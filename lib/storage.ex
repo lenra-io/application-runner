@@ -76,6 +76,7 @@ defmodule ApplicationRunner.Storage do
       iex> ApplicationRunner.Storage.get(:notexists, "truc")
       ** (ArgumentError) ETS : Unknown table name notexists
   """
+  @spec get(atom(), any(), any()) :: any()
   def get(table, key, default \\ nil)
 
   def get(table, _key, _default) when table not in @tables,
