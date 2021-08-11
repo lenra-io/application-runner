@@ -1,0 +1,24 @@
+---
+branches:
+  - "+([0-9])?(.{+([0-9]),x}).x"
+  - main
+  - name: beta
+    prerelease: true
+plugins:
+  - - "@semantic-release/commit-analyzer"
+    - preset: conventionalcommits
+  - - "@semantic-release/release-notes-generator"
+    - preset: conventionalcommits
+  - "@semantic-release/github"
+  - - "@semantic-release/exec"
+    - prepareCmd: >
+        sed -i "s/version: \"${lastRelease.version}\"/version: \"${nextRelease.version}\"/g" ./mix.exs &&
+        sed -i "s/tag: \"v${lastRelease.version}\"/tag: \"v${nextRelease.version}\"/g" ./README.md
+  - - "@semantic-release/git"
+    - assets:
+        - mix.exs
+        - README.md
+      message: |-
+        chore(release): ${nextRelease.version} [skip ci]
+
+        ${nextRelease.notes}
