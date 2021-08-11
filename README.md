@@ -11,7 +11,7 @@ In the meantime you can add it to dependancies using git deps
 ```elixir
 def deps do
   [
-    {:application_runner, git: "git@github.com:LenraOfficial/bouncer.git", tag: "v"}
+    {:application_runner, git: "git@github.com:LenraOfficial/bouncer.git", tag: "v1.0.0"}
   ]
 end
 ```
