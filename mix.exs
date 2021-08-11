@@ -27,6 +27,7 @@ defmodule ApplicationRunner.MixProject do
   defp deps do
     [
       {:credo, "~> 1.4", only: [:dev, :test], runtime: false},
+      {:dialyxir, "~> 1.0", only: [:dev], runtime: false},
       {:ex_json_schema, "~> 0.7.4"},
       {:jason, "~> 1.2"},
       {:json_diff, "~> 0.1"}
