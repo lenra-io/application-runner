@@ -4,7 +4,7 @@ defmodule ApplicationRunner.AdapterBehavior do
   """
   alias ApplicationRunner.Action
 
-  @callback run_action(%Action{}) :: {:ok, map()} | {:error, atom()}
-  @callback get_data(%Action{}) :: {:ok, map()}
-  @callback save_data(%Action{}, map()) :: {:ok, map()} | {:error, map()}
+  @callback run_action(Action.t()) :: {:ok, map()} | {:error, atom()}
+  @callback get_data(Action.t()) :: {:ok, Action.t()}
+  @callback save_data(Action.t(), map()) :: {:ok, map()} | {:error, map()}
 end
