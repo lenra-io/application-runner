@@ -4,12 +4,12 @@ defmodule ApplicationRunner.ApplicationRunnerAdapter do
   """
   @behaviour ApplicationRunner.AdapterBehavior
 
-  @impl ApplicationRunner.AdapterBehavior
+  @impl true
   def run_action(_action) do
     {:ok, %{"data" => %{}, "ui" => %{"root" => %{}}}}
   end
 
-  @impl ApplicationRunner.AdapterBehavior
+  @impl true
   def get_data(_action) do
     {:ok,
      %ApplicationRunner.Action{
@@ -20,7 +20,7 @@ defmodule ApplicationRunner.ApplicationRunnerAdapter do
      }}
   end
 
-  @impl ApplicationRunner.AdapterBehavior
+  @impl true
   def save_data(_action, _data) do
     {:ok, %{}}
   end
