@@ -48,7 +48,7 @@ defmodule ApplicationRunner.Storage do
       iex> ApplicationRunner.Storage.insert(:notexists, "truc", "machin")
       ** (ArgumentError) ETS : Unknown table name notexists
   """
-  @spec insert(:final_ui | :listeners | :ui, String.t(), any()) :: {:ok, any()}
+  @spec insert(atom(), String.t(), any()) :: {:ok, any()}
   def insert(table, _key, _data) when table not in @tables do
     raise ArgumentError, "ETS : Unknown table name #{table}"
   end
