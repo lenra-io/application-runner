@@ -18,6 +18,12 @@ defmodule ApplicationRunner.Action do
   @type t :: %ApplicationRunner.Action{
           user_id: integer(),
           app_name: String.t(),
-          build_number: integer()
+          build_number: integer(),
+          action_key: String.t(),
+          action_name: String.t(),
+          event: map(),
+          action_logs_uuid: String.t(),
+          old_data: map(),
+          props: map()
         }
 end
