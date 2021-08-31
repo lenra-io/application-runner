@@ -2,7 +2,7 @@ defmodule ApplicationRunner.Action do
   @moduledoc """
     The Action struct.
   """
-  @enforce_keys [:user_id, :app_name, :build_number, :action_logs_uuid]
+  @enforce_keys [:user_id, :app_name]
   defstruct [
     :user_id,
     :app_name,
