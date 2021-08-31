@@ -19,11 +19,11 @@ defmodule ApplicationRunner.Action do
           user_id: integer(),
           app_name: String.t(),
           build_number: integer(),
-          action_key: String.t(),
-          action_name: String.t(),
-          event: map(),
-          action_logs_uuid: String.t(),
-          old_data: map(),
-          props: map()
+          action_key: String.t() | nil,
+          action_name: String.t() | nil,
+          event: map() | nil,
+          action_logs_uuid: String.t() | nil,
+          old_data: map() | nil,
+          props: map() | nil
         }
 end
