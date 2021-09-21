@@ -4,7 +4,7 @@ defmodule ApplicationRunner.SchemaParser do
   """
 
   def parse(schema) do
-    properties = Map.get(Map.get(schema, :schema), "properties")
+    properties = Map.get(Map.get(schema, :schema), "properties", %{})
 
     Enum.reduce(
       properties,

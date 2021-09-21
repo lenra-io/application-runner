@@ -7,8 +7,8 @@ defmodule ApplicationRunner.JsonSchemata do
 
   # Client (api)
 
-  def get_schema(path) do
-    GenServer.call(__MODULE__, {:get_schema, path})
+  def get_schema_map(path) do
+    GenServer.call(__MODULE__, {:get_schema_map, path})
   end
 
   def start_link(_) do
@@ -32,8 +32,14 @@ defmodule ApplicationRunner.JsonSchemata do
   end
 
   def load_schema(path) do
-    read_schema(path)
-    |> ExComponentSchema.Schema.resolve()
+    schema =
+      read_schema(path)
+      |> ExComponentSchema.Schema.resolve()
+
+    schema_properties = ApplicationRunner.SchemaParser.parse(schema)
+
+
+    Map.merge(%{schema: schema}, schema_properties)
   end
 
   def read_schema(path) do
@@ -48,7 +54,7 @@ defmodule ApplicationRunner.JsonSchemata do
   end
 
   @impl true
-  def handle_call({:get_schema, path}, _from, schemata_map) do
+  def handle_call({:get_schema_map, path}, _from, schemata_map) do
     {:reply, Map.get(schemata_map, path, :error), schemata_map}
   end
 end
