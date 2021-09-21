@@ -44,7 +44,7 @@ defmodule ApplicationRunner.UIValidator do
         {:error, [{"Invalid type", prefix_path}]}
 
       schema ->
-        case ExJsonSchema.Validator.validate(schema, json) do
+        case ExComponentSchema.Validator.validate(schema, json) do
           :ok ->
             :ok
 

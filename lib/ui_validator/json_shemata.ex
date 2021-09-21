@@ -33,7 +33,7 @@ defmodule ApplicationRunner.JsonSchemata do
 
   def load_schema(path) do
     read_schema(path)
-    |> ExJsonSchema.Schema.resolve()
+    |> ExComponentSchema.Schema.resolve()
   end
 
   def read_schema(path) do
