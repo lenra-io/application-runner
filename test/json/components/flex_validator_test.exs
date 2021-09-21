@@ -1,15 +1,15 @@
-defmodule ApplicationRunner.ContainerValidatorTest do
+defmodule ApplicationRunner.FlexValidatorTest do
   use ExUnit.Case, async: true
 
   @moduledoc """
-    Test the "container_validator.schema.json" schema
+    Test the "flex.schema.json" schema
   """
 
-  @relative_path "components/container_validator.schema.json"
+  @relative_path "components/flex.schema.json"
 
-  test "valide container" do
+  test "valid flex" do
     json = %{
-      "type" => "container",
+      "type" => "flex",
       "children" => [
         %{
           "type" => "text",
@@ -22,9 +22,9 @@ defmodule ApplicationRunner.ContainerValidatorTest do
              ApplicationRunner.UIValidator.validate_for_schema(json, @relative_path, "")
   end
 
-  test "valid empty container" do
+  test "valid empty flex" do
     json = %{
-      "type" => "container",
+      "type" => "flex",
       "children" => []
     }
 
@@ -32,20 +32,20 @@ defmodule ApplicationRunner.ContainerValidatorTest do
              ApplicationRunner.UIValidator.validate_for_schema(json, @relative_path, "")
   end
 
-  test "invalid container type" do
+  test "invalid flex type" do
     json = %{
-      "type" => "containers",
+      "type" => "flexes",
       "children" => []
     }
 
-    assert {:error, [{"Does not match pattern \"^container$\".", "/type"}]} ==
+    assert {:error, [{"flexes is invalid. Should have been flex", "/type"}]} ==
              ApplicationRunner.UIValidator.validate_for_schema(json, @relative_path, "")
   end
 
-  test "invalide component inside the container" do
+  test "invalide component inside the flex" do
     json = %{
       "root" => %{
-        "type" => "container",
+        "type" => "flex",
         "children" => [
           %{
             "type" => "text",
@@ -62,9 +62,9 @@ defmodule ApplicationRunner.ContainerValidatorTest do
              ApplicationRunner.UIValidator.validate(json)
   end
 
-  test "invalid container with no children property" do
+  test "invalid flex with no children property" do
     json = %{
-      "type" => "container"
+      "type" => "flex"
     }
 
     assert {:error, [{"Required property children was not present.", ""}]} ==

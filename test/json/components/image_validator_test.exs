@@ -2,10 +2,10 @@ defmodule ApplicationRunner.ImageValidatorTest do
   use ExUnit.Case, async: true
 
   @moduledoc """
-    Test the "image_validator.schema.json" schema
+    Test the "image.schema.json" schema
   """
 
-  @relative_path "components/image_validator.schema.json"
+  @relative_path "components/image.schema.json"
 
   test "Valid image" do
     json = %{
@@ -35,7 +35,7 @@ defmodule ApplicationRunner.ImageValidatorTest do
       "path" => "download.jpeg"
     }
 
-    assert {:error, [{"Does not match pattern \"^image$\".", "/type"}]} ==
+    assert {:error, [{"images is invalid. Should have been image", "/type"}]} ==
              ApplicationRunner.UIValidator.validate_for_schema(json, @relative_path, "")
   end
 

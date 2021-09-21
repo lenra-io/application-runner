@@ -2,10 +2,10 @@ defmodule ApplicationRunner.TextValidatorTest do
   use ExUnit.Case, async: true
 
   @moduledoc """
-    Test the "text_validator.schema.json" schema
+    Test the "text.schema.json" schema
   """
 
-  @relative_path "components/text_validator.schema.json"
+  @relative_path "components/text.schema.json"
 
   test "valide text component" do
     json = %{
@@ -33,7 +33,7 @@ defmodule ApplicationRunner.TextValidatorTest do
       "value" => ""
     }
 
-    assert {:error, [{"Does not match pattern \"^text$\".", "/type"}]} ==
+    assert {:error, [{"texts is invalid. Should have been text", "/type"}]} ==
              ApplicationRunner.UIValidator.validate_for_schema(json, @relative_path, "")
   end
 

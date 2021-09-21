@@ -2,21 +2,19 @@ defmodule ApplicationRunner.ButtonValidatorTest do
   use ExUnit.Case, async: true
 
   @moduledoc """
-    Test the "button_validator.schema.json" schema
+    Test the "button.schema.json" schema
   """
-  @relative_path "components/button_validator.schema.json"
+  @relative_path "components/button.schema.json"
 
   test "valide button" do
     json = %{
       "type" => "button",
-      "value" => "",
-      "listeners" => %{
-        "onClick" => %{
-          "action" => "anyaction",
-          "props" => %{
-            "number" => 10,
-            "value" => "value"
-          }
+      "text" => "",
+      "onPressed" => %{
+        "action" => "anyaction",
+        "props" => %{
+          "number" => 10,
+          "text" => "value"
         }
       }
     }
@@ -28,7 +26,7 @@ defmodule ApplicationRunner.ButtonValidatorTest do
   test "valide button with no listener" do
     json = %{
       "type" => "button",
-      "value" => "test"
+      "text" => "test"
     }
 
     assert :ok ==
@@ -38,10 +36,10 @@ defmodule ApplicationRunner.ButtonValidatorTest do
   test "invalide button type" do
     json = %{
       "type" => "buttons",
-      "value" => "test"
+      "text" => "test"
     }
 
-    assert {:error, [{"Does not match pattern \"^button$\".", "/type"}]} ==
+    assert {:error, [{"buttons is invalid. Should have been button", "/type"}]} ==
              ApplicationRunner.UIValidator.validate_for_schema(json, @relative_path, "")
   end
 
@@ -50,26 +48,24 @@ defmodule ApplicationRunner.ButtonValidatorTest do
       "type" => "button"
     }
 
-    assert {:error, [{"Required property value was not present.", ""}]} ==
+    assert {:error, [{"Required property text was not present.", ""}]} ==
              ApplicationRunner.UIValidator.validate_for_schema(json, @relative_path, "")
   end
 
   test "invalid button with invalid action and props in listener" do
     json = %{
       "type" => "button",
-      "value" => "test",
-      "listeners" => %{
-        "onClick" => %{
-          "action" => 10,
-          "props" => ""
-        }
+      "text" => "test",
+      "onPressed" => %{
+        "action" => 10,
+        "props" => ""
       }
     }
 
     assert {:error,
             [
-              {"Type mismatch. Expected String but got Integer.", "/listeners/onClick/action"},
-              {"Type mismatch. Expected Object but got String.", "/listeners/onClick/props"}
+              {"Type mismatch. Expected String but got Integer.", "/onPressed/action"},
+              {"Type mismatch. Expected Object but got String.", "/onPressed/props"}
             ]} ==
              ApplicationRunner.UIValidator.validate_for_schema(json, @relative_path, "")
   end
@@ -77,54 +73,27 @@ defmodule ApplicationRunner.ButtonValidatorTest do
   test "invalid button with invalid listener key" do
     json = %{
       "type" => "button",
-      "value" => "test",
-      "listeners" => %{
-        "onChange" => %{
-          "action" => 42,
-          "props" => "machin"
-        }
+      "text" => "test",
+      "onChange" => %{
+        "action" => 42,
+        "props" => "machin"
       }
     }
 
     assert {:error,
             [
-              {"Schema does not allow additional properties.", "/listeners/onChange"}
+              {"Schema does not allow additional properties.", "/onChange"}
             ]} ==
              ApplicationRunner.UIValidator.validate_for_schema(json, @relative_path, "")
   end
 
-  test "valid button with empty value" do
+  test "valid button with empty text" do
     json = %{
       "type" => "button",
-      "value" => ""
+      "text" => ""
     }
 
     assert :ok ==
-             ApplicationRunner.UIValidator.validate_for_schema(json, @relative_path, "")
-  end
-
-  test "invalide button with empty listeners" do
-    json = %{
-      "type" => "button",
-      "value" => "test",
-      "listeners" => %{}
-    }
-
-    assert {:error, [{"Expected a minimum of 1 properties but got 0", "/listeners"}]} ==
-             ApplicationRunner.UIValidator.validate_for_schema(json, @relative_path, "")
-  end
-
-  test "invalide button with empty listeners and no value" do
-    json = %{
-      "type" => "button",
-      "listeners" => %{}
-    }
-
-    assert {:error,
-            [
-              {"Expected a minimum of 1 properties but got 0", "/listeners"},
-              {"Required property value was not present.", ""}
-            ]} ==
              ApplicationRunner.UIValidator.validate_for_schema(json, @relative_path, "")
   end
 end

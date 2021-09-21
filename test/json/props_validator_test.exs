@@ -2,10 +2,10 @@ defmodule ApplicationRunner.PropsValidatorTest do
   use ExUnit.Case, async: true
 
   @moduledoc """
-    Test the "props_validator.schema.json" schema
+    Test the "props.schema.json" schema
   """
 
-  @relative_path "props_validator.schema.json"
+  @relative_path "defs/props.schema.json"
 
   test "Valid props" do
     json = %{

@@ -2,22 +2,20 @@ defmodule ApplicationRunner.TextfieldValidatorTest do
   use ExUnit.Case, async: true
 
   @moduledoc """
-    Test the "textfield_validator.schema.json" schema
+    Test the "textfield.schema.json" schema
   """
 
-  @relative_path "components/textfield_validator.schema.json"
+  @relative_path "components/textfield.schema.json"
 
   test "valide textfield" do
     json = %{
       "type" => "textfield",
       "value" => "",
-      "listeners" => %{
-        "onChange" => %{
-          "action" => "anyaction",
-          "props" => %{
-            "number" => 10,
-            "value" => "value"
-          }
+      "onChange" => %{
+        "action" => "anyaction",
+        "props" => %{
+          "number" => 10,
+          "value" => "value"
         }
       }
     }
@@ -42,7 +40,7 @@ defmodule ApplicationRunner.TextfieldValidatorTest do
       "value" => "test"
     }
 
-    assert {:error, [{"Does not match pattern \"^textfield$\".", "/type"}]} ==
+    assert {:error, [{"textfields is invalid. Should have been textfield", "/type"}]} ==
              ApplicationRunner.UIValidator.validate_for_schema(json, @relative_path, "")
   end
 
@@ -59,18 +57,16 @@ defmodule ApplicationRunner.TextfieldValidatorTest do
     json = %{
       "type" => "textfield",
       "value" => "test",
-      "listeners" => %{
-        "onChange" => %{
-          "action" => 10,
-          "props" => ""
-        }
+      "onChange" => %{
+        "action" => 10,
+        "props" => ""
       }
     }
 
     assert {:error,
             [
-              {"Type mismatch. Expected String but got Integer.", "/listeners/onChange/action"},
-              {"Type mismatch. Expected Object but got String.", "/listeners/onChange/props"}
+              {"Type mismatch. Expected String but got Integer.", "/onChange/action"},
+              {"Type mismatch. Expected Object but got String.", "/onChange/props"}
             ]} ==
              ApplicationRunner.UIValidator.validate_for_schema(json, @relative_path, "")
   end
@@ -79,17 +75,15 @@ defmodule ApplicationRunner.TextfieldValidatorTest do
     json = %{
       "type" => "textfield",
       "value" => "test",
-      "listeners" => %{
-        "onClick" => %{
-          "action" => 42,
-          "props" => "machin"
-        }
+      "onClick" => %{
+        "action" => 42,
+        "props" => "machin"
       }
     }
 
     assert {:error,
             [
-              {"Schema does not allow additional properties.", "/listeners/onClick"}
+              {"Schema does not allow additional properties.", "/onClick"}
             ]} ==
              ApplicationRunner.UIValidator.validate_for_schema(json, @relative_path, "")
   end
@@ -101,17 +95,6 @@ defmodule ApplicationRunner.TextfieldValidatorTest do
     }
 
     assert :ok ==
-             ApplicationRunner.UIValidator.validate_for_schema(json, @relative_path, "")
-  end
-
-  test "invalide textfield with empty listeners" do
-    json = %{
-      "type" => "textfield",
-      "value" => "test",
-      "listeners" => %{}
-    }
-
-    assert {:error, [{"Expected a minimum of 1 properties but got 0", "/listeners"}]} ==
              ApplicationRunner.UIValidator.validate_for_schema(json, @relative_path, "")
   end
 end

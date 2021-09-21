@@ -17,7 +17,7 @@ defmodule ApplicationRunner.TestComponentTest do
     },
     "$id" => "test_component.schema.json",
     "$schema" =>
-      "https://raw.githubusercontent.com/lenra-io/ex_component_schema/poc_components/priv/static/draft-lenra.json",
+      "https://raw.githubusercontent.com/lenra-io/ex_component_schema/beta/priv/static/draft-lenra.json",
     "additionalProperties" => false,
     "description" => "Element used to test the Lenra Draft",
     "properties" => %{
@@ -56,6 +56,5 @@ defmodule ApplicationRunner.TestComponentTest do
     assert Enum.sort(Map.get(expected, :listeners)) == Enum.sort(Map.get(res, :listeners))
     assert Enum.sort(Map.get(expected, :children)) == Enum.sort(Map.get(res, :children))
     assert Enum.sort(Map.get(expected, :child)) == Enum.sort(Map.get(res, :child))
-
   end
 end

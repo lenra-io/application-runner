@@ -2,10 +2,10 @@ defmodule ApplicationRunner.ActionValidatorTest do
   use ExUnit.Case, async: true
 
   @moduledoc """
-    Test the "action_validator.schema.json" schema
+    Test the "action.schema.json" schema
   """
 
-  @relative_path "action_validator.schema.json"
+  @relative_path "defs/action.schema.json"
 
   test "valid action name" do
     assert :ok = ApplicationRunner.UIValidator.validate_for_schema("test", @relative_path, "")

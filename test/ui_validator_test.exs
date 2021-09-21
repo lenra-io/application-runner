@@ -33,7 +33,7 @@ defmodule ApplicationRunner.UIValidatorTest do
 
     assert {:error,
             [
-              {"Type mismatch. Expected Object but got String.", "/root"}
+              {"Type mismatch. Expected Component but got String.", "/root"}
             ]} ==
              ApplicationRunner.UIValidator.validate(ui)
 
@@ -43,7 +43,7 @@ defmodule ApplicationRunner.UIValidatorTest do
 
     assert {:error,
             [
-              {"No type found", "/root"}
+              {"Type mismatch. Expected Component but got Object.", "/root"}
             ]} ==
              ApplicationRunner.UIValidator.validate(ui)
   end
@@ -51,41 +51,35 @@ defmodule ApplicationRunner.UIValidatorTest do
   test "bug LENRA-130" do
     ui = %{
       "root" => %{
-        "type" => "container",
+        "type" => "flex",
         "children" => [
           %{
-            "type" => "container",
+            "type" => "flex",
             "children" => [
               %{
                 "type" => "textfield",
                 "value" => "",
-                "listeners" => %{
-                  "onChange" => %{
-                    "name" => "Category.setName"
-                  }
+                "onChange" => %{
+                  "name" => "Category.setName"
                 }
               },
               %{
                 "type" => "button",
-                "value" => "Save",
-                "listeners" => %{
-                  "onClick" => %{
-                    "name" => "Category.save"
-                  }
+                "text" => "Save",
+                "onPressed" => %{
+                  "name" => "Category.save"
                 }
               }
             ]
           },
           %{
-            "type" => "container",
+            "type" => "flex",
             "children" => [
               %{
                 "type" => "button",
-                "value" => "+",
-                "listeners" => %{
-                  "onClick" => %{
-                    "name" => "Category.addField"
-                  }
+                "text" => "+",
+                "onPressed" => %{
+                  "name" => "Category.addField"
                 }
               }
             ]
@@ -98,17 +92,17 @@ defmodule ApplicationRunner.UIValidatorTest do
              :error,
              [
                {"Schema does not allow additional properties.",
-                "/root/children/0/children/0/listeners/onChange/name"},
+                "/root/children/0/children/0/onChange/name"},
                {"Required property action was not present.",
-                "/root/children/0/children/0/listeners/onChange"},
+                "/root/children/0/children/0/onChange"},
                {"Schema does not allow additional properties.",
-                "/root/children/0/children/1/listeners/onClick/name"},
+                "/root/children/0/children/1/onPressed/name"},
                {"Required property action was not present.",
-                "/root/children/0/children/1/listeners/onClick"},
+                "/root/children/0/children/1/onPressed"},
                {"Schema does not allow additional properties.",
-                "/root/children/1/children/0/listeners/onClick/name"},
+                "/root/children/1/children/0/onPressed/name"},
                {"Required property action was not present.",
-                "/root/children/1/children/0/listeners/onClick"}
+                "/root/children/1/children/0/onPressed"}
              ]
            } ==
              ApplicationRunner.UIValidator.validate(ui)
@@ -117,7 +111,7 @@ defmodule ApplicationRunner.UIValidatorTest do
   test "multiple type error" do
     ui = %{
       "root" => %{
-        "type" => "container",
+        "type" => "flex",
         "children" => [
           %{"value" => "machin"},
           %{"value" => "truc"},
@@ -131,11 +125,8 @@ defmodule ApplicationRunner.UIValidatorTest do
     assert {
              :error,
              [
-               {"No type found", "/root/children/0"},
-               {"No type found", "/root/children/1"},
-               {"Invalid type", "/root/children/2"},
-               {"Invalid type", "/root/children/3"},
-               {"Required property value was not present.", "/root/children/4"}
+               {"Type mismatch. Expected Component but got Object.", "/root/flex/children/0"},
+               {"Type mismatch. Expected Component but got Object.", "/root/flex/children/1"}
              ]
            } ==
              ApplicationRunner.UIValidator.validate(ui)

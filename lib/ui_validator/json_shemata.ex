@@ -6,6 +6,7 @@ defmodule ApplicationRunner.JsonSchemata do
   """
 
   # Client (api)
+  @component_api_directory "priv/components-api/api"
 
   def get_schema_map(path) do
     GenServer.call(__MODULE__, {:get_schema_map, path})
@@ -18,7 +19,7 @@ defmodule ApplicationRunner.JsonSchemata do
   # Server (callbacks)
   @impl true
   def init(_) do
-    root_json_directory = Application.app_dir(:application_runner, "priv/json_validator")
+    root_json_directory = Application.app_dir(:application_runner, @component_api_directory)
 
     relative_shemata_path =
       Path.join(root_json_directory, "/**/*.schema.json")
@@ -38,12 +39,11 @@ defmodule ApplicationRunner.JsonSchemata do
 
     schema_properties = ApplicationRunner.SchemaParser.parse(schema)
 
-
     Map.merge(%{schema: schema}, schema_properties)
   end
 
   def read_schema(path) do
-    Application.app_dir(:application_runner, "priv/json_validator")
+    Application.app_dir(:application_runner, @component_api_directory)
     |> Path.join(path)
     |> File.read()
     |> case do

@@ -1,6 +1,6 @@
 alias ApplicationRunner.JsonValidator
 
-schema = JsonValidator.resolve_schema("ui_validator.schema.json")
+schema = JsonValidator.resolve_schema("ui.schema.json")
 
 root = fn json -> %{
     "root" => json

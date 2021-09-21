@@ -4,7 +4,7 @@ defmodule ApplicationRunner.UIValidator do
   """
 
   def validate(ui) do
-    with :ok <- validate_for_schema(ui, "root_validator.schema.json", "") do
+    with :ok <- validate_for_schema(ui, "root.schema.json", "") do
       validate_json_tree(ui["root"], "/root")
     end
   end
@@ -35,7 +35,7 @@ defmodule ApplicationRunner.UIValidator do
   end
 
   defp validate_component(comp_type, comp, prefix_path) do
-    validate_for_schema(comp, "components/#{comp_type}_validator.schema.json", prefix_path)
+    validate_for_schema(comp, "components/#{comp_type}.schema.json", prefix_path)
   end
 
   def validate_for_schema(json, schema_url, prefix_path) do
