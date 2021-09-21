@@ -17,7 +17,7 @@ defmodule ApplicationRunner.TestComponentTest do
     },
     "$id" => "test_component.schema.json",
     "$schema" =>
-      "https://raw.githubusercontent.com/lenra-io/ex_component_schema/poc_components/priv/static/draft-lenra.json",
+      "https://raw.githubusercontent.com/lenra-io/ex_component_schema/beta/priv/static/draft-lenra.json",
     "additionalProperties" => false,
     "description" => "Element used to test the Lenra Draft",
     "properties" => %{
