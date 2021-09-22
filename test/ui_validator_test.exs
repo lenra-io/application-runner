@@ -131,4 +131,130 @@ defmodule ApplicationRunner.UIValidatorTest do
            } ==
              ApplicationRunner.UIValidator.validate_and_build(ui)
   end
+
+  test "build_listener" do
+    listener = %{
+      "action" => "string",
+      "props" => %{}
+    }
+
+    assert {:ok, %{"code" => _}} = ApplicationRunner.UIValidator.build_listener(listener)
+  end
+
+  test "build_listener without props" do
+    listener = %{
+      "action" => "string"
+    }
+
+    assert {:ok, %{"code" => _}} = ApplicationRunner.UIValidator.build_listener(listener)
+  end
+
+  test "build_listener with additional props" do
+    listener = %{
+      "action" => "string",
+      "props" => %{},
+      "additional" => "foo"
+    }
+
+    assert {:ok, %{"code" => _, "additional" => "foo"}} =
+             ApplicationRunner.UIValidator.build_listener(listener)
+  end
+
+  test "build_listeners" do
+    comp = %{
+      "type" => "test",
+      "onPressed" => %{
+        "action" => "press",
+        "props" => %{}
+      },
+      "onDrag" => %{
+        "action" => "drag",
+        "props" => %{}
+      }
+    }
+
+    assert {:ok, %{"onPressed" => %{"code" => _}, "onDrag" => %{"code" => _}}} =
+             ApplicationRunner.UIValidator.build_listeners(comp, ["onPressed", "onDrag"])
+  end
+
+  test "build_child" do
+    comp = %{
+      "type" => "test",
+      "leftChild" => %{
+        "type" => "text",
+        "value" => "foo"
+      },
+      "rightChild" => %{
+        "type" => "text",
+        "value" => "bar"
+      }
+    }
+
+    assert {:ok,
+            %{
+              "leftChild" => %{
+                "type" => "text",
+                "value" => "foo"
+              },
+              "rightChild" => %{
+                "type" => "text",
+                "value" => "bar"
+              }
+            }} =
+             ApplicationRunner.UIValidator.validate_and_build_child_list(
+               comp,
+               [
+                 "leftChild",
+                 "rightChild"
+               ],
+               "/root"
+             )
+  end
+
+  test "build_child incorrect child" do
+    comp = %{
+      "type" => "test",
+      "leftChild" => %{
+        "type" => "text"
+      },
+      "rightChild" => %{
+        "type" => "text"
+      }
+    }
+
+    assert {:error,
+            [
+              {"Required property value was not present.", "/root/leftChild"},
+              {"Required property value was not present.", "/root/rightChild"}
+            ]} =
+             ApplicationRunner.UIValidator.validate_and_build_child_list(
+               comp,
+               ["leftChild", "rightChild"],
+               "/root"
+             )
+  end
+
+  test "build_child forgotten child" do
+    comp = %{"type" => "test"}
+
+    assert :ok ==
+             ApplicationRunner.UIValidator.validate_and_build_child_list(
+               comp,
+               ["leftChild", "rightChild"],
+               "/root"
+             )
+  end
+
+  test "build_children" do
+    comp = %{
+      "type" => "test"
+    }
+
+    assert :ok ==
+             ApplicationRunner.UIValidator.validate_and_build_children_list(
+               comp,
+               ["leftMenu", "rightMenu"],
+               "/root"
+             )
+  end
 end

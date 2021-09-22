@@ -57,4 +57,15 @@ defmodule ApplicationRunner.TestComponentTest do
     assert Enum.sort(Map.get(expected, :children)) == Enum.sort(Map.get(res, :children))
     assert Enum.sort(Map.get(expected, :child)) == Enum.sort(Map.get(res, :child))
   end
+
+  test "validate and build" do
+    json = %{
+      "root" => %{
+        "type" => "test",
+        "value" => "string"
+      }
+    }
+
+    assert :ok == ApplicationRunner.UIValidator.validate_and_build(json)
+  end
 end

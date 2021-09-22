@@ -53,6 +53,8 @@ defmodule ApplicationRunner.JsonSchemata do
     |> Jason.decode!()
   end
 
+  def get_component_path(comp_type), do: "components/#{comp_type}.schema.json"
+
   @impl true
   def handle_call({:get_schema_map, path}, _from, schemata_map) do
     {:reply, Map.get(schemata_map, path, :error), schemata_map}
