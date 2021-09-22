@@ -59,7 +59,7 @@ defmodule ApplicationRunner.FlexValidatorTest do
     }
 
     assert {:error, [{"Invalid type", "/root/children/1"}]} ==
-             ApplicationRunner.UIValidator.validate(json)
+             ApplicationRunner.UIValidator.validate_and_build(json)
   end
 
   test "invalid flex with no children property" do

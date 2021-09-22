@@ -3,34 +3,57 @@ defmodule ApplicationRunner.UIValidator do
     Services to validate json with json schema
   """
 
-  def validate(ui) do
-    with :ok <- validate_for_schema(ui, "root.schema.json", "") do
-      validate_json_tree(ui["root"], "/root")
+  # def validate(ui) do
+  #   with :ok <- validate_for_schema(ui, "root_validator.schema.json", "") do
+  #     validate_json_tree(ui["root"], "/root")
+  #   end
+  # end
+
+  def validate_and_build(ui) do
+    with :ok <- validate_for_schema(ui, "root_validator.schema.json", "") do
+      validate_and_build_json_tree(ui["root"], "/root")
     end
   end
 
-  defp validate_json_tree(%{"type" => comp_type, "children" => children} = comp, prefix_path) do
-    with :ok <- validate_component(comp_type, comp, "#{prefix_path}/#{comp_type}") do
-      children
-      |> Enum.with_index()
-      |> Enum.reduce([], fn {child, idx}, errors ->
-        case validate_json_tree(child, "#{prefix_path}/children/#{idx}") do
-          :ok -> errors
-          {:error, err} -> errors ++ err
-        end
-      end)
-      |> case do
-        [] -> :ok
-        errors -> {:error, errors}
-      end
+  # defp validate_json_tree(%{"type" => comp_type, "children" => children} = comp, prefix_path) do
+  #   with :ok <- validate_component(comp_type, comp, "#{prefix_path}/#{comp_type}") do
+  #     children
+  #     |> Enum.with_index()
+  #     |> Enum.reduce([], fn {child, idx}, errors ->
+  #       case validate_json_tree(child, "#{prefix_path}/children/#{idx}") do
+  #         :ok -> errors
+  #         {:error, err} -> errors ++ err
+  #       end
+  #     end)
+  #     |> case do
+  #       [] -> :ok
+  #       errors -> {:error, errors}
+  #     end
+  #   end
+  # end
+
+  # defp validate_json_tree(%{"type" => comp_type} = comp, prefix_path) do
+  #   validate_component(comp_type, comp, prefix_path)
+  # end
+
+  defp validate_and_build_json_tree(%{"type" => comp_type} = comp, prefix_path) do
+    with :ok <- validate_component(comp_type, comp, prefix_path) do
+      %{listeners: listeners, children: children, child: child} =
+        comp
+        |> ExComponentSchema.Schema.resolve()
+        |> ApplicationRunner.SchemaParser.parse()
+
+      IO.puts(inspect(listeners))
+      IO.puts(inspect(children))
+      IO.puts(inspect(child))
     end
   end
 
-  defp validate_json_tree(%{"type" => comp_type} = comp, prefix_path) do
-    validate_component(comp_type, comp, prefix_path)
-  end
+  # defp validate_json_tree(_comp, prefix_path) do
+  #   {:error, [{"No type found", prefix_path}]}
+  # end
 
-  defp validate_json_tree(_comp, prefix_path) do
+  defp validate_and_build_json_tree(_comp, prefix_path) do
     {:error, [{"No type found", prefix_path}]}
   end
 

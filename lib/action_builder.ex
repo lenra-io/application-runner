@@ -130,8 +130,7 @@ defmodule ApplicationRunner.ActionBuilder do
   defp run_app_listener(action) do
     with {:ok, %{"data" => data, "ui" => ui}} <-
            run_action(action),
-         :ok <- ApplicationRunner.UIValidator.validate(ui),
-         {:ok, final_ui} <- build_ui(ui),
+         {:ok, final_ui} <- ApplicationRunner.UIValidator.validate_and_build(ui),
          {:ok, _} <- save_final_ui(action, final_ui),
          {:ok, _} <- save_data(action, data) do
       {:ok, final_ui}

@@ -16,14 +16,14 @@ defmodule ApplicationRunner.UIValidatorTest do
     }
 
     assert :ok ==
-             ApplicationRunner.UIValidator.validate(ui)
+             ApplicationRunner.UIValidator.validate_and_build(ui)
   end
 
   test "A UI must have a root property" do
     ui = %{}
 
     assert {:error, [{"Required property root was not present.", ""}]} ==
-             ApplicationRunner.UIValidator.validate(ui)
+             ApplicationRunner.UIValidator.validate_and_build(ui)
   end
 
   test "the root property of a UI have to be a component" do
@@ -35,7 +35,7 @@ defmodule ApplicationRunner.UIValidatorTest do
             [
               {"Type mismatch. Expected Component but got String.", "/root"}
             ]} ==
-             ApplicationRunner.UIValidator.validate(ui)
+             ApplicationRunner.UIValidator.validate_and_build(ui)
 
     ui = %{
       "root" => %{}
@@ -45,7 +45,7 @@ defmodule ApplicationRunner.UIValidatorTest do
             [
               {"Type mismatch. Expected Component but got Object.", "/root"}
             ]} ==
-             ApplicationRunner.UIValidator.validate(ui)
+             ApplicationRunner.UIValidator.validate_and_build(ui)
   end
 
   test "bug LENRA-130" do
@@ -105,7 +105,7 @@ defmodule ApplicationRunner.UIValidatorTest do
                 "/root/children/1/children/0/onPressed"}
              ]
            } ==
-             ApplicationRunner.UIValidator.validate(ui)
+             ApplicationRunner.UIValidator.validate_and_build(ui)
   end
 
   test "multiple type error" do
@@ -129,6 +129,6 @@ defmodule ApplicationRunner.UIValidatorTest do
                {"Type mismatch. Expected Component but got Object.", "/root/flex/children/1"}
              ]
            } ==
-             ApplicationRunner.UIValidator.validate(ui)
+             ApplicationRunner.UIValidator.validate_and_build(ui)
   end
 end
