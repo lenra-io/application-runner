@@ -72,7 +72,7 @@ defmodule ApplicationRunner.UIValidator do
 
         child_comp ->
           validate_and_build_component(child_comp, child_path)
-          |> handle_child_list_reduce_errors(child, child_path, {acc, errors})
+          |> handle_built_child(child, child_path, {acc, errors})
       end
     end)
     |> case do
@@ -81,7 +81,7 @@ defmodule ApplicationRunner.UIValidator do
     end
   end
 
-  defp handle_child_list_reduce_errors(built_comp, comp_name, comp_path, {built, errors}) do
+  defp handle_built_child(built_comp, comp_name, comp_path, {built, errors}) do
     case built_comp do
       {:ok, built_component} ->
         {Map.merge(built, %{comp_name => built_component}), errors}
