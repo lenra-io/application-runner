@@ -22,7 +22,7 @@ defmodule ApplicationRunner.UIValidatorTest do
   test "A UI must have a root property" do
     ui = %{}
 
-    assert {:error, [{"Required property root was not present.", ""}]} ==
+    assert {:error, [{"Required property root was not present.", "#"}]} ==
              ApplicationRunner.UIValidator.validate_and_build(ui)
   end
 
@@ -33,7 +33,7 @@ defmodule ApplicationRunner.UIValidatorTest do
 
     assert {:error,
             [
-              {"Type mismatch. Expected Component but got String.", "/root"}
+              {"Type mismatch. Expected Component but got String.", "#/root"}
             ]} ==
              ApplicationRunner.UIValidator.validate_and_build(ui)
 
@@ -43,7 +43,7 @@ defmodule ApplicationRunner.UIValidatorTest do
 
     assert {:error,
             [
-              {"Type mismatch. Expected Component but got Object.", "/root"}
+              {"Type mismatch. Expected Component but got Object.", "#/root"}
             ]} ==
              ApplicationRunner.UIValidator.validate_and_build(ui)
   end
@@ -354,5 +354,33 @@ defmodule ApplicationRunner.UIValidatorTest do
                 %{"type" => "text", "value" => "bar"}
               ]
             }} = ApplicationRunner.UIValidator.validate_and_build_component(comp, "/root")
+  end
+
+  test "validate_and_build" do
+    comp = %{
+      "root" => %{
+        "type" => "test",
+        "value" => "foo",
+        "onDrag" => %{
+          "action" => "drag",
+          "props" => %{}
+        },
+        "leftMenu" => [
+          %{"type" => "text", "value" => "foo"},
+          %{"type" => "text", "value" => "bar"}
+        ]
+      }
+    }
+
+    assert {:ok,
+            %{
+              "type" => "test",
+              "value" => "foo",
+              "onDrag" => %{"code" => _},
+              "leftMenu" => [
+                %{"type" => "text", "value" => "foo"},
+                %{"type" => "text", "value" => "bar"}
+              ]
+            }} = ApplicationRunner.UIValidator.validate_and_build(comp)
   end
 end

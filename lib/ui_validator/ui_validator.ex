@@ -12,8 +12,12 @@ defmodule ApplicationRunner.UIValidator do
 
   @spec validate_and_build(ui()) :: {:ok, ui()} | {:error, build_errors()}
   def validate_and_build(ui) do
-    ui["root"]
-    |> validate_and_build_component("/root")
+    %{schema: schema} = JsonSchemata.get_schema_map("root.schema.json")
+
+    with :ok <- ExComponentSchema.Validator.validate(schema, ui) do
+      ui["root"]
+      |> validate_and_build_component("/root")
+    end
   end
 
   @spec validate_and_build_component(component(), String.t()) ::
@@ -23,11 +27,13 @@ defmodule ApplicationRunner.UIValidator do
       JsonSchemata.get_component_path(comp_type)
       |> JsonSchemata.get_schema_map()
 
+    comp_path = "#{prefix_path}/#{comp_type}"
+
     with %{schema: schema, listeners: listeners, children: children, child: child} <- schema_map,
          :ok <- ExComponentSchema.Validator.validate(schema, component),
          {:ok, children_map} <-
-           validate_and_build_children_list(component, children, prefix_path),
-         {:ok, child_map} <- validate_and_build_child_list(component, child, prefix_path),
+           validate_and_build_children_list(component, children, comp_path),
+         {:ok, child_map} <- validate_and_build_child_list(component, child, comp_path),
          {:ok, listeners_map} <- build_listeners(component, listeners) do
       {:ok,
        component
@@ -51,10 +57,11 @@ defmodule ApplicationRunner.UIValidator do
   def build_listener(listener) do
     case listener do
       %{"action" => action_code} ->
+        built_listener = Map.delete(listener, "action") |> Map.delete("props")
         props = Map.get(listener, "props", %{})
         listener_key = Storage.generate_listeners_key(action_code, props)
         Storage.insert(:listeners, listener_key, listener)
-        {:ok, %{"code" => listener_key}}
+        {:ok, Map.merge(built_listener, %{"code" => listener_key})}
 
       _ ->
         {:ok, %{}}
@@ -123,13 +130,13 @@ defmodule ApplicationRunner.UIValidator do
         {:ok, []}
 
       children_comp ->
-        build_children_map(children_comp, prefix_path)
+        build_children_map(children_comp, children, prefix_path)
     end
   end
 
-  defp build_children_map(children, prefix_path) do
+  defp build_children_map(children, children_name, prefix_path) do
     Enum.reduce(children, {[], []}, fn child, {acc, errors} ->
-      children_path = "#{prefix_path}/#{children}"
+      children_path = "#{prefix_path}/#{children_name}"
 
       case validate_and_build_component(child, "") do
         {:ok, built_component} ->

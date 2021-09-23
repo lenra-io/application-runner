@@ -16,7 +16,7 @@ defmodule ApplicationRunner.TextValidatorTest do
               "type" => "text",
               "value" => "Txt test"
             }} ==
-             ApplicationRunner.UIValidator.validate_and_build_component(json, "")
+             ApplicationRunner.UIValidator.validate_and_build_component(json, "/root")
   end
 
   test "valide text empty value" do
@@ -30,7 +30,7 @@ defmodule ApplicationRunner.TextValidatorTest do
               "type" => "text",
               "value" => ""
             }} ==
-             ApplicationRunner.UIValidator.validate_and_build_component(json, "")
+             ApplicationRunner.UIValidator.validate_and_build_component(json, "/root")
   end
 
   test "invalide text type" do
@@ -40,7 +40,7 @@ defmodule ApplicationRunner.TextValidatorTest do
     }
 
     assert {:error, [{"Invalid component type"}]} ==
-             ApplicationRunner.UIValidator.validate_and_build_component(json, "")
+             ApplicationRunner.UIValidator.validate_and_build_component(json, "/root")
   end
 
   test "invalid text no value" do
@@ -49,7 +49,7 @@ defmodule ApplicationRunner.TextValidatorTest do
     }
 
     assert {:error, [{"Required property value was not present.", "#"}]} ==
-             ApplicationRunner.UIValidator.validate_and_build_component(json, "")
+             ApplicationRunner.UIValidator.validate_and_build_component(json, "/root")
   end
 
   test "invalid text no string value type" do
@@ -59,6 +59,6 @@ defmodule ApplicationRunner.TextValidatorTest do
     }
 
     assert {:error, [{"Type mismatch. Expected String but got Integer.", "#/value"}]} ==
-             ApplicationRunner.UIValidator.validate_and_build_component(json, "")
+             ApplicationRunner.UIValidator.validate_and_build_component(json, "/root")
   end
 end

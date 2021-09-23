@@ -20,8 +20,8 @@ defmodule ApplicationRunner.TextfieldValidatorTest do
       }
     }
 
-    assert :ok ==
-             ApplicationRunner.UIValidator.validate_for_schema(json, @relative_path, "")
+    assert {:ok, json} ==
+             ApplicationRunner.UIValidator.validate_and_build_component(json, "")
   end
 
   test "valide textfield with no listener" do
@@ -30,8 +30,8 @@ defmodule ApplicationRunner.TextfieldValidatorTest do
       "value" => "test"
     }
 
-    assert :ok ==
-             ApplicationRunner.UIValidator.validate_for_schema(json, @relative_path, "")
+    assert {:ok, json} ==
+      ApplicationRunner.UIValidator.validate_and_build_component(json, "")
   end
 
   test "invalide type textfield" do
