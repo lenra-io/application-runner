@@ -114,7 +114,8 @@ defmodule ApplicationRunner.UIValidator do
           {Map.merge(acc, %{children => built_children}), errors}
 
         {:error, children_errors} ->
-          tmp = Enum.map(children_errors, &{elem(&1, 0), children_path})
+          # Enum.map(children_errors, &{elem(&1, 0), children_path})
+          tmp = children_errors
           {acc, errors ++ tmp}
       end
     end)
@@ -135,8 +136,10 @@ defmodule ApplicationRunner.UIValidator do
   end
 
   defp build_children_map(children, children_name, prefix_path) do
-    Enum.reduce(children, {[], []}, fn child, {acc, errors} ->
-      children_path = "#{prefix_path}/#{children_name}"
+    children
+    |> Enum.with_index()
+    |> Enum.reduce({[], []}, fn {child, index}, {acc, errors} ->
+      children_path = "#{prefix_path}/#{index}/#{children_name}"
 
       case validate_and_build_component(child, "") do
         {:ok, built_component} ->
