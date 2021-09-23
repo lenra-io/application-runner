@@ -7,7 +7,7 @@ defmodule ApplicationRunner.TextfieldValidatorTest do
 
   @relative_path "components/textfield.schema.json"
 
-  test "valide textfield" do
+  test "valid textfield" do
     json = %{
       "type" => "textfield",
       "value" => "",
@@ -30,7 +30,7 @@ defmodule ApplicationRunner.TextfieldValidatorTest do
             }} = ApplicationRunner.UIValidator.validate_and_build_component(json, "")
   end
 
-  test "valide textfield with no listener" do
+  test "valid textfield with no listener" do
     json = %{
       "type" => "textfield",
       "value" => "test"
@@ -40,14 +40,14 @@ defmodule ApplicationRunner.TextfieldValidatorTest do
              ApplicationRunner.UIValidator.validate_and_build_component(json, "")
   end
 
-  test "invalide type textfield" do
+  test "invalid type textfield" do
     json = %{
       "type" => "textfields",
       "value" => "test"
     }
 
-    assert {:error, [{"textfields is invalid. Should have been textfield", "/type"}]} ==
-             ApplicationRunner.UIValidator.validate_for_schema(json, @relative_path, "")
+    assert {:error, [{"Invalid component type"}]} ==
+             ApplicationRunner.UIValidator.validate_and_build_component(json, "")
   end
 
   test "invalid textfield with no value" do
@@ -56,7 +56,7 @@ defmodule ApplicationRunner.TextfieldValidatorTest do
     }
 
     assert {:error, [{"Required property value was not present.", ""}]} ==
-             ApplicationRunner.UIValidator.validate_for_schema(json, @relative_path, "")
+             ApplicationRunner.UIValidator.validate_and_build_component(json, "")
   end
 
   test "invalid textfield with invalid action and props in listener" do
@@ -74,7 +74,7 @@ defmodule ApplicationRunner.TextfieldValidatorTest do
               {"Type mismatch. Expected String but got Integer.", "/onChange/action"},
               {"Type mismatch. Expected Object but got String.", "/onChange/props"}
             ]} ==
-             ApplicationRunner.UIValidator.validate_for_schema(json, @relative_path, "")
+             ApplicationRunner.UIValidator.validate_and_build_component(json, "")
   end
 
   test "invalid textfield with invalid listener key" do
@@ -91,7 +91,7 @@ defmodule ApplicationRunner.TextfieldValidatorTest do
             [
               {"Schema does not allow additional properties.", "/onClick"}
             ]} ==
-             ApplicationRunner.UIValidator.validate_for_schema(json, @relative_path, "")
+             ApplicationRunner.UIValidator.validate_and_build_component(json, "")
   end
 
   test "valid textfield with empty value" do
@@ -100,7 +100,11 @@ defmodule ApplicationRunner.TextfieldValidatorTest do
       "value" => ""
     }
 
-    assert :ok ==
-             ApplicationRunner.UIValidator.validate_for_schema(json, @relative_path, "")
+    assert {:ok,
+            %{
+              "type" => "textfield",
+              "value" => ""
+            }} ==
+             ApplicationRunner.UIValidator.validate_and_build_component(json, "")
   end
 end

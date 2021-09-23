@@ -18,8 +18,8 @@ defmodule ApplicationRunner.FlexValidatorTest do
       ]
     }
 
-    assert :ok ==
-             ApplicationRunner.UIValidator.validate_for_schema(json, @relative_path, "")
+    assert {:ok, json} ==
+             ApplicationRunner.UIValidator.validate_and_build_component(json, "")
   end
 
   test "valid empty flex" do
@@ -28,8 +28,12 @@ defmodule ApplicationRunner.FlexValidatorTest do
       "children" => []
     }
 
-    assert :ok ==
-             ApplicationRunner.UIValidator.validate_for_schema(json, @relative_path, "")
+    assert {:ok,
+            %{
+              "type" => "flex",
+              "children" => []
+            }} ==
+             ApplicationRunner.UIValidator.validate_and_build_component(json, "")
   end
 
   test "invalid flex type" do
@@ -38,8 +42,8 @@ defmodule ApplicationRunner.FlexValidatorTest do
       "children" => []
     }
 
-    assert {:error, [{"flexes is invalid. Should have been flex", "/type"}]} ==
-             ApplicationRunner.UIValidator.validate_for_schema(json, @relative_path, "")
+    assert {:error, [{"Invalid component type"}]} ==
+             ApplicationRunner.UIValidator.validate_and_build_component(json, "")
   end
 
   test "invalide component inside the flex" do
@@ -67,7 +71,7 @@ defmodule ApplicationRunner.FlexValidatorTest do
       "type" => "flex"
     }
 
-    assert {:error, [{"Required property children was not present.", ""}]} ==
-             ApplicationRunner.UIValidator.validate_for_schema(json, @relative_path, "")
+    assert {:error, [{"Required property children was not present.", "#"}]} ==
+             ApplicationRunner.UIValidator.validate_and_build_component(json, "")
   end
 end
