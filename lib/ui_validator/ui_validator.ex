@@ -82,13 +82,17 @@ defmodule ApplicationRunner.UIValidator do
     Enum.reduce(child_list, {%{}, []}, fn child, {acc, errors} ->
       child_path = "#{prefix_path}/#{child}"
 
-      case validate_and_build_component(Map.get(component, child), child_path) do
-        {:ok, built_component} ->
-          {Map.merge(acc, %{child => built_component}), errors}
+      with child_comp when not is_nil(child_comp) <- Map.get(component, child) do
+        case validate_and_build_component(child_comp, child_path) do
+          {:ok, built_component} ->
+            {Map.merge(acc, %{child => built_component}), errors}
 
-        {:error, comp_errors} ->
-          tmp = Enum.map(comp_errors, &{elem(&1, 0), child_path})
-          {acc, errors ++ tmp}
+          {:error, comp_errors} ->
+            tmp = Enum.map(comp_errors, &{elem(&1, 0), child_path})
+            {acc, errors ++ tmp}
+        end
+      else
+        _ -> {acc, errors}
       end
     end)
     |> case do
@@ -104,6 +108,9 @@ defmodule ApplicationRunner.UIValidator do
       children_path = "#{prefix_path}/#{children}"
 
       case validate_and_build_children(component, children, children_path) do
+        {:ok, []} ->
+          {acc, errors}
+
         {:ok, built_children} ->
           {Map.merge(acc, %{children => built_children}), errors}
 
@@ -119,21 +126,25 @@ defmodule ApplicationRunner.UIValidator do
   end
 
   def validate_and_build_children(component, children, prefix_path) do
-    Enum.reduce(Map.get(component, children), {[], []}, fn child, {acc, errors} ->
-      children_path = "#{prefix_path}/#{children}"
+    with children_comp when not is_nil(children_comp) <- Map.get(component, children) do
+      Enum.reduce(children_comp, {[], []}, fn child, {acc, errors} ->
+        children_path = "#{prefix_path}/#{children}"
 
-      case validate_and_build_component(child, "") do
-        {:ok, built_component} ->
-          {acc ++ [built_component], errors}
+        case validate_and_build_component(child, "") do
+          {:ok, built_component} ->
+            {acc ++ [built_component], errors}
 
-        {:error, children_errors} ->
-          tmp = Enum.map(children_errors, &{elem(&1, 0), children_path})
-          {acc, errors ++ tmp}
+          {:error, children_errors} ->
+            tmp = Enum.map(children_errors, &{elem(&1, 0), children_path})
+            {acc, errors ++ tmp}
+        end
+      end)
+      |> case do
+        {comp, []} -> {:ok, comp}
+        {_, errors} -> {:error, errors}
       end
-    end)
-    |> case do
-      {comp, []} -> {:ok, comp}
-      {_, errors} -> {:error, errors}
+    else
+      _ -> {:ok, []}
     end
   end
 end

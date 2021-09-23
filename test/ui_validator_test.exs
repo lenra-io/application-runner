@@ -132,7 +132,7 @@ defmodule ApplicationRunner.UIValidatorTest do
              ApplicationRunner.UIValidator.validate_and_build(ui)
   end
 
-  test "build_listener" do
+  test "build_listener should correctly build" do
     listener = %{
       "action" => "string",
       "props" => %{}
@@ -141,7 +141,7 @@ defmodule ApplicationRunner.UIValidatorTest do
     assert {:ok, %{"code" => _}} = ApplicationRunner.UIValidator.build_listener(listener)
   end
 
-  test "build_listener without props" do
+  test "build_listener without props should correctly build" do
     listener = %{
       "action" => "string"
     }
@@ -149,7 +149,7 @@ defmodule ApplicationRunner.UIValidatorTest do
     assert {:ok, %{"code" => _}} = ApplicationRunner.UIValidator.build_listener(listener)
   end
 
-  test "build_listener with additional props" do
+  test "build_listener with additional props should correctly build" do
     listener = %{
       "action" => "string",
       "props" => %{},
@@ -160,7 +160,7 @@ defmodule ApplicationRunner.UIValidatorTest do
              ApplicationRunner.UIValidator.build_listener(listener)
   end
 
-  test "build_listeners" do
+  test "build_listeners should correctly build" do
     comp = %{
       "type" => "test",
       "onPressed" => %{
@@ -177,7 +177,7 @@ defmodule ApplicationRunner.UIValidatorTest do
              ApplicationRunner.UIValidator.build_listeners(comp, ["onPressed", "onDrag"])
   end
 
-  test "build_child" do
+  test "build_child_list should return the built children" do
     comp = %{
       "type" => "test",
       "leftChild" => %{
@@ -211,7 +211,7 @@ defmodule ApplicationRunner.UIValidatorTest do
              )
   end
 
-  test "build_child incorrect child" do
+  test "build_child incorrect child should return a list of errors" do
     comp = %{
       "type" => "test",
       "leftChild" => %{
@@ -234,10 +234,10 @@ defmodule ApplicationRunner.UIValidatorTest do
              )
   end
 
-  test "build_child forgotten child" do
+  test "build_child forgotten children should return an empty map" do
     comp = %{"type" => "test"}
 
-    assert :ok ==
+    assert {:ok, %{}} ==
              ApplicationRunner.UIValidator.validate_and_build_child_list(
                comp,
                ["leftChild", "rightChild"],
@@ -247,10 +247,60 @@ defmodule ApplicationRunner.UIValidatorTest do
 
   test "build_children" do
     comp = %{
+      "type" => "test",
+      "leftMenu" => [
+        %{"type" => "text", "value" => "foo"}
+      ],
+      "rightMenu" => [
+        %{"type" => "text", "value" => "bar"}
+      ]
+    }
+
+    assert {:ok,
+            %{
+              "leftMenu" => [
+                %{"type" => "text", "value" => "foo"}
+              ],
+              "rightMenu" => [
+                %{"type" => "text", "value" => "bar"}
+              ]
+            }} ==
+             ApplicationRunner.UIValidator.validate_and_build_children_list(
+               comp,
+               ["leftMenu", "rightMenu"],
+               "/root"
+             )
+  end
+
+  test "build_children forgotten children should return empty map" do
+    comp = %{
       "type" => "test"
     }
 
-    assert :ok ==
+    assert {:ok, %{}} ==
+             ApplicationRunner.UIValidator.validate_and_build_children_list(
+               comp,
+               ["leftMenu", "rightMenu"],
+               "/root"
+             )
+  end
+
+  test "build_children forgotten some children" do
+    comp = %{
+      "type" => "test",
+      "leftMenu" => [
+        %{"type" => "text", "value" => "foo"},
+        %{"type" => "text", "value" => "bar"}
+      ]
+    }
+
+    assert {:ok,
+            %{
+              "leftMenu" => [
+                %{"type" => "text", "value" => "foo"},
+                %{"type" => "text", "value" => "bar"}
+              ]
+            }} ==
              ApplicationRunner.UIValidator.validate_and_build_children_list(
                comp,
                ["leftMenu", "rightMenu"],
