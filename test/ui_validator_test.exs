@@ -383,4 +383,44 @@ defmodule ApplicationRunner.UIValidatorTest do
               ]
             }} = ApplicationRunner.UIValidator.validate_and_build(comp)
   end
+
+  test "complex ui errors should give correct paths to errors" do
+    comp = %{
+      "root" => %{
+        "type" => "test",
+        "value" => "foo",
+        "leftMenu" => [
+          %{
+            "type" => "test",
+            "value" => "first",
+            "onPressed" => %{"action" => "first", "props" => %{}},
+            "leftMenu" => [
+              %{
+                "type" => "test",
+                "value" => "second",
+                "leftMenu" => [
+                  %{
+                    "type" => "text",
+                    "value" => 123
+                  },
+                  %{
+                    "type" => "button"
+                  }
+                ]
+              }
+            ]
+          },
+          %{"type" => "text", "value" => "bar"}
+        ]
+      }
+    }
+
+    assert {:error,
+            [
+              {"Type mismatch. Expected String but got Integer.",
+               "/root/leftMenu/0/leftMenu/0/leftMenu/0/value"},
+              {"Required property text was not present.",
+               "/root/leftMenu/0/leftMenu/0/leftMenu/1"}
+            ]} == ApplicationRunner.UIValidator.validate_and_build(comp)
+  end
 end

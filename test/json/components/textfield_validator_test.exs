@@ -20,8 +20,14 @@ defmodule ApplicationRunner.TextfieldValidatorTest do
       }
     }
 
-    assert {:ok, json} ==
-             ApplicationRunner.UIValidator.validate_and_build_component(json, "")
+    assert {:ok,
+            %{
+              "type" => "textfield",
+              "value" => "",
+              "onChange" => %{
+                "code" => _
+              }
+            }} = ApplicationRunner.UIValidator.validate_and_build_component(json, "")
   end
 
   test "valide textfield with no listener" do
@@ -31,7 +37,7 @@ defmodule ApplicationRunner.TextfieldValidatorTest do
     }
 
     assert {:ok, json} ==
-      ApplicationRunner.UIValidator.validate_and_build_component(json, "")
+             ApplicationRunner.UIValidator.validate_and_build_component(json, "")
   end
 
   test "invalide type textfield" do
