@@ -48,13 +48,15 @@ defmodule ApplicationRunner.UIValidator do
 
   @spec build_listener(map()) :: {:ok, map()}
   def build_listener(listener) do
-    with %{"action" => action_code} <- listener do
-      props = Map.get(listener, "props", %{})
-      listener_key = Storage.generate_listeners_key(action_code, props)
-      Storage.insert(:listeners, listener_key, listener)
-      {:ok, %{"code" => listener_key}}
-    else
-      _ -> {:ok, %{}}
+    case listener do
+      %{"action" => action_code} ->
+        props = Map.get(listener, "props", %{})
+        listener_key = Storage.generate_listeners_key(action_code, props)
+        Storage.insert(:listeners, listener_key, listener)
+        {:ok, %{"code" => listener_key}}
+
+      _ ->
+        {:ok, %{}}
     end
   end
 
@@ -64,22 +66,28 @@ defmodule ApplicationRunner.UIValidator do
     Enum.reduce(child_list, {%{}, []}, fn child, {acc, errors} ->
       child_path = "#{prefix_path}/#{child}"
 
-      with child_comp when not is_nil(child_comp) <- Map.get(component, child) do
-        case validate_and_build_component(child_comp, child_path) do
-          {:ok, built_component} ->
-            {Map.merge(acc, %{child => built_component}), errors}
+      case Map.get(component, child) do
+        nil ->
+          {acc, errors}
 
-          {:error, comp_errors} ->
-            tmp = Enum.map(comp_errors, &{elem(&1, 0), child_path})
-            {acc, errors ++ tmp}
-        end
-      else
-        _ -> {acc, errors}
+        child_comp ->
+          handle_child_list_reduce_errors(child_comp, child, child_path, {acc, errors})
       end
     end)
     |> case do
       {comp, []} -> {:ok, comp}
       {_, errors} -> {:error, errors}
+    end
+  end
+
+  defp handle_child_list_reduce_errors(component, comp_name, comp_path, {built, errors}) do
+    case validate_and_build_component(component, comp_path) do
+      {:ok, built_component} ->
+        {Map.merge(built, %{comp_name => built_component}), errors}
+
+      {:error, comp_errors} ->
+        tmp = Enum.map(comp_errors, &{elem(&1, 0), comp_path})
+        {built, errors ++ tmp}
     end
   end
 
@@ -108,25 +116,31 @@ defmodule ApplicationRunner.UIValidator do
   end
 
   def validate_and_build_children(component, children, prefix_path) do
-    with children_comp when not is_nil(children_comp) <- Map.get(component, children) do
-      Enum.reduce(children_comp, {[], []}, fn child, {acc, errors} ->
-        children_path = "#{prefix_path}/#{children}"
+    case Map.get(component, children) do
+      nil ->
+        {:ok, []}
 
-        case validate_and_build_component(child, "") do
-          {:ok, built_component} ->
-            {acc ++ [built_component], errors}
+      children_comp ->
+        build_children_map(children_comp, prefix_path)
+    end
+  end
 
-          {:error, children_errors} ->
-            tmp = Enum.map(children_errors, &{elem(&1, 0), children_path})
-            {acc, errors ++ tmp}
-        end
-      end)
-      |> case do
-        {comp, []} -> {:ok, comp}
-        {_, errors} -> {:error, errors}
+  defp build_children_map(children, prefix_path) do
+    Enum.reduce(children, {[], []}, fn child, {acc, errors} ->
+      children_path = "#{prefix_path}/#{children}"
+
+      case validate_and_build_component(child, "") do
+        {:ok, built_component} ->
+          {acc ++ [built_component], errors}
+
+        {:error, children_errors} ->
+          tmp = Enum.map(children_errors, &{elem(&1, 0), children_path})
+          {acc, errors ++ tmp}
       end
-    else
-      _ -> {:ok, []}
+    end)
+    |> case do
+      {comp, []} -> {:ok, comp}
+      {_, errors} -> {:error, errors}
     end
   end
 end
