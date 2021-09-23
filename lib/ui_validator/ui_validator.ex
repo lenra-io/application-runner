@@ -19,11 +19,12 @@ defmodule ApplicationRunner.UIValidator do
   @spec validate_and_build_component(component(), String.t()) ::
           {:ok, component()} | {:error, build_errors()}
   def validate_and_build_component(%{"type" => comp_type} = component, prefix_path) do
-    %{schema: schema, listeners: listeners, children: children, child: child} =
+    schema_map =
       JsonSchemata.get_component_path(comp_type)
       |> JsonSchemata.get_schema_map()
 
-    with :ok <- ExComponentSchema.Validator.validate(schema, component),
+    with %{schema: schema, listeners: listeners, children: children, child: child} <- schema_map,
+         :ok <- ExComponentSchema.Validator.validate(schema, component),
          {:ok, children_map} <-
            validate_and_build_children_list(component, children, prefix_path),
          {:ok, child_map} <- validate_and_build_child_list(component, child, prefix_path),
