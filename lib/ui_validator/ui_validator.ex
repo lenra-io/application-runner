@@ -10,29 +10,6 @@ defmodule ApplicationRunner.UIValidator do
   @type error_tuple :: {String.t(), String.t()}
   @type build_errors :: list(error_tuple())
 
-  # %{
-  #   "type" => "test",
-  #   "leftColumn" => [
-  #     %{
-  #       "type" => "text"
-  #     },
-  #     %{
-  #       "type" => "button"
-  #     }
-  #   ],
-  #   "rightColumn" => [
-  #     %{"type" => "button"}
-  #   ],
-  #   "leftButton" => %{
-  #     "type" => "menu"
-  #   },
-  #   "rightButton" => %{
-  #     "type" => "button"
-  #   },
-  #   "onPressedLB" => %{"action" => "LB", "props" => %{}},
-  #   "onPressedRB" => %{"action" => "RB"}
-  # }
-
   @spec validate_and_build(ui()) :: {:ok, ui()} | {:error, build_errors()}
   def validate_and_build(ui) do
     ui["root"]
@@ -62,18 +39,23 @@ defmodule ApplicationRunner.UIValidator do
   @spec build_listeners(component(), list(String.t())) :: {:ok, map()} | {:error, list()}
   def build_listeners(component, listeners) do
     Enum.reduce(listeners, {:ok, %{}}, fn listener, {:ok, acc} ->
-      {:ok, built_listener} = build_listener(Map.get(component, listener))
-      {:ok, Map.put(acc, listener, built_listener)}
+      case build_listener(Map.get(component, listener)) do
+        {:ok, %{"code" => _} = built_listener} -> {:ok, Map.put(acc, listener, built_listener)}
+        {:ok, %{}} -> {:ok, acc}
+      end
     end)
   end
 
   @spec build_listener(map()) :: {:ok, map()}
   def build_listener(listener) do
-    %{"action" => action_code} = listener
-    props = Map.get(listener, "props", %{})
-    listener_key = Storage.generate_listeners_key(action_code, props)
-    Storage.insert(:listeners, listener_key, listener)
-    {:ok, %{"code" => listener_key}}
+    with %{"action" => action_code} <- listener do
+      props = Map.get(listener, "props", %{})
+      listener_key = Storage.generate_listeners_key(action_code, props)
+      Storage.insert(:listeners, listener_key, listener)
+      {:ok, %{"code" => listener_key}}
+    else
+      _ -> {:ok, %{}}
+    end
   end
 
   @spec validate_and_build_child_list(component(), list(String.t()), String.t()) ::

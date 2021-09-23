@@ -15,7 +15,7 @@ defmodule ApplicationRunner.UIValidatorTest do
       }
     }
 
-    assert :ok ==
+    assert {:ok, %{"type" => "text", "value" => "Txt test"}} ==
              ApplicationRunner.UIValidator.validate_and_build(ui)
   end
 
@@ -177,6 +177,28 @@ defmodule ApplicationRunner.UIValidatorTest do
              ApplicationRunner.UIValidator.build_listeners(comp, ["onPressed", "onDrag"])
   end
 
+  test "build_listeners forgotten listeners" do
+    comp = %{
+      "type" => "test"
+    }
+
+    assert {:ok, %{}} =
+             ApplicationRunner.UIValidator.build_listeners(comp, ["onPressed", "onDrag"])
+  end
+
+  test "build_listeners forgotten some listeners" do
+    comp = %{
+      "type" => "test",
+      "onDrag" => %{
+        "action" => "drag",
+        "props" => %{}
+      }
+    }
+
+    assert {:ok, %{"onDrag" => %{"code" => _}}} =
+             ApplicationRunner.UIValidator.build_listeners(comp, ["onPressed", "onDrag"])
+  end
+
   test "build_child_list should return the built children" do
     comp = %{
       "type" => "test",
@@ -306,5 +328,31 @@ defmodule ApplicationRunner.UIValidatorTest do
                ["leftMenu", "rightMenu"],
                "/root"
              )
+  end
+
+  test "build_component" do
+    comp = %{
+      "type" => "test",
+      "value" => "foo",
+      "onDrag" => %{
+        "action" => "drag",
+        "props" => %{}
+      },
+      "leftMenu" => [
+        %{"type" => "text", "value" => "foo"},
+        %{"type" => "text", "value" => "bar"}
+      ]
+    }
+
+    assert {:ok,
+            %{
+              "type" => "test",
+              "value" => "foo",
+              "onDrag" => %{"code" => _},
+              "leftMenu" => [
+                %{"type" => "text", "value" => "foo"},
+                %{"type" => "text", "value" => "bar"}
+              ]
+            }} = ApplicationRunner.UIValidator.validate_and_build_component(comp, "/root")
   end
 end
