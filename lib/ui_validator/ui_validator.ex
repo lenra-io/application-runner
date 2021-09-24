@@ -123,6 +123,8 @@ defmodule ApplicationRunner.UIValidator do
     end
   end
 
+  @spec validate_and_build_children(map, String.t(), String.t()) ::
+          {:error, list(error_tuple())} | {:ok, list(component())}
   def validate_and_build_children(component, children, prefix_path) do
     case Map.get(component, children) do
       nil ->
