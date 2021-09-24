@@ -144,13 +144,21 @@ defmodule ApplicationRunner.UIValidator do
           {acc ++ [built_component], errors}
 
         {:error, children_errors} ->
-          tmp = Enum.map(children_errors, &{elem(&1, 0), "#{children_path}#{String.trim(elem(&1, 1), "#")}"})
-          {acc, errors ++ tmp}
+          {acc, errors ++ handle_children_errors(children_errors, children_path)}
       end
     end)
     |> case do
       {comp, []} -> {:ok, comp}
       {_, errors} -> {:error, errors}
     end
+  end
+
+  defp handle_children_errors(children_errors, prefix_path) do
+    Enum.map(children_errors, fn error ->
+      case error do
+        {error_text} -> {error_text, "#{prefix_path}"}
+        {error_text, error_path} -> {error_text, "#{prefix_path}#{String.trim(error_path, "#")}"}
+      end
+    end)
   end
 end

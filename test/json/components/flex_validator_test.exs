@@ -62,7 +62,7 @@ defmodule ApplicationRunner.FlexValidatorTest do
       }
     }
 
-    assert {:error, [{"Invalid type", "/root/children/1"}]} ==
+    assert {:error, [{"Invalid component type", "/root/children/1"}]} ==
              ApplicationRunner.UIValidator.validate_and_build(json)
   end
 
