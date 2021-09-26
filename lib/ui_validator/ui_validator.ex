@@ -162,7 +162,7 @@ defmodule ApplicationRunner.UIValidator do
   defp handle_children_errors(children_errors, prefix_path) do
     Enum.map(children_errors, fn error ->
       case error do
-        {error_text} -> {error_text, "#{prefix_path}"}
+        {error_text} -> {error_text, prefix_path}
         {error_text, error_path} -> {error_text, "#{prefix_path}#{String.trim(error_path, "#")}"}
       end
     end)
