@@ -13,8 +13,12 @@ defmodule ApplicationRunner.ImageValidatorTest do
       "path" => "download.jpeg"
     }
 
-    assert :ok ==
-             ApplicationRunner.UIValidator.validate_for_schema(json, @relative_path, "")
+    assert {:ok,
+            %{
+              "type" => "image",
+              "path" => "download.jpeg"
+            }} ==
+             ApplicationRunner.UIValidator.validate_and_build_component(json, "")
   end
 
   test "Valid image with width and height properties set" do
@@ -25,8 +29,14 @@ defmodule ApplicationRunner.ImageValidatorTest do
       "height" => 120.0
     }
 
-    assert :ok ==
-             ApplicationRunner.UIValidator.validate_for_schema(json, @relative_path, "")
+    assert {:ok,
+            %{
+              "type" => "image",
+              "path" => "download.jpeg",
+              "width" => 120.0,
+              "height" => 120.0
+            }} ==
+             ApplicationRunner.UIValidator.validate_and_build_component(json, "")
   end
 
   test "Invalid type for image" do
@@ -35,8 +45,8 @@ defmodule ApplicationRunner.ImageValidatorTest do
       "path" => "download.jpeg"
     }
 
-    assert {:error, [{"images is invalid. Should have been image", "/type"}]} ==
-             ApplicationRunner.UIValidator.validate_for_schema(json, @relative_path, "")
+    assert {:error, [{"Invalid component type"}]} ==
+             ApplicationRunner.UIValidator.validate_and_build_component(json, "")
   end
 
   test "Invalid image with no path" do
@@ -44,8 +54,8 @@ defmodule ApplicationRunner.ImageValidatorTest do
       "type" => "image"
     }
 
-    assert {:error, [{"Required property path was not present.", ""}]} ==
-             ApplicationRunner.UIValidator.validate_for_schema(json, @relative_path, "")
+    assert {:error, [{"Required property path was not present.", "#"}]} ==
+             ApplicationRunner.UIValidator.validate_and_build_component(json, "")
   end
 
   test "Invalid image wrong types on width and height" do
@@ -58,9 +68,9 @@ defmodule ApplicationRunner.ImageValidatorTest do
 
     assert {:error,
             [
-              {"Type mismatch. Expected Number but got String.", "/height"},
-              {"Type mismatch. Expected Number but got String.", "/width"}
+              {"Type mismatch. Expected Number but got String.", "#/height"},
+              {"Type mismatch. Expected Number but got String.", "#/width"}
             ]} ==
-             ApplicationRunner.UIValidator.validate_for_schema(json, @relative_path, "")
+             ApplicationRunner.UIValidator.validate_and_build_component(json, "")
   end
 end

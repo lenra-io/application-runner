@@ -55,7 +55,7 @@ defmodule ApplicationRunner.TextfieldValidatorTest do
       "type" => "textfield"
     }
 
-    assert {:error, [{"Required property value was not present.", ""}]} ==
+    assert {:error, [{"Required property value was not present.", "#"}]} ==
              ApplicationRunner.UIValidator.validate_and_build_component(json, "")
   end
 
@@ -71,8 +71,8 @@ defmodule ApplicationRunner.TextfieldValidatorTest do
 
     assert {:error,
             [
-              {"Type mismatch. Expected String but got Integer.", "/onChange/action"},
-              {"Type mismatch. Expected Object but got String.", "/onChange/props"}
+              {"Type mismatch. Expected String but got Integer.", "#/onChange/action"},
+              {"Type mismatch. Expected Object but got String.", "#/onChange/props"}
             ]} ==
              ApplicationRunner.UIValidator.validate_and_build_component(json, "")
   end
@@ -89,7 +89,7 @@ defmodule ApplicationRunner.TextfieldValidatorTest do
 
     assert {:error,
             [
-              {"Schema does not allow additional properties.", "/onClick"}
+              {"Schema does not allow additional properties.", "#/onClick"}
             ]} ==
              ApplicationRunner.UIValidator.validate_and_build_component(json, "")
   end
