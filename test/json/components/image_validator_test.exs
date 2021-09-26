@@ -5,8 +5,6 @@ defmodule ApplicationRunner.ImageValidatorTest do
     Test the "image.schema.json" schema
   """
 
-  @relative_path "components/image.schema.json"
-
   test "Valid image" do
     json = %{
       "type" => "image",
@@ -45,7 +43,7 @@ defmodule ApplicationRunner.ImageValidatorTest do
       "path" => "download.jpeg"
     }
 
-    assert {:error, [{"Invalid component type"}]} ==
+    assert {:error, [{"Invalid component type", ""}]} ==
              ApplicationRunner.UIValidator.validate_and_build_component(json, "")
   end
 
@@ -54,7 +52,7 @@ defmodule ApplicationRunner.ImageValidatorTest do
       "type" => "image"
     }
 
-    assert {:error, [{"Required property path was not present.", "#"}]} ==
+    assert {:error, [{"Required property path was not present.", ""}]} ==
              ApplicationRunner.UIValidator.validate_and_build_component(json, "")
   end
 
@@ -68,8 +66,8 @@ defmodule ApplicationRunner.ImageValidatorTest do
 
     assert {:error,
             [
-              {"Type mismatch. Expected Number but got String.", "#/height"},
-              {"Type mismatch. Expected Number but got String.", "#/width"}
+              {"Type mismatch. Expected Number but got String.", "/height"},
+              {"Type mismatch. Expected Number but got String.", "/width"}
             ]} ==
              ApplicationRunner.UIValidator.validate_and_build_component(json, "")
   end

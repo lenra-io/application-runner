@@ -5,6 +5,46 @@ defmodule ApplicationRunner.UIValidatorTest do
     Test the `ApplicationRunner.UIValidator` module
   """
 
+  @test_component_schema %{
+    "$defs" => %{
+      "listener" => %{
+        "properties" => %{
+          "action" => %{"type" => "string"},
+          "props" => %{"type" => "object"}
+        },
+        "required" => ["action"],
+        "type" => "listener"
+      }
+    },
+    "$id" => "test.schema.json",
+    "$schema" =>
+      "https://raw.githubusercontent.com/lenra-io/ex_component_schema/beta/priv/static/draft-lenra.json",
+    "additionalProperties" => false,
+    "description" => "Element used to test the Lenra Draft",
+    "properties" => %{
+      "disabled" => %{
+        "description" => "Whether the component should be disabled or not",
+        "type" => "boolean"
+      },
+      "onDrag" => %{"$ref" => "#/$defs/listener"},
+      "onPressed" => %{"$ref" => "#/$defs/listener"},
+      "type" => %{"description" => "The type of the element", "enum" => ["test"]},
+      "value" => %{
+        "description" => "the value displayed in the element",
+        "type" => "string"
+      },
+      "leftWidget" => %{"type" => "component"},
+      "rightWidget" => %{"type" => "component"},
+      "leftMenu" => %{"type" => "array", "items" => %{"type" => "component"}},
+      "rightMenu" => %{"type" => "array", "items" => %{"type" => "component"}}
+    },
+    "required" => ["type", "value"],
+    "title" => "Test Component",
+    "type" => "component"
+  }
+
+  ApplicationRunner.JsonSchemata.load_raw_schema(@test_component_schema, "test")
+
   doctest ApplicationRunner.UIValidator
 
   test "valide basic UI" do
@@ -125,8 +165,8 @@ defmodule ApplicationRunner.UIValidatorTest do
     assert {
              :error,
              [
-               {"Type mismatch. Expected Component but got Object.", "/root/flex/children/0"},
-               {"Type mismatch. Expected Component but got Object.", "/root/flex/children/1"}
+               {"Type mismatch. Expected Component but got Object.", "/root/children/0"},
+               {"Type mismatch. Expected Component but got Object.", "/root/children/1"}
              ]
            } ==
              ApplicationRunner.UIValidator.validate_and_build(ui)

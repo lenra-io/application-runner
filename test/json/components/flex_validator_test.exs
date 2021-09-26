@@ -5,8 +5,6 @@ defmodule ApplicationRunner.FlexValidatorTest do
     Test the "flex.schema.json" schema
   """
 
-  @relative_path "components/flex.schema.json"
-
   test "valid flex" do
     json = %{
       "type" => "flex",
@@ -42,7 +40,7 @@ defmodule ApplicationRunner.FlexValidatorTest do
       "children" => []
     }
 
-    assert {:error, [{"Invalid component type"}]} ==
+    assert {:error, [{"Invalid component type", ""}]} ==
              ApplicationRunner.UIValidator.validate_and_build_component(json, "")
   end
 
@@ -71,7 +69,7 @@ defmodule ApplicationRunner.FlexValidatorTest do
       "type" => "flex"
     }
 
-    assert {:error, [{"Required property children was not present.", "#"}]} ==
+    assert {:error, [{"Required property children was not present.", ""}]} ==
              ApplicationRunner.UIValidator.validate_and_build_component(json, "")
   end
 end

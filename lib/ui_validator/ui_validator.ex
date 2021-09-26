@@ -39,6 +39,10 @@ defmodule ApplicationRunner.UIValidator do
        |> Map.merge(child_map)
        |> Map.merge(listeners_map)}
     end
+    |> case do
+      {:error, children_errors} -> {:error, handle_children_errors(children_errors, prefix_path)}
+      result -> result
+    end
   end
 
   @spec build_listeners(component(), list(String.t())) :: {:ok, map()} | {:error, list()}

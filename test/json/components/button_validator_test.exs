@@ -48,7 +48,7 @@ defmodule ApplicationRunner.ButtonValidatorTest do
       "text" => "test"
     }
 
-    assert {:error, [{"Invalid component type"}]} ==
+    assert {:error, [{"Invalid component type", ""}]} ==
              ApplicationRunner.UIValidator.validate_and_build_component(json, "")
   end
 
@@ -57,7 +57,7 @@ defmodule ApplicationRunner.ButtonValidatorTest do
       "type" => "button"
     }
 
-    assert {:error, [{"Required property text was not present.", "#"}]} ==
+    assert {:error, [{"Required property text was not present.", ""}]} ==
              ApplicationRunner.UIValidator.validate_and_build_component(json, "")
   end
 
@@ -73,8 +73,8 @@ defmodule ApplicationRunner.ButtonValidatorTest do
 
     assert {:error,
             [
-              {"Type mismatch. Expected String but got Integer.", "#/onPressed/action"},
-              {"Type mismatch. Expected Object but got String.", "#/onPressed/props"}
+              {"Type mismatch. Expected String but got Integer.", "/onPressed/action"},
+              {"Type mismatch. Expected Object but got String.", "/onPressed/props"}
             ]} ==
              ApplicationRunner.UIValidator.validate_and_build_component(json, "")
   end
@@ -91,7 +91,7 @@ defmodule ApplicationRunner.ButtonValidatorTest do
 
     assert {:error,
             [
-              {"Schema does not allow additional properties.", "#/onChange"}
+              {"Schema does not allow additional properties.", "/onChange"}
             ]} ==
              ApplicationRunner.UIValidator.validate_and_build_component(json, "")
   end

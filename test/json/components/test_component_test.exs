@@ -15,7 +15,7 @@ defmodule ApplicationRunner.TestComponentTest do
         "type" => "listener"
       }
     },
-    "$id" => "test_component.schema.json",
+    "$id" => "test.schema.json",
     "$schema" =>
       "https://raw.githubusercontent.com/lenra-io/ex_component_schema/beta/priv/static/draft-lenra.json",
     "additionalProperties" => false,
@@ -66,6 +66,12 @@ defmodule ApplicationRunner.TestComponentTest do
       }
     }
 
-    assert :ok == ApplicationRunner.UIValidator.validate_and_build(json)
+    ApplicationRunner.JsonSchemata.load_raw_schema(@test_component_schema, "test")
+
+    assert {:ok,
+            %{
+              "type" => "test",
+              "value" => "string"
+            }} == ApplicationRunner.UIValidator.validate_and_build(json)
   end
 end
