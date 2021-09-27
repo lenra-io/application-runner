@@ -48,8 +48,8 @@ defmodule ApplicationRunner.ButtonValidatorTest do
       "text" => "test"
     }
 
-    assert {:error, [{"Invalid component type", ""}]} ==
-             ApplicationRunner.UIValidator.validate_and_build_component(json, "")
+    assert {:error, [{"Invalid component type", "#"}]} ==
+             ApplicationRunner.UIValidator.validate_and_build_component(json, "#")
   end
 
   test "invalid button with no value" do

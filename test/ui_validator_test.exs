@@ -55,7 +55,27 @@ defmodule ApplicationRunner.UIValidatorTest do
       }
     }
 
-    assert {:ok, %{"type" => "text", "value" => "Txt test"}} ==
+    assert {:ok,
+            %{
+              "root" => %{"type" => "text", "value" => "Txt test"}
+            }} ==
+             ApplicationRunner.UIValidator.validate_and_build(ui)
+  end
+
+  test "valide basic UI no root" do
+    ui = %{
+      "type" => "text",
+      "value" => "Txt test"
+    }
+
+    assert {
+             :error,
+             [
+               {"Schema does not allow additional properties.", "#/type"},
+               {"Schema does not allow additional properties.", "#/value"},
+               {"Required property root was not present.", "#"}
+             ]
+           } ==
              ApplicationRunner.UIValidator.validate_and_build(ui)
   end
 
@@ -132,17 +152,17 @@ defmodule ApplicationRunner.UIValidatorTest do
              :error,
              [
                {"Schema does not allow additional properties.",
-                "/root/children/0/children/0/onChange/name"},
+                "#/root/children/0/children/0/onChange/name"},
                {"Required property action was not present.",
-                "/root/children/0/children/0/onChange"},
+                "#/root/children/0/children/0/onChange"},
                {"Schema does not allow additional properties.",
-                "/root/children/0/children/1/onPressed/name"},
+                "#/root/children/0/children/1/onPressed/name"},
                {"Required property action was not present.",
-                "/root/children/0/children/1/onPressed"},
+                "#/root/children/0/children/1/onPressed"},
                {"Schema does not allow additional properties.",
-                "/root/children/1/children/0/onPressed/name"},
+                "#/root/children/1/children/0/onPressed/name"},
                {"Required property action was not present.",
-                "/root/children/1/children/0/onPressed"}
+                "#/root/children/1/children/0/onPressed"}
              ]
            } ==
              ApplicationRunner.UIValidator.validate_and_build(ui)
@@ -165,8 +185,8 @@ defmodule ApplicationRunner.UIValidatorTest do
     assert {
              :error,
              [
-               {"Type mismatch. Expected Component but got Object.", "/root/children/0"},
-               {"Type mismatch. Expected Component but got Object.", "/root/children/1"}
+               {"Type mismatch. Expected Component but got Object.", "#/root/children/0"},
+               {"Type mismatch. Expected Component but got Object.", "#/root/children/1"}
              ]
            } ==
              ApplicationRunner.UIValidator.validate_and_build(ui)
@@ -286,13 +306,13 @@ defmodule ApplicationRunner.UIValidatorTest do
 
     assert {:error,
             [
-              {"Required property value was not present.", "/root/leftChild"},
-              {"Required property value was not present.", "/root/rightChild"}
+              {"Required property value was not present.", "#/rightChild"},
+              {"Required property value was not present.", "#/leftChild"}
             ]} =
              ApplicationRunner.UIValidator.validate_and_build_child_list(
                comp,
                ["leftChild", "rightChild"],
-               "/root"
+               "#"
              )
   end
 
@@ -414,13 +434,80 @@ defmodule ApplicationRunner.UIValidatorTest do
 
     assert {:ok,
             %{
-              "type" => "test",
-              "value" => "foo",
-              "onDrag" => %{"code" => _},
-              "leftMenu" => [
-                %{"type" => "text", "value" => "foo"},
-                %{"type" => "text", "value" => "bar"}
-              ]
+              "root" => %{
+                "type" => "test",
+                "value" => "foo",
+                "onDrag" => %{"code" => _},
+                "leftMenu" => [
+                  %{"type" => "text", "value" => "foo"},
+                  %{"type" => "text", "value" => "bar"}
+                ]
+              }
+            }} = ApplicationRunner.UIValidator.validate_and_build(comp)
+  end
+
+  test "valid complex ui" do
+    comp = %{
+      "root" => %{
+        "type" => "test",
+        "value" => "foo",
+        "leftMenu" => [
+          %{
+            "type" => "test",
+            "value" => "first",
+            "onPressed" => %{"action" => "first", "props" => %{}},
+            "leftMenu" => [
+              %{
+                "type" => "test",
+                "value" => "second",
+                "leftMenu" => [
+                  %{
+                    "type" => "text",
+                    "value" => "foo"
+                  },
+                  %{
+                    "type" => "button",
+                    "text" => "bar"
+                  }
+                ]
+              }
+            ]
+          },
+          %{"type" => "text", "value" => "bar"}
+        ]
+      }
+    }
+
+    assert {:ok,
+            %{
+              "root" => %{
+                "type" => "test",
+                "value" => "foo",
+                "leftMenu" => [
+                  %{
+                    "type" => "test",
+                    "value" => "first",
+                    "onPressed" => %{"code" => _},
+                    "leftMenu" => [
+                      %{
+                        "type" => "test",
+                        "value" => "second",
+                        "leftMenu" => [
+                          %{
+                            "type" => "text",
+                            "value" => "foo"
+                          },
+                          %{
+                            "type" => "button",
+                            "text" => "bar"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  %{"type" => "text", "value" => "bar"}
+                ]
+              }
             }} = ApplicationRunner.UIValidator.validate_and_build(comp)
   end
 
@@ -458,9 +545,28 @@ defmodule ApplicationRunner.UIValidatorTest do
     assert {:error,
             [
               {"Type mismatch. Expected String but got Integer.",
-               "/root/leftMenu/0/leftMenu/0/leftMenu/0/value"},
+               "#/root/leftMenu/0/leftMenu/0/leftMenu/0/value"},
               {"Required property text was not present.",
-               "/root/leftMenu/0/leftMenu/0/leftMenu/1"}
+               "#/root/leftMenu/0/leftMenu/0/leftMenu/1"}
             ]} == ApplicationRunner.UIValidator.validate_and_build(comp)
+  end
+
+  test "ettdtzetzfre" do
+    comp = %{
+      "root" => %{
+        "type" => "test",
+        "value" => "foo",
+        "leftWidget" => %{
+          "type" => "test",
+          "value" => "foo",
+          "leftWidget" => %{
+            "type" => "test"
+          }
+        }
+      }
+    }
+
+    assert {:error, [{"Required property value was not present.", "#/root/leftWidget/leftWidget"}]} ==
+             ApplicationRunner.UIValidator.validate_and_build(comp)
   end
 end

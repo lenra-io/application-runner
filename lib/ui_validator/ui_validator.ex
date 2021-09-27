@@ -12,23 +12,22 @@ defmodule ApplicationRunner.UIValidator do
 
   @spec validate_and_build(ui()) :: {:ok, ui()} | {:error, build_errors()}
   def validate_and_build(ui) do
-    %{schema: schema} = JsonSchemata.get_schema_map("root.schema.json")
-
-    with :ok <- ExComponentSchema.Validator.validate(schema, ui) do
+    with {:ok, _} <- validate_with_error("root.schema.json", ui, "#") do
       ui["root"]
-      |> validate_and_build_component("/root")
+      |> validate_and_build_component("#/root")
+    end
+    |> case do
+      {:ok, ui} -> {:ok, %{"root" => ui}}
+      error -> error
     end
   end
 
   @spec validate_and_build_component(component(), String.t()) ::
           {:ok, component()} | {:error, build_errors()}
   def validate_and_build_component(%{"type" => comp_type} = component, prefix_path) do
-    schema_map =
-      JsonSchemata.get_component_path(comp_type)
-      |> JsonSchemata.get_schema_map()
-
-    with %{schema: schema, listeners: listeners, children: children, child: child} <- schema_map,
-         :ok <- ExComponentSchema.Validator.validate(schema, component),
+    with schema_path <- JsonSchemata.get_component_path(comp_type),
+         {:ok, %{listeners: listeners, children: children, child: child}} <-
+           validate_with_error(schema_path, component, prefix_path),
          {:ok, children_map} <-
            validate_and_build_children_list(component, children, prefix_path),
          {:ok, child_map} <- validate_and_build_child_list(component, child, prefix_path),
@@ -39,9 +38,18 @@ defmodule ApplicationRunner.UIValidator do
        |> Map.merge(child_map)
        |> Map.merge(listeners_map)}
     end
-    |> case do
-      {:error, children_errors} -> {:error, handle_children_errors(children_errors, prefix_path)}
-      result -> result
+  end
+
+  def validate_with_error(schema_path, component, prefix_path) do
+    with {:ok, %{schema: schema} = schema_map} <- JsonSchemata.get_schema_map(schema_path),
+         :ok <- ExComponentSchema.Validator.validate(schema, component) do
+      {:ok, schema_map}
+    else
+      {:error, errors} ->
+        {:error,
+         Enum.map(errors, fn
+           {message, "#" <> path} -> {message, prefix_path <> path}
+         end)}
     end
   end
 
@@ -82,7 +90,7 @@ defmodule ApplicationRunner.UIValidator do
 
         child_comp ->
           validate_and_build_component(child_comp, child_path)
-          |> handle_built_child(child, child_path, {acc, errors})
+          |> handle_built_child(child, {acc, errors})
       end
     end)
     |> case do
@@ -91,14 +99,13 @@ defmodule ApplicationRunner.UIValidator do
     end
   end
 
-  defp handle_built_child(built_comp, comp_name, comp_path, {built, errors}) do
+  defp handle_built_child(built_comp, comp_name, {built, errors}) do
     case built_comp do
       {:ok, built_component} ->
         {Map.merge(built, %{comp_name => built_component}), errors}
 
       {:error, comp_errors} ->
-        tmp = Enum.map(comp_errors, &{elem(&1, 0), comp_path})
-        {built, errors ++ tmp}
+        {built, comp_errors ++ errors}
     end
   end
 
@@ -116,9 +123,7 @@ defmodule ApplicationRunner.UIValidator do
           {Map.merge(acc, %{children => built_children}), errors}
 
         {:error, children_errors} ->
-          # Enum.map(children_errors, &{elem(&1, 0), children_path})
-          tmp = children_errors
-          {acc, errors ++ tmp}
+          {acc, children_errors ++ errors}
       end
     end)
     |> case do
@@ -145,31 +150,17 @@ defmodule ApplicationRunner.UIValidator do
     |> Enum.reduce({[], []}, fn {child, index}, {acc, errors} ->
       children_path = "#{prefix_path}/#{index}"
 
-      case validate_and_build_component(child, "") do
+      case validate_and_build_component(child, children_path) do
         {:ok, built_component} ->
           {acc ++ [built_component], errors}
 
         {:error, children_errors} ->
-          {acc, errors ++ handle_children_errors(children_errors, children_path)}
+          {acc, errors ++ children_errors}
       end
     end)
     |> case do
       {comp, []} -> {:ok, comp}
       {_, errors} -> {:error, errors}
     end
-  end
-
-  defp handle_children_errors(children_errors, prefix_path) do
-    Enum.map(children_errors, fn error ->
-      case error do
-        {error_text} -> {error_text, prefix_path}
-        {error_text, error_path} ->
-          case prefix_path do
-            "/root" -> {error_text, "#{prefix_path}#{String.trim(String.trim(error_path, "#"), "/root")}"}
-            _ -> {error_text, "#{prefix_path}#{String.trim(error_path, "#")}"}
-          end
-
-      end
-    end)
   end
 end

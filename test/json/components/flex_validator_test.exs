@@ -31,7 +31,7 @@ defmodule ApplicationRunner.FlexValidatorTest do
               "type" => "flex",
               "children" => []
             }} ==
-             ApplicationRunner.UIValidator.validate_and_build_component(json, "")
+             ApplicationRunner.UIValidator.validate_and_build_component(json, "#")
   end
 
   test "invalid flex type" do
@@ -40,8 +40,8 @@ defmodule ApplicationRunner.FlexValidatorTest do
       "children" => []
     }
 
-    assert {:error, [{"Invalid component type", ""}]} ==
-             ApplicationRunner.UIValidator.validate_and_build_component(json, "")
+    assert {:error, [{"Invalid component type", "#"}]} ==
+             ApplicationRunner.UIValidator.validate_and_build_component(json, "#")
   end
 
   test "invalide component inside the flex" do
@@ -60,7 +60,7 @@ defmodule ApplicationRunner.FlexValidatorTest do
       }
     }
 
-    assert {:error, [{"Invalid component type", "/root/children/1"}]} ==
+    assert {:error, [{"Invalid component type", "#/root/children/1"}]} ==
              ApplicationRunner.UIValidator.validate_and_build(json)
   end
 
