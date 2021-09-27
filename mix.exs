@@ -16,7 +16,7 @@ defmodule ApplicationRunner.MixProject do
   def application do
     [
       mod: {ApplicationRunner.Application, []},
-      extra_applications: [:logger]
+      extra_applications: [:logger, :runtime_tools]
     ]
   end
 
@@ -28,7 +28,8 @@ defmodule ApplicationRunner.MixProject do
     [
       {:credo, "~> 1.4", only: [:dev, :test], runtime: false},
       {:dialyxir, "~> 1.0", only: [:dev], runtime: false},
-      {:ex_json_schema, "~> 0.7.4"},
+      {:ex_component_schema,
+       git: "https://github.com/lenra-io/ex_component_schema", ref: "v1.0.0-beta.1"},
       {:jason, "~> 1.2"},
       {:json_diff, "~> 0.1"}
     ]

@@ -2,10 +2,8 @@ defmodule ApplicationRunner.TextValidatorTest do
   use ExUnit.Case, async: true
 
   @moduledoc """
-    Test the "text_validator.schema.json" schema
+    Test the "text.schema.json" schema
   """
-
-  @relative_path "components/text_validator.schema.json"
 
   test "valide text component" do
     json = %{
@@ -13,8 +11,12 @@ defmodule ApplicationRunner.TextValidatorTest do
       "value" => "Txt test"
     }
 
-    assert :ok ==
-             ApplicationRunner.UIValidator.validate_for_schema(json, @relative_path, "")
+    assert {:ok,
+            %{
+              "type" => "text",
+              "value" => "Txt test"
+            }} ==
+             ApplicationRunner.UIValidator.validate_and_build_component(json, "/root")
   end
 
   test "valide text empty value" do
@@ -23,8 +25,12 @@ defmodule ApplicationRunner.TextValidatorTest do
       "value" => ""
     }
 
-    assert :ok ==
-             ApplicationRunner.UIValidator.validate_for_schema(json, @relative_path, "")
+    assert {:ok,
+            %{
+              "type" => "text",
+              "value" => ""
+            }} ==
+             ApplicationRunner.UIValidator.validate_and_build_component(json, "")
   end
 
   test "invalide text type" do
@@ -33,8 +39,8 @@ defmodule ApplicationRunner.TextValidatorTest do
       "value" => ""
     }
 
-    assert {:error, [{"Does not match pattern \"^text$\".", "/type"}]} ==
-             ApplicationRunner.UIValidator.validate_for_schema(json, @relative_path, "")
+    assert {:error, [{"Invalid component type", ""}]} ==
+             ApplicationRunner.UIValidator.validate_and_build_component(json, "")
   end
 
   test "invalid text no value" do
@@ -43,7 +49,7 @@ defmodule ApplicationRunner.TextValidatorTest do
     }
 
     assert {:error, [{"Required property value was not present.", ""}]} ==
-             ApplicationRunner.UIValidator.validate_for_schema(json, @relative_path, "")
+             ApplicationRunner.UIValidator.validate_and_build_component(json, "")
   end
 
   test "invalid text no string value type" do
@@ -53,6 +59,6 @@ defmodule ApplicationRunner.TextValidatorTest do
     }
 
     assert {:error, [{"Type mismatch. Expected String but got Integer.", "/value"}]} ==
-             ApplicationRunner.UIValidator.validate_for_schema(json, @relative_path, "")
+             ApplicationRunner.UIValidator.validate_and_build_component(json, "")
   end
 end

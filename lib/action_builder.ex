@@ -61,77 +61,11 @@ defmodule ApplicationRunner.ActionBuilder do
     end
   end
 
-  @spec build_ui(ui()) :: {:ok, ui()} | {:error, String.t()}
-  defp build_ui(%{"root" => base_component} = ui) do
-    with {:ok, builded_base_component} <- rec_build_ui(base_component) do
-      {:ok, Map.put(ui, "root", builded_base_component)}
-    end
-  end
-
-  @spec rec_build_ui(map()) :: {:ok, map()} | {:error, String.t()}
-  def rec_build_ui(component)
-
-  @doc """
-    Build recursively the given component and return the builded component.
-    The UI can be :
-     - A container -> The function will build all children recursively
-     - A listener component -> The function will build the listener
-     - Any other : Nothing happend, return self.
-  """
-
-  # Container case. Run recursivly for all children. Return builded container with updated children
-  def rec_build_ui(%{"children" => children} = container) when is_list(children) do
-    Enum.reduce_while(children, {:ok, []}, fn child, {:ok, acc} ->
-      case rec_build_ui(child) do
-        {:ok, new_child} -> {:cont, {:ok, acc ++ [new_child]}}
-        {:error, _} = err -> {:halt, err}
-      end
-    end)
-    |> case do
-      {:ok, new_children} -> {:ok, Map.put(container, "children", new_children)}
-      err -> err
-    end
-  end
-
-  # listener case. Save all listeners and return modified listener element with data replacement
-  def rec_build_ui(%{"listeners" => listeners_map} = component) when is_map(listeners_map) do
-    with {:ok, new_listeners} <- save_and_encode_listeners(listeners_map) do
-      {
-        :ok,
-        Map.put(component, "listeners", new_listeners)
-      }
-    end
-  end
-
-  # Base case, return same component
-  def rec_build_ui(component) do
-    {:ok, component}
-  end
-
-  @spec save_and_encode_listeners(map()) :: {:ok, map()} | {:error, String.t()}
-  defp save_and_encode_listeners(listeners_map) do
-    Enum.reduce_while(
-      listeners_map,
-      {:ok, %{}},
-      fn
-        {event_name, %{"action" => action_code} = listener}, {:ok, acc} ->
-          props = Map.get(listener, "props", %{})
-          listener_key = Storage.generate_listeners_key(action_code, props)
-          Storage.insert(:listeners, listener_key, listener)
-          {:cont, {:ok, Map.put(acc, event_name, %{"code" => listener_key})}}
-
-        _, _ ->
-          {:halt, {:error, "All listener must have an action name."}}
-      end
-    )
-  end
-
   @spec run_app_listener(Action.t()) :: {:ok, ui()} | {:error, String.t()}
   defp run_app_listener(action) do
     with {:ok, %{"data" => data, "ui" => ui}} <-
            run_action(action),
-         :ok <- ApplicationRunner.UIValidator.validate(ui),
-         {:ok, final_ui} <- build_ui(ui),
+         {:ok, final_ui} <- ApplicationRunner.UIValidator.validate_and_build(ui),
          {:ok, _} <- save_final_ui(action, final_ui),
          {:ok, _} <- save_data(action, data) do
       {:ok, final_ui}

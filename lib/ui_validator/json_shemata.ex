@@ -6,9 +6,14 @@ defmodule ApplicationRunner.JsonSchemata do
   """
 
   # Client (api)
+  @component_api_directory "priv/components-api/api"
 
-  def get_schema(path) do
-    GenServer.call(__MODULE__, {:get_schema, path})
+  def get_schema_map(path) do
+    GenServer.call(__MODULE__, {:get_schema_map, path})
+  end
+
+  def load_raw_schema(schema, component_name) do
+    GenServer.call(__MODULE__, {:load_raw_schema, schema, component_name})
   end
 
   def start_link(_) do
@@ -18,7 +23,7 @@ defmodule ApplicationRunner.JsonSchemata do
   # Server (callbacks)
   @impl true
   def init(_) do
-    root_json_directory = Application.app_dir(:application_runner, "priv/json_validator")
+    root_json_directory = Application.app_dir(:application_runner, @component_api_directory)
 
     relative_shemata_path =
       Path.join(root_json_directory, "/**/*.schema.json")
@@ -32,12 +37,26 @@ defmodule ApplicationRunner.JsonSchemata do
   end
 
   def load_schema(path) do
-    read_schema(path)
-    |> ExJsonSchema.Schema.resolve()
+    schema =
+      read_schema(path)
+      |> ExComponentSchema.Schema.resolve()
+
+    schema_properties = ApplicationRunner.SchemaParser.parse(schema)
+
+    Map.merge(%{schema: schema}, schema_properties)
+  end
+
+  defp load_raw_schema(schema, schemata_map, component_name) do
+    resolved_schema = ExComponentSchema.Schema.resolve(schema)
+
+    properties = ApplicationRunner.SchemaParser.parse(resolved_schema)
+
+    [{get_component_path(component_name), Map.merge(%{schema: resolved_schema}, properties)}]
+    |> Enum.into(schemata_map)
   end
 
   def read_schema(path) do
-    Application.app_dir(:application_runner, "priv/json_validator")
+    Application.app_dir(:application_runner, @component_api_directory)
     |> Path.join(path)
     |> File.read()
     |> case do
@@ -47,8 +66,21 @@ defmodule ApplicationRunner.JsonSchemata do
     |> Jason.decode!()
   end
 
+  def get_component_path(comp_type), do: "components/#{comp_type}.schema.json"
+
   @impl true
-  def handle_call({:get_schema, path}, _from, schemata_map) do
-    {:reply, Map.get(schemata_map, path, :error), schemata_map}
+  def handle_call({:load_raw_schema, schema, component_name}, _from, schemata_map) do
+    {:reply, :ok, load_raw_schema(schema, schemata_map, component_name)}
+  end
+
+  @impl true
+  def handle_call({:get_schema_map, path}, _from, schemata_map) do
+    schema_map =
+      case Map.fetch(schemata_map, path) do
+        :error -> {:error, [{"Invalid component type", "#"}]}
+        res -> res
+      end
+
+    {:reply, schema_map, schemata_map}
   end
 end
