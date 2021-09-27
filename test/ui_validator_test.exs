@@ -566,7 +566,8 @@ defmodule ApplicationRunner.UIValidatorTest do
       }
     }
 
-    assert {:error, [{"Required property value was not present.", "#/root/leftWidget/leftWidget"}]} ==
+    assert {:error,
+            [{"Required property value was not present.", "#/root/leftWidget/leftWidget"}]} ==
              ApplicationRunner.UIValidator.validate_and_build(comp)
   end
 end
