@@ -55,11 +55,8 @@ defmodule ApplicationRunner.JsonSchemata do
       resolved_schema
       |> ApplicationRunner.SchemaParser.parse()
 
-    schemata_map =
-      [{get_component_path(component_name), Map.merge(%{schema: resolved_schema}, properties)}]
-      |> Enum.into(schemata_map)
-
-    schemata_map
+    [{get_component_path(component_name), Map.merge(%{schema: resolved_schema}, properties)}]
+    |> Enum.into(schemata_map)
   end
 
   def read_schema(path) do
