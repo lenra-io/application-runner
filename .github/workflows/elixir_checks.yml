@@ -8,6 +8,9 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v2
+        with:
+          ssh-key: ${{ secrets.GH_PERSONNAL_TOKEN }}
+          submodules: true
       - name: Set up Elixir
         uses: erlef/setup-elixir@885971a72ed1f9240973bd92ab57af8c1aa68f24
         with:
@@ -21,12 +24,8 @@ jobs:
             _build
           key: ${{ runner.os }}-mix-${{ hashFiles('**/mix.lock') }}
           restore-keys: ${{ runner.os }}-mix-
-      - name: Install dependencies 
-        run: mix deps.get 
-      - name: Checkout repository
-        uses: actions/checkout@v2
-      - name: Checkout submodules
-        run: git submodule update --init --recursive
+      - name: Install dependencies
+        run: mix deps.get
       - name: Compile project
         run: mix compile
       - name: Check formatting
