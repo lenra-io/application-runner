@@ -47,13 +47,9 @@ defmodule ApplicationRunner.JsonSchemata do
   end
 
   defp load_raw_schema(schema, schemata_map, component_name) do
-    resolved_schema =
-      schema
-      |> ExComponentSchema.Schema.resolve()
+    resolved_schema = ExComponentSchema.Schema.resolve(schema)
 
-    properties =
-      resolved_schema
-      |> ApplicationRunner.SchemaParser.parse()
+    properties = ApplicationRunner.SchemaParser.parse(resolved_schema)
 
     [{get_component_path(component_name), Map.merge(%{schema: resolved_schema}, properties)}]
     |> Enum.into(schemata_map)

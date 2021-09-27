@@ -67,11 +67,10 @@ defmodule ApplicationRunner.UIValidator do
   def build_listener(listener) do
     case listener do
       %{"action" => action_code} ->
-        built_listener = Map.delete(listener, "action") |> Map.delete("props")
         props = Map.get(listener, "props", %{})
         listener_key = Storage.generate_listeners_key(action_code, props)
         Storage.insert(:listeners, listener_key, listener)
-        {:ok, Map.merge(built_listener, %{"code" => listener_key})}
+        {:ok, listener |> Map.drop(["action", "props"]) |> Map.put("code", listener_key)}
 
       _ ->
         {:ok, %{}}
