@@ -7,6 +7,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
+      - uses: webfactory/ssh-agent@v0.5.3
+        with:
+          ssh-private-key: ${{ secrets.COMPONENTS_API_SSH }}
       - uses: actions/checkout@v2
         with:
           ssh-key: ${{ secrets.GH_PERSONNAL_TOKEN }}
