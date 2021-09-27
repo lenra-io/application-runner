@@ -21,8 +21,10 @@ jobs:
             _build
           key: ${{ runner.os }}-mix-${{ hashFiles('**/mix.lock') }}
           restore-keys: ${{ runner.os }}-mix-
-      - name: Install dependencies & submodule
-        run: mix deps.get && git submodule update
+      - name: Install dependencies 
+        run: mix deps.get 
+      - name: Init submodule
+        run: git submodule update --init
       - name: Compile project
         run: mix compile
       - name: Check formatting
