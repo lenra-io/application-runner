@@ -18,26 +18,7 @@ defmodule ApplicationRunner.StyledContainerValidatorTest do
              ApplicationRunner.UIValidator.validate_and_build_component(json, "")
   end
 
-  test "valid styledContainer with simple border" do
-    json = %{
-      "type" => "styledContainer",
-      "child" => %{
-        "type" => "text",
-        "value" => "foo"
-      },
-      "border" => %{
-        "all" => %{
-          "width" => 2,
-          "color" => "#FFFFFF"
-        }
-      }
-    }
-
-    assert {:ok, json} ==
-             ApplicationRunner.UIValidator.validate_and_build_component(json, "")
-  end
-
-  test "valid styledContainer with complex border" do
+  test "valid styledContainer with border" do
     json = %{
       "type" => "styledContainer",
       "child" => %{
@@ -50,16 +31,16 @@ defmodule ApplicationRunner.StyledContainerValidatorTest do
           "color" => "#FFFFFF"
         },
         "left" => %{
-          "width" => 3,
-          "color" => "#FFFFAA"
+          "width" => 2,
+          "color" => "#FFFFFF"
         },
         "bottom" => %{
-          "width" => 4.0,
-          "color" => "#FFFFBB"
+          "width" => 2,
+          "color" => "#FFFFFF"
         },
         "right" => %{
-          "width" => 5.0,
-          "color" => "#FFFFCC"
+          "width" => 2,
+          "color" => "#FFFFFF"
         }
       }
     }
@@ -68,7 +49,7 @@ defmodule ApplicationRunner.StyledContainerValidatorTest do
              ApplicationRunner.UIValidator.validate_and_build_component(json, "")
   end
 
-  test "valid styledContainer with simple borderRadius" do
+  test "valid styledContainer with borderRadius" do
     json = %{
       "type" => "styledContainer",
       "child" => %{
@@ -76,28 +57,10 @@ defmodule ApplicationRunner.StyledContainerValidatorTest do
         "value" => "foo"
       },
       "borderRadius" => %{
-        "circular" => 5.0
-      }
-    }
-
-    assert {:ok, json} ==
-             ApplicationRunner.UIValidator.validate_and_build_component(json, "")
-  end
-
-  test "valid styledContainer with complex borderRadius" do
-    json = %{
-      "type" => "styledContainer",
-      "child" => %{
-        "type" => "text",
-        "value" => "foo"
-      },
-      "borderRadius" => %{
-        "only" => %{
-          "topLeft" => 2.0,
-          "topRight" => 3,
-          "bottomLeft" => 4.0,
-          "bottomRight" => 5
-        }
+        "topLeft" => %{"x" => 5.0, "y" => 5.0},
+        "topRight" => %{"x" => 5.0, "y" => 5.0},
+        "bottomLeft" => %{"x" => 5.0, "y" => 5.0},
+        "bottomRight" => %{"x" => 5.0, "y" => 5.0}
       }
     }
 
@@ -122,14 +85,32 @@ defmodule ApplicationRunner.StyledContainerValidatorTest do
         "value" => "foo"
       },
       "border" => %{
-        "all" => %{
+        "top" => %{
+          "width" => "invalid",
+          "color" => "#FFFFFF"
+        },
+        "left" => %{
+          "width" => "invalid",
+          "color" => "#FFFFFF"
+        },
+        "bottom" => %{
+          "width" => "invalid",
+          "color" => "#FFFFFF"
+        },
+        "right" => %{
           "width" => "invalid",
           "color" => "#FFFFFF"
         }
       }
     }
 
-    assert {:error, [{"Expected exactly one of the schemata to match, but none of them did.", "/border"}]} ==
-      ApplicationRunner.UIValidator.validate_and_build_component(json, "")
+    assert {:error,
+            [
+              {"Type mismatch. Expected Number but got String.", "/border/bottom/width"},
+              {"Type mismatch. Expected Number but got String.", "/border/left/width"},
+              {"Type mismatch. Expected Number but got String.", "/border/right/width"},
+              {"Type mismatch. Expected Number but got String.", "/border/top/width"}
+            ]} ==
+             ApplicationRunner.UIValidator.validate_and_build_component(json, "")
   end
 end
