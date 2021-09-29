@@ -44,6 +44,11 @@ defmodule ApplicationRunner.JsonSchemata do
     schema_properties = ApplicationRunner.SchemaParser.parse(schema)
 
     Map.merge(%{schema: schema}, schema_properties)
+  rescue
+    e in ExComponentSchema.Schema.InvalidSchemaError ->
+      reraise ExComponentSchema.Schema.InvalidSchemaError,
+              [message: "#{path} #{e.message}"],
+              System.stacktrace()
   end
 
   defp load_raw_schema(schema, schemata_map, component_name) do
