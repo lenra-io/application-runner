@@ -37,13 +37,17 @@ defmodule ApplicationRunner.JsonSchemata do
   end
 
   def load_schema(path) do
-    schema =
-      read_schema(path)
-      |> ExComponentSchema.Schema.resolve()
+    try do
+      schema =
+        read_schema(path)
+        |> ExComponentSchema.Schema.resolve()
 
-    schema_properties = ApplicationRunner.SchemaParser.parse(schema)
+      schema_properties = ApplicationRunner.SchemaParser.parse(schema)
 
-    Map.merge(%{schema: schema}, schema_properties)
+      Map.merge(%{schema: schema}, schema_properties)
+    rescue
+      e in ExComponentSchema.Schema.InvalidSchemaError -> raise ExComponentSchema.Schema.InvalidSchemaError, message: "#{path} #{e.message}"
+    end
   end
 
   defp load_raw_schema(schema, schemata_map, component_name) do
