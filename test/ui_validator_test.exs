@@ -119,7 +119,7 @@ defmodule ApplicationRunner.UIValidatorTest do
               %{
                 "type" => "textfield",
                 "value" => "",
-                "onChange" => %{
+                "onChanged" => %{
                   "name" => "Category.setName"
                 }
               },
@@ -152,9 +152,9 @@ defmodule ApplicationRunner.UIValidatorTest do
              :error,
              [
                {"Schema does not allow additional properties.",
-                "#/root/children/0/children/0/onChange/name"},
+                "#/root/children/0/children/0/onChanged/name"},
                {"Required property action was not present.",
-                "#/root/children/0/children/0/onChange"},
+                "#/root/children/0/children/0/onChanged"},
                {"Schema does not allow additional properties.",
                 "#/root/children/0/children/1/onPressed/name"},
                {"Required property action was not present.",

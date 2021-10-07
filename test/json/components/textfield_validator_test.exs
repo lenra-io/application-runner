@@ -9,7 +9,7 @@ defmodule ApplicationRunner.TextfieldValidatorTest do
     json = %{
       "type" => "textfield",
       "value" => "",
-      "onChange" => %{
+      "onChanged" => %{
         "action" => "anyaction",
         "props" => %{
           "number" => 10,
@@ -22,7 +22,7 @@ defmodule ApplicationRunner.TextfieldValidatorTest do
             %{
               "type" => "textfield",
               "value" => "",
-              "onChange" => %{
+              "onChanged" => %{
                 "code" => _
               }
             }} = ApplicationRunner.UIValidator.validate_and_build_component(json, "")
@@ -61,7 +61,7 @@ defmodule ApplicationRunner.TextfieldValidatorTest do
     json = %{
       "type" => "textfield",
       "value" => "test",
-      "onChange" => %{
+      "onChanged" => %{
         "action" => 10,
         "props" => ""
       }
@@ -69,8 +69,8 @@ defmodule ApplicationRunner.TextfieldValidatorTest do
 
     assert {:error,
             [
-              {"Type mismatch. Expected String but got Integer.", "/onChange/action"},
-              {"Type mismatch. Expected Object but got String.", "/onChange/props"}
+              {"Type mismatch. Expected String but got Integer.", "/onChanged/action"},
+              {"Type mismatch. Expected Object but got String.", "/onChanged/props"}
             ]} ==
              ApplicationRunner.UIValidator.validate_and_build_component(json, "")
   end
