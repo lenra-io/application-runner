@@ -32,7 +32,7 @@ jobs:
           name: 'Update dependecies'
           token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            if [ "${{ github.event.inputs.origin }}" == "components-api" ]; then
+            if [[ "${{ github.event.inputs.origin }}" == "components-api" ]]; then
               cd priv/components-api
               git fetch --all --tags
               git checkout "tags/${{ github.event.inputs.version }}"
