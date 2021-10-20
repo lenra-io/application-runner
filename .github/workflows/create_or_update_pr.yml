@@ -39,8 +39,8 @@ jobs:
               cd ../..
               git add priv/components-api
             else
-              echo "Error: ${{ github.event.inputs.origin }} not yet implemented"
-              exit(1)
+              >&2 echo "Error: ${{ github.event.inputs.origin }} not yet implemented"
+              exit 1
             fi
             git commit -m "deps-bot: Upgrade ${{ github.event.inputs.origin }} to ${{ github.event.inputs.version }}
             ${{ github.event.inputs.release_notes }}"
