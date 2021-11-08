@@ -3,44 +3,54 @@ defmodule ApplicationRunner.UIValidator do
     Services to validate json with json schema
   """
 
-  alias ApplicationRunner.{JsonSchemata, Storage}
+  alias ApplicationRunner.{JsonSchemata, Storage, AppContext, WidgetContext, ActionBuilder}
 
-  @type ui :: map()
+  @type widget_ui :: map()
   @type component :: map()
   @type error_tuple :: {String.t(), String.t()}
   @type build_errors :: list(error_tuple())
 
-  @spec validate_and_build(ui()) :: {:ok, ui()} | {:error, build_errors()}
-  def validate_and_build(ui) do
-    with {:ok, _} <- validate_with_error("root.schema.json", ui, "#") do
-      ui["root"]
-      |> validate_and_build_component("#/root")
-    end
-    |> case do
-      {:ok, ui} -> {:ok, %{"root" => ui}}
-      error -> error
+  @spec get_and_build_widget(AppContext.t(), WidgetContext.t()) :: {:ok, map()} | {:error, any()}
+  def get_and_build_widget(%AppContext{}= app_context, %WidgetContext{} = widget_context) do
+    with {:ok, _data} <- {:ok, :data}, #get_data(app_context, widget_context),
+    {:ok, widget} <- {:ok, :widget} do # get_widget(app_context, widget_context, data) do
+      UIValidator.validate_and_build_component(widget, app_context, widget_context)
     end
   end
 
-  @spec validate_and_build_component(component(), String.t()) ::
-          {:ok, component()} | {:error, build_errors()}
-  def validate_and_build_component(%{"type" => comp_type} = component, prefix_path) do
+  @spec validate_and_build_component(widget_ui(), AppContext.t(), WidgetContext.t()) :: {:ok, AppContext.t()} | {:error, build_errors()}
+  def validate_and_build_component(%{"type" => "widget" = comp_type} = component, app_context, widget_context) do
+    with schema_path <- JsonSchemata.get_component_path(comp_type),
+         {:ok, _} <-
+           validate_with_error(schema_path, component, widget_context) do
+            new_widget_context = %WidgetContext{
+              widget_name: component["name"],
+              data_query: component["query"],
+              props: component["props"],
+              prefix_path: widget_context.prefix_path}
+            ActionBuilder.get_and_build_widget(app_context, new_widget_context)
+    end
+  end
+
+  def validate_and_build_component(%{"type" => comp_type} = component, app_context, widget_context) do
     with schema_path <- JsonSchemata.get_component_path(comp_type),
          {:ok, %{listeners: listeners, children: children, child: child}} <-
-           validate_with_error(schema_path, component, prefix_path),
-         {:ok, children_map} <-
-           validate_and_build_children_list(component, children, prefix_path),
-         {:ok, child_map} <- validate_and_build_child_list(component, child, prefix_path),
+           validate_with_error(schema_path, component, widget_context),
+         {:ok, children_map, widget_children_map} <-
+           validate_and_build_children_list(component, children, app_context, widget_context),
+         {:ok, child_map, widget_child_map} <- validate_and_build_child_list(component, child, app_context, widget_context),
          {:ok, listeners_map} <- build_listeners(component, listeners) do
       {:ok,
        component
        |> Map.merge(children_map)
        |> Map.merge(child_map)
-       |> Map.merge(listeners_map)}
+       |> Map.merge(listeners_map),
+       Map.merge(widget_child_map, widget_children_map)
+      }
     end
   end
 
-  def validate_with_error(schema_path, component, prefix_path) do
+  def validate_with_error(schema_path, component, %WidgetContext{prefix_path: prefix_path}) do
     with {:ok, %{schema: schema} = schema_map} <- JsonSchemata.get_schema_map(schema_path),
          :ok <- ExComponentSchema.Validator.validate(schema, component) do
       {:ok, schema_map}
@@ -77,9 +87,9 @@ defmodule ApplicationRunner.UIValidator do
     end
   end
 
-  @spec validate_and_build_child_list(component(), list(String.t()), String.t()) ::
+  @spec validate_and_build_child_list(component(), list(String.t()), AppContext.t(), WidgetContext.t()) ::
           {:ok, map()} | {:error, build_errors()}
-  def validate_and_build_child_list(component, child_list, prefix_path) do
+  def validate_and_build_child_list(component, child_list, app_context, %WidgetContext{prefix_path: prefix_path} = widget_context) do
     Enum.reduce(child_list, {%{}, []}, fn child, {acc, errors} ->
       child_path = "#{prefix_path}/#{child}"
 
@@ -88,7 +98,7 @@ defmodule ApplicationRunner.UIValidator do
           {acc, errors}
 
         child_comp ->
-          validate_and_build_component(child_comp, child_path)
+          validate_and_build_component(child_comp, app_context, Map.put(widget_context, :prefix_path, child_path))
           |> handle_built_child(child, {acc, errors})
       end
     end)
@@ -108,13 +118,15 @@ defmodule ApplicationRunner.UIValidator do
     end
   end
 
-  @spec validate_and_build_children_list(component(), list(), String.t()) ::
-          {:ok, map()} | {:error, build_errors()}
-  def validate_and_build_children_list(component, children_list, prefix_path) do
+  @spec validate_and_build_children_list(component(), list(), AppContext.t(), WidgetContext.t()) ::
+          {:ok, map(), map()} | {:error, build_errors()}
+  def validate_and_build_children_list(component, children_list, %AppContext{} = app_context, %WidgetContext{prefix_path: prefix_path} = widget_context) do
+    # TODO: Return the widget_children_map
+
     Enum.reduce(children_list, {%{}, []}, fn children, {acc, errors} ->
       children_path = "#{prefix_path}/#{children}"
 
-      case validate_and_build_children(component, children, children_path) do
+      case validate_and_build_children(component, children, app_context, Map.put(widget_context, :prefix_path, children_path)) do
         {:ok, []} ->
           {acc, errors}
 
@@ -131,25 +143,25 @@ defmodule ApplicationRunner.UIValidator do
     end
   end
 
-  @spec validate_and_build_children(map, String.t(), String.t()) ::
+  @spec validate_and_build_children(map, String.t(), AppContext.t(), WidgetContext.t()) ::
           {:error, list(error_tuple())} | {:ok, list(component())}
-  def validate_and_build_children(component, children, prefix_path) do
+  def validate_and_build_children(component, children, app_context, widget_context) do
     case Map.get(component, children) do
       nil ->
         {:ok, []}
 
       children_comp ->
-        build_children_map(children_comp, prefix_path)
+        build_children_map(children_comp, app_context, widget_context)
     end
   end
 
-  defp build_children_map(children, prefix_path) do
+  defp build_children_map(children, app_context, %WidgetContext{prefix_path: prefix_path} = widget_context) do
     children
     |> Enum.with_index()
     |> Enum.reduce({[], []}, fn {child, index}, {acc, errors} ->
       children_path = "#{prefix_path}/#{index}"
 
-      case validate_and_build_component(child, children_path) do
+      case validate_and_build_component(child, app_context, Map.put(widget_context, :prefix_path, children_path)) do
         {:ok, built_component} ->
           {acc ++ [built_component], errors}
 
