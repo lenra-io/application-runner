@@ -5,9 +5,9 @@ defmodule ApplicationRunner.ActionBuilder do
 
   require Logger
 
-  alias ApplicationRunner.{Action, AppContext, WidgetContext, UIValidator}
+  alias ApplicationRunner.{AppContext, WidgetContext, UIValidator}
 
-  @spec first_run(Action.t()) :: {:ok, map()} | {:error, String.t()}
+  @spec first_run(AppContext.t()) :: {:ok, AppContext.t()} | {:error, any()}
 
   @doc """
     This function build the first UI with default Entry Point `"InitData"` to generate the data model and `"MainUi"` to generate the UI
