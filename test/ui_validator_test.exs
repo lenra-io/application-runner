@@ -570,4 +570,19 @@ defmodule ApplicationRunner.UIValidatorTest do
             [{"Required property value was not present.", "#/root/leftWidget/leftWidget"}]} ==
              ApplicationRunner.UIValidator.validate_and_build(comp)
   end
+
+  alias ApplicationRunner.{AppContext, WidgetContext}
+
+  test "parseTestWidget" do
+    {:ok, app_context} = ApplicationRunner.UIValidator.get_and_build_widget(
+      %AppContext{
+        user_id: 0,
+        app_name: "test",
+        build_number: 0,
+        action_logs_uuid: 0,
+        widgets_map: %{}
+      }, %WidgetContext{widget_name: "root", prefix_path: ""})
+   assert %AppContext{} = app_context == app_context
+  end
+
 end

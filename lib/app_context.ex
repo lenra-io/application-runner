@@ -7,13 +7,15 @@ defmodule ApplicationRunner.AppContext do
     :user_id,
     :app_name,
     :build_number,
-    :action_logs_uuid
+    :action_logs_uuid,
+    :widgets_map
   ]
 
   @type t :: %ApplicationRunner.AppContext{
     user_id: integer(),
     app_name: String.t(),
     build_number: integer(),
-    action_logs_uuid: String.t() | nil
+    action_logs_uuid: String.t() | nil,
+    widgets_map: map()
   }
 end
