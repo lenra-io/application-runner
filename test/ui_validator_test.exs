@@ -574,6 +574,17 @@ defmodule ApplicationRunner.UIValidatorTest do
   alias ApplicationRunner.{AppContext, WidgetContext}
 
   test "parseTestWidget" do
+    comp = %{
+      "test" => %{
+        "type" => "flex",
+        "children" => [%{"type" => "text", "value" => "trtt"}]
+      },
+      "root" => %{
+          "type" => "flex",
+          "children" => [%{"type" => "text", "value" => "zeaze"}, %{"type" => "widget", "name" => "test"}]
+      }
+    }
+
     {:ok, app_context} = ApplicationRunner.UIValidator.get_and_build_widget(
       %AppContext{
         user_id: 0,
@@ -581,8 +592,10 @@ defmodule ApplicationRunner.UIValidatorTest do
         build_number: 0,
         action_logs_uuid: 0,
         widgets_map: %{}
-      }, %WidgetContext{widget_name: "root", prefix_path: ""})
-   assert %AppContext{} = app_context == app_context
+      }, %WidgetContext{widget_name: "root", prefix_path: ""}
+    )
+    assert app_context.widgets_map == comp
+
   end
 
 end
