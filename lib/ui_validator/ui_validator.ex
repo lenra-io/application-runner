@@ -26,7 +26,7 @@ defmodule ApplicationRunner.UIValidator do
     with {:ok, data} <- {:ok, :data}, #get_data(app_context, widget_context),
     {:ok, widget} <- get_widget(app_context, widget_context, data),
     {:ok, component, new_app_context} <- build_component(widget, app_context, widget_context) do
-      {:ok, put_in(new_app_context, [:widgets_map, widget_context.widget_name], component)}
+      {:ok, put_in(new_app_context.widgets_map[widget_context.widget_name], component)}
     end
   end
 
