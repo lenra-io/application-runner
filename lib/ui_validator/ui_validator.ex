@@ -10,17 +10,6 @@ defmodule ApplicationRunner.UIValidator do
   @type error_tuple :: {String.t(), String.t()}
   @type build_errors :: list(error_tuple())
 
-  @widgets %{
-    "test" => %{
-      "type" => "flex",
-      "children" => [%{"type" => "text", "value" => "trtt"}]
-    },
-    "root" => %{
-        "type" => "flex",
-        "children" => [%{"type" => "text", "value" => "zeaze"}, %{"type" => "widget", "name" => "test"}]
-    }
-  }
-
   @spec get_and_build_widget(AppContext.t(), WidgetContext.t()) :: {:ok, AppContext.t()} | {:error, any()}
   def get_and_build_widget(%AppContext{}= app_context, %WidgetContext{} = widget_context) do
     with {:ok, data} <- {:ok, :data}, #get_data(app_context, widget_context),
@@ -30,9 +19,8 @@ defmodule ApplicationRunner.UIValidator do
     end
   end
 
-  defp get_widget(_, %WidgetContext{widget_name: widget_name}, _) do
-    # TODO!: Implement get_widget function
-    {:ok, Map.get(@widgets, widget_name)}
+  defp get_widget(app, widget, data) do
+    ApplicationRunner.ActionBuilder.get_widget(app, widget, data)
   end
 
   @spec build_component(widget_ui(), AppContext.t(), WidgetContext.t()) :: {:ok, component(), AppContext.t()} | {:error, build_errors()}

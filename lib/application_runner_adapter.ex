@@ -5,14 +5,24 @@ defmodule ApplicationRunner.ApplicationRunnerAdapter do
   @behaviour ApplicationRunner.AdapterBehavior
 
   @impl true
-  def run_action(_action) do
-    {:ok, %{"data" => %{}, "ui" => %{"root" => %{}}}}
+  def get_manifest(_app) do
+    {:ok, %{"widgets" => %{"root" => %{}}, "entrypoint" => "root"}}
+  end
+
+  @impl true
+  def get_widget(_app, _widget, _data) do
+    {:ok, %{"ui" => %{"root" => %{}}}}
+  end
+
+  @impl true
+  def run_listener(_app, _listener, _data) do
+    { :ok, %{} }
   end
 
   @impl true
   def get_data(_action) do
     {:ok,
-     %ApplicationRunner.Action{
+     %ApplicationRunner.AppContext{
        user_id: 1,
        app_name: "test",
        build_number: 42,
