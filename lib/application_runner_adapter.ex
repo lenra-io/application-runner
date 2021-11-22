@@ -11,7 +11,7 @@ defmodule ApplicationRunner.ApplicationRunnerAdapter do
 
   @impl true
   def get_widget(_app, _widget, _data) do
-    {:ok, %{"ui" => %{"root" => %{}}}}
+    {:ok, %{"root" => %{}}}
   end
 
   @impl true

@@ -8,7 +8,9 @@ defmodule ApplicationRunner.AppContext do
     :app_name,
     :build_number,
     :action_logs_uuid,
-    :widgets_map
+    :entrypoint,
+    :widgets_map,
+    :listeners_map
   ]
 
   @type t :: %ApplicationRunner.AppContext{
@@ -16,6 +18,8 @@ defmodule ApplicationRunner.AppContext do
     app_name: String.t(),
     build_number: integer(),
     action_logs_uuid: String.t() | nil,
-    widgets_map: map()
+    entrypoint: String.t() | nil,
+    widgets_map: map(),
+    listeners_map: map()
   }
 end

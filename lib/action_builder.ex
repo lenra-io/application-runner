@@ -15,9 +15,10 @@ defmodule ApplicationRunner.ActionBuilder do
   def first_run(%AppContext{} = app_context) do
     {:ok, %{"entrypoint" => entrypoint}} = get_manifest(app_context)
 
-    UIValidator.get_and_build_widget(app_context, %WidgetContext{
-      widget_name: entrypoint,
-      prefix_path: "/"
+    uuid = UUID.uuid1()
+    UIValidator.get_and_build_widget(Map.put(app_context, :entrypoint, uuid), %WidgetContext{
+      widget_id: uuid,
+      widget_name: entrypoint
     })
   end
 

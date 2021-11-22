@@ -12,10 +12,10 @@ defmodule ApplicationRunner.UIValidator do
 
   @spec get_and_build_widget(AppContext.t(), WidgetContext.t()) :: {:ok, AppContext.t()} | {:error, any()}
   def get_and_build_widget(%AppContext{}= app_context, %WidgetContext{} = widget_context) do
-    with {:ok, data} <- {:ok, :data}, #get_data(app_context, widget_context),
+    with {:ok, data} <- get_data(app_context, widget_context),
     {:ok, widget} <- get_widget(app_context, widget_context, data),
     {:ok, component, new_app_context} <- build_component(widget, app_context, widget_context) do
-      {:ok, put_in(new_app_context.widgets_map[widget_context.widget_name], component)}
+      {:ok, put_in(new_app_context.widgets_map[widget_context.widget_id], component)}
     end
   end
 
@@ -23,18 +23,24 @@ defmodule ApplicationRunner.UIValidator do
     ApplicationRunner.ActionBuilder.get_widget(app, widget, data)
   end
 
+  defp get_data(_app, _widget) do
+    {:ok, %{"user" => %{"id" => 1, "page" => "home_pages", "pseudo" => "test_user", "name" => "Test User"}}}
+  end
+
   @spec build_component(widget_ui(), AppContext.t(), WidgetContext.t()) :: {:ok, component(), AppContext.t()} | {:error, build_errors()}
   def build_component(%{"type" => "widget" = comp_type} = component, app_context, widget_context) do
     with schema_path <- JsonSchemata.get_component_path(comp_type),
          {:ok, _} <-
            validate_with_error(schema_path, component, widget_context) do
+            uuid = UUID.uuid1()
             new_widget_context = %WidgetContext{
+              widget_id: uuid,
               widget_name: component["name"],
               data_query: component["query"],
               props: component["props"],
               prefix_path: widget_context.prefix_path}
               {:ok, new_app_context} = get_and_build_widget(app_context, new_widget_context)
-              {:ok, component, new_app_context}
+              {:ok, %{"type" => "widget", "id" => uuid, "name" => component["name"]}, new_app_context}
     end
   end
 
@@ -65,7 +71,7 @@ defmodule ApplicationRunner.UIValidator do
       {:error, errors} ->
         {:error,
          Enum.map(errors, fn
-           {message, "#" <> path} -> {message, prefix_path <> path}
+           {message, "#" <> path} -> {message, (prefix_path || "") <> path}
          end)}
     end
   end
@@ -98,7 +104,7 @@ defmodule ApplicationRunner.UIValidator do
           {:ok, map(), AppContext.t()} | {:error, build_errors()}
   def build_child_list(component, child_list, app_context, %WidgetContext{prefix_path: prefix_path} = widget_context) do
     Enum.reduce(child_list, {%{}, app_context, []}, fn child_key, {child_map, app_context_acc, errors} ->
-      child_path = "#{prefix_path}/#{child_key}"
+      child_path = "#{prefix_path || ""}/#{child_key}"
 
       case Map.get(component, child_key) do
         nil ->
@@ -130,7 +136,7 @@ defmodule ApplicationRunner.UIValidator do
   def build_children_list(component, children_keys, %AppContext{} = app_context, %WidgetContext{prefix_path: prefix_path} = widget_context) do
 
     Enum.reduce(children_keys, {%{}, app_context, []}, fn children_key, {children_map, app_context_acc, errors} ->
-      children_path = "#{prefix_path}/#{children_key}"
+      children_path = "#{prefix_path || ""}/#{children_key}"
 
       case build_children(component, children_key, app_context, Map.put(widget_context, :prefix_path, children_path)) do
         {:ok, built_children, children_app_context} ->
@@ -166,7 +172,7 @@ defmodule ApplicationRunner.UIValidator do
     children
     |> Enum.with_index()
     |> Enum.reduce({[], app_context, []}, fn {child, index}, {built_components, app_context_acc, errors} ->
-      children_path = "#{prefix_path}/#{index}"
+      children_path = "#{prefix_path || ""}/#{index}"
 
       case build_component(child, app_context, Map.put(widget_context, :prefix_path, children_path)) do
         {:ok, built_component, new_app_context} ->
