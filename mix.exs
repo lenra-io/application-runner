@@ -32,7 +32,8 @@ defmodule ApplicationRunner.MixProject do
        git: "https://github.com/lenra-io/ex_component_schema", ref: "v1.0.0-beta.2"},
       {:jason, "~> 1.2"},
       {:json_diff, "~> 0.1"},
-      { :elixir_uuid, "~> 1.2" }
+      {:swarm, "~> 3.0"},
+      {:libcluster, "~> 3.3"}
     ]
   end
 end

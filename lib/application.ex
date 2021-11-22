@@ -7,11 +7,22 @@ defmodule ApplicationRunner.Application do
   use Application
 
   def start(_type, _args) do
+    topologies = [
+      example: [
+        strategy: Cluster.Strategy.Gossip
+        # config: [hosts: [:a@LenraBook, :b@LenraBook]]
+      ]
+    ]
+
     children = [
       # Start the json validator server for the UI
       ApplicationRunner.JsonSchemata,
       # Start the Cache Storage system (init all tables of storage)
-      ApplicationRunner.Storage
+      ApplicationRunner.Storage,
+
+      # Start the cluster supervisor to handle all the nodes in the cluster
+      {Cluster.Supervisor, [topologies, [name: LenraDataPoc.ClusterSupervisor]]},
+      ApplicationRunner.AppManagers
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html
