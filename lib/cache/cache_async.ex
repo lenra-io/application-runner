@@ -1,8 +1,6 @@
 defmodule ApplicationRunner.CacheAsync do
   use GenServer
 
-  alias ApplicationRunner.CacheMap
-
   def start_link() do
     GenServer.start_link(__MODULE__, [], [])
   end
@@ -20,9 +18,9 @@ defmodule ApplicationRunner.CacheAsync do
     key = {module, function_name, args}
     from_list = Map.get(state, key, [])
 
-    case CacheMap.get(cache_pid, key) do
+    case Cachex.get!(cache_pid, key) do # CacheMap.get(cache_pid, key) do
       nil ->
-        CacheMap.put(cache_pid, key, {:pending, nil})
+        Cachex.put(cache_pid, key, {:pending, nil})
         {:noreply, Map.put(state, key, [from | from_list]), {:continue, {:call_function, cache_pid, module, function_name, args}}}
       {:pending, nil} -> {:noreply, Map.put(state, key, [from | from_list])}
       {:done, value} -> {:reply, value, state}
@@ -40,7 +38,7 @@ defmodule ApplicationRunner.CacheAsync do
     pid = self()
     spawn(fn ->
       res = apply(module, function_name, args)
-      CacheMap.put(cache_pid, key, {:done, res})
+      Cachex.put(cache_pid, key, {:done, res})
 
       GenServer.cast(pid, {:call_function_done, key, res})
     end)

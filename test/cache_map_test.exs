@@ -24,17 +24,18 @@ defmodule ApplicationRunner.CacheMapTest do
   doctest ApplicationRunner.CacheMap
 
   test "Can create cache_map" do
-    {:ok, cache} = GenServer.start_link(ApplicationRunner.CacheMap, nil)
+    cache = :cache
+    {:ok, _} = Cachex.start_link(cache)
 
-    :ok = ApplicationRunner.CacheMap.put(cache, "foo", "bar")
-    assert ApplicationRunner.CacheMap.get(cache, "foo") == "bar"
+    {:ok, _} = Cachex.put(cache, "foo", "bar")
+    assert Cachex.get!(cache, "foo") == "bar"
 
   end
 
 
-
   test "Can create cache_async" do
-    {:ok, cache_map} = GenServer.start_link(ApplicationRunner.CacheMap, nil)
+    cache_map = :cache_widget
+    {:ok, _} = Cachex.start_link(cache_map)
     {:ok, cache_async} = GenServer.start_link(ApplicationRunner.CacheAsync, nil)
 
     tasks = [Task.async(fn ->
@@ -67,7 +68,8 @@ defmodule ApplicationRunner.CacheMapTest do
   end
 
   test "Stress test cache_async" do
-    {:ok, cache_map} = GenServer.start_link(ApplicationRunner.CacheMap, nil)
+    cache_map = :cache_widget
+    {:ok, _} = Cachex.start_link(cache_map)
     {:ok, cache_async} = GenServer.start_link(ApplicationRunner.CacheAsync, nil)
 
     0..200

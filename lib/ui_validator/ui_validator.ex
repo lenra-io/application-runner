@@ -3,7 +3,7 @@ defmodule ApplicationRunner.UIValidator do
     Services to validate json with json schema
   """
 
-  alias ApplicationRunner.{JsonSchemata, Storage, AppContext, WidgetContext}
+  alias ApplicationRunner.{JsonSchemata, Storage, AppContext, WidgetContext, CacheAsync}
 
   @type widget_ui :: map()
   @type component :: map()
@@ -20,6 +20,9 @@ defmodule ApplicationRunner.UIValidator do
   end
 
   defp get_widget(app, widget, data) do
+    pid = 1
+    cache_pid = 1
+    CacheAsync.call_function(pid, cache_pid, ApplicationRunner.ActionBuilder, "get_widget", [app, widget, data])
     ApplicationRunner.ActionBuilder.get_widget(app, widget, data)
   end
 

@@ -33,7 +33,8 @@ defmodule ApplicationRunner.MixProject do
       {:jason, "~> 1.2"},
       {:json_diff, "~> 0.1"},
       {:swarm, "~> 3.0"},
-      {:libcluster, "~> 3.3"}
+      {:libcluster, "~> 3.3"},
+      {:cachex, "~> 3.4"}
     ]
   end
 end
