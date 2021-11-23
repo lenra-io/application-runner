@@ -27,3 +27,4 @@ application_runner-*.tar
 /tmp
 
 .DS_Store
+.iex.exs
