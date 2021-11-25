@@ -46,5 +46,5 @@ jobs:
             RELEASE_NOTES="${{ github.event.inputs.release_notes }}"
             RELEASE_TYPE="${RELEASE_NOTES/:*}"
             
-            git commit -m "${RELEASE_NOTES}: Upgrade ${{ github.event.inputs.origin }} to ${{ github.event.inputs.version }}
+            git commit -m "${RELEASE_TYPE}: Upgrade ${{ github.event.inputs.origin }} to ${{ github.event.inputs.version }}
             ${{ github.event.inputs.release_notes }}"
