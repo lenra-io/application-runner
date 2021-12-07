@@ -2,7 +2,7 @@ defmodule ApplicationRunner.ContainerValidatorTest do
   use ExUnit.Case, async: true
 
   @moduledoc """
-    Test the "styledContainer.schema.json" schema
+    Test the "container.schema.json" schema
   """
 
   test "valid container" do
