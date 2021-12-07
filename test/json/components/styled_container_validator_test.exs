@@ -1,13 +1,13 @@
-defmodule ApplicationRunner.StyledContainerValidatorTest do
+defmodule ApplicationRunner.ContainerValidatorTest do
   use ExUnit.Case, async: true
 
   @moduledoc """
     Test the "styledContainer.schema.json" schema
   """
 
-  test "valid styledContainer" do
+  test "valid container" do
     json = %{
-      "type" => "styledContainer",
+      "type" => "container",
       "child" => %{
         "type" => "text",
         "value" => "foo"
@@ -18,9 +18,9 @@ defmodule ApplicationRunner.StyledContainerValidatorTest do
              ApplicationRunner.UIValidator.validate_and_build_component(json, "")
   end
 
-  test "valid styledContainer with border" do
+  test "valid container with border" do
     json = %{
-      "type" => "styledContainer",
+      "type" => "container",
       "child" => %{
         "type" => "text",
         "value" => "foo"
@@ -28,19 +28,19 @@ defmodule ApplicationRunner.StyledContainerValidatorTest do
       "border" => %{
         "top" => %{
           "width" => 2,
-          "color" => "#FFFFFF"
+          "color" => 0xFFFFFFFF
         },
         "left" => %{
           "width" => 2,
-          "color" => "#FFFFFF"
+          "color" => 0xFFFFFFFF
         },
         "bottom" => %{
           "width" => 2,
-          "color" => "#FFFFFF"
+          "color" => 0xFFFFFFFF
         },
         "right" => %{
           "width" => 2,
-          "color" => "#FFFFFF"
+          "color" => 0xFFFFFFFF
         }
       }
     }
@@ -49,18 +49,20 @@ defmodule ApplicationRunner.StyledContainerValidatorTest do
              ApplicationRunner.UIValidator.validate_and_build_component(json, "")
   end
 
-  test "valid styledContainer with borderRadius" do
+  test "valid container with borderRadius" do
     json = %{
-      "type" => "styledContainer",
+      "type" => "container",
       "child" => %{
         "type" => "text",
         "value" => "foo"
       },
-      "borderRadius" => %{
-        "topLeft" => %{"x" => 5.0, "y" => 5.0},
-        "topRight" => %{"x" => 5.0, "y" => 5.0},
-        "bottomLeft" => %{"x" => 5.0, "y" => 5.0},
-        "bottomRight" => %{"x" => 5.0, "y" => 5.0}
+      "decoration" => %{
+        "borderRadius" => %{
+          "topLeft" => %{"x" => 5.0, "y" => 5.0},
+          "topRight" => %{"x" => 5.0, "y" => 5.0},
+          "bottomLeft" => %{"x" => 5.0, "y" => 5.0},
+          "bottomRight" => %{"x" => 5.0, "y" => 5.0}
+        }
       }
     }
 
@@ -68,18 +70,18 @@ defmodule ApplicationRunner.StyledContainerValidatorTest do
              ApplicationRunner.UIValidator.validate_and_build_component(json, "")
   end
 
-  test "invalid styledContainer forgotten child" do
+  test "invalid container forgotten child" do
     json = %{
-      "type" => "styledContainer"
+      "type" => "container"
     }
 
     assert {:error, [{"Required property child was not present.", ""}]} ==
              ApplicationRunner.UIValidator.validate_and_build_component(json, "")
   end
 
-  test "invalid styledContainer border is invalid" do
+  test "invalid container border" do
     json = %{
-      "type" => "styledContainer",
+      "type" => "container",
       "child" => %{
         "type" => "text",
         "value" => "foo"
@@ -87,19 +89,19 @@ defmodule ApplicationRunner.StyledContainerValidatorTest do
       "border" => %{
         "top" => %{
           "width" => "invalid",
-          "color" => "#FFFFFF"
+          "color" => 0xFFFFFFFF
         },
         "left" => %{
           "width" => "invalid",
-          "color" => "#FFFFFF"
+          "color" => 0xFFFFFFFF
         },
         "bottom" => %{
           "width" => "invalid",
-          "color" => "#FFFFFF"
+          "color" => 0xFFFFFFFF
         },
         "right" => %{
           "width" => "invalid",
-          "color" => "#FFFFFF"
+          "color" => 0xFFFFFFFF
         }
       }
     }
