@@ -30,8 +30,7 @@ defmodule ApplicationRunner.SessionManager do
 
   @impl true
   def handle_info(:timeout, state) do
-    app_id = Keyword.fetch!(state.opts, :app_id)
-    SessionManagers.terminate_session(app_id, self())
+    SessionManagers.terminate_session(self())
     {:noreply, state}
   end
 

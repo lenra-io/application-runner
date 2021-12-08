@@ -5,7 +5,7 @@ defmodule ApplicationRunner.SessionManagers do
   """
   use DynamicSupervisor
 
-  alias ApplicationRunner.{AppManagers, AppManager, SessionManager}
+  alias ApplicationRunner.{AppManagers, SessionManager}
 
   def start_link(opts) do
     DynamicSupervisor.start_link(__MODULE__, opts, name: __MODULE__)

@@ -4,7 +4,7 @@ defmodule ApplicationRunner.AppManager do
   """
   use GenServer
 
-  alias ApplicationRunner.{AppManagers, AppSupervisor, SessionManagers}
+  alias ApplicationRunner.{AppManagers, AppSupervisor}
 
   @inactivity_timeout Application.compile_env!(:application_runner, :app_inactivity_timeout)
 
@@ -20,7 +20,6 @@ defmodule ApplicationRunner.AppManager do
 
   @impl true
   def init(opts) do
-    app_id = Keyword.fetch!(opts, :app_id)
     {:ok, app_supervisor_pid} = AppSupervisor.start_link(opts)
     # Link the process to kill the manager if the supervisor is killed.
     # The AppManager should be restarted by the AppManagers then it will restart the supervisor.
