@@ -4,12 +4,18 @@ defmodule ApplicationRunner.AppManager do
   """
   use GenServer
 
-  alias ApplicationRunner.{AppManagers, AppSupervisor}
+  alias ApplicationRunner.{AppManagers, AppSupervisor, SessionManagers}
 
-  @inactivity_timeout Application.fetch_env!(:application_runner, :app_inactivity_timeout)
+  @inactivity_timeout Application.compile_env!(:application_runner, :app_inactivity_timeout)
 
   def start_link(opts) do
-    GenServer.start_link(__MODULE__, opts)
+    app_id = Keyword.fetch!(opts, :app_id)
+
+    with {:ok, pid} <-
+           GenServer.start_link(__MODULE__, opts, name: {:via, :swarm, {:app, app_id}}) do
+      Swarm.join(:apps, pid)
+      {:ok, pid}
+    end
   end
 
   @impl true
@@ -22,12 +28,10 @@ defmodule ApplicationRunner.AppManager do
 
     {
       :ok,
-      [app_supervisor_pid: app_supervisor_pid, app_state: load_app_state(app_id)],
+      [app_supervisor_pid: app_supervisor_pid],
       @inactivity_timeout
     }
   end
-
-  defdelegate load_app_state(app_id), to: Application.fetch_env!(:application_runner, :app_loader)
 
   @doc """
     return the app-level module.
@@ -40,13 +44,16 @@ defmodule ApplicationRunner.AppManager do
         {name, _, _, _} -> module_name == name
       end)
       |> case do
-        {_, pid, _, _} -> {:ok, pid}
-        :no_such_module -> raise "No such Module in AppSupervisor. This should not happen."
+        {_, pid, _, _} ->
+          {:ok, pid}
+
+        {:error, :no_such_module} ->
+          raise "No such Module in AppSupervisor. This should not happen."
       end
     end
   end
 
-  def fetch_supervisor_pid(app_manager_pid) when is_pid(app_manager_pid) do
+  defp fetch_supervisor_pid(app_manager_pid) when is_pid(app_manager_pid) do
     {:ok, GenServer.call(app_manager_pid, :get_app_supervisor_pid)}
   end
 

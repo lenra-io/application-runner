@@ -5,11 +5,18 @@ defmodule ApplicationRunner.SessionManager do
   use GenServer
   alias ApplicationRunner.{SessionManagers, SessionSupervisor}
 
-  @inactivity_timeout Application.fetch_env!(:application_runner, :session_inactivity_timeout)
+  @inactivity_timeout Application.compile_env!(:application_runner, :session_inactivity_timeout)
 
   def start_link(opts) do
     session_id = Keyword.fetch!(opts, :session_id)
-    GenServer.start_link(__MODULE__, opts, name: {:via, :swarm, {:session, session_id}})
+    app_id = Keyword.fetch!(opts, :app_id)
+
+    with {:ok, pid} <-
+           GenServer.start_link(__MODULE__, opts, name: {:via, :swarm, {:session, session_id}}) do
+      Swarm.join(:sessions, pid)
+      Swarm.join({:sessions, app_id}, pid)
+      {:ok, pid}
+    end
   end
 
   @impl true
@@ -30,7 +37,7 @@ defmodule ApplicationRunner.SessionManager do
 
   @doc """
     return the app-level module.
-    This can be used to get module declared in the `AppSupervisor` (like the cache module for example)
+    This can be used to get module declared in the `SessionSupervisor` (like the cache module for example)
   """
   def fetch_module_pid(session_manager_pid, module_name) when is_pid(session_manager_pid) do
     with {:ok, supervisor_pid} <- fetch_supervisor_pid(session_manager_pid) do
@@ -43,7 +50,7 @@ defmodule ApplicationRunner.SessionManager do
           {:ok, pid}
 
         {:error, :no_such_module} ->
-          raise "No such Module in AppSupervisor. This should not happen."
+          raise "No such Module in SessionSupervisor. This should not happen."
       end
     end
   end
@@ -58,5 +65,16 @@ defmodule ApplicationRunner.SessionManager do
       nil -> raise "No SessionSupervisor. This should not happen."
       res -> {:reply, res, state, @inactivity_timeout}
     end
+  end
+
+  @doc """
+    This callback is called when the `SessionManagers` is asked to kill this node.
+    We cannot call directly `DynamicSupervisor.terminate_child/2` as we could be asking it on the wrong node.
+    To prevent this we simply ask the child to call `DynamicSupervisor.terminate_child/2`to ensure that the correct SessionManagers is called.
+  """
+  @impl true
+  def handle_cast(:stop, state) do
+    SessionManagers.terminate_session(self())
+    {:noreply, state}
   end
 end

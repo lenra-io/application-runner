@@ -6,7 +6,6 @@ defmodule ApplicationRunner.Application do
   require Logger
   use Application
 
-
   def start(_type, _args) do
     topologies = [
       example: [
@@ -23,7 +22,8 @@ defmodule ApplicationRunner.Application do
 
       # Start the cluster supervisor to handle all the nodes in the cluster
       {Cluster.Supervisor, [topologies, [name: LenraDataPoc.ClusterSupervisor]]},
-      ApplicationRunner.AppManagers
+      ApplicationRunner.AppManagers,
+      ApplicationRunner.SessionManagers
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html

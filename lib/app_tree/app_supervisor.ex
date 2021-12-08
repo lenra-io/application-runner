@@ -13,7 +13,6 @@ defmodule ApplicationRunner.AppSupervisor do
     children =
       [
         # ApplicationRunner.Cache,
-        ApplicationRunner.SessionManagers
       ] ++ Application.get_env(:application_runner, :additional_app_modules, [])
 
     Supervisor.init(children, strategy: :one_for_one)
