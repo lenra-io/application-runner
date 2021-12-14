@@ -5,10 +5,10 @@ defmodule ApplicationRunner.SessionManagers do
   """
   use DynamicSupervisor
 
-  alias ApplicationRunner.{AppManagers, AppManager, SessionManager}
+  alias ApplicationRunner.{AppManagers, SessionManager}
 
   def start_link(opts) do
-    DynamicSupervisor.start_link(__MODULE__, opts)
+    DynamicSupervisor.start_link(__MODULE__, opts, name: __MODULE__)
   end
 
   @impl true
@@ -25,39 +25,27 @@ defmodule ApplicationRunner.SessionManagers do
   """
   @spec start_session(number(), term()) :: {:error, any} | {:ok, pid()}
   def start_session(app_id, session_id) do
-    with {:ok, _pid} <- ensure_app_started(app_id),
-         {:ok, session_managers_pid} <- fetch_session_managers_pid(app_id),
-         {:ok, pid} <-
-           DynamicSupervisor.start_child(
-             session_managers_pid,
-             {SessionManager, [app_id: app_id, session_id: session_id]}
-           ) do
-      Swarm.join(:sessions, pid)
-      {:ok, pid}
+    with {:ok, _pid} <- AppManagers.ensure_app_started(app_id) do
+      DynamicSupervisor.start_child(
+        ApplicationRunner.SessionManagers,
+        {SessionManager, [app_id: app_id, session_id: session_id]}
+      )
     end
   end
 
   @doc """
-    Ensure that the app process is started. Start the app if not.
+    Stop the `SessionManager` with the given `session_id` and return `:ok`.
+    If there is no `SessionManager` for the given `session_id`, then return `{:error, :not_started}`
   """
-  @spec ensure_app_started(number()) :: {:ok, pid}
-  def ensure_app_started(app_id) do
-    case AppManagers.start_app(app_id) do
-      {:ok, pid} -> {:ok, pid}
-      {:error, {:already_registered, pid}} -> {:ok, pid}
+  @spec stop_session(number()) :: :ok | {:error, :app_not_started}
+  def stop_session(session_id) do
+    with {:ok, pid} <- fetch_session_manager_pid(session_id) do
+      GenServer.cast(pid, :stop)
     end
   end
 
-  defp fetch_session_managers_pid(app_id) do
-    with {:ok, pid} <- AppManagers.fetch_app_manager_pid(app_id) do
-      AppManager.fetch_module_pid(pid, ApplicationRunner.SessionManagers)
-    end
-  end
-
-  def terminate_session(app_id, child_pid) do
-    with {:ok, pid} <- fetch_session_managers_pid(app_id) do
-      DynamicSupervisor.terminate_child(pid, child_pid)
-    end
+  def terminate_session(session_manager_pid) do
+    DynamicSupervisor.terminate_child(ApplicationRunner.SessionManagers, session_manager_pid)
   end
 
   @spec fetch_session_manager_pid(any) :: {:error, :session_not_started} | {:ok, pid()}

@@ -7,10 +7,11 @@ config :ex_component_schema,
 
 config :application_runner,
   adapter: ApplicationRunner.ApplicationRunnerAdapter,
-  app_loader: ApplicationRunner.AppLoaderImpl,
   # 10 min
   session_inactivity_timeout: 1000 * 60 * 10,
   # 60 min
   app_inactivity_timeout: 1000 * 60 * 60,
   additional_app_modules: [],
   additional_session_modules: []
+
+import_config "#{Mix.env()}.exs"

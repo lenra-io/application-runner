@@ -5,6 +5,8 @@ defmodule ApplicationRunner.AppManagers do
   """
   use DynamicSupervisor
 
+  alias ApplicationRunner.{AppManagers}
+
   @doc false
   def start_link(opts) do
     DynamicSupervisor.start_link(__MODULE__, opts, name: __MODULE__)
@@ -21,7 +23,7 @@ defmodule ApplicationRunner.AppManagers do
   """
   @spec fetch_app_manager_pid(number()) :: {:error, :app_not_started} | {:ok, pid()}
   def fetch_app_manager_pid(app_id) do
-    case Swarm.whereis_name(swarm_id(app_id)) do
+    case Swarm.whereis_name({:app, app_id}) do
       :undefined -> {:error, :app_not_started}
       pid -> {:ok, pid}
     end
@@ -34,19 +36,24 @@ defmodule ApplicationRunner.AppManagers do
     The children of this `AppManager` process are restarted from scratch. That means the Sessions process will be lost.
     The app cannot be started twice.
     If the app is not already started, it returns `{:ok, <PID>}`
-    If the app is already started, return `{:error, {:already_registered, <PID>}}`
+    If the app is already started, return `{:error, {:already_started, <PID>}}`
   """
-  @spec start_app(number()) :: {:error, {:already_registered, pid()}} | {:ok, pid()}
+  @spec start_app(number()) :: {:error, {:already_started, pid()}} | {:ok, pid()}
   def start_app(app_id) do
-    with {:ok, pid} = res <-
-           Swarm.register_name(
-             swarm_id(app_id),
-             ApplicationRunner.AppManagers,
-             :handle_start_app,
-             [[app_id: app_id]]
-           ) do
-      Swarm.join(:apps, pid)
-      res
+    DynamicSupervisor.start_child(
+      AppManagers,
+      {ApplicationRunner.AppManager, [app_id: app_id]}
+    )
+  end
+
+  @doc """
+    Ensure that the app process is started. Start the app if not.
+  """
+  @spec ensure_app_started(number()) :: {:ok, pid}
+  def ensure_app_started(app_id) do
+    case AppManagers.start_app(app_id) do
+      {:ok, pid} -> {:ok, pid}
+      {:error, {:already_started, pid}} -> {:ok, pid}
     end
   end
 
@@ -57,45 +64,13 @@ defmodule ApplicationRunner.AppManagers do
   @spec stop_app(number()) :: :ok | {:error, :app_not_started}
   def stop_app(app_id) do
     with {:ok, pid} <- fetch_app_manager_pid(app_id) do
+      # Stop all the session node for the given app and stop the app.
+      Swarm.publish({:sessions, app_id}, :stop)
       GenServer.cast(pid, :stop)
     end
   end
 
-  @doc """
-  This broadcast the (async) message to all the `AppManager`. Does not wait for a response.
-  The message will be handled by `handle_info/2` in the `AppManager`
-  """
-  @spec broadcast(any()) :: :ok
-  def broadcast(message) do
-    Swarm.publish(:apps, message)
-  end
-
-  @doc """
-    This broadcast the sync message to all the `AppManager` and wait for all the responses.
-    The message will be handled by `handle_call/2` in the `AppManager`
-    Returns te list of responses.
-  """
-  @spec broadcast_call(term()) :: [term()]
-  def broadcast_call(message) do
-    Swarm.multi_call(:apps, message)
-  end
-
-  defp swarm_id(app_id) do
-    {:app, app_id}
-  end
-
   def terminate_app(app_manager_pid) do
     DynamicSupervisor.terminate_child(ApplicationRunner.AppManagers, app_manager_pid)
-  end
-
-  # This @doc false ensure that the function will not be in the doc.
-  # this function should never be called directly. It is called by swarm to create the process. (see `start_app/1` above)
-  @doc false
-  @spec handle_start_app(number()) :: {:error, any} | {:ok, pid}
-  def handle_start_app(opts) do
-    DynamicSupervisor.start_child(
-      ApplicationRunner.AppManagers,
-      {ApplicationRunner.AppManager, opts}
-    )
   end
 end

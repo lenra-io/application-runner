@@ -8,7 +8,10 @@ defmodule ApplicationRunner.MixProject do
       elixir: "~> 1.12",
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
-      deps: deps()
+      deps: deps(),
+      aliases: [
+        test: "test --no-start"
+      ]
     ]
   end
 
@@ -33,7 +36,6 @@ defmodule ApplicationRunner.MixProject do
       {:jason, "~> 1.2"},
       {:json_diff, "~> 0.1"},
       {:swarm, "~> 3.0"},
-      {:libcluster, "~> 3.3"},
       {:cachex, "~> 3.4"}
     ]
   end
