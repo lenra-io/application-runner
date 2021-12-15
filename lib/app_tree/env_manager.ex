@@ -72,6 +72,17 @@ defmodule ApplicationRunner.EnvManager do
     {:ok, GenServer.call(env_manager_pid, :get_env_supervisor_pid)}
   end
 
+  def get_manifest(env_id) do
+    with {:ok, pid} <- EnvManagers.fetch_env_manager_pid(env_id) do
+      GenServer.call(pid, :get_manifest)
+    end
+  end
+
+  @impl true
+  def handle_call(:get_manifest, _from, state) do
+    {:reply, Map.get(state, :manifest), state, @inactivity_timeout}
+  end
+
   @impl true
   def handle_call(:get_env_supervisor_pid, _from, state) do
     case Map.get(state, :env_supervisor_pid) do

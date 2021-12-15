@@ -6,7 +6,15 @@ defmodule ApplicationRunner.ApplicationRunnerAdapter do
 
   alias ApplicationRunner.{SessionState}
 
-  @root %{"type" => "text", "value" => "foo"}
+  @root %{
+    "type" => "flex",
+    "children" => [
+      %{"type" => "text", "value" => "foo"},
+      %{"type" => "widget", "name" => "w1"}
+    ]
+  }
+  @w1 %{"type" => "text", "value" => "bar"}
+
   @manifest %{"widgets" => %{"root" => @root}, "entrypoint" => "root"}
 
   @impl true
@@ -17,6 +25,10 @@ defmodule ApplicationRunner.ApplicationRunnerAdapter do
   @impl true
   def get_widget("root", _data, _props) do
     {:ok, @root}
+  end
+
+  def get_widget("w1", _, _) do
+    {:ok, @w1}
   end
 
   def get_widget(name, _, _) do

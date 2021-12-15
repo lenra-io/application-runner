@@ -8,9 +8,12 @@ defmodule ApplicationRunner.SessionManager do
     SessionManagers,
     SessionSupervisor,
     SessionState,
+    EnvManager,
     WidgetCache,
     WidgetContext,
-    ActionBuilder
+    ActionBuilder,
+    UiContext,
+    UIValidator
   }
 
   @inactivity_timeout Application.compile_env!(:application_runner, :session_inactivity_timeout)
@@ -57,39 +60,55 @@ defmodule ApplicationRunner.SessionManager do
     return the app-level module.
     This can be used to get module declared in the `SessionSupervisor` (like the cache module for example)
   """
-  def fetch_module_pid(session_manager_pid, module_name) when is_pid(session_manager_pid) do
-    with {:ok, supervisor_pid} <- fetch_supervisor_pid(session_manager_pid) do
-      Supervisor.which_children(supervisor_pid)
-      |> Enum.find({:error, :no_such_module}, fn
-        {name, _, _, _} -> module_name == name
-      end)
-      |> case do
-        {_, pid, _, _} ->
-          {:ok, pid}
+  def fetch_module_pid(%SessionState{session_supervisor_pid: session_supervisor_pid}, module_name) do
+    Supervisor.which_children(session_supervisor_pid)
+    |> Enum.find({:error, :no_such_module}, fn
+      {name, _, _, _} -> module_name == name
+    end)
+    |> case do
+      {_, pid, _, _} ->
+        {:ok, pid}
 
-        {:error, :no_such_module} ->
-          raise "No such Module in SessionSupervisor. This should not happen."
-      end
+      {:error, :no_such_module} ->
+        raise "No such Module in SessionSupervisor. This should not happen."
     end
   end
 
-  defp fetch_supervisor_pid(session_manager_pid) when is_pid(session_manager_pid) do
-    {:ok, GenServer.call(session_manager_pid, :get_session_supervisor_pid)}
-  end
-
   def get_widget(%SessionState{} = session_state, %WidgetContext{} = widget_context) do
-    with {:ok, env_pid} <- SessionManagers.fetch_session_manager_pid(session_state.session_id),
-         {:ok, cache_pid} <- fetch_module_pid(env_pid, WidgetCache),
+    with {:ok, cache_pid} <- fetch_module_pid(session_state, WidgetCache),
          {:ok, data} <- ActionBuilder.get_data(session_state) do
       WidgetCache.get_widget(cache_pid, widget_context.name, data, widget_context.props)
     end
   end
 
-  def get_ui() do
+  def get_ui(session_id) do
+    with {:ok, pid} <- SessionManagers.fetch_session_manager_pid(session_id) do
+      GenServer.call(pid, :get_ui)
+    end
   end
 
-  @impl
+  @impl true
   def handle_call(:get_ui, _from, state) do
+    env_id = Map.get(state, :env_id)
+
+    %{"entrypoint" => entrypoint} = EnvManager.get_manifest(env_id)
+    uuid = UUID.uuid1()
+
+    {:ok, ui_context} =
+      UIValidator.get_and_build_widget(
+        state,
+        %UiContext{
+          widgets_map: %{},
+          listeners_map: %{}
+        },
+        %WidgetContext{
+          id: uuid,
+          name: entrypoint
+        }
+      )
+
+    {:reply, {:ok, %{"entrypoint" => entrypoint, "widgets" => ui_context.widgets_map}}, state,
+     @inactivity_timeout}
   end
 
   @impl true
