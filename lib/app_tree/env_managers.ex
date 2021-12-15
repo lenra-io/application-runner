@@ -21,10 +21,10 @@ defmodule ApplicationRunner.EnvManagers do
   @doc """
     Fetch the `EnvManager` pid corresponding to the `env_id`.
   """
-  @spec fetch_env_manager_pid(number()) :: {:error, :app_not_started} | {:ok, pid()}
+  @spec fetch_env_manager_pid(number()) :: {:error, :env_not_started} | {:ok, pid()}
   def fetch_env_manager_pid(env_id) do
-    case Swarm.whereis_name({:app, env_id}) do
-      :undefined -> {:error, :app_not_started}
+    case Swarm.whereis_name({:env, env_id}) do
+      :undefined -> {:error, :env_not_started}
       pid -> {:ok, pid}
     end
   end

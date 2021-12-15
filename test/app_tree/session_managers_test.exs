@@ -5,10 +5,10 @@ defmodule ApplicationRunner.SessionManagersTest do
     Test the `ApplicationRunner.SessionManagersTest` module
   """
 
-  alias ApplicationRunner.{AppManagers, SessionManagers}
+  alias ApplicationRunner.{EnvManagers, SessionManagers}
 
   setup do
-    start_supervised(AppManagers)
+    start_supervised(EnvManagers)
     start_supervised(SessionManagers)
     :ok
   end

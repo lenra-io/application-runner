@@ -50,7 +50,7 @@ defmodule ApplicationRunner.EnvManager do
           {:ok, pid}
 
         {:error, :no_such_module} ->
-          raise "No such Module in AppSupervisor. This should not happen."
+          raise "No such Module in EnvSupervisor. This should not happen."
       end
     end
   end
