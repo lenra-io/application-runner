@@ -26,61 +26,56 @@ defmodule ApplicationRunner.UIValidator do
         %UiContext{} = ui_context,
         %WidgetContext{} = current_widget
       ) do
-    with {:ok, widget} <- EnvManager.get_widget(session_state, widget_context),
+    with {:ok, widget} <- EnvManager.get_widget(session_state, current_widget),
          {:ok, component, new_app_context} <-
            build_component(session_state, widget, ui_context, current_widget) do
       {:ok, put_in(new_app_context.widgets_map[current_widget.id], component)}
     end
   end
 
-  defp get_data(_app, _widget) do
-    {:ok,
-     %{
-       "user" => %{
-         "id" => 1,
-         "page" => "home_pages",
-         "pseudo" => "test_user",
-         "name" => "Test User"
-       }
-     }}
-  end
-
   @spec build_component(SessionState.t(), widget_ui(), UiContext.t(), WidgetContext.t()) ::
           {:ok, component(), UiContext.t()} | {:error, build_errors()}
   def build_component(
         session_state,
-        %{"type" => "widget" = comp_type} = component,
-        ui_context,
-        widget_context
-      ) do
-    with schema_path <- JsonSchemata.get_component_path(comp_type),
-         {:ok, _} <-
-           validate_with_error(schema_path, component, widget_context) do
-      uuid = UUID.uuid1()
-
-      new_widget_context = %WidgetContext{
-        id: uuid,
-        name: component["name"],
-        data_query: component["query"],
-        props: component["props"],
-        prefix_path: widget_context.prefix_path
-      }
-
-      {:ok, new_app_context} = get_and_build_widget(session_state, ui_context, new_widget_context)
-      {:ok, %{"type" => "widget", "id" => uuid, "name" => component["name"]}, new_app_context}
-    end
-  end
-
-  def build_component(
-        %SessionState{} = session_state,
         %{"type" => comp_type} = component,
         ui_context,
         widget_context
       ) do
     with schema_path <- JsonSchemata.get_component_path(comp_type),
-         {:ok, %{listeners: listeners_keys, children: children_keys, child: child_keys}} <-
-           validate_with_error(schema_path, component, widget_context),
-         {:ok, children_map, merged_children_app_context} <-
+         {:ok, validation_data} <- validate_with_error(schema_path, component, widget_context) do
+      case comp_type do
+        "widget" ->
+          handle_widget(session_state, component, ui_context, widget_context)
+
+        _ ->
+          handle_component(session_state, component, ui_context, widget_context, validation_data)
+      end
+    end
+  end
+
+  defp handle_widget(session_state, component, ui_context, widget_context) do
+    uuid = UUID.uuid1()
+
+    new_widget_context = %WidgetContext{
+      id: uuid,
+      name: component["name"],
+      data_query: component["query"],
+      props: component["props"],
+      prefix_path: widget_context.prefix_path
+    }
+
+    {:ok, new_app_context} = get_and_build_widget(session_state, ui_context, new_widget_context)
+    {:ok, %{"type" => "widget", "id" => uuid, "name" => component["name"]}, new_app_context}
+  end
+
+  def handle_component(
+        %SessionState{} = session_state,
+        component,
+        ui_context,
+        widget_context,
+        %{listeners: listeners_keys, children: children_keys, child: child_keys}
+      ) do
+    with {:ok, children_map, merged_children_app_context} <-
            build_children_list(
              session_state,
              component,

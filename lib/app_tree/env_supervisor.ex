@@ -10,7 +10,7 @@ defmodule ApplicationRunner.EnvSupervisor do
 
   @impl true
 
-  def init(opts) do
+  def init(_opts) do
     children =
       [
         ApplicationRunner.WidgetCache
