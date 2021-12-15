@@ -63,7 +63,7 @@ defmodule ApplicationRunner.EnvManagers do
   """
   @spec stop_env(number()) :: :ok | {:error, :app_not_started}
   def stop_env(env_id) do
-    with {:ok, _pid} <- fetch_env_manager_pid(env_id) do
+    with {:ok, pid} <- fetch_env_manager_pid(env_id) do
       # Stop all the session node for the given app and stop the app.
       Swarm.publish({:sessions, env_id}, :stop)
       GenServer.cast(pid, :stop)
