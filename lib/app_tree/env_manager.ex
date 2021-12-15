@@ -59,11 +59,11 @@ defmodule ApplicationRunner.EnvManager do
     {:ok, GenServer.call(env_manager_pid, :get_env_supervisor_pid)}
   end
 
-  def get_widget(env_id, name, data, props) do
-    with {:ok, env_pid} <- EnvManagers.fetch_env_manager_pid(env_id),
-         {:ok, cache_pid} <- fetch_module_pid(env_pid, WidgetCache) do
-      WidgetCache.get_widget(cache_pid, name, data, props)
-    end
+  def get_widget(%SessionState{} = session_state, %WidgetContext{}) = widget_context do
+    # with {:ok, env_pid} <- EnvManagers.fetch_env_manager_pid(env_id),
+    #      {:ok, cache_pid} <- fetch_module_pid(env_pid, WidgetCache) do
+    #   WidgetCache.get_widget(cache_pid, name, data, props)
+    # end
   end
 
   @impl true

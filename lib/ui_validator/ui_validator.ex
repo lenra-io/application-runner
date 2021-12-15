@@ -26,26 +26,11 @@ defmodule ApplicationRunner.UIValidator do
         %UiContext{} = ui_context,
         %WidgetContext{} = current_widget
       ) do
-    with {:ok, data} <- get_data(session_state, current_widget),
-         {:ok, widget} <- get_widget(session_state, current_widget, data),
+    with {:ok, widget} <- EnvManager.get_widget(session_state, widget_context),
          {:ok, component, new_app_context} <-
            build_component(session_state, widget, ui_context, current_widget) do
       {:ok, put_in(new_app_context.widgets_map[current_widget.id], component)}
     end
-  end
-
-  defp get_widget(session_state, widget_context, data) do
-    # with {:ok, env_pid} <- EnvManagers.fetch_env_manager_pid(session_state.env_id),
-    # {:ok, cache_pid} <- EnvManager.fetch_module_pid(env_pid, CacheAsync) do
-    #   CacheAsync.call_function(cache_pid, ApplicationRunner.ActionBuilder, :get_widget, [ui_context, widget_context, data])
-    # end
-    # ApplicationRunner.ActionBuilder.get_widget(session_state, widget_context, data)
-    EnvManager.get_widget(
-      session_state.env_id,
-      widget_context.name,
-      data,
-      widget_context.props
-    )
   end
 
   defp get_data(_app, _widget) do
