@@ -7,12 +7,12 @@ defmodule ApplicationRunner.ActionBuilder do
 
   alias ApplicationRunner.{SessionState, UiContext, WidgetContext, UIValidator}
 
-  @spec first_run(UiContext.t()) :: {:ok, map()} | {:error, any()}
+  @spec first_run(SessionState.t()) :: {:ok, map()} | {:error, any()}
 
   @doc """
     This function build the first UI with default Entry Point `"InitData"` to generate the data model and `"MainUi"` to generate the UI
   """
-  def first_run(%SessionState{} = session_state) do
+  def first_run(session_state) do
     {:ok, %{"entrypoint" => entrypoint}} = get_manifest(session_state)
 
     uuid = UUID.uuid1()
