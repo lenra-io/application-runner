@@ -3,7 +3,15 @@ defmodule ApplicationRunner.SessionManager do
     This module is the Session supervisor that handle the SupervisorManager children modules.
   """
   use GenServer
-  alias ApplicationRunner.{SessionManagers, SessionSupervisor}
+
+  alias ApplicationRunner.{
+    SessionManagers,
+    SessionSupervisor,
+    SessionState,
+    WidgetCache,
+    WidgetContext,
+    ActionBuilder
+  }
 
   @inactivity_timeout Application.compile_env!(:application_runner, :session_inactivity_timeout)
 
@@ -57,6 +65,14 @@ defmodule ApplicationRunner.SessionManager do
 
   defp fetch_supervisor_pid(session_manager_pid) when is_pid(session_manager_pid) do
     {:ok, GenServer.call(session_manager_pid, :get_session_supervisor_pid)}
+  end
+
+  def get_widget(%SessionState{} = session_state, %WidgetContext{} = widget_context) do
+    with {:ok, env_pid} <- SessionManagers.fetch_session_manager_pid(session_state.session_id),
+         {:ok, cache_pid} <- fetch_module_pid(env_pid, WidgetCache),
+         {:ok, data} <- ActionBuilder.get_data(session_state) do
+      WidgetCache.get_widget(cache_pid, widget_context.name, data, widget_context.props)
+    end
   end
 
   @impl true

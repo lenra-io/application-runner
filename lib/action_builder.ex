@@ -5,7 +5,7 @@ defmodule ApplicationRunner.ActionBuilder do
 
   require Logger
 
-  alias ApplicationRunner.{SessionState, UiContext, WidgetContext, UIValidator}
+  alias ApplicationRunner.{SessionState, WidgetContext, UIValidator, UiContext}
 
   @spec first_run(SessionState.t()) :: {:ok, map()} | {:error, any()}
 
@@ -18,12 +18,19 @@ defmodule ApplicationRunner.ActionBuilder do
     uuid = UUID.uuid1()
 
     {:ok, ui_context} =
-      UIValidator.get_and_build_widget(Map.put(session_state, :entrypoint, uuid), %WidgetContext{
-        id: uuid,
-        name: entrypoint
-      })
+      UIValidator.get_and_build_widget(
+        session_state,
+        %UiContext{
+          widgets_map: %{},
+          listeners_map: %{}
+        },
+        %WidgetContext{
+          id: uuid,
+          name: entrypoint
+        }
+      )
 
-    {:ok, %{"entrypoint" => ui_context.entrypoint, "widgets" => ui_context.widgets_map}}
+    {:ok, %{"entrypoint" => entrypoint, "widgets" => ui_context.widgets_map}}
   end
 
   @behaviour ApplicationRunner.AdapterBehavior
@@ -36,6 +43,8 @@ defmodule ApplicationRunner.ActionBuilder do
   defdelegate run_listener(app, listener, data),
     to: Application.compile_env!(:application_runner, :adapter)
 
-  defdelegate get_data(action), to: Application.compile_env!(:application_runner, :adapter)
-  defdelegate save_data(action, data), to: Application.compile_env!(:application_runner, :adapter)
+  defdelegate get_data(session_state), to: Application.compile_env!(:application_runner, :adapter)
+
+  defdelegate save_data(session_state, data),
+    to: Application.compile_env!(:application_runner, :adapter)
 end

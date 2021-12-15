@@ -9,9 +9,7 @@ defmodule ApplicationRunner.UIValidator do
     SessionState,
     UiContext,
     WidgetContext,
-    CacheAsync,
-    EnvManager,
-    SessionManagers
+    SessionManager
   }
 
   @type widget_ui :: map()
@@ -26,7 +24,7 @@ defmodule ApplicationRunner.UIValidator do
         %UiContext{} = ui_context,
         %WidgetContext{} = current_widget
       ) do
-    with {:ok, widget} <- EnvManager.get_widget(session_state, current_widget),
+    with {:ok, widget} <- SessionManager.get_widget(session_state, current_widget),
          {:ok, component, new_app_context} <-
            build_component(session_state, widget, ui_context, current_widget) do
       {:ok, put_in(new_app_context.widgets_map[current_widget.id], component)}
@@ -68,13 +66,13 @@ defmodule ApplicationRunner.UIValidator do
     {:ok, %{"type" => "widget", "id" => uuid, "name" => component["name"]}, new_app_context}
   end
 
-  def handle_component(
-        %SessionState{} = session_state,
-        component,
-        ui_context,
-        widget_context,
-        %{listeners: listeners_keys, children: children_keys, child: child_keys}
-      ) do
+  defp handle_component(
+         %SessionState{} = session_state,
+         component,
+         ui_context,
+         widget_context,
+         %{listeners: listeners_keys, children: children_keys, child: child_keys}
+       ) do
     with {:ok, children_map, merged_children_app_context} <-
            build_children_list(
              session_state,

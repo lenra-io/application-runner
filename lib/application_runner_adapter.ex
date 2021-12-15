@@ -4,6 +4,8 @@ defmodule ApplicationRunner.ApplicationRunnerAdapter do
   """
   @behaviour ApplicationRunner.AdapterBehavior
 
+  alias ApplicationRunner.{SessionState}
+
   @impl true
   def get_manifest(_app) do
     {:ok, %{"widgets" => %{"root" => %{}}, "entrypoint" => "root"}}
@@ -20,16 +22,12 @@ defmodule ApplicationRunner.ApplicationRunnerAdapter do
   end
 
   @impl true
-  def get_data(_action) do
-    {:ok,
-     %ApplicationRunner.UiContext{
-       widgets_map: %{},
-       listeners_map: %{}
-     }}
+  def get_data(%SessionState{} = _session_state) do
+    {:ok, %{}}
   end
 
   @impl true
-  def save_data(_action, _data) do
-    {:ok, %{}}
+  def save_data(%SessionState{} = _session_state, _data) do
+    :ok
   end
 end
