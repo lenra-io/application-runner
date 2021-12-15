@@ -30,11 +30,21 @@ defmodule ApplicationRunner.SessionManager do
 
   @impl true
   def init(opts) do
+    session_id = Keyword.fetch!(opts, :session_id)
+    env_id = Keyword.fetch!(opts, :env_id)
+
     {:ok, session_supervisor_pid} = SessionSupervisor.start_link(opts)
     # Link the process to kill the manager if the supervisor is killed.
     # The SessionManager should be restarted by the SessionManagers then it will restart the supervisor.
     Process.link(session_supervisor_pid)
-    {:ok, [session_supervisor_pid: session_supervisor_pid, opts: opts], @inactivity_timeout}
+
+    session_state = %SessionState{
+      session_id: session_id,
+      env_id: env_id,
+      session_supervisor_pid: session_supervisor_pid
+    }
+
+    {:ok, session_state, @inactivity_timeout}
   end
 
   @impl true
@@ -75,9 +85,16 @@ defmodule ApplicationRunner.SessionManager do
     end
   end
 
+  def get_ui() do
+  end
+
+  @impl
+  def handle_call(:get_ui, _from, state) do
+  end
+
   @impl true
   def handle_call(:get_session_supervisor_pid, _from, state) do
-    case Keyword.fetch!(state, :session_supervisor_pid) do
+    case Map.fetch!(state, :session_supervisor_pid) do
       nil -> raise "No SessionSupervisor. This should not happen."
       res -> {:reply, res, state, @inactivity_timeout}
     end

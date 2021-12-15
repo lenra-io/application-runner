@@ -4,7 +4,7 @@ defmodule ApplicationRunner.EnvManager do
   """
   use GenServer
 
-  alias ApplicationRunner.{EnvManagers, EnvSupervisor}
+  alias ApplicationRunner.{EnvManagers, EnvSupervisor, EnvState, ActionBuilder}
 
   @inactivity_timeout Application.compile_env!(:application_runner, :app_inactivity_timeout)
 
@@ -20,14 +20,27 @@ defmodule ApplicationRunner.EnvManager do
 
   @impl true
   def init(opts) do
+    env_id = Keyword.fetch!(opts, :env_id)
+    build_number = Keyword.fetch!(opts, :build_number)
+    app_name = Keyword.fetch!(opts, :app_name)
+
     {:ok, env_supervisor_pid} = EnvSupervisor.start_link(opts)
     # Link the process to kill the manager if the supervisor is killed.
     # The EnvManager should be restarted by the EnvManagers then it will restart the supervisor.
     Process.link(env_supervisor_pid)
 
+    env_state = %EnvState{
+      env_id: env_id,
+      app_name: app_name,
+      build_number: build_number,
+      env_supervisor_pid: env_supervisor_pid
+    }
+
+    {:ok, manifest} = ActionBuilder.get_manifest(env_state)
+
     {
       :ok,
-      [env_supervisor_pid: env_supervisor_pid],
+      Map.put(env_state, :manifest, manifest),
       @inactivity_timeout
     }
   end
@@ -61,7 +74,7 @@ defmodule ApplicationRunner.EnvManager do
 
   @impl true
   def handle_call(:get_env_supervisor_pid, _from, state) do
-    case Keyword.get(state, :env_supervisor_pid) do
+    case Map.get(state, :env_supervisor_pid) do
       nil -> raise "No EnvSupervisor. This should not happen."
       res -> {:reply, res, state, @inactivity_timeout}
     end

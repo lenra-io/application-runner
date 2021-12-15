@@ -13,12 +13,12 @@ defmodule ApplicationRunner.EnvManagerTest do
   end
 
   test "Can EnvManager supervisor should exist and have the MockGenServer." do
-    assert {:ok, pid} = EnvManagers.start_env(1)
+    assert {:ok, pid} = EnvManagers.start_env(1, 1, "app")
     assert {:ok, _pid} = EnvManager.fetch_module_pid(pid, MockGenServer)
   end
 
   test "Can EnvManager supervisor should not have the NotExistGenServer" do
-    assert {:ok, pid} = EnvManagers.start_env(1)
+    assert {:ok, pid} = EnvManagers.start_env(1, 1, "app")
 
     assert_raise(
       RuntimeError,

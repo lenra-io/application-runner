@@ -6,14 +6,21 @@ defmodule ApplicationRunner.ApplicationRunnerAdapter do
 
   alias ApplicationRunner.{SessionState}
 
+  @root %{"type" => "text", "value" => "foo"}
+  @manifest %{"widgets" => %{"root" => @root}, "entrypoint" => "root"}
+
   @impl true
   def get_manifest(_app) do
-    {:ok, %{"widgets" => %{"root" => %{}}, "entrypoint" => "root"}}
+    {:ok, @manifest}
   end
 
   @impl true
-  def get_widget(_app, _widget, _data) do
-    {:ok, %{"root" => %{}}}
+  def get_widget("root", _data, _props) do
+    {:ok, @root}
+  end
+
+  def get_widget(name, _, _) do
+    raise "no component #{name}"
   end
 
   @impl true
@@ -23,7 +30,7 @@ defmodule ApplicationRunner.ApplicationRunnerAdapter do
 
   @impl true
   def get_data(%SessionState{} = _session_state) do
-    {:ok, %{}}
+    {:ok, %{"value" => "bar"}}
   end
 
   @impl true

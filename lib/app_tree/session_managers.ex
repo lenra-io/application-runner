@@ -23,9 +23,9 @@ defmodule ApplicationRunner.SessionManagers do
 
   The session should be started with the same session_id if the client socket is disconnected for a short period of time.
   """
-  @spec start_session(number(), term()) :: {:error, any} | {:ok, pid()}
-  def start_session(env_id, session_id) do
-    with {:ok, _pid} <- EnvManagers.ensure_env_started(env_id) do
+  @spec start_session(term(), number(), number(), String.t()) :: {:error, any} | {:ok, pid()}
+  def start_session(session_id, env_id, build_number, app_name) do
+    with {:ok, _pid} <- EnvManagers.ensure_env_started(env_id, build_number, app_name) do
       DynamicSupervisor.start_child(
         ApplicationRunner.SessionManagers,
         {SessionManager, [env_id: env_id, session_id: session_id]}
