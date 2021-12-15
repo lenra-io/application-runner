@@ -5,7 +5,7 @@ defmodule ApplicationRunner.SessionManagers do
   """
   use DynamicSupervisor
 
-  alias ApplicationRunner.{AppManagers, SessionManager}
+  alias ApplicationRunner.{EnvManagers, SessionManager}
 
   def start_link(opts) do
     DynamicSupervisor.start_link(__MODULE__, opts, name: __MODULE__)
@@ -17,18 +17,18 @@ defmodule ApplicationRunner.SessionManagers do
   end
 
   @doc """
-  Start session for the given app_id and session_id and add it to the :sessions group of swarm.
+  Start session for the given env_id and session_id and add it to the :sessions group of swarm.
   This in fact recreate a new process with the given session_id.
   This give the possibility for children modules to recreate their states (cache, UI etc..) if the session_id is the same as before.
 
   The session should be started with the same session_id if the client socket is disconnected for a short period of time.
   """
   @spec start_session(number(), term()) :: {:error, any} | {:ok, pid()}
-  def start_session(app_id, session_id) do
-    with {:ok, _pid} <- AppManagers.ensure_app_started(app_id) do
+  def start_session(env_id, session_id) do
+    with {:ok, _pid} <- EnvManagers.ensure_env_started(env_id) do
       DynamicSupervisor.start_child(
         ApplicationRunner.SessionManagers,
-        {SessionManager, [app_id: app_id, session_id: session_id]}
+        {SessionManager, [env_id: env_id, session_id: session_id]}
       )
     end
   end

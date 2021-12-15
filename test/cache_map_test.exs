@@ -34,22 +34,22 @@ defmodule ApplicationRunner.CacheMapTest do
 
 
   test "Can create cache_async" do
-    cache_map = :cache_widget
-    {:ok, _} = Cachex.start_link(cache_map)
-    {:ok, cache_async} = GenServer.start_link(ApplicationRunner.CacheAsync, nil)
+    {:ok, cache_pid} = GenServer.start_link(ApplicationRunner.CacheAsync, nil)
 
     tasks = [Task.async(fn ->
-      res = ApplicationRunner.CacheAsync.call_function(cache_async, cache_map, TestModule, :foo, [])
+      res = ApplicationRunner.CacheAsync.call_function(cache_pid, TestModule, :foo, [])
+
       IO.puts("T1")
       {res, System.system_time()}
     end),
     Task.async(fn ->
-      res = ApplicationRunner.CacheAsync.call_function(cache_async, cache_map, TestModule, :bar, [])
+      res = ApplicationRunner.CacheAsync.call_function(cache_pid, TestModule, :bar, [])
+
       IO.puts("T2")
       {res, System.system_time()}
     end),
     Task.async(fn ->
-      res = ApplicationRunner.CacheAsync.call_function(cache_async, cache_map, TestModule, :foo, [])
+      res = ApplicationRunner.CacheAsync.call_function(cache_pid, TestModule, :foo, [])
       IO.puts("T3")
       {res, System.system_time()}
     end)]
@@ -68,16 +68,14 @@ defmodule ApplicationRunner.CacheMapTest do
   end
 
   test "Stress test cache_async" do
-    cache_map = :cache_widget
-    {:ok, _} = Cachex.start_link(cache_map)
-    {:ok, cache_async} = GenServer.start_link(ApplicationRunner.CacheAsync, nil)
+    {:ok, cache_pid} = GenServer.start_link(ApplicationRunner.CacheAsync, nil)
 
     0..200
       |>Enum.to_list()
       |>Enum.map(fn _ ->
         Process.sleep(10)
         Task.async(fn ->
-        res = ApplicationRunner.CacheAsync.call_function(cache_async, cache_map, TestModule, :baz, [])
+        res = ApplicationRunner.CacheAsync.call_function(cache_pid, TestModule, :baz, [])
         res
       end)end)
       |> Task.await_many

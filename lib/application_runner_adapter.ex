@@ -22,12 +22,12 @@ defmodule ApplicationRunner.ApplicationRunnerAdapter do
   @impl true
   def get_data(_action) do
     {:ok,
-     %ApplicationRunner.AppContext{
-       user_id: 1,
-       app_name: "test",
-       build_number: 42,
-       action_logs_uuid: "truc"
-     }}
+      %ApplicationRunner.UiContext{
+        session_id: 1,
+        widgets_map: %{},
+        listeners_map: %{}
+      }
+    }
   end
 
   @impl true

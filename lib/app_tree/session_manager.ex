@@ -7,6 +7,7 @@ defmodule ApplicationRunner.SessionManager do
 
   @inactivity_timeout Application.compile_env!(:application_runner, :session_inactivity_timeout)
 
+  @spec start_link(keyword) :: :ignore | {:error, any} | {:ok, pid}
   def start_link(opts) do
     session_id = Keyword.fetch!(opts, :session_id)
     app_id = Keyword.fetch!(opts, :app_id)

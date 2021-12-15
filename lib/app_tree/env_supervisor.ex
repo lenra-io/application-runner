@@ -1,4 +1,4 @@
-defmodule ApplicationRunner.AppSupervisor do
+defmodule ApplicationRunner.EnvSupervisor do
   @moduledoc """
     This module handle the children module of an AppManager.
   """
@@ -9,7 +9,9 @@ defmodule ApplicationRunner.AppSupervisor do
   end
 
   @impl true
-  def init(_opts) do
+
+  def init(opts) do
+    _env_id = Keyword.fetch!(opts, :env_id)
     children =
       [
         # ApplicationRunner.Cache,
