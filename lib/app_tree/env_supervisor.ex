@@ -11,10 +11,9 @@ defmodule ApplicationRunner.EnvSupervisor do
   @impl true
 
   def init(opts) do
-    _env_id = Keyword.fetch!(opts, :env_id)
     children =
       [
-        # ApplicationRunner.Cache,
+        ApplicationRunner.WidgetCache
       ] ++ Application.get_env(:application_runner, :additional_app_modules, [])
 
     Supervisor.init(children, strategy: :one_for_one)

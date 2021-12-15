@@ -5,15 +5,11 @@ defmodule ApplicationRunner.SessionState do
   @enforce_keys [:session_id, :env_id]
   defstruct [
     :session_id,
-    :env_id,
-    :widgets_map,
-    :listeners_map
+    :env_id
   ]
 
   @type t :: %ApplicationRunner.SessionState{
-    session_id: integer(),
-    env_id: integer(),
-    widgets_map: map(),
-    listeners_map: map()
-  }
+          session_id: integer(),
+          env_id: integer()
+        }
 end
