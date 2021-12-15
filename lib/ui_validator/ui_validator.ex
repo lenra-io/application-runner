@@ -100,7 +100,7 @@ defmodule ApplicationRunner.UIValidator do
     end)
   end
 
-  @spec build_listener(map()) :: {:ok, map()}
+  @spec build_listener(SessionState.t(), map()) :: {:ok, map()}
   def build_listener(_session_state, listener) do
     case listener do
       %{"action" => action_code} ->
