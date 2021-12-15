@@ -9,7 +9,7 @@ defmodule ApplicationRunner.SessionSupervisor do
   def init(_opts) do
     children =
       [
-        # ApplicationRunner.CacheAsync,
+        ApplicationRunner.ListenersCache
       ] ++ Application.get_env(:application_runner, :additional_session_modules, [])
 
     Supervisor.init(children, strategy: :one_for_one)

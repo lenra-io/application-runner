@@ -1,3 +1,3 @@
 defmodule ApplicationRunner.WidgetCache do
-  use ApplicationRunner.CacheAsync
+  use ApplicationRunner.CacheAsyncMacro
 end

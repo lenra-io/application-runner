@@ -1,4 +1,4 @@
-defmodule ApplicationRunner.CacheAsync do
+defmodule ApplicationRunner.CacheAsyncMacro do
   defmacro __using__(_opts) do
     quote do
       use GenServer
@@ -16,7 +16,7 @@ defmodule ApplicationRunner.CacheAsync do
       def init(_) do
         {:ok, cache_pid} = CacheMap.start_link()
         Process.link(cache_pid)
-        state = %{ cache_pid: cache_pid, values: %{} }
+        state = %{cache_pid: cache_pid, values: %{}}
         {:ok, state}
       end
 
@@ -27,21 +27,29 @@ defmodule ApplicationRunner.CacheAsync do
         case CacheMap.get(state.cache_pid, key) do
           nil ->
             CacheMap.put(state.cache_pid, key, {:pending, nil})
-            {:noreply, put_in(state.values[key], [from | from_list]), {:continue, {:call_function, module, function_name, args}}}
-          {:pending, nil} -> {:noreply, put_in(state.values[key], [from | from_list])}
-          {:done, value} -> {:reply, value, state}
+
+            {:noreply, put_in(state.values[key], [from | from_list]),
+             {:continue, {:call_function, module, function_name, args}}}
+
+          {:pending, nil} ->
+            {:noreply, put_in(state.values[key], [from | from_list])}
+
+          {:done, value} ->
+            {:reply, value, state}
         end
       end
 
       def handle_cast({:call_function_done, key, res}, state) do
         Map.get(state.values, key, [])
-          |> Enum.each(fn pid -> GenServer.reply(pid, res) end)
+        |> Enum.each(fn pid -> GenServer.reply(pid, res) end)
+
         {:noreply, put_in(state.values[key], [])}
       end
 
       def handle_continue({:call_function, module, function_name, args}, state) do
         key = {module, function_name, args}
         pid = self()
+
         spawn(fn ->
           res = apply(module, function_name, args)
           CacheMap.put(state.cache_pid, key, {:done, res})
@@ -51,7 +59,6 @@ defmodule ApplicationRunner.CacheAsync do
 
         {:noreply, state}
       end
-
     end
   end
 end
