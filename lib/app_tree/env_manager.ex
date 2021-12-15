@@ -9,11 +9,11 @@ defmodule ApplicationRunner.EnvManager do
   @inactivity_timeout Application.compile_env!(:application_runner, :app_inactivity_timeout)
 
   def start_link(opts) do
-    app_id = Keyword.fetch!(opts, :app_id)
+    env_id = Keyword.fetch!(opts, :env_id)
 
     with {:ok, pid} <-
-           GenServer.start_link(__MODULE__, opts, name: {:via, :swarm, {:app, app_id}}) do
-      Swarm.join(:apps, pid)
+           GenServer.start_link(__MODULE__, opts, name: {:via, :swarm, {:env, env_id}}) do
+      Swarm.join(:envs, pid)
       {:ok, pid}
     end
   end
@@ -32,7 +32,8 @@ defmodule ApplicationRunner.EnvManager do
     }
   end
 
-  defdelegate load_env_state(env_id), to: Application.compile_env!(:application_runner, :app_loader)
+  #  defdelegate load_env_state(env_id),
+  #    to: Application.compile_env!(:application_runner, :app_loader)
 
   @doc """
     return the app-level module.

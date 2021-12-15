@@ -51,7 +51,7 @@ defmodule ApplicationRunner.EnvManagers do
   """
   @spec ensure_env_started(number()) :: {:ok, pid}
   def ensure_env_started(env_id) do
-    case EnvManagers.start_app(app_id) do
+    case EnvManagers.start_app(env_id) do
       {:ok, pid} -> {:ok, pid}
       {:error, {:already_started, pid}} -> {:ok, pid}
     end
@@ -63,7 +63,7 @@ defmodule ApplicationRunner.EnvManagers do
   """
   @spec stop_env(number()) :: :ok | {:error, :app_not_started}
   def stop_env(env_id) do
-    with {:ok, pid} <- fetch_env_manager_pid(app_id) do
+    with {:ok, pid} <- fetch_env_manager_pid(env_id) do
       # Stop all the session node for the given app and stop the app.
       Swarm.publish({:sessions, env_id}, :stop)
     end
@@ -72,5 +72,4 @@ defmodule ApplicationRunner.EnvManagers do
   def terminate_app(app_manager_pid) do
     DynamicSupervisor.terminate_child(ApplicationRunner.EnvManagers, app_manager_pid)
   end
-
 end
