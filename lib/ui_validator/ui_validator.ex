@@ -3,6 +3,7 @@ defmodule ApplicationRunner.UIValidator do
     Services to validate json with json schema
   """
 
+<<<<<<< Updated upstream
   alias ApplicationRunner.{
     JsonSchemata,
     Storage,
@@ -12,22 +13,34 @@ defmodule ApplicationRunner.UIValidator do
     EnvManager,
     SessionManagers
   }
+=======
+  alias ApplicationRunner.{JsonSchemata, Storage, SessionState, UiContext, WidgetContext, CacheAsync, EnvManager, SessionManagers}
+>>>>>>> Stashed changes
 
   @type widget_ui :: map()
   @type component :: map()
   @type error_tuple :: {String.t(), String.t()}
   @type build_errors :: list(error_tuple())
 
+<<<<<<< Updated upstream
   @spec get_and_build_widget(UiContext.t(), WidgetContext.t()) ::
           {:ok, UiContext.t()} | {:error, any()}
   def get_and_build_widget(%UiContext{} = ui_context, %WidgetContext{} = current_widget) do
     with {:ok, data} <- get_data(ui_context, current_widget),
          {:ok, widget} <- get_widget(ui_context, current_widget, data),
          {:ok, component, new_app_context} <- build_component(widget, ui_context, current_widget) do
+=======
+  @spec get_and_build_widget(SessionState.t(), UiContext.t(), WidgetContext.t()) :: {:ok, UiContext.t()} | {:error, any()}
+  def get_and_build_widget(%SessionState{} = session_state, %UiContext{} = ui_context, %WidgetContext{} = current_widget) do
+    with {:ok, data} <- get_data(session_state, current_widget),
+    {:ok, widget} <- get_widget(session_state, ui_context, current_widget, data),
+    {:ok, component, new_app_context} <- build_component(session_state, widget, ui_context, current_widget) do
+>>>>>>> Stashed changes
       {:ok, put_in(new_app_context.widgets_map[current_widget.widget_id], component)}
     end
   end
 
+<<<<<<< Updated upstream
   defp get_widget(ui_context, widget_context, data) do
     # {:ok, session_pid} = SessionManagers.fetch_session_manager_pid(ui_context.session_id)
 
@@ -35,6 +48,14 @@ defmodule ApplicationRunner.UIValidator do
 
     # CacheAsync.call_function(ApplicationRunner.ActionBuilder, "get_widget", [ui_context, widget_context, data])
     ApplicationRunner.ActionBuilder.get_widget(ui_context, widget_context, data)
+=======
+  defp get_widget(session_state, ui_context, widget_context, data) do
+    with {:ok, env_pid} <- EnvManagers.fetch_env_manager_pid(session_state.env_id),
+    {:ok, cache_pid} <- EnvManager.fetch_module_pid(env_pid, CacheAsync) do
+      CacheAsync.call_function(cache_pid, ApplicationRunner.ActionBuilder, :get_widget, [ui_context, widget_context, data])
+    end
+    # ApplicationRunner.ActionBuilder.get_widget(session_state, ui_context, widget_context, data)
+>>>>>>> Stashed changes
   end
 
   defp get_data(_app, _widget) do
@@ -49,6 +70,7 @@ defmodule ApplicationRunner.UIValidator do
      }}
   end
 
+<<<<<<< Updated upstream
   @spec build_component(widget_ui(), UiContext.t(), WidgetContext.t()) ::
           {:ok, component(), UiContext.t()} | {:error, build_errors()}
   def build_component(%{"type" => "widget" = comp_type} = component, ui_context, widget_context) do
@@ -67,18 +89,40 @@ defmodule ApplicationRunner.UIValidator do
 
       {:ok, new_app_context} = get_and_build_widget(ui_context, new_widget_context)
       {:ok, %{"type" => "widget", "id" => uuid, "name" => component["name"]}, new_app_context}
+=======
+  @spec build_component(SessionState.t(), widget_ui(), UiContext.t(), WidgetContext.t()) :: {:ok, component(), UiContext.t()} | {:error, build_errors()}
+  def build_component(session_state, %{"type" => "widget" = comp_type} = component, ui_context, widget_context) do
+    with schema_path <- JsonSchemata.get_component_path(comp_type),
+         {:ok, _} <-
+           validate_with_error(schema_path, component, widget_context) do
+            uuid = UUID.uuid1()
+            new_widget_context = %WidgetContext{
+              widget_id: uuid,
+              widget_name: component["name"],
+              data_query: component["query"],
+              props: component["props"],
+              prefix_path: widget_context.prefix_path}
+              {:ok, new_app_context} = get_and_build_widget(session_state, ui_context, new_widget_context)
+              {:ok, %{"type" => "widget", "id" => uuid, "name" => component["name"]}, new_app_context}
+>>>>>>> Stashed changes
     end
   end
 
-  def build_component(%{"type" => comp_type} = component, ui_context, widget_context) do
+  def build_component(%SessionState{} = session_state, %{"type" => comp_type} = component, ui_context, widget_context) do
     with schema_path <- JsonSchemata.get_component_path(comp_type),
          {:ok, %{listeners: listeners_keys, children: children_keys, child: child_keys}} <-
            validate_with_error(schema_path, component, widget_context),
          {:ok, children_map, merged_children_app_context} <-
-           build_children_list(component, children_keys, ui_context, widget_context),
+           build_children_list(session_state, component, children_keys, ui_context, widget_context),
          {:ok, child_map, merged_child_app_context} <-
+<<<<<<< Updated upstream
            build_child_list(component, child_keys, ui_context, widget_context),
          {:ok, listeners_map} <- build_listeners(component, listeners_keys) do
+=======
+           build_child_list(session_state, component, child_keys, ui_context, widget_context),
+         {:ok, listeners_map} <- build_listeners(session_state, component, listeners_keys) do
+
+>>>>>>> Stashed changes
       {:ok,
        component
        |> Map.merge(children_map)
@@ -101,10 +145,10 @@ defmodule ApplicationRunner.UIValidator do
     end
   end
 
-  @spec build_listeners(component(), list(String.t())) :: {:ok, map()} | {:error, list()}
-  def build_listeners(component, listeners) do
+  @spec build_listeners(SessionState.t(), component(), list(String.t())) :: {:ok, map()} | {:error, list()}
+  def build_listeners(session_state, component, listeners) do
     Enum.reduce(listeners, {:ok, %{}}, fn listener, {:ok, acc} ->
-      case build_listener(Map.get(component, listener)) do
+      case build_listener(session_state, Map.get(component, listener)) do
         {:ok, %{"code" => _} = built_listener} -> {:ok, Map.put(acc, listener, built_listener)}
         {:ok, %{}} -> {:ok, acc}
       end
@@ -112,7 +156,7 @@ defmodule ApplicationRunner.UIValidator do
   end
 
   @spec build_listener(map()) :: {:ok, map()}
-  def build_listener(listener) do
+  def build_listener(_session_state, listener) do
     case listener do
       %{"action" => action_code} ->
         props = Map.get(listener, "props", %{})
@@ -125,8 +169,9 @@ defmodule ApplicationRunner.UIValidator do
     end
   end
 
-  @spec build_child_list(component(), list(String.t()), UiContext.t(), WidgetContext.t()) ::
+  @spec build_child_list(SessionState.t(), component(), list(String.t()), UiContext.t(), WidgetContext.t()) ::
           {:ok, map(), UiContext.t()} | {:error, build_errors()}
+<<<<<<< Updated upstream
   def build_child_list(
         component,
         child_list,
@@ -135,6 +180,10 @@ defmodule ApplicationRunner.UIValidator do
       ) do
     Enum.reduce(child_list, {%{}, ui_context, []}, fn child_key,
                                                       {child_map, app_context_acc, errors} ->
+=======
+  def build_child_list(session_state, component, child_list, ui_context, %WidgetContext{prefix_path: prefix_path} = widget_context) do
+    Enum.reduce(child_list, {%{}, ui_context, []}, fn child_key, {child_map, app_context_acc, errors} ->
+>>>>>>> Stashed changes
       child_path = "#{prefix_path || ""}/#{child_key}"
 
       case Map.get(component, child_key) do
@@ -142,11 +191,16 @@ defmodule ApplicationRunner.UIValidator do
           {child_map, errors}
 
         child_comp ->
+<<<<<<< Updated upstream
           build_component(
             child_comp,
             ui_context,
             Map.put(widget_context, :prefix_path, child_path)
           )
+=======
+          build_component(session_state, child_comp, ui_context, Map.put(widget_context, :prefix_path, child_path))
+
+>>>>>>> Stashed changes
           |> case do
             {:ok, built_component, child_app_context} ->
               {
@@ -166,8 +220,9 @@ defmodule ApplicationRunner.UIValidator do
     end
   end
 
-  @spec build_children_list(component(), list(), UiContext.t(), WidgetContext.t()) ::
+  @spec build_children_list(SessionState.t(), component(), list(), UiContext.t(), WidgetContext.t()) ::
           {:ok, map(), UiContext.t()} | {:error, build_errors()}
+<<<<<<< Updated upstream
   def build_children_list(
         component,
         children_keys,
@@ -184,6 +239,14 @@ defmodule ApplicationRunner.UIValidator do
              ui_context,
              Map.put(widget_context, :prefix_path, children_path)
            ) do
+=======
+  def build_children_list(session_state, component, children_keys, %UiContext{} = ui_context, %WidgetContext{prefix_path: prefix_path} = widget_context) do
+
+    Enum.reduce(children_keys, {%{}, ui_context, []}, fn children_key, {children_map, app_context_acc, errors} ->
+      children_path = "#{prefix_path || ""}/#{children_key}"
+
+      case build_children(session_state, component, children_key, ui_context, Map.put(widget_context, :prefix_path, children_path)) do
+>>>>>>> Stashed changes
         {:ok, built_children, children_app_context} ->
           {
             Map.merge(children_map, %{children_key => built_children}),
@@ -201,14 +264,15 @@ defmodule ApplicationRunner.UIValidator do
     end
   end
 
-  @spec build_children(map, String.t(), UiContext.t(), WidgetContext.t()) ::
+  @spec build_children(SessionState.t(), map, String.t(), UiContext.t(), WidgetContext.t()) ::
           {:error, list(error_tuple())} | {:ok, list(component()), UiContext.t()}
-  def build_children(component, children_key, ui_context, widget_context) do
+  def build_children(session_state, component, children_key, ui_context, widget_context) do
     case Map.get(component, children_key) do
       nil ->
         {:ok, []}
 
       children ->
+<<<<<<< Updated upstream
         build_children_map(children, ui_context, widget_context)
     end
   end
@@ -218,17 +282,29 @@ defmodule ApplicationRunner.UIValidator do
          ui_context,
          %WidgetContext{prefix_path: prefix_path} = widget_context
        ) do
+=======
+
+        build_children_map(session_state, children, ui_context, widget_context)
+    end
+  end
+
+  defp build_children_map(session_state, children, ui_context, %WidgetContext{prefix_path: prefix_path} = widget_context) do
+>>>>>>> Stashed changes
     children
     |> Enum.with_index()
     |> Enum.reduce({[], ui_context, []}, fn {child, index},
                                             {built_components, app_context_acc, errors} ->
       children_path = "#{prefix_path || ""}/#{index}"
 
+<<<<<<< Updated upstream
       case build_component(
              child,
              ui_context,
              Map.put(widget_context, :prefix_path, children_path)
            ) do
+=======
+      case build_component(session_state, child, ui_context, Map.put(widget_context, :prefix_path, children_path)) do
+>>>>>>> Stashed changes
         {:ok, built_component, new_app_context} ->
           {built_components ++ [built_component],
            merge_app_context(app_context_acc, new_app_context), errors}
