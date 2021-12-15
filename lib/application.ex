@@ -16,7 +16,7 @@ defmodule ApplicationRunner.Application do
         ApplicationRunner.Storage
       ] ++
         if Mix.env() == :test do
-          [ApplicationRunner.Repo, ApplicationRunner.DB]
+          [ApplicationRunner.Repo]
         else
           []
         end
