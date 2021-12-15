@@ -14,7 +14,7 @@ defmodule ApplicationRunner.CacheAsyncMacro do
       end
 
       def init(_) do
-        {:ok, cache_pid} = CacheMap.start_link()
+        {:ok, cache_pid} = CacheMap.start_link(nil)
         Process.link(cache_pid)
         state = %{cache_pid: cache_pid, values: %{}}
         {:ok, state}

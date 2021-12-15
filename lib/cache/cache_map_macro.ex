@@ -1,9 +1,9 @@
 defmodule ApplicationRunner.CacheMapMacro do
   defmacro __using__(_opts) do
-    quote do
+    quote generated: true, location: :keep do
       use GenServer
 
-      def start_link() do
+      def start_link(_) do
         GenServer.start_link(__MODULE__, [], [])
       end
 
@@ -18,7 +18,6 @@ defmodule ApplicationRunner.CacheMapMacro do
       def delete(pid, key) do
         GenServer.cast(pid, {:expire, key})
       end
-
 
       def init(_) do
         state = %{}
