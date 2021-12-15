@@ -17,7 +17,7 @@ config :application_runner,
   ecto_repos: [ApplicationRunner.Repo],
   repo: ApplicationRunner.Repo
 
-config :application_runner, ApplicationRunner.Repo, database: "/tmp/db.db"
+config :application_runner, ApplicationRunner.Repo, database: ":memory:"
 
 config :swarm,
   debug: false
