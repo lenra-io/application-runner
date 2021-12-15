@@ -19,8 +19,8 @@ defmodule ApplicationRunner.AppManagersTest do
   test "Can start multiple Apps" do
     1..10
     |> Enum.to_list()
-    |> Enum.each(fn app_id ->
-      assert {:ok, _} = AppManagers.start_app(app_id)
+    |> Enum.each(fn env_id ->
+      assert {:ok, _} = AppManagers.start_app(env_id)
     end)
   end
 

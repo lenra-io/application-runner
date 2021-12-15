@@ -10,12 +10,12 @@ defmodule ApplicationRunner.SessionManager do
   @spec start_link(keyword) :: :ignore | {:error, any} | {:ok, pid}
   def start_link(opts) do
     session_id = Keyword.fetch!(opts, :session_id)
-    app_id = Keyword.fetch!(opts, :app_id)
+    env_id = Keyword.fetch!(opts, :env_id)
 
     with {:ok, pid} <-
            GenServer.start_link(__MODULE__, opts, name: {:via, :swarm, {:session, session_id}}) do
       Swarm.join(:sessions, pid)
-      Swarm.join({:sessions, app_id}, pid)
+      Swarm.join({:sessions, env_id}, pid)
       {:ok, pid}
     end
   end

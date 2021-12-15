@@ -5,7 +5,7 @@ defmodule ApplicationRunner.EnvManagers do
   """
   use DynamicSupervisor
 
-  alias ApplicationRunner.{AppManagers}
+  alias ApplicationRunner.{EnvManagers}
 
   @doc false
   def start_link(opts) do
@@ -51,7 +51,7 @@ defmodule ApplicationRunner.EnvManagers do
   """
   @spec ensure_env_started(number()) :: {:ok, pid}
   def ensure_env_started(env_id) do
-    case EnvManagers.start_app(env_id) do
+    case EnvManagers.start_env(env_id) do
       {:ok, pid} -> {:ok, pid}
       {:error, {:already_started, pid}} -> {:ok, pid}
     end

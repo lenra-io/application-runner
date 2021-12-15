@@ -12,7 +12,7 @@ defmodule ApplicationRunner.Application do
       ApplicationRunner.JsonSchemata,
       # Start the Cache Storage system (init all tables of storage)
       ApplicationRunner.Storage,
-      ApplicationRunner.AppManagers,
+      ApplicationRunner.EnvManagers,
       ApplicationRunner.SessionManagers
     ]
 
