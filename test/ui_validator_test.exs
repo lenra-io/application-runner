@@ -580,22 +580,26 @@ defmodule ApplicationRunner.UIValidatorTest do
         "children" => [%{"type" => "text", "value" => "trtt"}]
       },
       "root" => %{
-          "type" => "flex",
-          "children" => [%{"type" => "text", "value" => "zeaze"}, %{"type" => "widget", "name" => "test"}]
+        "type" => "flex",
+        "children" => [
+          %{"type" => "text", "value" => "zeaze"},
+          %{"type" => "widget", "name" => "test"}
+        ]
       }
     }
 
-    {:ok, app_context} = ApplicationRunner.UIValidator.get_and_build_widget(
-      %AppContext{
-        user_id: 0,
-        app_name: "test",
-        build_number: 0,
-        action_logs_uuid: 0,
-        widgets_map: %{}
-      }, %WidgetContext{widget_name: "root", prefix_path: ""}
-    )
+    {:ok, app_context} =
+      ApplicationRunner.UIValidator.get_and_build_widget(
+        %AppContext{
+          user_id: 0,
+          app_name: "test",
+          build_number: 0,
+          action_logs_uuid: 0,
+          widgets_map: %{}
+        },
+        %WidgetContext{name: "root", prefix_path: ""}
+      )
+
     assert app_context.widgets_map == comp
-
   end
-
 end

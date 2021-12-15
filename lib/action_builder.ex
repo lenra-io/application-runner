@@ -16,10 +16,13 @@ defmodule ApplicationRunner.ActionBuilder do
     {:ok, %{"entrypoint" => entrypoint}} = get_manifest(session_state)
 
     uuid = UUID.uuid1()
-    {:ok, ui_context} = UIValidator.get_and_build_widget(Map.put(session_state, :entrypoint, uuid), %WidgetContext {
-      widget_id: uuid,
-      widget_name: entrypoint
-    })
+
+    {:ok, ui_context} =
+      UIValidator.get_and_build_widget(Map.put(session_state, :entrypoint, uuid), %WidgetContext{
+        id: uuid,
+        name: entrypoint
+      })
+
     {:ok, %{"entrypoint" => ui_context.entrypoint, "widgets" => ui_context.widgets_map}}
   end
 
@@ -31,7 +34,7 @@ defmodule ApplicationRunner.ActionBuilder do
     to: Application.compile_env!(:application_runner, :adapter)
 
   defdelegate run_listener(app, listener, data),
-      to: Application.compile_env!(:application_runner, :adapter)
+    to: Application.compile_env!(:application_runner, :adapter)
 
   defdelegate get_data(action), to: Application.compile_env!(:application_runner, :adapter)
   defdelegate save_data(action, data), to: Application.compile_env!(:application_runner, :adapter)

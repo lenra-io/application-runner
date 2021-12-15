@@ -4,7 +4,7 @@ defmodule ApplicationRunner.EnvManager do
   """
   use GenServer
 
-  alias ApplicationRunner.{EnvManagers, EnvSupervisor}
+  alias ApplicationRunner.{EnvManagers, EnvSupervisor, WidgetCache}
 
   @inactivity_timeout Application.compile_env!(:application_runner, :app_inactivity_timeout)
 
@@ -57,6 +57,13 @@ defmodule ApplicationRunner.EnvManager do
 
   defp fetch_supervisor_pid(env_manager_pid) when is_pid(env_manager_pid) do
     {:ok, GenServer.call(env_manager_pid, :get_env_supervisor_pid)}
+  end
+
+  def get_widget(env_id, name, data, props) do
+    with {:ok, env_pid} <- EnvManagers.fetch_env_manager_pid(env_id),
+         {:ok, cache_pid} <- fetch_module_pid(env_pid, WidgetCache) do
+      WidgetCache.get_widget(cache_pid, name, data, props)
+    end
   end
 
   @impl true

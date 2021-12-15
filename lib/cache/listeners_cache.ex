@@ -1,3 +1,3 @@
-defmodule ApplicationRunner.ListenerCache do
+defmodule ApplicationRunner.ListenersCache do
   use ApplicationRunner.CacheMapMacro
 end

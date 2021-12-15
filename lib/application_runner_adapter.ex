@@ -16,18 +16,16 @@ defmodule ApplicationRunner.ApplicationRunnerAdapter do
 
   @impl true
   def run_listener(_app, _listener, _data) do
-    { :ok, %{} }
+    {:ok, %{}}
   end
 
   @impl true
   def get_data(_action) do
     {:ok,
-      %ApplicationRunner.UiContext{
-        session_id: 1,
-        widgets_map: %{},
-        listeners_map: %{}
-      }
-    }
+     %ApplicationRunner.UiContext{
+       widgets_map: %{},
+       listeners_map: %{}
+     }}
   end
 
   @impl true
