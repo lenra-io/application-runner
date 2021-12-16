@@ -5,46 +5,75 @@ defmodule ApplicationRunner.Query do
   alias ApplicationRunner.{Data, Datastore, Refs}
 
   @repo Application.compile_env!(:application_runner, :repo)
-  @application Application.compile_env!(:application_runner, :lenra_application_schema)
+  # @application Application.compile_env!(:application_runner, :lenra_application_schema)
 
-  def handle_insert(action, [lists]) do
-    Enum.map(lists, fn list -> insert(action, list) end)
+  def handle_insert(app_id, [lists]) do
+    Enum.map(lists, fn list -> insert(app_id, list) end)
   end
 
-  def handle_insert(action, req) do
-    insert(action, req)
+  def handle_insert(app_id, req) do
+    insert(app_id, req)
+  end
+
+  defp handle_refs(datastore_id, data, refBy, refTo) do
+    Ecto.Multi.new()
+    |> Ecto.Multi.insert(:inserted_datastore, Data.new(datastore_id, data))
+    |> Ecto.Multi.run(:inserted_refs, fn _, %{inserted_datastore: %Data{} = data} ->
+      case refBy != nil do
+        true ->
+          inserted_refs = Enum.map(refBy, fn by -> @repo.insert(Refs.new(by, data.id)) end)
+          {:ok, inserted_refs}
+
+        false ->
+          case refTo != nil do
+            true ->
+              inserted_refs = Enum.map(refTo, fn to -> @repo.insert(Refs.new(data.id, to)) end)
+              {:ok, inserted_refs}
+
+            false ->
+              {:error, :json_ref_format_error}
+          end
+      end
+    end)
+    |> @repo.transaction()
   end
 
   def insert(app_id, %{"table" => table, "data" => data, "refBy" => refBy}) do
     datastore = @repo.get_by(Datastore, name: table, application_id: app_id)
-    {:ok, inserted_data} = @repo.insert(Data.new(datastore.id, data))
 
-    Enum.map(refBy, fn by -> @repo.insert(Refs.new(by, inserted_data.id)) end)
+    case datastore != nil do
+      true -> handle_refs(datastore.id, data, refBy, nil)
+      false -> {:error, :datastore_not_found}
+    end
   end
 
   def insert(app_id, %{"table" => table, "data" => data, "refTo" => refTo}) do
-    with {:ok, inserted_data} <-
-           insert_data(app_id, table, data) do
-      Enum.map(refTo, fn to -> @repo.insert(Refs.new(inserted_data.id, to)) end)
+    datastore = @repo.get_by(Datastore, name: table, application_id: app_id)
+
+    case datastore != nil do
+      true -> handle_refs(datastore.id, data, nil, refTo)
+      false -> {:error, :datastore_not_found}
     end
   end
 
   def insert(app_id, %{"table" => table, "data" => data}) do
     datastore = @repo.get_by(Datastore, name: table, application_id: app_id)
-    @repo.insert(Data.new(datastore.id, data))
+
+    Ecto.Multi.new()
+    |> Ecto.Multi.insert(:inserted_datastore, Data.new(datastore.id, data))
+    |> @repo.transaction()
   end
 
-  defp insert_data(app_id, table, data) do
-    datastore = @repo.get_by(Datastore, name: table, application_id: app_id)
-    @repo.insert(Data.new(datastore.id, data))
-  end
-
-  def insert(_action, %{"refBy" => refBy, "refTo" => refTo}) do
-    Enum.map(refBy, fn by -> Enum.map(refTo, fn to -> @repo.insert(Refs.new(by, to)) end) end)
+  def insert(_id, %{"refBy" => refBy, "refTo" => refTo}) do
+    Ecto.Multi.new()
+    |> Ecto.Multi.run(:inserted_refs, fn _, _ ->
+      Enum.map(refBy, fn by -> Enum.map(refTo, fn to -> @repo.insert(Refs.new(by, to)) end) end)
+    end)
+    |> @repo.transaction()
   end
 
   def insert(_action, _req) do
-    raise "insert format error"
+    {:error, :json_format_error}
   end
 
   def update(%{"id" => id, "data" => changes}) do
@@ -54,13 +83,10 @@ defmodule ApplicationRunner.Query do
   end
 
   def delete(%{"id" => id}) do
-    data = @repo.get(Data, id)
-
     data =
-      data
+      @repo.get(Data, id)
       |> @repo.preload([:referencer, :referenced])
 
-    IO.puts(inspect(data))
     Enum.map(data.referencer, fn ref -> @repo.delete(ref) end)
     Enum.map(data.referenced, fn ref -> @repo.delete(ref) end)
 
