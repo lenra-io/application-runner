@@ -36,8 +36,8 @@ defmodule ApplicationRunner.MixProject do
        git: "https://github.com/lenra-io/ex_component_schema", ref: "v1.0.0-beta.2"},
       {:jason, "~> 1.2"},
       {:json_diff, "~> 0.1"},
-      {:swarm, "~> 3.0"}
-      {:ecto_sql, "~> 3.4"},
+      {:swarm, "~> 3.0"},
+      {:ecto_sql, "~> 3.7"},
       {:etso, "~> 0.1.6"},
       {:ecto_sqlite3, "~> 0.7.2"}
     ]
