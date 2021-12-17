@@ -8,6 +8,7 @@ defmodule ApplicationRunner.Data do
 
   alias ApplicationRunner.{Datastore, Data, Refs}
 
+  @derive {Jason.Encoder, only: [:id, :datastore_id, :data]}
   schema "datas" do
     belongs_to(:datastore, Datastore)
     has_many(:referencer, Refs, foreign_key: :referencer_id)

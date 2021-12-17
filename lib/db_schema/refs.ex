@@ -8,6 +8,7 @@ defmodule ApplicationRunner.Refs do
 
   alias ApplicationRunner.{Data, Refs}
 
+  @derive {Jason.Encoder, only: [:id, :referencer_id, :referenced_id]}
   schema "refs" do
     belongs_to(:referencer, Data)
     belongs_to(:referenced, Data)

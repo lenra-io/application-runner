@@ -9,6 +9,8 @@ defmodule ApplicationRunner.Datastore do
   alias ApplicationRunner.{Datastore, Data}
 
   @application_schema Application.compile_env!(:application_runner, :lenra_application_schema)
+
+  @derive {Jason.Encoder, only: [:id, :application_id, :name]}
   schema "datastores" do
     has_many(:data, Data)
     belongs_to(:application, @application_schema)
