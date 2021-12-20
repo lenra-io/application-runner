@@ -9,8 +9,7 @@ defmodule ApplicationRunner.SessionManagerTest do
     EnvManagers,
     SessionManagers,
     SessionManager,
-    MockGenServer,
-    SessionState
+    MockGenServer
   }
 
   setup do

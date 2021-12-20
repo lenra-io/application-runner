@@ -1,4 +1,4 @@
-defmodule ApplicationRunner.WidgetCache do
+defmodule ApplicationRunner.WidgetHandler do
   use ApplicationRunner.CacheAsyncMacro
 
   alias ApplicationRunner.{

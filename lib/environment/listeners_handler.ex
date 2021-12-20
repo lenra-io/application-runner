@@ -1,7 +1,7 @@
-defmodule ApplicationRunner.ListenersCache do
+defmodule ApplicationRunner.ListenersHandler do
   use ApplicationRunner.CacheMapMacro
 
-  alias ApplicationRunner.{SessionState, Storage, WidgetHandler}
+  alias ApplicationRunner.{SessionState, WidgetHandler, SessionManager, ListenerCache}
 
   @spec build_listeners(SessionState.t(), WidgetHandler.component(), list(String.t())) ::
           {:ok, map()} | {:error, list()}
@@ -15,12 +15,13 @@ defmodule ApplicationRunner.ListenersCache do
   end
 
   @spec build_listener(SessionState.t(), map()) :: {:ok, map()}
-  def build_listener(_session_state, listener) do
+  defp build_listener(session_state, listener) do
     case listener do
       %{"action" => action_code} ->
         props = Map.get(listener, "props", %{})
-        listener_key = Storage.generate_listeners_key(action_code, props)
-        Storage.insert(:listeners, listener_key, listener)
+        listener_key = generate_listeners_key(action_code, props)
+        {:ok, pid} = SessionManager.fetch_module_pid(session_state, ListenerCache)
+        put(pid, listener_key, listener)
         {:ok, listener |> Map.drop(["action", "props"]) |> Map.put("code", listener_key)}
 
       _ ->
@@ -28,15 +29,8 @@ defmodule ApplicationRunner.ListenersCache do
     end
   end
 
-  @doc ~S"""
-    Return a listener key created with `client_id`, `app_name`, `action_code` and `props`.
-    Each key is uniq for the same arguments
-
-    # Examples
-      iex> ApplicationRunner.Storage.generate_listeners_key("InitData", %{"toto" => "tata"})
-      "InitData:{\"toto\":\"tata\"}"
-  """
   defp generate_listeners_key(action_code, props) do
-    "#{action_code}:#{Jason.encode!(props)}"
+    binary = :erlang.term_to_binary(action_code) <> :erlang.term_to_binary(props)
+    :crypto.hash(:sha256, binary)
   end
 end
