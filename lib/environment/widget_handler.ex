@@ -1,7 +1,5 @@
-defmodule ApplicationRunner.UIValidator do
-  @moduledoc """
-    Services to validate json with json schema
-  """
+defmodule ApplicationRunner.WidgetCache do
+  use ApplicationRunner.CacheAsyncMacro
 
   alias ApplicationRunner.{
     JsonSchemata,
@@ -9,8 +7,13 @@ defmodule ApplicationRunner.UIValidator do
     SessionState,
     UiContext,
     WidgetContext,
-    SessionManager
+    SessionManager,
+    ListenerHandler
   }
+
+  def get_widget(pid, name, data, props) do
+    call_function(pid, ApplicationRunner.ActionBuilder, :get_widget, [name, data, props])
+  end
 
   @type widget_ui :: map()
   @type component :: map()
@@ -33,12 +36,12 @@ defmodule ApplicationRunner.UIValidator do
 
   @spec build_component(SessionState.t(), widget_ui(), UiContext.t(), WidgetContext.t()) ::
           {:ok, component(), UiContext.t()} | {:error, build_errors()}
-  def build_component(
-        session_state,
-        %{"type" => comp_type} = component,
-        ui_context,
-        widget_context
-      ) do
+  defp build_component(
+         session_state,
+         %{"type" => comp_type} = component,
+         ui_context,
+         widget_context
+       ) do
     with schema_path <- JsonSchemata.get_component_path(comp_type),
          {:ok, validation_data} <- validate_with_error(schema_path, component, widget_context) do
       case comp_type do
@@ -83,7 +86,8 @@ defmodule ApplicationRunner.UIValidator do
            ),
          {:ok, child_map, merged_child_app_context} <-
            build_child_list(session_state, component, child_keys, ui_context, widget_context),
-         {:ok, listeners_map} <- build_listeners(session_state, component, listeners_keys) do
+         {:ok, listeners_map} <-
+           ListenerHandler.build_listeners(session_state, component, listeners_keys) do
       {:ok,
        component
        |> Map.merge(children_map)
@@ -93,7 +97,7 @@ defmodule ApplicationRunner.UIValidator do
     end
   end
 
-  def validate_with_error(schema_path, component, %WidgetContext{prefix_path: prefix_path}) do
+  defp validate_with_error(schema_path, component, %WidgetContext{prefix_path: prefix_path}) do
     with {:ok, %{schema: schema} = schema_map} <- JsonSchemata.get_schema_map(schema_path),
          :ok <- ExComponentSchema.Validator.validate(schema, component) do
       {:ok, schema_map}
@@ -106,31 +110,6 @@ defmodule ApplicationRunner.UIValidator do
     end
   end
 
-  @spec build_listeners(SessionState.t(), component(), list(String.t())) ::
-          {:ok, map()} | {:error, list()}
-  def build_listeners(session_state, component, listeners) do
-    Enum.reduce(listeners, {:ok, %{}}, fn listener, {:ok, acc} ->
-      case build_listener(session_state, Map.get(component, listener)) do
-        {:ok, %{"code" => _} = built_listener} -> {:ok, Map.put(acc, listener, built_listener)}
-        {:ok, %{}} -> {:ok, acc}
-      end
-    end)
-  end
-
-  @spec build_listener(SessionState.t(), map()) :: {:ok, map()}
-  def build_listener(_session_state, listener) do
-    case listener do
-      %{"action" => action_code} ->
-        props = Map.get(listener, "props", %{})
-        listener_key = Storage.generate_listeners_key(action_code, props)
-        Storage.insert(:listeners, listener_key, listener)
-        {:ok, listener |> Map.drop(["action", "props"]) |> Map.put("code", listener_key)}
-
-      _ ->
-        {:ok, %{}}
-    end
-  end
-
   @spec build_child_list(
           SessionState.t(),
           component(),
@@ -139,13 +118,13 @@ defmodule ApplicationRunner.UIValidator do
           WidgetContext.t()
         ) ::
           {:ok, map(), UiContext.t()} | {:error, build_errors()}
-  def build_child_list(
-        session_state,
-        component,
-        child_list,
-        ui_context,
-        %WidgetContext{prefix_path: prefix_path} = widget_context
-      ) do
+  defp build_child_list(
+         session_state,
+         component,
+         child_list,
+         ui_context,
+         %WidgetContext{prefix_path: prefix_path} = widget_context
+       ) do
     Enum.reduce(child_list, {%{}, ui_context, []}, fn child_key,
                                                       {child_map, app_context_acc, errors} ->
       child_path = "#{prefix_path || ""}/#{child_key}"
@@ -188,13 +167,13 @@ defmodule ApplicationRunner.UIValidator do
           WidgetContext.t()
         ) ::
           {:ok, map(), UiContext.t()} | {:error, build_errors()}
-  def build_children_list(
-        session_state,
-        component,
-        children_keys,
-        %UiContext{} = ui_context,
-        %WidgetContext{prefix_path: prefix_path} = widget_context
-      ) do
+  defp build_children_list(
+         session_state,
+         component,
+         children_keys,
+         %UiContext{} = ui_context,
+         %WidgetContext{prefix_path: prefix_path} = widget_context
+       ) do
     Enum.reduce(children_keys, {%{}, ui_context, []}, fn children_key,
                                                          {children_map, app_context_acc, errors} ->
       children_path = "#{prefix_path || ""}/#{children_key}"
@@ -225,7 +204,7 @@ defmodule ApplicationRunner.UIValidator do
 
   @spec build_children(SessionState.t(), map, String.t(), UiContext.t(), WidgetContext.t()) ::
           {:error, list(error_tuple())} | {:ok, list(component()), UiContext.t()}
-  def build_children(session_state, component, children_key, ui_context, widget_context) do
+  defp build_children(session_state, component, children_key, ui_context, widget_context) do
     case Map.get(component, children_key) do
       nil ->
         {:ok, []}

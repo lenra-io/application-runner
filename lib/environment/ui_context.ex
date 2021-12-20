@@ -9,7 +9,7 @@ defmodule ApplicationRunner.UiContext do
   ]
 
   @type t :: %ApplicationRunner.UiContext{
-    widgets_map: map(),
-    listeners_map: map()
-  }
+          widgets_map: map(),
+          listeners_map: map()
+        }
 end

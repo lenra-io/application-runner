@@ -111,18 +111,6 @@ defmodule ApplicationRunner.Storage do
   end
 
   @doc ~S"""
-    Return a listener key created with `client_id`, `app_name`, `action_code` and `props`.
-    Each key is uniq for the same arguments
-
-    # Examples
-      iex> ApplicationRunner.Storage.generate_listeners_key("InitData", %{"toto" => "tata"})
-      "InitData:{\"toto\":\"tata\"}"
-  """
-  def generate_listeners_key(action_code, props) do
-    "#{action_code}:#{Jason.encode!(props)}"
-  end
-
-  @doc ~S"""
     Return a ui key created with `client_id`, `app_name`, `action_code` and `props`.
     Each key is uniq for the same arguments
 
