@@ -4,7 +4,15 @@ defmodule ApplicationRunner.EnvManager do
   """
   use GenServer
 
-  alias ApplicationRunner.{EnvManagers, EnvSupervisor, EnvState, ActionBuilder}
+  alias ApplicationRunner.{
+    EnvManagers,
+    EnvSupervisor,
+    EnvState,
+    AdapterHandler,
+    UiContext,
+    WidgetContext,
+    WidgetCache
+  }
 
   @inactivity_timeout Application.compile_env!(:application_runner, :app_inactivity_timeout)
 
@@ -36,7 +44,7 @@ defmodule ApplicationRunner.EnvManager do
       env_supervisor_pid: env_supervisor_pid
     }
 
-    {:ok, manifest} = ActionBuilder.get_manifest(env_state)
+    {:ok, manifest} = AdapterHandler.get_manifest(env_state)
 
     {
       :ok,
@@ -48,27 +56,26 @@ defmodule ApplicationRunner.EnvManager do
   #  defdelegate load_env_state(env_id),
   #    to: Application.compile_env!(:application_runner, :app_loader)
 
+  @spec fetch_module_pid(EnvState.t(), String.t()) :: {:ok, any}
   @doc """
     return the app-level module.
     This can be used to get module declared in the `EnvSupervisor` (like the cache module for example)
   """
-  def fetch_module_pid(env_manager_pid, module_name) when is_pid(env_manager_pid) do
-    with {:ok, pid} <- fetch_supervisor_pid(env_manager_pid) do
-      Supervisor.which_children(pid)
-      |> Enum.find({:error, :no_such_module}, fn
-        {name, _, _, _} -> module_name == name
-      end)
-      |> case do
-        {_, pid, _, _} ->
-          {:ok, pid}
+  def fetch_module_pid(%EnvState{} = env_state, module_name) do
+    Supervisor.which_children(env_state.env_supervisor_pid)
+    |> Enum.find({:error, :no_such_module}, fn
+      {name, _, _, _} -> module_name == name
+    end)
+    |> case do
+      {_, pid, _, _} ->
+        {:ok, pid}
 
-        {:error, :no_such_module} ->
-          raise "No such Module in EnvSupervisor. This should not happen."
-      end
+      {:error, :no_such_module} ->
+        raise "No such Module in EnvSupervisor. This should not happen."
     end
   end
 
-  defp fetch_supervisor_pid(env_manager_pid) when is_pid(env_manager_pid) do
+  def fetch_supervisor_pid(env_manager_pid) when is_pid(env_manager_pid) do
     {:ok, GenServer.call(env_manager_pid, :get_env_supervisor_pid)}
   end
 
@@ -76,6 +83,39 @@ defmodule ApplicationRunner.EnvManager do
     with {:ok, pid} <- EnvManagers.fetch_env_manager_pid(env_id) do
       GenServer.call(pid, :get_manifest)
     end
+  end
+
+  def get_and_build_ui(session_state, entrypoint) do
+    with {:ok, pid} <- EnvManagers.fetch_env_manager_pid(session_state.env_id) do
+      GenServer.call(pid, {:get_and_build_ui, entrypoint})
+    end
+  end
+
+  def notify_data_changed(env_id) do
+    with {:ok, pid} <- EnvManagers.fetch_env_manager_pid(env_id) do
+      GenServer.cast(pid, :notify_data_changed)
+    end
+  end
+
+  @impl true
+  def handle_call({:get_and_build_ui, entrypoint}, _from, env_state) do
+    {:ok, ui_context} =
+      WidgetCache.get_and_build_widget(
+        env_state,
+        %UiContext{
+          widgets_map: %{},
+          listeners_map: %{}
+        },
+        %WidgetContext{
+          id: WidgetCache.generate_widget_id(entrypoint, %{}, %{}),
+          name: entrypoint,
+          prefix_path: ""
+        }
+      )
+
+    res = {:ok, %{"entrypoint" => entrypoint, "widgets" => ui_context.widgets_map}}
+
+    {:reply, res, env_state, @inactivity_timeout}
   end
 
   @impl true
@@ -109,6 +149,12 @@ defmodule ApplicationRunner.EnvManager do
   def handle_cast(:stop, state) do
     EnvManagers.terminate_app(self())
     {:noreply, state}
+  end
+
+  @impl true
+  def handle_cast(:notify_data_changed, %EnvState{} = env_state) do
+    Swarm.publish({:sessions, env_state.env_id}, :data_changed)
+    {:noreply, env_state, @inactivity_timeout}
   end
 
   @impl true

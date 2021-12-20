@@ -1,43 +1,66 @@
-defmodule ApplicationRunner.WidgetHandler do
+defmodule ApplicationRunner.WidgetCache do
   use ApplicationRunner.CacheAsyncMacro
 
   alias ApplicationRunner.{
     JsonSchemata,
-    Storage,
-    SessionState,
+    EnvState,
+    EnvManager,
     UiContext,
     WidgetContext,
-    SessionManager,
-    ListenerHandler
+    ListenersCache,
+    WidgetCache,
+    AdapterHandler,
+    WidgetCache
   }
-
-  def get_widget(pid, name, data, props) do
-    call_function(pid, ApplicationRunner.ActionBuilder, :get_widget, [name, data, props])
-  end
 
   @type widget_ui :: map()
   @type component :: map()
   @type error_tuple :: {String.t(), String.t()}
   @type build_errors :: list(error_tuple())
 
-  @spec get_and_build_widget(SessionState.t(), UiContext.t(), WidgetContext.t()) ::
+  @spec get_widget(EnvState.t(), WidgetContext.t()) :: {:ok, map()} | {:error, any()}
+  def get_widget(
+        %EnvState{} = env_state,
+        %WidgetContext{} = current_widget
+      ) do
+    with {:ok, data} <- AdapterHandler.get_data(env_state) do
+      AdapterHandler.get_widget(current_widget.name, data, current_widget.props)
+    end
+  end
+
+  @spec get_and_build_widget(EnvState.t(), UiContext.t(), WidgetContext.t()) ::
           {:ok, UiContext.t()} | {:error, any()}
+
   def get_and_build_widget(
-        %SessionState{} = session_state,
+        %EnvState{} = env_state,
         %UiContext{} = ui_context,
         %WidgetContext{} = current_widget
       ) do
-    with {:ok, widget} <- SessionManager.get_widget(session_state, current_widget),
+    with {:ok, pid} <- EnvManager.fetch_module_pid(env_state, WidgetCache) do
+      call_function(pid, WidgetCache, :get_and_build_widget_cached, [
+        env_state,
+        ui_context,
+        current_widget
+      ])
+    end
+  end
+
+  def get_and_build_widget_cached(
+        %EnvState{} = env_state,
+        %UiContext{} = ui_context,
+        %WidgetContext{} = current_widget
+      ) do
+    with {:ok, widget} <- WidgetCache.get_widget(env_state, current_widget),
          {:ok, component, new_app_context} <-
-           build_component(session_state, widget, ui_context, current_widget) do
+           build_component(env_state, widget, ui_context, current_widget) do
       {:ok, put_in(new_app_context.widgets_map[current_widget.id], component)}
     end
   end
 
-  @spec build_component(SessionState.t(), widget_ui(), UiContext.t(), WidgetContext.t()) ::
+  @spec build_component(EnvState.t(), widget_ui(), UiContext.t(), WidgetContext.t()) ::
           {:ok, component(), UiContext.t()} | {:error, build_errors()}
   defp build_component(
-         session_state,
+         env_state,
          %{"type" => comp_type} = component,
          ui_context,
          widget_context
@@ -46,31 +69,34 @@ defmodule ApplicationRunner.WidgetHandler do
          {:ok, validation_data} <- validate_with_error(schema_path, component, widget_context) do
       case comp_type do
         "widget" ->
-          handle_widget(session_state, component, ui_context, widget_context)
+          handle_widget(env_state, component, ui_context, widget_context)
 
         _ ->
-          handle_component(session_state, component, ui_context, widget_context, validation_data)
+          handle_component(env_state, component, ui_context, widget_context, validation_data)
       end
     end
   end
 
-  defp handle_widget(session_state, component, ui_context, widget_context) do
-    uuid = UUID.uuid1()
+  defp handle_widget(env_state, component, ui_context, widget_context) do
+    name = Map.get(component, "name")
+    query = Map.get(component, "query")
+    props = Map.get(component, "props")
+    id = WidgetCache.generate_widget_id(name, props, query)
 
     new_widget_context = %WidgetContext{
-      id: uuid,
-      name: component["name"],
-      data_query: component["query"],
-      props: component["props"],
+      id: id,
+      name: name,
+      data_query: query,
+      props: props,
       prefix_path: widget_context.prefix_path
     }
 
-    {:ok, new_app_context} = get_and_build_widget(session_state, ui_context, new_widget_context)
-    {:ok, %{"type" => "widget", "id" => uuid, "name" => component["name"]}, new_app_context}
+    {:ok, new_app_context} = get_and_build_widget(env_state, ui_context, new_widget_context)
+    {:ok, %{"type" => "widget", "id" => id, "name" => name}, new_app_context}
   end
 
   defp handle_component(
-         %SessionState{} = session_state,
+         %EnvState{} = env_state,
          component,
          ui_context,
          widget_context,
@@ -78,16 +104,16 @@ defmodule ApplicationRunner.WidgetHandler do
        ) do
     with {:ok, children_map, merged_children_app_context} <-
            build_children_list(
-             session_state,
+             env_state,
              component,
              children_keys,
              ui_context,
              widget_context
            ),
          {:ok, child_map, merged_child_app_context} <-
-           build_child_list(session_state, component, child_keys, ui_context, widget_context),
+           build_child_list(env_state, component, child_keys, ui_context, widget_context),
          {:ok, listeners_map} <-
-           ListenerHandler.build_listeners(session_state, component, listeners_keys) do
+           build_listeners(env_state, component, listeners_keys) do
       {:ok,
        component
        |> Map.merge(children_map)
@@ -111,7 +137,7 @@ defmodule ApplicationRunner.WidgetHandler do
   end
 
   @spec build_child_list(
-          SessionState.t(),
+          EnvState.t(),
           component(),
           list(String.t()),
           UiContext.t(),
@@ -119,7 +145,7 @@ defmodule ApplicationRunner.WidgetHandler do
         ) ::
           {:ok, map(), UiContext.t()} | {:error, build_errors()}
   defp build_child_list(
-         session_state,
+         env_state,
          component,
          child_list,
          ui_context,
@@ -135,7 +161,7 @@ defmodule ApplicationRunner.WidgetHandler do
 
         child_comp ->
           build_component(
-            session_state,
+            env_state,
             child_comp,
             ui_context,
             Map.put(widget_context, :prefix_path, child_path)
@@ -160,7 +186,7 @@ defmodule ApplicationRunner.WidgetHandler do
   end
 
   @spec build_children_list(
-          SessionState.t(),
+          EnvState.t(),
           component(),
           list(),
           UiContext.t(),
@@ -168,7 +194,7 @@ defmodule ApplicationRunner.WidgetHandler do
         ) ::
           {:ok, map(), UiContext.t()} | {:error, build_errors()}
   defp build_children_list(
-         session_state,
+         env_state,
          component,
          children_keys,
          %UiContext{} = ui_context,
@@ -179,7 +205,7 @@ defmodule ApplicationRunner.WidgetHandler do
       children_path = "#{prefix_path || ""}/#{children_key}"
 
       case build_children(
-             session_state,
+             env_state,
              component,
              children_key,
              ui_context,
@@ -202,44 +228,46 @@ defmodule ApplicationRunner.WidgetHandler do
     end
   end
 
-  @spec build_children(SessionState.t(), map, String.t(), UiContext.t(), WidgetContext.t()) ::
+  @spec build_children(EnvState.t(), map, String.t(), UiContext.t(), WidgetContext.t()) ::
           {:error, list(error_tuple())} | {:ok, list(component()), UiContext.t()}
-  defp build_children(session_state, component, children_key, ui_context, widget_context) do
+  defp build_children(env_state, component, children_key, ui_context, widget_context) do
     case Map.get(component, children_key) do
       nil ->
         {:ok, []}
 
       children ->
-        build_children_map(session_state, children, ui_context, widget_context)
+        build_children_map(env_state, children, ui_context, widget_context)
     end
   end
 
   defp build_children_map(
-         session_state,
+         env_state,
          children,
          ui_context,
          %WidgetContext{prefix_path: prefix_path} = widget_context
        ) do
     children
     |> Enum.with_index()
-    |> Enum.reduce({[], ui_context, []}, fn {child, index},
-                                            {built_components, app_context_acc, errors} ->
-      children_path = "#{prefix_path || ""}/#{index}"
+    |> Enum.reduce(
+      {[], ui_context, []},
+      fn {child, index}, {built_components, app_context_acc, errors} ->
+        children_path = "#{prefix_path}/#{index}"
 
-      case build_component(
-             session_state,
-             child,
-             ui_context,
-             Map.put(widget_context, :prefix_path, children_path)
-           ) do
-        {:ok, built_component, new_app_context} ->
-          {built_components ++ [built_component],
-           merge_app_context(app_context_acc, new_app_context), errors}
+        case build_component(
+               env_state,
+               child,
+               ui_context,
+               Map.put(widget_context, :prefix_path, children_path)
+             ) do
+          {:ok, built_component, new_app_context} ->
+            {built_components ++ [built_component],
+             merge_app_context(app_context_acc, new_app_context), errors}
 
-        {:error, children_errors} ->
-          {built_components, app_context_acc, errors ++ children_errors}
+          {:error, children_errors} ->
+            {built_components, app_context_acc, errors ++ children_errors}
+        end
       end
-    end)
+    )
     |> case do
       {comp, merged_app_context, []} -> {:ok, comp, merged_app_context}
       {_, _, errors} -> {:error, errors}
@@ -252,5 +280,35 @@ defmodule ApplicationRunner.WidgetHandler do
       :widgets_map,
       Map.merge(app_context1.widgets_map, app_context2.widgets_map)
     )
+  end
+
+  @spec build_listeners(EnvState.t(), WidgetHandler.component(), list(String.t())) ::
+          {:ok, map()} | {:error, list()}
+  defp build_listeners(env_state, component, listeners) do
+    Enum.reduce(listeners, {:ok, %{}}, fn listener, {:ok, acc} ->
+      case build_listener(env_state, Map.get(component, listener)) do
+        {:ok, %{"code" => _} = built_listener} -> {:ok, Map.put(acc, listener, built_listener)}
+        {:ok, %{}} -> {:ok, acc}
+      end
+    end)
+  end
+
+  @spec build_listener(EnvState.t(), map()) :: {:ok, map()}
+  defp build_listener(env_state, listener) do
+    case listener do
+      %{"action" => action_code} ->
+        props = Map.get(listener, "props", %{})
+        listener_key = ListenersCache.generate_listeners_key(action_code, props)
+        ListenersCache.cache_listener(env_state, listener_key, listener)
+        {:ok, listener |> Map.drop(["action", "props"]) |> Map.put("code", listener_key)}
+
+      _ ->
+        {:ok, %{}}
+    end
+  end
+
+  def generate_widget_id(name, data_query, props) do
+    :crypto.hash(:sha256, :erlang.term_to_binary({name, data_query, props}))
+    |> Base.encode64()
   end
 end

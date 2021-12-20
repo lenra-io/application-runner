@@ -9,11 +9,7 @@ defmodule ApplicationRunner.SessionManager do
     SessionSupervisor,
     SessionState,
     EnvManager,
-    WidgetCache,
-    WidgetContext,
-    ActionBuilder,
-    UiContext,
-    UIValidator
+    AdapterHandler
   }
 
   @inactivity_timeout Application.compile_env!(:application_runner, :session_inactivity_timeout)
@@ -56,6 +52,15 @@ defmodule ApplicationRunner.SessionManager do
     {:noreply, state}
   end
 
+  @impl true
+  def handle_info(:data_changed, %SessionState{} = session_state) do
+    %{"entrypoint" => entrypoint} = EnvManager.get_manifest(session_state.env_id)
+    {:ok, ui} = EnvManager.get_and_build_ui(session_state, entrypoint)
+
+    AdapterHandler.on_ui_changed(ui)
+    {:noreply, session_state, @inactivity_timeout}
+  end
+
   @doc """
     return the app-level module.
     This can be used to get module declared in the `SessionSupervisor` (like the cache module for example)
@@ -72,43 +77,6 @@ defmodule ApplicationRunner.SessionManager do
       {:error, :no_such_module} ->
         raise "No such Module in SessionSupervisor. This should not happen."
     end
-  end
-
-  def get_widget(%SessionState{} = session_state, %WidgetContext{} = widget_context) do
-    with {:ok, cache_pid} <- fetch_module_pid(session_state, WidgetCache),
-         {:ok, data} <- ActionBuilder.get_data(session_state) do
-      WidgetCache.get_widget(cache_pid, widget_context.name, data, widget_context.props)
-    end
-  end
-
-  def get_ui(session_id) do
-    with {:ok, pid} <- SessionManagers.fetch_session_manager_pid(session_id) do
-      GenServer.call(pid, :get_ui)
-    end
-  end
-
-  @impl true
-  def handle_call(:get_ui, _from, state) do
-    env_id = Map.get(state, :env_id)
-
-    %{"entrypoint" => entrypoint} = EnvManager.get_manifest(env_id)
-    uuid = UUID.uuid1()
-
-    {:ok, ui_context} =
-      UIValidator.get_and_build_widget(
-        state,
-        %UiContext{
-          widgets_map: %{},
-          listeners_map: %{}
-        },
-        %WidgetContext{
-          id: uuid,
-          name: entrypoint
-        }
-      )
-
-    {:reply, {:ok, %{"entrypoint" => entrypoint, "widgets" => ui_context.widgets_map}}, state,
-     @inactivity_timeout}
   end
 
   @impl true

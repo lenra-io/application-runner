@@ -2,7 +2,7 @@ defmodule ApplicationRunner.WidgetContext do
   @moduledoc """
     The Action struct.
   """
-  @enforce_keys [:id, :name]
+  @enforce_keys [:id, :name, :prefix_path]
   defstruct [
     :id,
     :name,
