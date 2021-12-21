@@ -85,9 +85,9 @@ defmodule ApplicationRunner.EnvManager do
     end
   end
 
-  def get_and_build_ui(session_state, entrypoint) do
+  def get_and_build_ui(session_state, entrypoint, data) do
     with {:ok, pid} <- EnvManagers.fetch_env_manager_pid(session_state.env_id) do
-      GenServer.call(pid, {:get_and_build_ui, entrypoint})
+      GenServer.call(pid, {:get_and_build_ui, entrypoint, data})
     end
   end
 
@@ -98,7 +98,9 @@ defmodule ApplicationRunner.EnvManager do
   end
 
   @impl true
-  def handle_call({:get_and_build_ui, entrypoint}, _from, env_state) do
+  def handle_call({:get_and_build_ui, entrypoint, data}, _from, env_state) do
+    id = WidgetCache.generate_widget_id(entrypoint, data, %{})
+
     {:ok, ui_context} =
       WidgetCache.get_and_build_widget(
         env_state,
@@ -107,13 +109,14 @@ defmodule ApplicationRunner.EnvManager do
           listeners_map: %{}
         },
         %WidgetContext{
-          id: WidgetCache.generate_widget_id(entrypoint, %{}, %{}),
+          id: id,
           name: entrypoint,
-          prefix_path: ""
+          prefix_path: "",
+          data: data
         }
       )
 
-    res = {:ok, %{"entrypoint" => entrypoint, "widgets" => ui_context.widgets_map}}
+    res = {:ok, %{"entrypoint" => id, "widgets" => ui_context.widgets_map}}
 
     {:reply, res, env_state, @inactivity_timeout}
   end

@@ -18,14 +18,9 @@ defmodule ApplicationRunner.WidgetCache do
   @type error_tuple :: {String.t(), String.t()}
   @type build_errors :: list(error_tuple())
 
-  @spec get_widget(EnvState.t(), WidgetContext.t()) :: {:ok, map()} | {:error, any()}
-  def get_widget(
-        %EnvState{} = env_state,
-        %WidgetContext{} = current_widget
-      ) do
-    with {:ok, data} <- AdapterHandler.get_data(env_state) do
-      AdapterHandler.get_widget(current_widget.name, data, current_widget.props)
-    end
+  @spec get_widget(WidgetContext.t()) :: {:ok, map()} | {:error, any()}
+  def get_widget(%WidgetContext{} = current_widget) do
+    AdapterHandler.get_widget(current_widget.name, current_widget.data, current_widget.props)
   end
 
   @spec get_and_build_widget(EnvState.t(), UiContext.t(), WidgetContext.t()) ::
@@ -50,7 +45,7 @@ defmodule ApplicationRunner.WidgetCache do
         %UiContext{} = ui_context,
         %WidgetContext{} = current_widget
       ) do
-    with {:ok, widget} <- WidgetCache.get_widget(env_state, current_widget),
+    with {:ok, widget} <- WidgetCache.get_widget(current_widget),
          {:ok, component, new_app_context} <-
            build_component(env_state, widget, ui_context, current_widget) do
       {:ok, put_in(new_app_context.widgets_map[current_widget.id], component)}
@@ -79,14 +74,14 @@ defmodule ApplicationRunner.WidgetCache do
 
   defp handle_widget(env_state, component, ui_context, widget_context) do
     name = Map.get(component, "name")
-    query = Map.get(component, "query")
+    # query = Map.get(component, "query")
     props = Map.get(component, "props")
-    id = WidgetCache.generate_widget_id(name, props, query)
+    id = WidgetCache.generate_widget_id(name, widget_context.data, props)
 
     new_widget_context = %WidgetContext{
       id: id,
       name: name,
-      data_query: query,
+      data: widget_context.data,
       props: props,
       prefix_path: widget_context.prefix_path
     }
@@ -307,8 +302,8 @@ defmodule ApplicationRunner.WidgetCache do
     end
   end
 
-  def generate_widget_id(name, data_query, props) do
-    :crypto.hash(:sha256, :erlang.term_to_binary({name, data_query, props}))
+  def generate_widget_id(name, data, props) do
+    :crypto.hash(:sha256, :erlang.term_to_binary({name, data, props}))
     |> Base.encode64()
   end
 end

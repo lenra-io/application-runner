@@ -4,7 +4,7 @@ defmodule ApplicationRunner.ApplicationRunnerAdapter do
   """
   @behaviour ApplicationRunner.AdapterBehavior
 
-  alias ApplicationRunner.{EnvState}
+  alias ApplicationRunner.{SessionState}
 
   @root %{
     "type" => "flex",
@@ -47,17 +47,17 @@ defmodule ApplicationRunner.ApplicationRunnerAdapter do
   end
 
   @impl true
-  def get_data(%EnvState{} = _env_state) do
-    {:ok, %{"value" => "bar"}}
+  def get_data(%SessionState{session_id: session_id} = _session_state) do
+    {:ok, %{"value" => "bar", "session_id" => session_id}}
   end
 
   @impl true
-  def save_data(%EnvState{} = _env_state, _data) do
+  def save_data(%SessionState{} = _env_state, _data) do
     :ok
   end
 
   @impl true
-  def on_ui_changed(ui) do
+  def on_ui_changed(_session_state, ui) do
     IO.inspect(ui)
     :ok
   end

@@ -14,6 +14,24 @@ defmodule ApplicationRunner.SessionManager do
 
   @inactivity_timeout Application.compile_env!(:application_runner, :session_inactivity_timeout)
 
+  @doc """
+    return the app-level module.
+    This can be used to get module declared in the `SessionSupervisor` (like the cache module for example)
+  """
+  def fetch_module_pid(%SessionState{session_supervisor_pid: session_supervisor_pid}, module_name) do
+    Supervisor.which_children(session_supervisor_pid)
+    |> Enum.find({:error, :no_such_module}, fn
+      {name, _, _, _} -> module_name == name
+    end)
+    |> case do
+      {_, pid, _, _} ->
+        {:ok, pid}
+
+      {:error, :no_such_module} ->
+        raise "No such Module in SessionSupervisor. This should not happen."
+    end
+  end
+
   @spec start_link(keyword) :: :ignore | {:error, any} | {:ok, pid}
   def start_link(opts) do
     session_id = Keyword.fetch!(opts, :session_id)
@@ -55,28 +73,11 @@ defmodule ApplicationRunner.SessionManager do
   @impl true
   def handle_info(:data_changed, %SessionState{} = session_state) do
     %{"entrypoint" => entrypoint} = EnvManager.get_manifest(session_state.env_id)
-    {:ok, ui} = EnvManager.get_and_build_ui(session_state, entrypoint)
+    {:ok, data} = AdapterHandler.get_data(session_state)
+    {:ok, ui} = EnvManager.get_and_build_ui(session_state, entrypoint, data)
 
-    AdapterHandler.on_ui_changed(ui)
+    AdapterHandler.on_ui_changed(session_state, ui)
     {:noreply, session_state, @inactivity_timeout}
-  end
-
-  @doc """
-    return the app-level module.
-    This can be used to get module declared in the `SessionSupervisor` (like the cache module for example)
-  """
-  def fetch_module_pid(%SessionState{session_supervisor_pid: session_supervisor_pid}, module_name) do
-    Supervisor.which_children(session_supervisor_pid)
-    |> Enum.find({:error, :no_such_module}, fn
-      {name, _, _, _} -> module_name == name
-    end)
-    |> case do
-      {_, pid, _, _} ->
-        {:ok, pid}
-
-      {:error, :no_such_module} ->
-        raise "No such Module in SessionSupervisor. This should not happen."
-    end
   end
 
   @impl true
