@@ -6,7 +6,7 @@ defmodule ApplicationRunner.Datastore do
   use Ecto.Schema
   import Ecto.Changeset
 
-  alias ApplicationRunner.{Datastore, Data}
+  alias ApplicationRunner.{Data, Datastore}
 
   @application_schema Application.compile_env!(:application_runner, :lenra_application_schema)
 

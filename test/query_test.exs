@@ -1,7 +1,7 @@
 defmodule ApplicationRunner.QueryTest do
   use ExUnit.Case, async: false
 
-  alias ApplicationRunner.{Datastore, Data, FakeLenraApplication, Repo, Refs, Query}
+  alias ApplicationRunner.{Data, Datastore, FakeLenraApplication, Query, Refs, Repo}
 
   setup do
     {:ok, inserted_application} = Repo.insert(FakeLenraApplication.new())
