@@ -16,16 +16,16 @@ defmodule ApplicationRunner.Refs do
     timestamps()
   end
 
-  def changeset(datastore, params \\ %{}) do
-    datastore
+  def changeset(refs, params \\ %{}) do
+    refs
     |> cast(params, [])
     |> validate_required([:referencer_id, :referenced_id])
     |> foreign_key_constraint(:referencer_id)
     |> foreign_key_constraint(:referenced_id)
   end
 
-  def new(referencer, referenced) do
-    %Refs{referenced_id: referenced, referencer_id: referencer}
+  def new(referencer_id, referenced_id) do
+    %Refs{referenced_id: referenced_id, referencer_id: referencer_id}
     |> Refs.changeset()
   end
 end

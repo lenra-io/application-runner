@@ -17,7 +17,9 @@ config :application_runner,
   ecto_repos: [ApplicationRunner.Repo],
   repo: ApplicationRunner.Repo
 
-config :application_runner, ApplicationRunner.Repo, database: "file::memory:?cache=shared"
+config :application_runner, ApplicationRunner.Repo,
+  database: "file::memory:?cache=shared",
+  log: false
 
 config :swarm,
   debug: false

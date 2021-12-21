@@ -1,0 +1,170 @@
+defmodule ApplicationRunner.QueryTest do
+  use ExUnit.Case, async: false
+
+  alias ApplicationRunner.{Datastore, Data, FakeLenraApplication, Repo, Refs, Query}
+
+  setup do
+    {:ok, inserted_application} = Repo.insert(FakeLenraApplication.new())
+    %{application_id: inserted_application.id}
+  end
+
+  describe "Query.insert_1/1" do
+    test "insert datastore if json valid", %{application_id: application_id} do
+      {:ok, %{inserted_datastore: inserted_datastore}} =
+        Query.create_table(application_id, %{"name" => "users"})
+
+      datastore = Repo.get(Datastore, inserted_datastore.id)
+
+      assert datastore.name == "users"
+    end
+
+    test "return error if datastore json invalid", %{application_id: application_id} do
+      assert {:error, :json_format_error} == Query.insert(application_id, %{"test" => "users"})
+    end
+
+    test "insert data if json valid", %{application_id: application_id} do
+      Query.create_table(application_id, %{"name" => "users"})
+
+      {:ok, %{inserted_data: inserted_data}} =
+        Query.insert(application_id, %{"table" => "users", "data" => %{"name" => "toto"}})
+
+      data = Repo.get(Data, inserted_data.id)
+
+      assert data.data == %{"name" => "toto"}
+    end
+
+    test "return error if data json invalid", %{application_id: application_id} do
+      Query.create_table(application_id, %{"name" => "users"})
+
+      assert {:error, :json_format_error} ==
+               Query.insert(application_id, %{"table" => "users", "test" => %{"name" => "toto"}})
+    end
+
+    test "return error if json valid but datastore not found", %{application_id: application_id} do
+      assert {:error, :datastore_not_found} ==
+               Query.insert(application_id, %{"table" => "users", "data" => %{"name" => "toto"}})
+    end
+
+    test "insert data with refBy", %{application_id: application_id} do
+      Query.create_table(application_id, %{"name" => "users"})
+      Query.create_table(application_id, %{"name" => "score"})
+
+      {:ok, %{inserted_data: inserted_data}} =
+        Query.insert(application_id, %{"table" => "users", "data" => %{"name" => "toto"}})
+
+      {:ok, %{inserted_data: inserted_data_ref, inserted_ref: [inserted_ref]}} =
+        Query.insert(application_id, %{
+          "table" => "score",
+          "data" => %{"point" => 2},
+          "refBy" => [inserted_data.id]
+        })
+
+      data = Repo.get(Data, inserted_data.id)
+      ref = Repo.get(Refs, inserted_ref.id)
+      data_ref = Repo.get(Data, inserted_data_ref.id)
+
+      assert data.data == %{"name" => "toto"}
+      assert ref.referencer_id == inserted_data.id
+      assert ref.referenced_id == inserted_data_ref.id
+      assert data_ref.data == %{"point" => 2}
+    end
+
+    test "insert data with refTo", %{application_id: application_id} do
+      Query.create_table(application_id, %{"name" => "users"})
+      Query.create_table(application_id, %{"name" => "score"})
+
+      {:ok, %{inserted_data: inserted_data}} =
+        Query.insert(application_id, %{"table" => "score", "data" => %{"point" => 2}})
+
+      {:ok, %{inserted_data: inserted_data_ref, inserted_ref: [inserted_ref]}} =
+        Query.insert(application_id, %{
+          "table" => "users",
+          "data" => %{"name" => "toto"},
+          "refTo" => [inserted_data.id]
+        })
+
+      data = Repo.get(Data, inserted_data.id)
+      ref = Repo.get(Refs, inserted_ref.id)
+      data_ref = Repo.get(Data, inserted_data_ref.id)
+
+      assert data.data == %{"point" => 2}
+      assert ref.referencer_id == inserted_data_ref.id
+      assert ref.referenced_id == inserted_data.id
+      assert data_ref.data == %{"name" => "toto"}
+    end
+
+    test "return error if ref not found", %{application_id: application_id} do
+      Query.create_table(application_id, %{"name" => "users"})
+
+      {:ok, inserted_data} =
+        Query.insert(application_id, %{
+          "table" => "users",
+          "data" => %{"name" => "toto"},
+          "refTo" => [1, 100]
+        })
+
+      [head | tail] = inserted_data.inserted_ref
+      assert head.referencer_id == inserted_data.inserted_data.id
+      assert head.referenced_id == 1
+      assert tail == [{:error, :ref_not_found}]
+    end
+  end
+
+  describe "Query.update_1/1" do
+    test "update data", %{application_id: application_id} do
+      Query.create_table(application_id, %{"name" => "users"})
+
+      {:ok, %{inserted_data: inserted_data}} =
+        Query.insert(application_id, %{"table" => "users", "data" => %{"name" => "toto"}})
+
+      data = Repo.get(Data, inserted_data.id)
+
+      assert data.data == %{"name" => "toto"}
+
+      Query.update(%{"id" => data.id, "data" => %{"name" => "test"}})
+
+      data = Repo.get(Data, inserted_data.id)
+
+      assert data.data == %{"name" => "test"}
+    end
+
+    test "return error if data id not found", %{application_id: _application_id} do
+      res = Query.update(%{"id" => -1, "data" => %{"name" => "test"}})
+
+      assert res == {:error, :data_not_found}
+    end
+
+    test "return error if json invalid", %{application_id: _application_id} do
+      res = Query.update(%{"ib" => -1, "data" => %{"name" => "test"}})
+
+      assert res == {:error, :json_format_error}
+    end
+  end
+
+  describe "Query.delete_1/1" do
+    test "delete data", %{application_id: application_id} do
+      Query.create_table(application_id, %{"name" => "users"})
+
+      {:ok, %{inserted_data: inserted_data}} =
+        Query.insert(application_id, %{"table" => "users", "data" => %{"name" => "toto"}})
+
+      Query.delete(%{"id" => inserted_data.id})
+
+      data = Repo.get(Data, inserted_data.id)
+
+      assert data == nil
+    end
+
+    test "return error if data id not found", %{application_id: _application_id} do
+      res = Query.delete(%{"id" => -1})
+
+      assert res == {:error, :data_not_found}
+    end
+
+    test "return error if json invalid", %{application_id: _application_id} do
+      res = Query.delete(%{"ib" => 1})
+
+      assert res == {:error, :json_format_error}
+    end
+  end
+end

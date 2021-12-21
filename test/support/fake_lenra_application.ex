@@ -18,12 +18,12 @@ defmodule ApplicationRunner.FakeLenraApplication do
 
   def changeset(application, params \\ %{}) do
     application
-    |> cast(params, [])
+    |> cast(params, [:id])
   end
 
-  def new(id) do
-    %FakeLenraApplication{id: id}
-    |> changeset()
+  def new(params \\ %{}) do
+    %FakeLenraApplication{}
+    |> changeset(params)
   end
 
   def update(app, params) do
