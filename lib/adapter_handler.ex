@@ -12,7 +12,7 @@ defmodule ApplicationRunner.AdapterHandler do
   defdelegate get_widget(app, widget, data),
     to: Application.compile_env!(:application_runner, :adapter)
 
-  defdelegate run_listener(app, listener, data),
+  defdelegate run_listener(app, action, data, props, event),
     to: Application.compile_env!(:application_runner, :adapter)
 
   defdelegate get_data(session_state), to: Application.compile_env!(:application_runner, :adapter)

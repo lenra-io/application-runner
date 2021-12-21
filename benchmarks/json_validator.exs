@@ -58,8 +58,6 @@ complexe_container = Enum.reduce(1..20, container,  fn _, acc ->
   Map.replace!(acc, "children", [container | acc["children"]])
 end)
 
-IO.puts(inspect(complexe_container))
-
 {:ok, _} = JsonValidator.validate_json(schema, root.(text))
 {:error, _} = JsonValidator.validate_json(schema, root.(error_text))
 {:ok, _} = JsonValidator.validate_json(schema, root.(container))

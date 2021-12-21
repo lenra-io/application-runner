@@ -8,10 +8,12 @@ defmodule ApplicationRunner.EnvManager do
     EnvManagers,
     EnvSupervisor,
     EnvState,
+    SessionManagers,
     AdapterHandler,
     UiContext,
     WidgetContext,
-    WidgetCache
+    WidgetCache,
+    ListenersCache
   }
 
   @inactivity_timeout Application.compile_env!(:application_runner, :app_inactivity_timeout)
@@ -91,9 +93,21 @@ defmodule ApplicationRunner.EnvManager do
     end
   end
 
-  def notify_data_changed(env_id) do
-    with {:ok, pid} <- EnvManagers.fetch_env_manager_pid(env_id) do
-      GenServer.cast(pid, :notify_data_changed)
+  def run_listener(session_state, code, data, event) do
+    with {:ok, pid} <- EnvManagers.fetch_env_manager_pid(session_state.env_id) do
+      GenServer.call(pid, {:run_listener, code, data, event})
+    end
+  end
+
+  def init_data(session_state, data) do
+    with {:ok, pid} <- EnvManagers.fetch_env_manager_pid(session_state.env_id) do
+      GenServer.call(pid, {:init_data, data})
+    end
+  end
+
+  def notify_data_changed(session_state) do
+    with {:ok, pid} <- EnvManagers.fetch_env_manager_pid(session_state.env_id) do
+      GenServer.cast(pid, {:notify_data_changed, session_state.session_id})
     end
   end
 
@@ -118,6 +132,28 @@ defmodule ApplicationRunner.EnvManager do
 
     res = {:ok, %{"entrypoint" => id, "widgets" => ui_context.widgets_map}}
 
+    {:reply, res, env_state, @inactivity_timeout}
+  end
+
+  @impl true
+  def handle_call({:get_listener, code}, _from, env_state) do
+    res = ListenersCache.get_listener(env_state, code)
+    {:reply, res, env_state, @inactivity_timeout}
+  end
+
+  @impl true
+  def handle_call({:run_listener, code, data, event}, _from, env_state) do
+    listener = ListenersCache.get_listener(env_state, code)
+    action = Map.fetch!(listener, "action")
+    props = Map.get(listener, "props", %{})
+    res = AdapterHandler.run_listener(env_state, action, data, props, event)
+
+    {:reply, res, env_state, @inactivity_timeout}
+  end
+
+  @impl true
+  def handle_call({:init_data, data}, _from, env_state) do
+    res = AdapterHandler.run_listener(env_state, "InitData", data, %{}, %{})
     {:reply, res, env_state, @inactivity_timeout}
   end
 
@@ -148,16 +184,20 @@ defmodule ApplicationRunner.EnvManager do
     We cannot call directly `DynamicSupervisor.terminate_child/2` as we could be asking it on the wrong node.
     To prevent this we simply ask the child to call `DynamicSupervisor.terminate_child/2`to ensure that the correct EnvManager is called.
   """
+
+  @impl true
+  def handle_cast({:notify_data_changed, session_id}, %EnvState{} = env_state) do
+    with {:ok, pid} <- SessionManagers.fetch_session_manager_pid(session_id) do
+      send(pid, :data_changed)
+    end
+
+    {:noreply, env_state, @inactivity_timeout}
+  end
+
   @impl true
   def handle_cast(:stop, state) do
     EnvManagers.terminate_app(self())
     {:noreply, state}
-  end
-
-  @impl true
-  def handle_cast(:notify_data_changed, %EnvState{} = env_state) do
-    Swarm.publish({:sessions, env_state.env_id}, :data_changed)
-    {:noreply, env_state, @inactivity_timeout}
   end
 
   @impl true

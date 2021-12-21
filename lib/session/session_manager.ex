@@ -32,6 +32,14 @@ defmodule ApplicationRunner.SessionManager do
     end
   end
 
+  def run_listener(session_manager_pid, code, event) do
+    GenServer.cast(session_manager_pid, {:run_listener, code, event})
+  end
+
+  def init_data(session_manager_pid) do
+    GenServer.cast(session_manager_pid, :init_data)
+  end
+
   @spec start_link(keyword) :: :ignore | {:error, any} | {:ok, pid}
   def start_link(opts) do
     session_id = Keyword.fetch!(opts, :session_id)
@@ -49,6 +57,7 @@ defmodule ApplicationRunner.SessionManager do
   def init(opts) do
     session_id = Keyword.fetch!(opts, :session_id)
     env_id = Keyword.fetch!(opts, :env_id)
+    assigns = Keyword.fetch!(opts, :assigns)
 
     {:ok, session_supervisor_pid} = SessionSupervisor.start_link(opts)
     # Link the process to kill the manager if the supervisor is killed.
@@ -58,7 +67,8 @@ defmodule ApplicationRunner.SessionManager do
     session_state = %SessionState{
       session_id: session_id,
       env_id: env_id,
-      session_supervisor_pid: session_supervisor_pid
+      session_supervisor_pid: session_supervisor_pid,
+      assigns: assigns
     }
 
     {:ok, session_state, @inactivity_timeout}
@@ -72,11 +82,12 @@ defmodule ApplicationRunner.SessionManager do
 
   @impl true
   def handle_info(:data_changed, %SessionState{} = session_state) do
-    %{"entrypoint" => entrypoint} = EnvManager.get_manifest(session_state.env_id)
-    {:ok, data} = AdapterHandler.get_data(session_state)
-    {:ok, ui} = EnvManager.get_and_build_ui(session_state, entrypoint, data)
+    with %{"entrypoint" => entrypoint} <- EnvManager.get_manifest(session_state.env_id),
+         {:ok, data} <- AdapterHandler.get_data(session_state),
+         {:ok, ui} <- EnvManager.get_and_build_ui(session_state, entrypoint, data) do
+      AdapterHandler.on_ui_changed(session_state, ui)
+    end
 
-    AdapterHandler.on_ui_changed(session_state, ui)
     {:noreply, session_state, @inactivity_timeout}
   end
 
@@ -97,5 +108,27 @@ defmodule ApplicationRunner.SessionManager do
   def handle_cast(:stop, state) do
     SessionManagers.terminate_session(self())
     {:noreply, state}
+  end
+
+  @impl true
+  def handle_cast({:run_listener, code, event}, session_state) do
+    with {:ok, data} <- AdapterHandler.get_data(session_state),
+         {:ok, new_data} <- EnvManager.run_listener(session_state, code, data, event),
+         :ok <- AdapterHandler.save_data(session_state, new_data) do
+      EnvManager.notify_data_changed(session_state)
+    end
+
+    {:noreply, session_state, @inactivity_timeout}
+  end
+
+  @impl true
+  def handle_cast(:init_data, session_state) do
+    with {:ok, data} <- AdapterHandler.get_data(session_state),
+         {:ok, new_data} <- EnvManager.init_data(session_state, data),
+         :ok <- AdapterHandler.save_data(session_state, new_data) do
+      EnvManager.notify_data_changed(session_state)
+    end
+
+    {:noreply, session_state, @inactivity_timeout}
   end
 end
