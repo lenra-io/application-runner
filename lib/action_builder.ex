@@ -19,7 +19,7 @@ defmodule ApplicationRunner.ActionBuilder do
   """
   def first_run(%Action{} = action) do
     with {:ok, action} <- get_data(action),
-         {:ok, final_ui} = res <-
+         {:ok, _final_ui} = res <-
            run_app_listener(%{action | action_name: "InitData", props: %{}, event: %{}}) do
       res
     end
