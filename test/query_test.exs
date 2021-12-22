@@ -167,4 +167,58 @@ defmodule ApplicationRunner.QueryTest do
       assert res == {:error, :json_format_error}
     end
   end
+
+  describe "Query.get_1/1" do
+    test "get all data from table should return list of data", %{application_id: _application_id} do
+      {:ok, app} = Repo.insert(FakeLenraApplication.new())
+      Query.create_table(app.id, %{"name" => "users"})
+      Query.insert(app.id, %{"table" => "users", "data" => %{"name" => "user1"}})
+      Query.insert(app.id, %{"table" => "users", "data" => %{"name" => "user2"}})
+
+      res = Query.get(app.id, %{"table" => "users"})
+
+      assert 2 == length(res)
+    end
+
+    test "get all data from table with incorrect table name should return error", %{
+      application_id: application_id
+    } do
+      res = Query.get(application_id, %{"table" => "1"})
+
+      assert {:error, :datastore_not_found} == res
+    end
+
+    test "data by id in table should return list of data" do
+      {:ok, app} = Repo.insert(FakeLenraApplication.new())
+      Query.create_table(app.id, %{"name" => "users"})
+
+      {:ok, %{inserted_data: app_one}} =
+        Query.insert(app.id, %{"table" => "users", "data" => %{"name" => "user1"}})
+
+      {:ok, %{inserted_data: app_two}} =
+        Query.insert(app.id, %{"table" => "users", "data" => %{"name" => "user2"}})
+
+      res = Query.get(app.id, %{"table" => "users", "ids" => [app_one.id, app_two.id]})
+
+      assert 2 == length(res)
+    end
+
+    test "data by id in table should error if table name incorrect", %{
+      application_id: application_id
+    } do
+      res = Query.get(application_id, %{"table" => "1", "ids" => []})
+
+      assert res == {:error, :datastore_not_found}
+    end
+
+    test "data by id in table should empty list if data id incorrect", %{
+      application_id: _application_id
+    } do
+      {:ok, app} = Repo.insert(FakeLenraApplication.new())
+      Query.create_table(app.id, %{"name" => "users"})
+      res = Query.get(app.id, %{"table" => "users", "ids" => [-1]})
+
+      assert res == []
+    end
+  end
 end

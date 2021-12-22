@@ -8,15 +8,15 @@ defmodule ApplicationRunner.Query do
 
   @repo Application.compile_env!(:application_runner, :repo)
 
-  def get(%{"table" => table}) do
-    case @repo.get_by(Datastore, name: table) do
+  def get(app_id, %{"table" => table}) do
+    case @repo.get_by(Datastore, name: table, application_id: app_id) do
       nil ->
         {:error, :datastore_not_found}
 
       %Datastore{} = datastore ->
         case @repo.all(from(d in Data, where: d.datastore_id == ^datastore.id, select: d)) do
           nil -> {:error, :data_not_found}
-          %Data{} = data -> data
+          data when is_list(data) -> data
         end
     end
   end
@@ -41,21 +41,7 @@ defmodule ApplicationRunner.Query do
         {:error, :data_not_found}
 
       %Datastore{} = datastore ->
-        Enum.map(ref_by, fn by ->
-          case(@repo.get(Data, by)) do
-            nil ->
-              {:error, :ref_not_found}
-
-            %Data{} ->
-              @repo.all(
-                from(d in Data,
-                  join: r in assoc(d, :referencer_id),
-                  where: r.id == ^by and d.datastore_id == ^datastore,
-                  select: d
-                )
-              )
-          end
-        end)
+        handle_get_ref_by(datastore, ref_by)
     end
   end
 
@@ -65,26 +51,48 @@ defmodule ApplicationRunner.Query do
         {:error, :data_not_found}
 
       %Datastore{} = datastore ->
-        Enum.map(ref_to, fn to ->
-          case(@repo.get(Data, to)) do
-            nil ->
-              {:error, :ref_not_found}
-
-            %Data{} ->
-              @repo.all(
-                from(d in Data,
-                  join: r in assoc(d, :referenced_id),
-                  where: r.id == ^to and d.datastore_id == ^datastore,
-                  select: d
-                )
-              )
-          end
-        end)
+        handle_get_ref_to(datastore, ref_to)
     end
   end
 
   def get(_anything) do
     {:error, :json_format_error}
+  end
+
+  defp handle_get_ref_by(datastore, ref_by) do
+    Enum.map(ref_by, fn by ->
+      case(@repo.get(Data, by)) do
+        nil ->
+          {:error, :ref_not_found}
+
+        %Data{} ->
+          @repo.all(
+            from(d in Data,
+              join: r in assoc(d, :referencer_id),
+              where: r.id == ^by and d.datastore_id == ^datastore,
+              select: d
+            )
+          )
+      end
+    end)
+  end
+
+  defp handle_get_ref_to(datastore, ref_to) do
+    Enum.map(ref_to, fn to ->
+      case(@repo.get(Data, to)) do
+        nil ->
+          {:error, :ref_not_found}
+
+        %Data{} ->
+          @repo.all(
+            from(d in Data,
+              join: r in assoc(d, :referenced_id),
+              where: r.id == ^to and d.datastore_id == ^datastore,
+              select: d
+            )
+          )
+      end
+    end)
   end
 
   def create_table(app_id, %{"name" => name}) do
