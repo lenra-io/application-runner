@@ -7,7 +7,10 @@ defmodule ApplicationRunner.SessionSupervisor do
 
   @impl true
   def init(_opts) do
-    children = [] ++ Application.get_env(:application_runner, :additional_session_modules, [])
+    children =
+      [
+        ApplicationRunner.UiCache
+      ] ++ Application.get_env(:application_runner, :additional_session_modules, [])
 
     Supervisor.init(children, strategy: :one_for_one)
   end

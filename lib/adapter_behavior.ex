@@ -10,5 +10,5 @@ defmodule ApplicationRunner.AdapterBehavior do
               {:ok, map()} | {:error, map()}
   @callback get_data(SessionState.t()) :: {:ok, map()} | {:error, atom()}
   @callback save_data(SessionState.t(), map()) :: :ok | {:error, atom()}
-  @callback on_ui_changed(SessionState.t(), map()) :: :ok
+  @callback on_ui_changed(SessionState.t(), {:ui, map()} | {:patches, list(map())}) :: :ok
 end

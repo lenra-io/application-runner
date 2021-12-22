@@ -8,9 +8,7 @@ defmodule ApplicationRunner.WidgetCache do
     UiContext,
     WidgetContext,
     ListenersCache,
-    WidgetCache,
-    AdapterHandler,
-    WidgetCache
+    AdapterHandler
   }
 
   @type widget_ui :: map()
@@ -25,27 +23,31 @@ defmodule ApplicationRunner.WidgetCache do
 
   @spec get_and_build_widget(EnvState.t(), UiContext.t(), WidgetContext.t()) ::
           {:ok, UiContext.t()} | {:error, any()}
-
   def get_and_build_widget(
         %EnvState{} = env_state,
         %UiContext{} = ui_context,
         %WidgetContext{} = current_widget
       ) do
-    with {:ok, pid} <- EnvManager.fetch_module_pid(env_state, WidgetCache) do
-      call_function(pid, WidgetCache, :get_and_build_widget_cached, [
-        env_state,
-        ui_context,
-        current_widget
-      ])
-    end
+    pid = EnvManager.fetch_module_pid!(env_state, __MODULE__)
+
+    call_function(pid, __MODULE__, :get_and_build_widget_cached, [
+      env_state,
+      ui_context,
+      current_widget
+    ])
   end
 
+  @spec get_and_build_widget_cached(
+          ApplicationRunner.EnvState.t(),
+          ApplicationRunner.UiContext.t(),
+          ApplicationRunner.WidgetContext.t()
+        ) :: {:error, build_errors()} | {:ok, map()}
   def get_and_build_widget_cached(
         %EnvState{} = env_state,
         %UiContext{} = ui_context,
         %WidgetContext{} = current_widget
       ) do
-    with {:ok, widget} <- WidgetCache.get_widget(current_widget),
+    with {:ok, widget} <- get_widget(current_widget),
          {:ok, component, new_app_context} <-
            build_component(env_state, widget, ui_context, current_widget) do
       {:ok, put_in(new_app_context.widgets_map[current_widget.id], component)}
@@ -76,7 +78,7 @@ defmodule ApplicationRunner.WidgetCache do
     name = Map.get(component, "name")
     # query = Map.get(component, "query")
     props = Map.get(component, "props")
-    id = WidgetCache.generate_widget_id(name, widget_context.data, props)
+    id = generate_widget_id(name, widget_context.data, props)
 
     new_widget_context = %WidgetContext{
       id: id,
@@ -294,7 +296,7 @@ defmodule ApplicationRunner.WidgetCache do
       %{"action" => action_code} ->
         props = Map.get(listener, "props", %{})
         listener_key = ListenersCache.generate_listeners_key(action_code, props)
-        ListenersCache.cache_listener(env_state, listener_key, listener)
+        ListenersCache.save_listener(env_state, listener_key, listener)
         {:ok, listener |> Map.drop(["action", "props"]) |> Map.put("code", listener_key)}
 
       _ ->

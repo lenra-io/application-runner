@@ -9,7 +9,8 @@ defmodule ApplicationRunner.SessionManager do
     SessionSupervisor,
     SessionState,
     EnvManager,
-    AdapterHandler
+    AdapterHandler,
+    UiCache
   }
 
   @inactivity_timeout Application.compile_env!(:application_runner, :session_inactivity_timeout)
@@ -18,14 +19,18 @@ defmodule ApplicationRunner.SessionManager do
     return the app-level module.
     This can be used to get module declared in the `SessionSupervisor` (like the cache module for example)
   """
-  def fetch_module_pid(%SessionState{session_supervisor_pid: session_supervisor_pid}, module_name) do
+  @spec fetch_module_pid!(SessionState.t(), atom()) :: pid()
+  def fetch_module_pid!(
+        %SessionState{session_supervisor_pid: session_supervisor_pid},
+        module_name
+      ) do
     Supervisor.which_children(session_supervisor_pid)
     |> Enum.find({:error, :no_such_module}, fn
       {name, _, _, _} -> module_name == name
     end)
     |> case do
       {_, pid, _, _} ->
-        {:ok, pid}
+        pid
 
       {:error, :no_such_module} ->
         raise "No such Module in SessionSupervisor. This should not happen."
@@ -85,7 +90,9 @@ defmodule ApplicationRunner.SessionManager do
     with %{"entrypoint" => entrypoint} <- EnvManager.get_manifest(session_state.env_id),
          {:ok, data} <- AdapterHandler.get_data(session_state),
          {:ok, ui} <- EnvManager.get_and_build_ui(session_state, entrypoint, data) do
-      AdapterHandler.on_ui_changed(session_state, ui)
+      transformed_ui = transform_ui(ui)
+      res = UiCache.diff_and_save(session_state, transformed_ui)
+      AdapterHandler.on_ui_changed(session_state, res)
     end
 
     {:noreply, session_state, @inactivity_timeout}
@@ -130,5 +137,28 @@ defmodule ApplicationRunner.SessionManager do
     end
 
     {:noreply, session_state, @inactivity_timeout}
+  end
+
+  defp transform_ui(%{"entrypoint" => entrypoint, "widgets" => widgets}) do
+    transform(Map.fetch!(widgets, entrypoint), widgets)
+  end
+
+  defp transform(%{"type" => "widget", "id" => id}, widgets) do
+    transform(Map.fetch!(widgets, id), widgets)
+  end
+
+  defp transform(widget, widgets) when is_map(widget) do
+    Enum.map(widget, fn
+      {k, v} -> {k, transform(v, widgets)}
+    end)
+    |> Map.new()
+  end
+
+  defp transform(widget, widgets) when is_list(widget) do
+    Enum.map(widget, &transform(&1, widgets))
+  end
+
+  defp transform(widget, _widgets) do
+    widget
   end
 end

@@ -77,8 +77,15 @@ defmodule ApplicationRunner.ApplicationRunnerAdapter do
   end
 
   @impl true
-  def on_ui_changed(_session_state, ui) do
-    IO.inspect(ui)
+  def on_ui_changed(_session_state, ui_update) do
+    case ui_update do
+      {:ui, ui} ->
+        IO.inspect(ui)
+
+      {:patches, patches} ->
+        IO.inspect(patches)
+    end
+
     :ok
   end
 end

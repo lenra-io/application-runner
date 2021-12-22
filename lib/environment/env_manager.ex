@@ -58,29 +58,26 @@ defmodule ApplicationRunner.EnvManager do
   #  defdelegate load_env_state(env_id),
   #    to: Application.compile_env!(:application_runner, :app_loader)
 
-  @spec fetch_module_pid(EnvState.t(), String.t()) :: {:ok, any}
   @doc """
     return the app-level module.
     This can be used to get module declared in the `EnvSupervisor` (like the cache module for example)
   """
-  def fetch_module_pid(%EnvState{} = env_state, module_name) do
+  @spec fetch_module_pid!(EnvState.t(), atom()) :: pid()
+  def fetch_module_pid!(%EnvState{} = env_state, module_name) do
     Supervisor.which_children(env_state.env_supervisor_pid)
     |> Enum.find({:error, :no_such_module}, fn
       {name, _, _, _} -> module_name == name
     end)
     |> case do
       {_, pid, _, _} ->
-        {:ok, pid}
+        pid
 
       {:error, :no_such_module} ->
         raise "No such Module in EnvSupervisor. This should not happen."
     end
   end
 
-  def fetch_supervisor_pid(env_manager_pid) when is_pid(env_manager_pid) do
-    {:ok, GenServer.call(env_manager_pid, :get_env_supervisor_pid)}
-  end
-
+  @spec get_manifest(number()) :: map()
   def get_manifest(env_id) do
     with {:ok, pid} <- EnvManagers.fetch_env_manager_pid(env_id) do
       GenServer.call(pid, :get_manifest)

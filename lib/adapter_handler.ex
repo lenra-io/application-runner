@@ -20,6 +20,6 @@ defmodule ApplicationRunner.AdapterHandler do
   defdelegate save_data(session_state, data),
     to: Application.compile_env!(:application_runner, :adapter)
 
-  defdelegate on_ui_changed(session_state, ui),
+  defdelegate on_ui_changed(session_state, ui_update),
     to: Application.compile_env!(:application_runner, :adapter)
 end

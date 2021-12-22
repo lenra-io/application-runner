@@ -7,16 +7,19 @@ defmodule ApplicationRunner.CacheMapMacro do
         GenServer.start_link(__MODULE__, [], [])
       end
 
+      @spec put(pid(), term(), term()) :: :ok
       def put(pid, key, value) do
         GenServer.cast(pid, {:put, key, value})
       end
 
+      @spec get(pid(), term()) :: term() | nil
       def get(pid, key) do
         GenServer.call(pid, {:get, key})
       end
 
+      @spec delete(pid(), term()) :: :ok
       def delete(pid, key) do
-        GenServer.cast(pid, {:expire, key})
+        GenServer.cast(pid, {:delete, key})
       end
 
       def init(_) do
@@ -28,7 +31,7 @@ defmodule ApplicationRunner.CacheMapMacro do
         {:noreply, Map.put(state, key, value)}
       end
 
-      def handle_cast({:expire, key}, state) do
+      def handle_cast({:delete, key}, state) do
         {:noreply, Map.delete(state, key)}
       end
 
