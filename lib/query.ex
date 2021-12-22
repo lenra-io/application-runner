@@ -2,9 +2,90 @@ defmodule ApplicationRunner.Query do
   @moduledoc """
     'ApplicationRunner.Query' transform query in JSON format to an ecto query
   """
+  import Ecto.Query, only: [from: 2]
+
   alias ApplicationRunner.{Data, Datastore, Refs}
 
   @repo Application.compile_env!(:application_runner, :repo)
+
+  def get(%{"table" => table}) do
+    case @repo.get_by(Datastore, name: table) do
+      nil ->
+        {:error, :datastore_not_found}
+
+      %Datastore{} = datastore ->
+        case @repo.all(from(d in Data, where: d.datastore_id == ^datastore.id, select: d)) do
+          nil -> {:error, :data_not_found}
+          %Data{} = data -> data
+        end
+    end
+  end
+
+  def get(%{"table" => table, "ids" => ids}) when is_list(ids) do
+    case @repo.get_by(Datastore, name: table) do
+      nil ->
+        {:error, :datastore_not_found}
+
+      %Datastore{} = datastore ->
+        Enum.map(ids, fn id ->
+          @repo.all(
+            from(d in Data, where: d.datastore_id == ^datastore.id and d.id == ^id, select: d)
+          )
+        end)
+    end
+  end
+
+  def get(%{"table" => table, "refBy" => ref_by}) when is_list(ref_by) do
+    case @repo.get_by(Datastore, name: table) do
+      nil ->
+        {:error, :data_not_found}
+
+      %Datastore{} = datastore ->
+        Enum.map(ref_by, fn by ->
+          case(@repo.get(Data, by)) do
+            nil ->
+              {:error, :ref_not_found}
+
+            %Data{} ->
+              @repo.all(
+                from(d in Data,
+                  join: r in assoc(d, :referencer_id),
+                  where: r.id == ^by and d.datastore_id == ^datastore,
+                  select: d
+                )
+              )
+          end
+        end)
+    end
+  end
+
+  def get(%{"table" => table, "refTo" => ref_to}) when is_list(ref_to) do
+    case @repo.get_by(Datastore, name: table) do
+      nil ->
+        {:error, :data_not_found}
+
+      %Datastore{} = datastore ->
+        Enum.map(ref_to, fn to ->
+          case(@repo.get(Data, to)) do
+            nil ->
+              {:error, :ref_not_found}
+
+            %Data{} ->
+              @repo.all(
+                from(d in Data,
+                  join: r in assoc(d, :referenced_id),
+                  where: r.id == ^to and d.datastore_id == ^datastore,
+                  select: d
+                )
+              )
+          end
+        end)
+    end
+  end
+
+  def get(_anything) do
+    {:error, :json_format_error}
+  end
 
   def create_table(app_id, %{"name" => name}) do
     Ecto.Multi.new()
