@@ -220,5 +220,34 @@ defmodule ApplicationRunner.QueryTest do
 
       assert res == []
     end
+
+    test "data by refTo in table should return a list", %{
+      application_id: _application_id
+    } do
+      {:ok, app} = Repo.insert(FakeLenraApplication.new())
+      Query.create_table(app.id, %{"name" => "users"})
+      Query.create_table(app.id, %{"name" => "score"})
+
+      {:ok, %{inserted_data: user}} =
+        Query.insert(app.id, %{"table" => "users", "data" => %{"name" => "test"}})
+
+      {:ok, %{inserted_data: data_one}} =
+        Query.insert(app.id, %{
+          "table" => "score",
+          "data" => %{"points" => 10},
+          "refBy" => [user.id]
+        })
+
+      {:ok, %{inserted_data: data_two}} =
+        Query.insert(app.id, %{
+          "table" => "score",
+          "data" => %{"points" => 12},
+          "refBy" => [user.id]
+        })
+
+      res = Query.get(app.id, %{"table" => "score", "refBy" => [user.id]})
+
+      assert 2 == length(res)
+    end
   end
 end

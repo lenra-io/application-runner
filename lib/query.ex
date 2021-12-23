@@ -68,7 +68,7 @@ defmodule ApplicationRunner.Query do
         %Data{} ->
           @repo.all(
             from(d in Data,
-              join: r in assoc(d, :referencer_id),
+              join: r in assoc(d, :referencers),
               where: r.id == ^by and d.datastore_id == ^datastore,
               select: d
             )
@@ -86,7 +86,7 @@ defmodule ApplicationRunner.Query do
         %Data{} ->
           @repo.all(
             from(d in Data,
-              join: r in assoc(d, :referenced_id),
+              join: r in assoc(d, :referenceds),
               where: r.id == ^to and d.datastore_id == ^datastore,
               select: d
             )
@@ -99,6 +99,10 @@ defmodule ApplicationRunner.Query do
     Ecto.Multi.new()
     |> Ecto.Multi.insert(:inserted_datastore, Datastore.new(app_id, name))
     |> @repo.transaction()
+  end
+
+  def create_table(_app_id, _anything) do
+    {:error, :json_format_error}
   end
 
   def insert(app_id, lists) when is_list(lists) do
