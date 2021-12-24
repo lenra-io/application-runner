@@ -231,12 +231,11 @@ defmodule ApplicationRunner.QueryTest do
       {:ok, %{inserted_data: user}} =
         Query.insert(app.id, %{"table" => "users", "data" => %{"name" => "test"}})
 
-      {:ok, %{inserted_data: data_one}} =
-        Query.insert(app.id, %{
-          "table" => "score",
-          "data" => %{"points" => 10},
-          "refBy" => [user.id]
-        })
+      Query.insert(app.id, %{
+        "table" => "score",
+        "data" => %{"points" => 10},
+        "refBy" => [user.id]
+      })
 
       Query.insert(app.id, %{
         "table" => "score",
