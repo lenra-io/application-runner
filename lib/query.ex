@@ -209,7 +209,10 @@ defmodule ApplicationRunner.Query do
       |> Ecto.Multi.run(:inserted_ref, fn _, _ ->
         {:ok,
          Enum.map(ref_by, fn by ->
-           Enum.map(ref_to, fn to -> @repo.insert(Refs.new(by, to)) end)
+           Enum.map(ref_to, fn to ->
+             {:ok, ref} = @repo.insert(Refs.new(by, to))
+             ref
+           end)
          end)}
       end)
       |> @repo.transaction()
@@ -238,11 +241,9 @@ defmodule ApplicationRunner.Query do
   end
 
   defp handle_del(list) when is_list(list) do
-    Enum.map(list, fn ref -> @repo.delete(ref) end)
-  end
-
-  defp handle_del(_) do
-    []
+    Enum.map(list, fn ref ->
+      @repo.delete(ref)
+    end)
   end
 
   def delete(%{"id" => id}) do
@@ -251,20 +252,37 @@ defmodule ApplicationRunner.Query do
         {:error, :data_not_found}
 
       data ->
-        data
-        |> @repo.preload([:referencers, :referenceds])
+        data =
+          data
+          |> @repo.preload([:referencers, :referenceds])
 
-        handle_del(data.referencers)
-        handle_del(data.referenceds)
-        @repo.delete(data)
+        IO.inspect(data)
+
+        Ecto.Multi.new()
+        |> Ecto.Multi.run(:del_by, fn _, _ ->
+          Enum.map(data.referencers, fn by -> delete(%{"refBy" => [by.id], "refTo" => [id]}) end)
+        end)
+        |> Ecto.Multi.run(:del_to, fn _, _ ->
+          Enum.map(data.referenceds, fn to -> delete(%{"refBy" => [id], "refTo" => [to.id]}) end)
+        end)
+        |> Ecto.Multi.delete(:deleted_data, data)
+        |> @repo.transaction()
     end
   end
 
   def delete(%{"refBy" => ref_bys, "refTo" => ref_tos}) do
-    ref_bys = Enum.map(ref_bys, fn by -> @repo.get_by(Refs, referencer_id: by) end)
-    ref_tos = Enum.map(ref_tos, fn to -> @repo.get_by(Refs, referenced_id: to) end)
+    ref_bys =
+      Enum.map(ref_bys, fn by ->
+        @repo.all(from(r in Refs, where: r.referencer_id == ^by, select: r))
+      end)
+
+    ref_tos =
+      Enum.map(ref_tos, fn to ->
+        @repo.all(from(r in Refs, where: r.referenced_id == ^to, select: r))
+      end)
+
     to_delete = Enum.uniq(ref_bys ++ ref_tos)
-    IO.puts(inspect(to_delete))
+    IO.inspect(to_delete)
     handle_del(to_delete)
   end
 
