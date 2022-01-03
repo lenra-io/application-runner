@@ -140,7 +140,7 @@ defmodule ApplicationRunner.SessionManager do
   end
 
   defp transform_ui(%{"entrypoint" => entrypoint, "widgets" => widgets}) do
-    transform(Map.fetch!(widgets, entrypoint), widgets)
+    transform(%{"root" => Map.fetch!(widgets, entrypoint)}, widgets)
   end
 
   defp transform(%{"type" => "widget", "id" => id}, widgets) do
