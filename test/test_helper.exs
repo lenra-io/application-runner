@@ -5,4 +5,6 @@ for app <- Application.spec(:application_runner, :applications) do
   Application.ensure_all_started(app)
 end
 
+ApplicationRunner.ApplicationRunnerAdapter.start_link([])
+
 ExUnit.start()

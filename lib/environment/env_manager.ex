@@ -112,24 +112,27 @@ defmodule ApplicationRunner.EnvManager do
   def handle_call({:get_and_build_ui, entrypoint, data}, _from, env_state) do
     id = WidgetCache.generate_widget_id(entrypoint, data, %{})
 
-    {:ok, ui_context} =
-      WidgetCache.get_and_build_widget(
-        env_state,
-        %UiContext{
-          widgets_map: %{},
-          listeners_map: %{}
-        },
-        %WidgetContext{
-          id: id,
-          name: entrypoint,
-          prefix_path: "",
-          data: data
-        }
-      )
+    WidgetCache.get_and_build_widget(
+      env_state,
+      %UiContext{
+        widgets_map: %{},
+        listeners_map: %{}
+      },
+      %WidgetContext{
+        id: id,
+        name: entrypoint,
+        prefix_path: "",
+        data: data
+      }
+    )
+    |> case do
+      {:ok, ui_context} ->
+        res = {:ok, %{"entrypoint" => id, "widgets" => ui_context.widgets_map}}
+        {:reply, res, env_state, @inactivity_timeout}
 
-    res = {:ok, %{"entrypoint" => id, "widgets" => ui_context.widgets_map}}
-
-    {:reply, res, env_state, @inactivity_timeout}
+      error_res ->
+        {:reply, error_res, env_state, @inactivity_timeout}
+    end
   end
 
   @impl true

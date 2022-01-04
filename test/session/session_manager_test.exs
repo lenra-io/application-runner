@@ -19,23 +19,23 @@ defmodule ApplicationRunner.SessionManagerTest do
   end
 
   test "SessionManager supervisor should exist and have the MockGenServer." do
-    assert {:ok, pid} = SessionManagers.start_session("1", 1, 1, "app")
+    assert {:ok, pid} = SessionManagers.start_session(make_ref(), make_ref(), 1, "app")
 
-    assert {:ok, _pid} =
-             SessionManager.fetch_module_pid(
+    assert _pid =
+             SessionManager.fetch_module_pid!(
                :sys.get_state(pid),
                MockGenServer
              )
   end
 
   test "SessionManager supervisor should not have the NotExistGenServer" do
-    assert {:ok, pid} = SessionManagers.start_session("1", 1, 1, "app")
+    assert {:ok, pid} = SessionManagers.start_session(make_ref(), make_ref(), 1, "app")
 
     assert_raise(
       RuntimeError,
       "No such Module in SessionSupervisor. This should not happen.",
       fn ->
-        SessionManager.fetch_module_pid(
+        SessionManager.fetch_module_pid!(
           :sys.get_state(pid),
           NotExistGenServer
         )

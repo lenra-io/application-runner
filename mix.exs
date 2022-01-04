@@ -10,7 +10,7 @@ defmodule ApplicationRunner.MixProject do
       start_permanent: Mix.env() == :prod,
       deps: deps(),
       aliases: [
-        test: "test --no-start"
+        test: "test"
       ]
     ]
   end

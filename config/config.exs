@@ -14,4 +14,10 @@ config :application_runner,
   additional_app_modules: [],
   additional_session_modules: []
 
+config :swarm,
+  debug: false
+
+config :logger,
+  level: :warning
+
 import_config "#{Mix.env()}.exs"

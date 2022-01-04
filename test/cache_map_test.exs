@@ -19,7 +19,7 @@ defmodule ApplicationRunner.MyCacheAsync do
 end
 
 defmodule ApplicationRunner.CacheMapTest do
-  use ExUnit.Case, async: true
+  use ExUnit.Case, async: false
 
   @moduledoc """
     Test the `ApplicationRunner.CacheMapTest` module

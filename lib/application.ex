@@ -10,8 +10,6 @@ defmodule ApplicationRunner.Application do
     children = [
       # Start the json validator server for the UI
       ApplicationRunner.JsonSchemata,
-      # Start the Cache Storage system (init all tables of storage)
-      ApplicationRunner.Storage,
       ApplicationRunner.EnvManagers,
       ApplicationRunner.SessionManagers
     ]

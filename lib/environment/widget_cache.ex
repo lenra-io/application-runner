@@ -149,7 +149,7 @@ defmodule ApplicationRunner.WidgetCache do
          %WidgetContext{prefix_path: prefix_path} = widget_context
        ) do
     Enum.reduce(child_list, {%{}, ui_context, []}, fn child_key,
-                                                      {child_map, app_context_acc, errors} ->
+                                                      {child_map, ui_context_acc, errors} ->
       child_path = "#{prefix_path || ""}/#{child_key}"
 
       case Map.get(component, child_key) do
@@ -164,10 +164,10 @@ defmodule ApplicationRunner.WidgetCache do
             Map.put(widget_context, :prefix_path, child_path)
           )
           |> case do
-            {:ok, built_component, child_app_context} ->
+            {:ok, built_component, child_ui_context} ->
               {
                 Map.merge(child_map, %{child_key => built_component}),
-                merge_app_context(app_context_acc, child_app_context),
+                merge_ui_context(ui_context_acc, child_ui_context),
                 errors
               }
 
@@ -198,25 +198,30 @@ defmodule ApplicationRunner.WidgetCache do
          %WidgetContext{prefix_path: prefix_path} = widget_context
        ) do
     Enum.reduce(children_keys, {%{}, ui_context, []}, fn children_key,
-                                                         {children_map, app_context_acc, errors} ->
-      children_path = "#{prefix_path || ""}/#{children_key}"
+                                                         {children_map, app_context_acc, errors} =
+                                                           acc ->
+      if Map.has_key?(component, children_key) do
+        children_path = "#{prefix_path || ""}/#{children_key}"
 
-      case build_children(
-             env_state,
-             component,
-             children_key,
-             ui_context,
-             Map.put(widget_context, :prefix_path, children_path)
-           ) do
-        {:ok, built_children, children_app_context} ->
-          {
-            Map.merge(children_map, %{children_key => built_children}),
-            merge_app_context(app_context_acc, children_app_context),
-            errors
-          }
+        case build_children(
+               env_state,
+               component,
+               children_key,
+               ui_context,
+               Map.put(widget_context, :prefix_path, children_path)
+             ) do
+          {:ok, built_children, children_ui_context} ->
+            {
+              Map.merge(children_map, %{children_key => built_children}),
+              merge_ui_context(app_context_acc, children_ui_context),
+              errors
+            }
 
-        {:error, children_errors} ->
-          {%{}, ui_context, children_errors ++ errors}
+          {:error, children_errors} ->
+            {%{}, ui_context, children_errors ++ errors}
+        end
+      else
+        acc
       end
     end)
     |> case do
@@ -230,7 +235,7 @@ defmodule ApplicationRunner.WidgetCache do
   defp build_children(env_state, component, children_key, ui_context, widget_context) do
     case Map.get(component, children_key) do
       nil ->
-        {:ok, []}
+        {:ok, [], ui_context}
 
       children ->
         build_children_map(env_state, children, ui_context, widget_context)
@@ -247,7 +252,7 @@ defmodule ApplicationRunner.WidgetCache do
     |> Enum.with_index()
     |> Enum.reduce(
       {[], ui_context, []},
-      fn {child, index}, {built_components, app_context_acc, errors} ->
+      fn {child, index}, {built_components, ui_context_acc, errors} ->
         children_path = "#{prefix_path}/#{index}"
 
         case build_component(
@@ -256,12 +261,12 @@ defmodule ApplicationRunner.WidgetCache do
                ui_context,
                Map.put(widget_context, :prefix_path, children_path)
              ) do
-          {:ok, built_component, new_app_context} ->
+          {:ok, built_component, new_ui_context} ->
             {built_components ++ [built_component],
-             merge_app_context(app_context_acc, new_app_context), errors}
+             merge_ui_context(ui_context_acc, new_ui_context), errors}
 
           {:error, children_errors} ->
-            {built_components, app_context_acc, errors ++ children_errors}
+            {built_components, ui_context_acc, errors ++ children_errors}
         end
       end
     )
@@ -271,11 +276,11 @@ defmodule ApplicationRunner.WidgetCache do
     end
   end
 
-  defp merge_app_context(app_context1, app_context2) do
+  defp merge_ui_context(ui_context1, ui_context2) do
     Map.put(
-      app_context1,
+      ui_context1,
       :widgets_map,
-      Map.merge(app_context1.widgets_map, app_context2.widgets_map)
+      Map.merge(ui_context1.widgets_map, ui_context2.widgets_map)
     )
   end
 

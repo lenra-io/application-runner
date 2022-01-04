@@ -9,29 +9,32 @@ defmodule ApplicationRunner.EnvManagersTest do
 
   setup do
     start_supervised(EnvManagers)
+
     :ok
   end
 
   test "Can start one Env" do
-    assert {:ok, _} = EnvManagers.start_env(1, 1, "app")
+    assert {:ok, _} = EnvManagers.start_env(make_ref(), 1, "app")
   end
 
   test "Can start multiple Envs" do
     1..10
     |> Enum.to_list()
-    |> Enum.each(fn env_id ->
-      assert {:ok, _} = EnvManagers.start_env(env_id, 1, "app")
+    |> Enum.each(fn _ ->
+      assert {:ok, _} = EnvManagers.start_env(make_ref(), 1, "app")
     end)
   end
 
   test "Can start one Env and get it after" do
-    assert {:error, :env_not_started} = EnvManagers.fetch_env_manager_pid(1)
-    assert {:ok, pid} = EnvManagers.start_env(1, 1, "app")
-    assert {:ok, ^pid} = EnvManagers.fetch_env_manager_pid(1)
+    env_id = make_ref()
+    assert {:error, :env_not_started} = EnvManagers.fetch_env_manager_pid(env_id)
+    assert {:ok, pid} = EnvManagers.start_env(env_id, 1, "app")
+    assert {:ok, ^pid} = EnvManagers.fetch_env_manager_pid(env_id)
   end
 
   test "Cannot start same env twice" do
-    assert {:ok, pid} = EnvManagers.start_env(1, 1, "app")
-    assert {:error, {:already_started, ^pid}} = EnvManagers.start_env(1, 1, "app")
+    env_id = make_ref()
+    assert {:ok, pid} = EnvManagers.start_env(env_id, 1, "app")
+    assert {:error, {:already_started, ^pid}} = EnvManagers.start_env(env_id, 1, "app")
   end
 end

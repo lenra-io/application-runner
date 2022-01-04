@@ -6,52 +6,40 @@ defmodule ApplicationRunner.ApplicationRunnerAdapter do
 
   alias ApplicationRunner.{SessionState, EnvState}
 
-  @root %{
-    "type" => "flex",
-    "children" => [
-      %{"type" => "text", "value" => "foo"},
-      %{"type" => "widget", "name" => "w1"},
-      %{"type" => "widget", "name" => "w2"}
-    ]
-  }
-  @w1 %{"type" => "text", "value" => "bar"}
-  @w2 %{"type" => "button", "text" => "butt", "onPressed" => %{"action" => "inc", "props" => %{}}}
+  use GenServer
 
-  @manifest %{"widgets" => %{"root" => @root}, "entrypoint" => "root"}
+  # @root %{
+  #   "type" => "flex",
+  #   "children" => [
+  #     %{"type" => "text", "value" => "foo"},
+  #     %{"type" => "widget", "name" => "w1"},
+  #     %{"type" => "widget", "name" => "w2"}
+  #   ]
+  # }
+  # @w1 %{"type" => "text", "value" => "bar"}
+  # @w2 %{"type" => "button", "text" => "butt", "onPressed" => %{"action" => "inc", "props" => %{}}}
+
+  @manifest %{"entrypoint" => "root"}
 
   @impl true
   def get_manifest(_app) do
     {:ok, @manifest}
   end
 
+  def manifest_const, do: @manifest
+
   @impl true
-  def get_widget("root", _data, _props) do
-    {:ok, @root}
+  def get_widget(name, data, props) do
+    GenServer.call(__MODULE__, {:get_widget, name, data, props})
   end
 
-  def get_widget("w1", data, _) do
-    {:ok, Map.put(@w1, "value", "#{data["value"]}")}
-  end
-
-  def get_widget("w2", _, _) do
-    {:ok, @w2}
-  end
-
-  def get_widget(name, _, _) do
-    raise "no component #{name}"
+  def set_mock(mock) do
+    GenServer.call(__MODULE__, {:set_mock, mock})
   end
 
   @impl true
-  def run_listener(%EnvState{}, "inc", data, _props, _event) do
-    {:ok, %{"value" => data["value"] + 1}}
-  end
-
-  def run_listener(%EnvState{}, "InitData", _data, _props, _event) do
-    {:ok, %{"value" => 0}}
-  end
-
-  def run_listener(%EnvState{}, _action, data, _props, _event) do
-    {:ok, data}
+  def run_listener(%EnvState{}, action, data, props, event) do
+    GenServer.call(__MODULE__, {:run_listener, action, data, props, event})
   end
 
   @impl true
@@ -87,5 +75,32 @@ defmodule ApplicationRunner.ApplicationRunnerAdapter do
     end
 
     :ok
+  end
+
+  @impl true
+  def init(_) do
+    {:ok, %{}}
+  end
+
+  def start_link(_), do: GenServer.start_link(__MODULE__, [], name: __MODULE__)
+
+  @impl true
+  def handle_call({:set_mock, mock}, _from, _) do
+    {:reply, :ok, mock}
+  end
+
+  @impl true
+  def handle_call({:get_widget, name, data, props}, _from, %{widgets: widgets} = mock) do
+    widget = apply(Map.get(widgets, name), [data, props])
+    {:reply, {:ok, widget}, mock}
+  end
+
+  def handle_call(
+        {:run_listener, action, data, props, event},
+        _from,
+        %{listeners: listeners} = mock
+      ) do
+    new_data = apply(Map.get(listeners, action), [data, props, event])
+    {:reply, new_data, mock}
   end
 end
