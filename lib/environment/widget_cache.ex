@@ -324,7 +324,7 @@ defmodule ApplicationRunner.WidgetCache do
     )
   end
 
-  @spec build_listeners(EnvState.t(), WidgetHandler.component(), list(String.t())) ::
+  @spec build_listeners(EnvState.t(), component(), list(String.t())) ::
           {:ok, map()} | {:error, list()}
   defp build_listeners(env_state, component, listeners) do
     Enum.reduce(listeners, {:ok, %{}}, fn listener, {:ok, acc} ->
