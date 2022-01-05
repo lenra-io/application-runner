@@ -5,11 +5,11 @@ defmodule ApplicationRunner.SessionManager do
   use GenServer
 
   alias ApplicationRunner.{
-    SessionManagers,
-    SessionSupervisor,
-    SessionState,
-    EnvManager,
     AdapterHandler,
+    EnvManager,
+    SessionManagers,
+    SessionState,
+    SessionSupervisor,
     UiCache
   }
 

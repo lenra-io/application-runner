@@ -1,7 +1,12 @@
 defmodule ApplicationRunner.ButtonValidatorTest do
   use ApplicationRunner.ComponentCase
 
-  alias ApplicationRunner.{SessionManagers, EnvManagers, ApplicationRunnerAdapter, EnvManager}
+  alias ApplicationRunner.{
+    ApplicationRunnerAdapter,
+    EnvManager,
+    EnvManagers,
+    SessionManagers
+  }
 
   @moduledoc """
     Test the "button.schema.json" schema

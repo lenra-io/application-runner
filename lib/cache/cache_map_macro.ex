@@ -1,4 +1,11 @@
 defmodule ApplicationRunner.CacheMapMacro do
+  @moduledoc """
+    This is a using macro to create a simple key/value in-memory cache.
+
+    ```
+      use ApplicationRunner.CacheMapMacro
+    ```
+  """
   defmacro __using__(_opts) do
     quote generated: true, location: :keep do
       use GenServer

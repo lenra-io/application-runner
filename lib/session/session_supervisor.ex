@@ -1,4 +1,8 @@
 defmodule ApplicationRunner.SessionSupervisor do
+  @moduledoc """
+    This Supervisor is started by the SessionManager.
+    It handle all the GenServer needed for the Session to work.
+  """
   use Supervisor
 
   def start_link(opts) do

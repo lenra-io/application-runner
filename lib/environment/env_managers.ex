@@ -5,7 +5,7 @@ defmodule ApplicationRunner.EnvManagers do
   """
   use DynamicSupervisor
 
-  alias ApplicationRunner.{EnvManagers}
+  alias ApplicationRunner.EnvManagers
 
   @doc false
   def start_link(opts) do

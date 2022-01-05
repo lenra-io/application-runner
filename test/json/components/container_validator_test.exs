@@ -1,7 +1,12 @@
 defmodule ApplicationRunner.ContainerValidatorTest do
   use ApplicationRunner.ComponentCase
 
-  alias ApplicationRunner.{SessionManagers, EnvManagers, ApplicationRunnerAdapter, EnvManager}
+  alias ApplicationRunner.{
+    ApplicationRunnerAdapter,
+    EnvManager,
+    EnvManagers,
+    SessionManagers
+  }
 
   @moduledoc """
     Test the "container.schema.json" schema

@@ -5,15 +5,15 @@ defmodule ApplicationRunner.EnvManager do
   use GenServer
 
   alias ApplicationRunner.{
-    EnvManagers,
-    EnvSupervisor,
-    EnvState,
-    SessionManagers,
     AdapterHandler,
+    EnvManagers,
+    EnvState,
+    EnvSupervisor,
+    ListenersCache,
+    SessionManagers,
     UiContext,
-    WidgetContext,
     WidgetCache,
-    ListenersCache
+    WidgetContext
   }
 
   @inactivity_timeout Application.compile_env!(:application_runner, :app_inactivity_timeout)

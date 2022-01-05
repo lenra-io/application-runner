@@ -7,9 +7,9 @@ defmodule ApplicationRunner.SessionManagerTest do
 
   alias ApplicationRunner.{
     EnvManagers,
-    SessionManagers,
+    MockGenServer,
     SessionManager,
-    MockGenServer
+    SessionManagers
   }
 
   setup do

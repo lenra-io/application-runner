@@ -5,7 +5,7 @@ defmodule ApplicationRunner.EnvManagersTest do
     Test the `ApplicationRunner.EnvManagers` module
   """
 
-  alias ApplicationRunner.{EnvManagers}
+  alias ApplicationRunner.EnvManagers
 
   setup do
     start_supervised(EnvManagers)

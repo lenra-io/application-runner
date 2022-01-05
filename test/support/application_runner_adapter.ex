@@ -4,7 +4,7 @@ defmodule ApplicationRunner.ApplicationRunnerAdapter do
   """
   @behaviour ApplicationRunner.AdapterBehavior
 
-  alias ApplicationRunner.{SessionState, EnvState}
+  alias ApplicationRunner.{EnvState, SessionState}
 
   use GenServer
 
@@ -68,9 +68,11 @@ defmodule ApplicationRunner.ApplicationRunnerAdapter do
   def on_ui_changed(_session_state, ui_update) do
     case ui_update do
       {:ui, ui} ->
+        # credo:disable-for-next-line
         IO.inspect(ui)
 
       {:patches, patches} ->
+        # credo:disable-for-next-line
         IO.inspect(patches)
     end
 

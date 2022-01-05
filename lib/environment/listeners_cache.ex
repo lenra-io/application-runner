@@ -1,6 +1,15 @@
 defmodule ApplicationRunner.ListenersCache do
+  @moduledoc """
+    This module create a Cache for all the listeners.
+    It save the listener by creating a hash of the action and the props as the key.
+    Then we can retreive the listener (action/props) by giving the key.
+  """
   use ApplicationRunner.CacheMapMacro
-  alias ApplicationRunner.{EnvState, EnvManager}
+
+  alias ApplicationRunner.{
+    EnvManager,
+    EnvState
+  }
 
   @spec save_listener(EnvState.t(), String.t(), map()) :: :ok
   def save_listener(%EnvState{} = env_state, code, listener) do

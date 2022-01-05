@@ -5,7 +5,12 @@ defmodule ApplicationRunner.EnvManagerTest do
     Test the `ApplicationRunner.AppManager` module
   """
 
-  alias ApplicationRunner.{EnvManagers, EnvManager, MockGenServer, ApplicationRunnerAdapter}
+  alias ApplicationRunner.{
+    ApplicationRunnerAdapter,
+    EnvManager,
+    EnvManagers,
+    MockGenServer
+  }
 
   setup do
     start_supervised(EnvManagers)

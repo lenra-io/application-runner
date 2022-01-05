@@ -1,8 +1,21 @@
 defmodule ApplicationRunner.ComponentCase do
+  @moduledoc """
+    This is a ExUnit test case with some setup that allow simpler unit test on JSON UI.
+
+    ```
+      use ApplicationRunner.ComponentCase
+    ```
+  """
   defmacro __using__(_opts) do
     quote do
       use ExUnit.Case, async: false
-      alias ApplicationRunner.{SessionManagers, EnvManagers, ApplicationRunnerAdapter, EnvManager}
+
+      alias ApplicationRunner.{
+        ApplicationRunnerAdapter,
+        EnvManager,
+        EnvManagers,
+        SessionManagers
+      }
 
       setup do
         start_supervised(EnvManagers)

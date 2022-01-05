@@ -1,14 +1,21 @@
 defmodule ApplicationRunner.WidgetCache do
+  @moduledoc """
+    This module handle the recursive widget building.
+    It is called by the EnvManager and call ListenerCache to cache the listeners.
+
+    This module cache every call to the get_and_build_widget.
+    This means that every widget with the same name/data/props is get/build only once.
+  """
   use ApplicationRunner.CacheAsyncMacro
 
   alias ApplicationRunner.{
-    JsonSchemata,
-    EnvState,
+    AdapterHandler,
     EnvManager,
-    UiContext,
-    WidgetContext,
+    EnvState,
+    JsonSchemata,
     ListenersCache,
-    AdapterHandler
+    UiContext,
+    WidgetContext
   }
 
   @type widget_ui :: map()
@@ -146,39 +153,72 @@ defmodule ApplicationRunner.WidgetCache do
          component,
          child_list,
          ui_context,
-         %WidgetContext{prefix_path: prefix_path} = widget_context
+         widget_context
        ) do
-    Enum.reduce(child_list, {%{}, ui_context, []}, fn child_key,
-                                                      {child_map, ui_context_acc, errors} ->
-      child_path = "#{prefix_path || ""}/#{child_key}"
-
-      case Map.get(component, child_key) do
-        nil ->
-          {child_map, errors}
-
-        child_comp ->
-          build_component(
-            env_state,
-            child_comp,
-            ui_context,
-            Map.put(widget_context, :prefix_path, child_path)
-          )
-          |> case do
-            {:ok, built_component, child_ui_context} ->
-              {
-                Map.merge(child_map, %{child_key => built_component}),
-                merge_ui_context(ui_context_acc, child_ui_context),
-                errors
-              }
-
-            {:error, comp_errors} ->
-              {child_map, comp_errors ++ errors}
-          end
-      end
-    end)
-    |> case do
+    case reduce_child_list(env_state, component, child_list, ui_context, widget_context) do
       {comp, merged_app_context, []} -> {:ok, comp, merged_app_context}
       {_, _, errors} -> {:error, errors}
+    end
+  end
+
+  defp reduce_child_list(
+         env_state,
+         component,
+         child_list,
+         ui_context,
+         %WidgetContext{prefix_path: prefix_path} = widget_context
+       ) do
+    Enum.reduce(
+      child_list,
+      {%{}, ui_context, []},
+      fn child_key, {child_map, ui_context_acc, errors} ->
+        case Map.get(component, child_key) do
+          nil ->
+            {child_map, ui_context_acc, errors}
+
+          child_comp ->
+            child_path = "#{prefix_path || ""}/#{child_key}"
+
+            build_comp_and_format(
+              env_state,
+              child_map,
+              child_comp,
+              child_key,
+              errors,
+              ui_context_acc,
+              ui_context,
+              Map.put(widget_context, :prefix_path, child_path)
+            )
+        end
+      end
+    )
+  end
+
+  defp build_comp_and_format(
+         env_state,
+         child_map,
+         child_comp,
+         child_key,
+         errors,
+         ui_context_acc,
+         ui_context,
+         widget_context
+       ) do
+    case build_component(
+           env_state,
+           child_comp,
+           ui_context,
+           widget_context
+         ) do
+      {:ok, built_component, child_ui_context} ->
+        {
+          Map.merge(child_map, %{child_key => built_component}),
+          merge_ui_context(ui_context_acc, child_ui_context),
+          errors
+        }
+
+      {:error, comp_errors} ->
+        {child_map, ui_context_acc, comp_errors ++ errors}
     end
   end
 
