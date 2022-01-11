@@ -16,7 +16,11 @@ defmodule ApplicationRunner.EnvManager do
     WidgetContext
   }
 
-  @inactivity_timeout Application.compile_env!(:application_runner, :env_inactivity_timeout)
+  @inactivity_timeout Application.compile_env(
+                        :application_runner,
+                        :env_inactivity_timeout,
+                        1000 * 60 * 60
+                      )
 
   def start_link(opts) do
     env_id = Keyword.fetch!(opts, :env_id)

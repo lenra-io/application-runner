@@ -13,7 +13,11 @@ defmodule ApplicationRunner.SessionManager do
     UiCache
   }
 
-  @inactivity_timeout Application.compile_env!(:application_runner, :session_inactivity_timeout)
+  @inactivity_timeout Application.compile_env(
+                        :application_runner,
+                        :session_inactivity_timeout,
+                        1000 * 60 * 10
+                      )
 
   @doc """
     return the app-level module.
