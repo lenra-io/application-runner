@@ -31,8 +31,7 @@ defmodule ApplicationRunner.EnvManager do
   @impl true
   def init(opts) do
     env_id = Keyword.fetch!(opts, :env_id)
-    build_number = Keyword.fetch!(opts, :build_number)
-    app_name = Keyword.fetch!(opts, :app_name)
+    assigns = Keyword.fetch!(opts, :assigns)
 
     {:ok, env_supervisor_pid} = EnvSupervisor.start_link(opts)
     # Link the process to kill the manager if the supervisor is killed.
@@ -41,8 +40,7 @@ defmodule ApplicationRunner.EnvManager do
 
     env_state = %EnvState{
       env_id: env_id,
-      app_name: app_name,
-      build_number: build_number,
+      assigns: assigns,
       env_supervisor_pid: env_supervisor_pid
     }
 

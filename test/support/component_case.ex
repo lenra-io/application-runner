@@ -24,7 +24,7 @@ defmodule ApplicationRunner.ComponentCase do
         # These make_ref() create a uniq ref that avoid collision across two test.
         session_id = make_ref()
         env_id = make_ref()
-        {:ok, pid} = SessionManagers.start_session(session_id, env_id, 1, "app")
+        {:ok, pid} = SessionManagers.start_session(session_id, env_id, %{}, %{})
         session_state = :sys.get_state(pid)
 
         on_exit(fn ->

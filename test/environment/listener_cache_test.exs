@@ -5,7 +5,7 @@ defmodule ApplicationRunner.ListenerCacheTest do
   setup do
     start_supervised(EnvManagers)
 
-    {:ok, pid} = EnvManagers.start_env(make_ref(), 1, "app")
+    {:ok, pid} = EnvManagers.start_env(make_ref(), %{})
 
     {:ok, %{env_state: :sys.get_state(pid)}}
   end
