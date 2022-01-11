@@ -15,7 +15,7 @@ defmodule ApplicationRunner.EnvSupervisor do
       [
         ApplicationRunner.ListenersCache,
         ApplicationRunner.WidgetCache
-      ] ++ Application.get_env(:application_runner, :additional_app_modules, [])
+      ] ++ Application.get_env(:application_runner, :additional_env_modules, [])
 
     Supervisor.init(children, strategy: :one_for_one)
   end
