@@ -45,7 +45,7 @@ defmodule ApplicationRunner.ImageValidatorTest do
     }
 
     res = mock_root_and_run(json, session_state)
-    assert_error({:error, [{"Required property path was not present.", ""}]}, res)
+    assert_error({:error, [{"Required property src was not present.", ""}]}, res)
   end
 
   test "Invalid image wrong types on width and height", %{session_state: session_state} do
