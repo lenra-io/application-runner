@@ -33,7 +33,7 @@ defmodule ApplicationRunner.EnvManager do
     env_id = Keyword.fetch!(opts, :env_id)
     assigns = Keyword.fetch!(opts, :assigns)
 
-    {:ok, env_supervisor_pid} = EnvSupervisor.start_link(opts)
+    {:ok, env_supervisor_pid} = EnvSupervisor.start_link(nil)
     # Link the process to kill the manager if the supervisor is killed.
     # The EnvManager should be restarted by the EnvManagers then it will restart the supervisor.
     Process.link(env_supervisor_pid)
@@ -44,13 +44,17 @@ defmodule ApplicationRunner.EnvManager do
       env_supervisor_pid: env_supervisor_pid
     }
 
-    {:ok, manifest} = AdapterHandler.get_manifest(env_state)
+    case AdapterHandler.get_manifest(env_state) do
+      {:ok, manifest} ->
+        {
+          :ok,
+          Map.put(env_state, :manifest, manifest),
+          @inactivity_timeout
+        }
 
-    {
-      :ok,
-      Map.put(env_state, :manifest, manifest),
-      @inactivity_timeout
-    }
+      {:error, reason} ->
+        {:stop, reason}
+    end
   end
 
   #  defdelegate load_env_state(env_id),

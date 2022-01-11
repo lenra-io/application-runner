@@ -4,7 +4,7 @@ defmodule ApplicationRunner.AdapterBehavior do
   """
   alias ApplicationRunner.{EnvState, SessionState}
 
-  @callback get_manifest(EnvState.t()) :: {:ok, map()} | {:error, map()}
+  @callback get_manifest(EnvState.t()) :: {:ok, map()} | {:error, term()}
   @callback get_widget(String.t(), map(), map()) :: {:ok, map()} | {:error, map()}
   @callback run_listener(EnvState.t(), String.t(), map(), map(), map()) ::
               {:ok, map()} | {:error, map()}

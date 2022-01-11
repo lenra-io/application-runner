@@ -22,8 +22,11 @@ defmodule ApplicationRunner.ApplicationRunnerAdapter do
   @manifest %{"entrypoint" => "root"}
 
   @impl true
-  def get_manifest(_app) do
-    {:ok, @manifest}
+  def get_manifest(%EnvState{assigns: assigns}) do
+    case assigns do
+      %{} -> {:ok, @manifest}
+      _ -> {:error, :nothing_bad}
+    end
   end
 
   def manifest_const, do: @manifest
