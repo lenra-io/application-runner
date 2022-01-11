@@ -10,7 +10,7 @@ config :application_runner,
   # 10 min
   session_inactivity_timeout: 1000 * 60 * 10,
   # 60 min
-  app_inactivity_timeout: 1000 * 60 * 60,
+  env_inactivity_timeout: 1000 * 60 * 60,
   additional_app_modules: [],
   additional_session_modules: []
 
