@@ -8,7 +8,7 @@ defmodule ApplicationRunner.ImageValidatorTest do
   test "Valid image", %{session_state: session_state} do
     json = %{
       "type" => "image",
-      "path" => "download.jpeg"
+      "src" => "download.jpeg"
     }
 
     res = mock_root_and_run(json, session_state)
@@ -19,7 +19,7 @@ defmodule ApplicationRunner.ImageValidatorTest do
   test "Valid image with width and height properties set", %{session_state: session_state} do
     json = %{
       "type" => "image",
-      "path" => "download.jpeg",
+      "src" => "download.jpeg",
       "width" => 120.0,
       "height" => 120.0
     }
@@ -32,7 +32,7 @@ defmodule ApplicationRunner.ImageValidatorTest do
   test "Invalid type for image", %{session_state: session_state} do
     json = %{
       "type" => "images",
-      "path" => "download.jpeg"
+      "src" => "download.jpeg"
     }
 
     res = mock_root_and_run(json, session_state)
@@ -51,7 +51,7 @@ defmodule ApplicationRunner.ImageValidatorTest do
   test "Invalid image wrong types on width and height", %{session_state: session_state} do
     json = %{
       "type" => "image",
-      "path" => "download.jpeg",
+      "src" => "download.jpeg",
       "width" => "wrong",
       "height" => "wrong"
     }
