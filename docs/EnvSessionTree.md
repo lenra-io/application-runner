@@ -1,9 +1,9 @@
 # The Environment and Session achitecture
 
 ## How does it works ?
-We tried to organize each actor in the system with elixir process/genserver.
-These are the actors in the system.
-- An Environment is a specific version of an app. The Environment handle everything that is in common between every users of one version of the application (The cache of all widget for example.)
+
+We tried to organize each actor in the system with elixir Genserver/Supervisor/DynamicSupervisor.
+- An Environment is a speicific version of an app. The Environment handle everything that is in common between every users of a specific version of the application (The cache of all widget for example.)
 - A session is a device open in a specific App. The session is linked to the Environment and handle all IN/OUT between the client socket and the Environment. The session handle everyhting that is specific to a user (the state of the UI for example.)
 
 To match these two actor and everything they handle, we use GenServer, DynamicSupervisor and Supervisor.
