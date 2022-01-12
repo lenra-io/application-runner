@@ -4,7 +4,7 @@ defmodule ApplicationRunner.CacheAsyncMacro do
     Every function called with `call_function(pid, module, function_name, args)` is called only once for the same module/name/args.
     If another call_function for the same args is called then :
     - If the first call is still pending, the second call is waiting until the first one is done and the result is sent to the first and second call.
-    - If the first call is done, the result is send directly.
+    - If the first call is done, the result is sent directly.
 
     ```
       use ApplicationRunner.CacheMapMacro
