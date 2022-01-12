@@ -3,7 +3,7 @@ defmodule ApplicationRunner.CacheAsyncMacro do
     This is a using macro to create a function cache.
     Every function called with `call_function(pid, module, function_name, args)` is called only once for the same module/name/args.
     If another call_function for the same args is called then :
-    - If the first call is still pending, the second call is waiting until the first is done and the result is send to the first and second call.
+    - If the first call is still pending, the second call is waiting until the first one is done and the result is sent to the first and second call.
     - If the first call is done, the result is send directly.
 
     ```
