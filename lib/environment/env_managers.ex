@@ -1,6 +1,6 @@
 defmodule ApplicationRunner.EnvManagers do
   @moduledoc """
-    This module manage all the applications.
+    This module manages all the applications.
     It can start/stop an `EnvManager`, get the `EnvManager` process, send a message to all the `EnvManager`, etc..
   """
   use DynamicSupervisor
