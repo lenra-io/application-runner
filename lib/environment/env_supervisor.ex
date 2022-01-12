@@ -1,6 +1,6 @@
 defmodule ApplicationRunner.EnvSupervisor do
   @moduledoc """
-    This module handle the children module of an AppManager.
+    This module handles the children module of an AppManager.
   """
   use Supervisor
 
