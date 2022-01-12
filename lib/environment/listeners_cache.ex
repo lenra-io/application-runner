@@ -1,8 +1,8 @@
 defmodule ApplicationRunner.ListenersCache do
   @moduledoc """
-    This module create a Cache for all the listeners.
-    It save the listener by creating a hash of the action and the props as the key.
-    Then we can retreive the listener (action/props) by giving the key.
+    This module creates a Cache for all the listeners.
+    It save the listener props/action using a hash the value (sha256) as key.
+    Then we can retrieve the listener (action/props) by giving the key.
   """
   use ApplicationRunner.CacheMapMacro
 
