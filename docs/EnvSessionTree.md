@@ -9,7 +9,7 @@ These are the actors in the system.
 To match these two actor and everything they handle, we use GenServer, DynamicSupervisor and Supervisor.
 - An environment is materialized with a `EnvManager`
 - All environments are supervised by a DynamicSupervisor `EnvManagers`
-- A `EnvManager` need submodules to handle different features. These modules are handled by the `EnvSupervisor`
+- An `EnvManager` need submodules to handle different features. These modules are handled by `EnvSupervisor`
 And for the sessions :
 - A session is materialized with a `SessionManager` GenServer.
 - All sessions are supervised by a DynamicSupervisor `SessionManagers`
