@@ -1,11 +1,11 @@
 defmodule ApplicationRunner.TextfieldValidatorTest do
-  use ExUnit.Case, async: true
+  use ApplicationRunner.ComponentCase
 
   @moduledoc """
     Test the "textfield.schema.json" schema
   """
 
-  test "valid textfield" do
+  test "valid textfield", %{session_state: session_state} do
     json = %{
       "type" => "textfield",
       "value" => "",
@@ -18,46 +18,53 @@ defmodule ApplicationRunner.TextfieldValidatorTest do
       }
     }
 
-    assert {:ok,
-            %{
-              "type" => "textfield",
-              "value" => "",
-              "onChanged" => %{
-                "code" => _
-              }
-            }} = ApplicationRunner.UIValidator.validate_and_build_component(json, "")
+    res = mock_root_and_run(json, session_state)
+
+    assert_success(
+      %{
+        "type" => "textfield",
+        "value" => "",
+        "onChanged" => %{
+          "code" => _
+        }
+      },
+      res
+    )
   end
 
-  test "valid textfield with no listener" do
+  test "valid textfield with no listener", %{session_state: session_state} do
     json = %{
       "type" => "textfield",
       "value" => "test"
     }
 
-    assert {:ok, json} ==
-             ApplicationRunner.UIValidator.validate_and_build_component(json, "")
+    res = mock_root_and_run(json, session_state)
+
+    assert_success(^json, res)
   end
 
-  test "invalid type textfield" do
+  test "invalid type textfield", %{session_state: session_state} do
     json = %{
       "type" => "textfields",
       "value" => "test"
     }
 
-    assert {:error, [{"Invalid component type", ""}]} ==
-             ApplicationRunner.UIValidator.validate_and_build_component(json, "")
+    res = mock_root_and_run(json, session_state)
+    assert_error({:error, [{"Invalid component type", ""}]}, res)
   end
 
-  test "invalid textfield with no value" do
+  test "invalid textfield with no value", %{session_state: session_state} do
     json = %{
       "type" => "textfield"
     }
 
-    assert {:error, [{"Required property value was not present.", ""}]} ==
-             ApplicationRunner.UIValidator.validate_and_build_component(json, "")
+    res = mock_root_and_run(json, session_state)
+    assert_error({:error, [{"Required property value was not present.", ""}]}, res)
   end
 
-  test "invalid textfield with invalid action and props in listener" do
+  test "invalid textfield with invalid action and props in listener", %{
+    session_state: session_state
+  } do
     json = %{
       "type" => "textfield",
       "value" => "test",
@@ -67,15 +74,19 @@ defmodule ApplicationRunner.TextfieldValidatorTest do
       }
     }
 
-    assert {:error,
-            [
-              {"Type mismatch. Expected String but got Integer.", "/onChanged/action"},
-              {"Type mismatch. Expected Object but got String.", "/onChanged/props"}
-            ]} ==
-             ApplicationRunner.UIValidator.validate_and_build_component(json, "")
+    res = mock_root_and_run(json, session_state)
+
+    assert_error(
+      {:error,
+       [
+         {"Type mismatch. Expected String but got Integer.", "/onChanged/action"},
+         {"Type mismatch. Expected Object but got String.", "/onChanged/props"}
+       ]},
+      res
+    )
   end
 
-  test "invalid textfield with invalid listener key" do
+  test "invalid textfield with invalid listener key", %{session_state: session_state} do
     json = %{
       "type" => "textfield",
       "value" => "test",
@@ -85,24 +96,31 @@ defmodule ApplicationRunner.TextfieldValidatorTest do
       }
     }
 
-    assert {:error,
-            [
-              {"Schema does not allow additional properties.", "/onClick"}
-            ]} ==
-             ApplicationRunner.UIValidator.validate_and_build_component(json, "")
+    res = mock_root_and_run(json, session_state)
+
+    assert_error(
+      {:error,
+       [
+         {"Schema does not allow additional properties.", "/onClick"}
+       ]},
+      res
+    )
   end
 
-  test "valid textfield with empty value" do
+  test "valid textfield with empty value", %{session_state: session_state} do
     json = %{
       "type" => "textfield",
       "value" => ""
     }
 
-    assert {:ok,
-            %{
-              "type" => "textfield",
-              "value" => ""
-            }} ==
-             ApplicationRunner.UIValidator.validate_and_build_component(json, "")
+    res = mock_root_and_run(json, session_state)
+
+    assert_success(
+      %{
+        "type" => "textfield",
+        "value" => ""
+      },
+      res
+    )
   end
 end

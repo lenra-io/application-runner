@@ -1,11 +1,18 @@
 defmodule ApplicationRunner.ButtonValidatorTest do
-  use ExUnit.Case, async: true
+  use ApplicationRunner.ComponentCase
+
+  alias ApplicationRunner.{
+    ApplicationRunnerAdapter,
+    EnvManager,
+    EnvManagers,
+    SessionManagers
+  }
 
   @moduledoc """
     Test the "button.schema.json" schema
   """
 
-  test "valid button" do
+  test "valid button", %{session_state: session_state} do
     json = %{
       "type" => "button",
       "text" => "",
@@ -18,50 +25,48 @@ defmodule ApplicationRunner.ButtonValidatorTest do
       }
     }
 
-    assert {:ok,
-            %{
-              "type" => "button",
-              "text" => "",
-              "onPressed" => %{
-                "code" => _
-              }
-            }} = ApplicationRunner.UIValidator.validate_and_build_component(json, "")
+    # Setup mock
+    res = mock_root_and_run(json, session_state)
+
+    assert_success(
+      %{"onPressed" => %{"code" => _}, "text" => "", "type" => "button"},
+      res
+    )
   end
 
-  test "valid button with no listener" do
+  test "valid button with no listener", %{session_state: session_state} do
     json = %{
       "type" => "button",
       "text" => "test"
     }
 
-    assert {:ok,
-            %{
-              "type" => "button",
-              "text" => "test"
-            }} ==
-             ApplicationRunner.UIValidator.validate_and_build_component(json, "")
+    # Setup mock
+    res = mock_root_and_run(json, session_state)
+    assert_success(%{"type" => "button", "text" => "test"}, res)
   end
 
-  test "invalid button type" do
+  test "invalid button type", %{session_state: session_state} do
     json = %{
       "type" => "buttons",
       "text" => "test"
     }
 
-    assert {:error, [{"Invalid component type", "#"}]} ==
-             ApplicationRunner.UIValidator.validate_and_build_component(json, "#")
+    # Setup mock
+    res = mock_root_and_run(json, session_state)
+    assert_error({:error, [{"Invalid component type", ""}]}, res)
   end
 
-  test "invalid button with no value" do
+  test "invalid button with no value", %{session_state: session_state} do
     json = %{
       "type" => "button"
     }
 
-    assert {:error, [{"Required property text was not present.", ""}]} ==
-             ApplicationRunner.UIValidator.validate_and_build_component(json, "")
+    # Setup mock
+    res = mock_root_and_run(json, session_state)
+    assert_error({:error, [{"Required property text was not present.", ""}]}, res)
   end
 
-  test "invalid button with invalid action and props in listener" do
+  test "invalid button with invalid action and props in listener", %{session_state: session_state} do
     json = %{
       "type" => "button",
       "text" => "test",
@@ -71,15 +76,20 @@ defmodule ApplicationRunner.ButtonValidatorTest do
       }
     }
 
-    assert {:error,
-            [
-              {"Type mismatch. Expected String but got Integer.", "/onPressed/action"},
-              {"Type mismatch. Expected Object but got String.", "/onPressed/props"}
-            ]} ==
-             ApplicationRunner.UIValidator.validate_and_build_component(json, "")
+    # Setup mock
+    res = mock_root_and_run(json, session_state)
+
+    assert_error(
+      {:error,
+       [
+         {"Type mismatch. Expected String but got Integer.", "/onPressed/action"},
+         {"Type mismatch. Expected Object but got String.", "/onPressed/props"}
+       ]},
+      res
+    )
   end
 
-  test "invalid button with invalid listener key" do
+  test "invalid button with invalid listener key", %{session_state: session_state} do
     json = %{
       "type" => "button",
       "text" => "test",
@@ -89,24 +99,25 @@ defmodule ApplicationRunner.ButtonValidatorTest do
       }
     }
 
-    assert {:error,
-            [
-              {"Schema does not allow additional properties.", "/onChange"}
-            ]} ==
-             ApplicationRunner.UIValidator.validate_and_build_component(json, "")
+    # Setup mock
+    res = mock_root_and_run(json, session_state)
+
+    assert_error(
+      {:error,
+       [
+         {"Schema does not allow additional properties.", "/onChange"}
+       ]},
+      res
+    )
   end
 
-  test "valid button with empty text" do
+  test "valid button with empty text", %{session_state: session_state} do
     json = %{
       "type" => "button",
       "text" => ""
     }
 
-    assert {:ok,
-            %{
-              "type" => "button",
-              "text" => ""
-            }} ==
-             ApplicationRunner.UIValidator.validate_and_build_component(json, "")
+    res = mock_root_and_run(json, session_state)
+    assert_success(^json, res)
   end
 end

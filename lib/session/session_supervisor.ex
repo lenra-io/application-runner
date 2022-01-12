@@ -1,0 +1,21 @@
+defmodule ApplicationRunner.SessionSupervisor do
+  @moduledoc """
+    This Supervisor is started by the SessionManager.
+    It handle all the GenServer needed for the Session to work.
+  """
+  use Supervisor
+
+  def start_link(opts) do
+    Supervisor.start_link(__MODULE__, opts)
+  end
+
+  @impl true
+  def init(_opts) do
+    children =
+      [
+        ApplicationRunner.UiCache
+      ] ++ Application.get_env(:application_runner, :additional_session_modules, [])
+
+    Supervisor.init(children, strategy: :one_for_one)
+  end
+end

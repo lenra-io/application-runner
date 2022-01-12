@@ -1,11 +1,18 @@
 defmodule ApplicationRunner.ContainerValidatorTest do
-  use ExUnit.Case, async: true
+  use ApplicationRunner.ComponentCase
+
+  alias ApplicationRunner.{
+    ApplicationRunnerAdapter,
+    EnvManager,
+    EnvManagers,
+    SessionManagers
+  }
 
   @moduledoc """
     Test the "container.schema.json" schema
   """
 
-  test "valid container" do
+  test "valid container", %{session_state: session_state} do
     json = %{
       "type" => "container",
       "child" => %{
@@ -14,11 +21,12 @@ defmodule ApplicationRunner.ContainerValidatorTest do
       }
     }
 
-    assert {:ok, json} ==
-             ApplicationRunner.UIValidator.validate_and_build_component(json, "")
+    res = mock_root_and_run(json, session_state)
+
+    assert_success(^json, res)
   end
 
-  test "valid container with border" do
+  test "valid container with border", %{session_state: session_state} do
     json = %{
       "type" => "container",
       "child" => %{
@@ -45,11 +53,12 @@ defmodule ApplicationRunner.ContainerValidatorTest do
       }
     }
 
-    assert {:ok, json} ==
-             ApplicationRunner.UIValidator.validate_and_build_component(json, "")
+    res = mock_root_and_run(json, session_state)
+
+    assert_success(^json, res)
   end
 
-  test "valid container with borderRadius" do
+  test "valid container with borderRadius", %{session_state: session_state} do
     json = %{
       "type" => "container",
       "child" => %{
@@ -66,20 +75,22 @@ defmodule ApplicationRunner.ContainerValidatorTest do
       }
     }
 
-    assert {:ok, json} ==
-             ApplicationRunner.UIValidator.validate_and_build_component(json, "")
+    res = mock_root_and_run(json, session_state)
+
+    assert_success(^json, res)
   end
 
-  test "invalid container forgotten child" do
+  test "invalid container forgotten child", %{session_state: session_state} do
     json = %{
       "type" => "container"
     }
 
-    assert {:error, [{"Required property child was not present.", ""}]} ==
-             ApplicationRunner.UIValidator.validate_and_build_component(json, "")
+    res = mock_root_and_run(json, session_state)
+
+    assert_error({:error, [{"Required property child was not present.", ""}]}, res)
   end
 
-  test "invalid container border" do
+  test "invalid container border", %{session_state: session_state} do
     json = %{
       "type" => "container",
       "child" => %{
@@ -106,13 +117,17 @@ defmodule ApplicationRunner.ContainerValidatorTest do
       }
     }
 
-    assert {:error,
-            [
-              {"Type mismatch. Expected Number but got String.", "/border/bottom/width"},
-              {"Type mismatch. Expected Number but got String.", "/border/left/width"},
-              {"Type mismatch. Expected Number but got String.", "/border/right/width"},
-              {"Type mismatch. Expected Number but got String.", "/border/top/width"}
-            ]} ==
-             ApplicationRunner.UIValidator.validate_and_build_component(json, "")
+    res = mock_root_and_run(json, session_state)
+
+    assert_error(
+      {:error,
+       [
+         {"Type mismatch. Expected Number but got String.", "/border/bottom/width"},
+         {"Type mismatch. Expected Number but got String.", "/border/left/width"},
+         {"Type mismatch. Expected Number but got String.", "/border/right/width"},
+         {"Type mismatch. Expected Number but got String.", "/border/top/width"}
+       ]},
+      res
+    )
   end
 end

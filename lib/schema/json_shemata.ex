@@ -48,7 +48,7 @@ defmodule ApplicationRunner.JsonSchemata do
     e in ExComponentSchema.Schema.InvalidSchemaError ->
       reraise ExComponentSchema.Schema.InvalidSchemaError,
               [message: "#{path} #{e.message}"],
-              System.stacktrace()
+              __STACKTRACE__
   end
 
   defp load_raw_schema(schema, schemata_map, component_name) do

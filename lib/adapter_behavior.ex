@@ -2,9 +2,13 @@ defmodule ApplicationRunner.AdapterBehavior do
   @moduledoc """
   ApplicationRunner's AdapterBehavior
   """
-  alias ApplicationRunner.Action
+  alias ApplicationRunner.{EnvState, SessionState}
 
-  @callback run_action(Action.t()) :: {:ok, map()} | {:error, atom()}
-  @callback get_data(Action.t()) :: {:ok, Action.t()}
-  @callback save_data(Action.t(), map()) :: {:ok, map()} | {:error, map()}
+  @callback get_manifest(EnvState.t()) :: {:ok, map()} | {:error, term()}
+  @callback get_widget(String.t(), map(), map()) :: {:ok, map()} | {:error, map()}
+  @callback run_listener(EnvState.t(), String.t(), map(), map(), map()) ::
+              {:ok, map()} | {:error, map()}
+  @callback get_data(SessionState.t()) :: {:ok, map()} | {:error, atom()}
+  @callback save_data(SessionState.t(), map()) :: :ok | {:error, atom()}
+  @callback on_ui_changed(SessionState.t(), {:ui, map()} | {:patches, list(map())}) :: :ok
 end

@@ -8,7 +8,10 @@ defmodule ApplicationRunner.MixProject do
       elixir: "~> 1.12",
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
-      deps: deps()
+      deps: deps(),
+      aliases: [
+        test: "test"
+      ]
     ]
   end
 
@@ -21,17 +24,19 @@ defmodule ApplicationRunner.MixProject do
   end
 
   defp elixirc_paths(:test), do: ["lib", "test/support"]
+  defp elixirc_paths(:dev), do: ["lib", "test/support"]
   defp elixirc_paths(_), do: ["lib"]
 
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
       {:credo, "~> 1.4", only: [:dev, :test], runtime: false},
-      {:dialyxir, "~> 1.0", only: [:dev], runtime: false},
+      {:dialyxir, "~> 1.0", only: [:dev, :test], runtime: false},
       {:ex_component_schema,
        git: "https://github.com/lenra-io/ex_component_schema", ref: "v1.0.0-beta.2"},
       {:jason, "~> 1.2"},
-      {:json_diff, "~> 0.1"}
+      {:json_diff, "~> 0.1"},
+      {:swarm, "~> 3.0"}
     ]
   end
 end

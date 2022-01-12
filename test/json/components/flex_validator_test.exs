@@ -1,11 +1,11 @@
 defmodule ApplicationRunner.FlexValidatorTest do
-  use ExUnit.Case, async: true
+  use ApplicationRunner.ComponentCase
 
   @moduledoc """
     Test the "flex.schema.json" schema
   """
 
-  test "valid flex" do
+  test "valid flex", %{session_state: session_state} do
     json = %{
       "type" => "flex",
       "children" => [
@@ -16,60 +16,59 @@ defmodule ApplicationRunner.FlexValidatorTest do
       ]
     }
 
-    assert {:ok, json} ==
-             ApplicationRunner.UIValidator.validate_and_build_component(json, "")
+    res = mock_root_and_run(json, session_state)
+
+    assert_success(^json, res)
   end
 
-  test "valid empty flex" do
+  test "valid empty flex", %{session_state: session_state} do
     json = %{
       "type" => "flex",
       "children" => []
     }
 
-    assert {:ok,
-            %{
-              "type" => "flex",
-              "children" => []
-            }} ==
-             ApplicationRunner.UIValidator.validate_and_build_component(json, "#")
+    res = mock_root_and_run(json, session_state)
+
+    assert_success(^json, res)
   end
 
-  test "invalid flex type" do
+  test "invalid flex type", %{session_state: session_state} do
     json = %{
       "type" => "flexes",
       "children" => []
     }
 
-    assert {:error, [{"Invalid component type", "#"}]} ==
-             ApplicationRunner.UIValidator.validate_and_build_component(json, "#")
+    res = mock_root_and_run(json, session_state)
+
+    assert_error({:error, [{"Invalid component type", ""}]}, res)
   end
 
-  test "invalide component inside the flex" do
+  test "invalide component inside the flex", %{session_state: session_state} do
     json = %{
-      "root" => %{
-        "type" => "flex",
-        "children" => [
-          %{
-            "type" => "text",
-            "value" => "Txt test"
-          },
-          %{
-            "type" => "New"
-          }
-        ]
-      }
+      "type" => "flex",
+      "children" => [
+        %{
+          "type" => "text",
+          "value" => "Txt test"
+        },
+        %{
+          "type" => "New"
+        }
+      ]
     }
 
-    assert {:error, [{"Invalid component type", "#/root/children/1"}]} ==
-             ApplicationRunner.UIValidator.validate_and_build(json)
+    res = mock_root_and_run(json, session_state)
+
+    assert_error({:error, [{"Invalid component type", "/children/1"}]}, res)
   end
 
-  test "invalid flex with no children property" do
+  test "invalid flex with no children property", %{session_state: session_state} do
     json = %{
       "type" => "flex"
     }
 
-    assert {:error, [{"Required property children was not present.", ""}]} ==
-             ApplicationRunner.UIValidator.validate_and_build_component(json, "")
+    res = mock_root_and_run(json, session_state)
+
+    assert_error({:error, [{"Required property children was not present.", ""}]}, res)
   end
 end
