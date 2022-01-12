@@ -1,6 +1,6 @@
 defmodule ApplicationRunner.WidgetContext do
   @moduledoc """
-    The Action struct.
+    The Widget context struct from the developer application.
   """
   @enforce_keys [:id, :name, :prefix_path]
   defstruct [
