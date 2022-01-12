@@ -1,6 +1,6 @@
 defmodule ApplicationRunner.EnvManager do
   @moduledoc """
-    This module handle one application. This module is the entrypoint to deal with children modules.
+    This module handles one application. This module is the entrypoint to deal with children modules.
   """
   use GenServer
 
