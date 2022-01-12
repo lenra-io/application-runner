@@ -1,6 +1,6 @@
 defmodule ApplicationRunner.SessionManagers do
   @moduledoc """
-    This module handle all the session for one app.
+    This module handles all the sessions for one app.
     This allow to create/recreate/delete session for the app and possibly many other operations on sessions.
   """
   use DynamicSupervisor
