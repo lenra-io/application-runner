@@ -1,6 +1,6 @@
 defmodule ApplicationRunner.SessionManager do
   @moduledoc """
-    This module is the Session supervisor that handle the SupervisorManager children modules.
+    This module is the Session supervisor that handles the SupervisorManager children modules.
   """
   use GenServer
 
