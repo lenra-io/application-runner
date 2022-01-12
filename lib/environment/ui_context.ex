@@ -1,6 +1,6 @@
 defmodule ApplicationRunner.UiContext do
   @moduledoc """
-    The Action struct.
+    The UI Context that contain all widgets and listeners information
   """
 
   defstruct [
