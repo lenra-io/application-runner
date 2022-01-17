@@ -7,6 +7,7 @@ defmodule ApplicationRunner.SessionState do
     :session_id,
     :env_id,
     :session_supervisor_pid,
+    :inactivity_timeout,
     :assigns
   ]
 
@@ -14,6 +15,7 @@ defmodule ApplicationRunner.SessionState do
           session_id: integer(),
           env_id: integer(),
           session_supervisor_pid: pid(),
+          inactivity_timeout: number(),
           assigns: term()
         }
 end

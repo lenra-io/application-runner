@@ -13,12 +13,6 @@ defmodule ApplicationRunner.SessionManager do
     UiCache
   }
 
-  @inactivity_timeout Application.compile_env(
-                        :application_runner,
-                        :session_inactivity_timeout,
-                        1000 * 60 * 10
-                      )
-
   @doc """
     return the app-level module.
     This can be used to get module declared in the `SessionSupervisor` (like the cache module for example)
@@ -77,10 +71,12 @@ defmodule ApplicationRunner.SessionManager do
       session_id: session_id,
       env_id: env_id,
       session_supervisor_pid: session_supervisor_pid,
+      inactivity_timeout:
+        Application.get_env(:application_runner, :session_inactivity_timeout, 1000 * 60 * 10),
       assigns: assigns
     }
 
-    {:ok, session_state, @inactivity_timeout}
+    {:ok, session_state, session_state.inactivity_timeout}
   end
 
   @impl true
@@ -99,14 +95,14 @@ defmodule ApplicationRunner.SessionManager do
       AdapterHandler.on_ui_changed(session_state, res)
     end
 
-    {:noreply, session_state, @inactivity_timeout}
+    {:noreply, session_state, session_state.inactivity_timeout}
   end
 
   @impl true
-  def handle_call(:get_session_supervisor_pid, _from, state) do
-    case Map.fetch!(state, :session_supervisor_pid) do
+  def handle_call(:get_session_supervisor_pid, _from, session_state) do
+    case Map.fetch!(session_state, :session_supervisor_pid) do
       nil -> raise "No SessionSupervisor. This should not happen."
-      res -> {:reply, res, state, @inactivity_timeout}
+      res -> {:reply, res, session_state, session_state.inactivity_timeout}
     end
   end
 
@@ -129,7 +125,7 @@ defmodule ApplicationRunner.SessionManager do
       EnvManager.notify_data_changed(session_state)
     end
 
-    {:noreply, session_state, @inactivity_timeout}
+    {:noreply, session_state, session_state.inactivity_timeout}
   end
 
   @impl true
@@ -140,7 +136,7 @@ defmodule ApplicationRunner.SessionManager do
       EnvManager.notify_data_changed(session_state)
     end
 
-    {:noreply, session_state, @inactivity_timeout}
+    {:noreply, session_state, session_state.inactivity_timeout}
   end
 
   defp transform_ui(%{"entrypoint" => entrypoint, "widgets" => widgets}) do

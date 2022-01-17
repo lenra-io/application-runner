@@ -16,12 +16,6 @@ defmodule ApplicationRunner.EnvManager do
     WidgetContext
   }
 
-  @inactivity_timeout Application.compile_env(
-                        :application_runner,
-                        :env_inactivity_timeout,
-                        1000 * 60 * 60
-                      )
-
   def start_link(opts) do
     env_id = Keyword.fetch!(opts, :env_id)
 
@@ -45,7 +39,9 @@ defmodule ApplicationRunner.EnvManager do
     env_state = %EnvState{
       env_id: env_id,
       assigns: assigns,
-      env_supervisor_pid: env_supervisor_pid
+      env_supervisor_pid: env_supervisor_pid,
+      inactivity_timeout:
+        Application.get_env(:application_runner, :env_inactivity_timeout, 1000 * 60 * 60)
     }
 
     case AdapterHandler.get_manifest(env_state) do
@@ -53,7 +49,7 @@ defmodule ApplicationRunner.EnvManager do
         {
           :ok,
           Map.put(env_state, :manifest, manifest),
-          @inactivity_timeout
+          env_state.inactivity_timeout
         }
 
       {:error, reason} ->
@@ -134,17 +130,17 @@ defmodule ApplicationRunner.EnvManager do
     |> case do
       {:ok, ui_context} ->
         res = {:ok, %{"entrypoint" => id, "widgets" => ui_context.widgets_map}}
-        {:reply, res, env_state, @inactivity_timeout}
+        {:reply, res, env_state, env_state.inactivity_timeout}
 
       error_res ->
-        {:reply, error_res, env_state, @inactivity_timeout}
+        {:reply, error_res, env_state, env_state.inactivity_timeout}
     end
   end
 
   @impl true
   def handle_call({:get_listener, code}, _from, env_state) do
     res = ListenersCache.get_listener(env_state, code)
-    {:reply, res, env_state, @inactivity_timeout}
+    {:reply, res, env_state, env_state.inactivity_timeout}
   end
 
   @impl true
@@ -154,25 +150,25 @@ defmodule ApplicationRunner.EnvManager do
     props = Map.get(listener, "props", %{})
     res = AdapterHandler.run_listener(env_state, action, data, props, event)
 
-    {:reply, res, env_state, @inactivity_timeout}
+    {:reply, res, env_state, env_state.inactivity_timeout}
   end
 
   @impl true
   def handle_call({:init_data, data}, _from, env_state) do
     res = AdapterHandler.run_listener(env_state, "InitData", data, %{}, %{})
-    {:reply, res, env_state, @inactivity_timeout}
+    {:reply, res, env_state, env_state.inactivity_timeout}
   end
 
   @impl true
-  def handle_call(:get_manifest, _from, state) do
-    {:reply, Map.get(state, :manifest), state, @inactivity_timeout}
+  def handle_call(:get_manifest, _from, env_state) do
+    {:reply, Map.get(env_state, :manifest), env_state, env_state.inactivity_timeout}
   end
 
   @impl true
-  def handle_call(:get_env_supervisor_pid, _from, state) do
-    case Map.get(state, :env_supervisor_pid) do
+  def handle_call(:get_env_supervisor_pid, _from, env_state) do
+    case Map.get(env_state, :env_supervisor_pid) do
       nil -> raise "No EnvSupervisor. This should not happen."
-      res -> {:reply, res, state, @inactivity_timeout}
+      res -> {:reply, res, env_state, env_state.inactivity_timeout}
     end
   end
 
@@ -197,7 +193,7 @@ defmodule ApplicationRunner.EnvManager do
       send(pid, :data_changed)
     end
 
-    {:noreply, env_state, @inactivity_timeout}
+    {:noreply, env_state, env_state.inactivity_timeout}
   end
 
   @impl true
