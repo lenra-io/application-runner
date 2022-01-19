@@ -26,9 +26,14 @@ defmodule ApplicationRunner.WidgetCache do
   @doc """
     Call the Adapter to get the Widget corresponding to the given the `WidgetContext`
   """
-  @spec get_widget(WidgetContext.t()) :: {:ok, map()} | {:error, any()}
-  def get_widget(%WidgetContext{} = current_widget) do
-    AdapterHandler.get_widget(current_widget.name, current_widget.data, current_widget.props)
+  @spec get_widget(EnvState.t(), WidgetContext.t()) :: {:ok, map()} | {:error, any()}
+  def get_widget(%EnvState{} = env_state, %WidgetContext{} = current_widget) do
+    AdapterHandler.get_widget(
+      env_state,
+      current_widget.name,
+      current_widget.data,
+      current_widget.props
+    )
   end
 
   @doc """
@@ -65,7 +70,7 @@ defmodule ApplicationRunner.WidgetCache do
         %UiContext{} = ui_context,
         %WidgetContext{} = current_widget
       ) do
-    with {:ok, widget} <- get_widget(current_widget),
+    with {:ok, widget} <- get_widget(env_state, current_widget),
          {:ok, component, new_app_context} <-
            build_component(env_state, widget, ui_context, current_widget) do
       {:ok, put_in(new_app_context.widgets_map[current_widget.id], component)}

@@ -4,11 +4,24 @@ defmodule ApplicationRunner.AdapterBehavior do
   """
   alias ApplicationRunner.{EnvState, SessionState}
 
-  @callback get_manifest(EnvState.t()) :: {:ok, map()} | {:error, term()}
-  @callback get_widget(String.t(), map(), map()) :: {:ok, map()} | {:error, map()}
-  @callback run_listener(EnvState.t(), String.t(), map(), map(), map()) ::
-              {:ok, map()} | {:error, map()}
-  @callback get_data(SessionState.t()) :: {:ok, map()} | {:error, atom()}
-  @callback save_data(SessionState.t(), map()) :: :ok | {:error, atom()}
-  @callback on_ui_changed(SessionState.t(), {:ui, map()} | {:patches, list(map())}) :: :ok
+  @type widget() :: map()
+  @type manifest() :: map()
+  @type data() :: map()
+  @type props() :: map()
+  @type event() :: map()
+  @type reason() :: atom()
+  @type ui() :: map()
+  @type patches() :: list(map())
+  @type code() :: String.t()
+  @type action() :: String.t()
+  @type widget_name() :: String.t()
+
+  @callback get_manifest(EnvState.t()) :: {:ok, manifest()} | {:error, reason()}
+  @callback get_widget(EnvState.t(), widget_name(), data(), props()) ::
+              {:ok, widget()} | {:error, reason()}
+  @callback run_listener(EnvState.t(), action(), data(), props(), event()) ::
+              {:ok, data()} | {:error, reason()}
+  @callback get_data(SessionState.t()) :: {:ok, data()} | {:error, reason()}
+  @callback save_data(SessionState.t(), data()) :: :ok | {:error, reason()}
+  @callback on_ui_changed(SessionState.t(), {:ui, ui()} | {:patches, patches()}) :: :ok
 end
