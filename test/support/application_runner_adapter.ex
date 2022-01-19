@@ -32,7 +32,7 @@ defmodule ApplicationRunner.ApplicationRunnerAdapter do
   def manifest_const, do: @manifest
 
   @impl true
-  def get_widget(name, data, props) do
+  def get_widget(_env_state, name, data, props) do
     GenServer.call(__MODULE__, {:get_widget, name, data, props})
   end
 

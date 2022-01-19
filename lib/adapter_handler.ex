@@ -6,13 +6,13 @@ defmodule ApplicationRunner.AdapterHandler do
   require Logger
 
   @behaviour ApplicationRunner.AdapterBehavior
-  defdelegate get_manifest(app),
+  defdelegate get_manifest(env_state),
     to: Application.compile_env!(:application_runner, :adapter)
 
-  defdelegate get_widget(app, widget, data),
+  defdelegate get_widget(env_state, widget, data, props),
     to: Application.compile_env!(:application_runner, :adapter)
 
-  defdelegate run_listener(app, action, data, props, event),
+  defdelegate run_listener(env_state, action, data, props, event),
     to: Application.compile_env!(:application_runner, :adapter)
 
   defdelegate get_data(session_state), to: Application.compile_env!(:application_runner, :adapter)
