@@ -19,7 +19,7 @@ defmodule ApplicationRunner.ApplicationRunnerAdapter do
   # @w1 %{"type" => "text", "value" => "bar"}
   # @w2 %{"type" => "button", "text" => "butt", "onPressed" => %{"action" => "inc", "props" => %{}}}
 
-  @manifest %{"entrypoint" => "root"}
+  @manifest %{"rootWidget" => "root"}
 
   @impl true
   def get_manifest(%EnvState{assigns: assigns}) do
