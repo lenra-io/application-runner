@@ -1,6 +1,6 @@
 defmodule ApplicationRunner.EnvManager do
   @moduledoc """
-    This module handles one application. This module is the entrypoint to deal with children modules.
+    This module handles one application. This module is the root_widget to deal with children modules.
   """
   use GenServer
 
@@ -86,9 +86,9 @@ defmodule ApplicationRunner.EnvManager do
     end
   end
 
-  def get_and_build_ui(session_state, entrypoint, data) do
+  def get_and_build_ui(session_state, root_widget, data) do
     with {:ok, pid} <- EnvManagers.fetch_env_manager_pid(session_state.env_id) do
-      GenServer.call(pid, {:get_and_build_ui, entrypoint, data})
+      GenServer.call(pid, {:get_and_build_ui, root_widget, data})
     end
   end
 
@@ -111,8 +111,8 @@ defmodule ApplicationRunner.EnvManager do
   end
 
   @impl true
-  def handle_call({:get_and_build_ui, entrypoint, data}, _from, env_state) do
-    id = WidgetCache.generate_widget_id(entrypoint, data, %{})
+  def handle_call({:get_and_build_ui, root_widget, data}, _from, env_state) do
+    id = WidgetCache.generate_widget_id(root_widget, data, %{})
 
     WidgetCache.get_and_build_widget(
       env_state,
@@ -122,14 +122,14 @@ defmodule ApplicationRunner.EnvManager do
       },
       %WidgetContext{
         id: id,
-        name: entrypoint,
+        name: root_widget,
         prefix_path: "",
         data: data
       }
     )
     |> case do
       {:ok, ui_context} ->
-        res = {:ok, %{"entrypoint" => id, "widgets" => ui_context.widgets_map}}
+        res = {:ok, %{"rootWidget" => id, "widgets" => ui_context.widgets_map}}
         {:reply, res, env_state, env_state.inactivity_timeout}
 
       error_res ->

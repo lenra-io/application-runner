@@ -87,9 +87,9 @@ defmodule ApplicationRunner.SessionManager do
 
   @impl true
   def handle_info(:data_changed, %SessionState{} = session_state) do
-    with %{"entrypoint" => entrypoint} <- EnvManager.get_manifest(session_state.env_id),
+    with %{"rootWidget" => root_widget} <- EnvManager.get_manifest(session_state.env_id),
          {:ok, data} <- AdapterHandler.get_data(session_state),
-         {:ok, ui} <- EnvManager.get_and_build_ui(session_state, entrypoint, data) do
+         {:ok, ui} <- EnvManager.get_and_build_ui(session_state, root_widget, data) do
       transformed_ui = transform_ui(ui)
       res = UiCache.diff_and_save(session_state, transformed_ui)
       AdapterHandler.on_ui_changed(session_state, res)
@@ -139,8 +139,8 @@ defmodule ApplicationRunner.SessionManager do
     {:noreply, session_state, session_state.inactivity_timeout}
   end
 
-  defp transform_ui(%{"entrypoint" => entrypoint, "widgets" => widgets}) do
-    transform(%{"root" => Map.fetch!(widgets, entrypoint)}, widgets)
+  defp transform_ui(%{"rootWidget" => root_widget, "widgets" => widgets}) do
+    transform(%{"root" => Map.fetch!(widgets, root_widget)}, widgets)
   end
 
   defp transform(%{"type" => "widget", "id" => id}, widgets) do

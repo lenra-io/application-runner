@@ -43,8 +43,8 @@ defmodule ApplicationRunner.ComponentCase do
       defmacro assert_success(expected, actual) do
         quote do
           assert {:ok, res} = unquote(actual)
-          assert %{"entrypoint" => entrypoint} = res
-          assert %{"widgets" => %{^entrypoint => widget}} = res
+          assert %{"rootWidget" => root_widget} = res
+          assert %{"widgets" => %{^root_widget => widget}} = res
           assert unquote(expected) = widget
         end
       end
