@@ -14,12 +14,12 @@ defmodule ApplicationRunner.Data do
 
     many_to_many(:referencers, Data,
       join_through: Refs,
-      join_keys: [referencer_id: :id, referencer_id: :id]
+      join_keys: [referencer_id: :id, referenced_id: :id]
     )
 
     many_to_many(:referenceds, Data,
       join_through: Refs,
-      join_keys: [referenced_id: :id, referenced_id: :id]
+      join_keys: [referenced_id: :id, referencer_id: :id]
     )
 
     field(:data, :map)

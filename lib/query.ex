@@ -8,6 +8,7 @@ defmodule ApplicationRunner.Query do
 
   @repo Application.compile_env!(:application_runner, :repo)
 
+  # Get all Data from a table
   def get(app_id, %{"table" => table}) do
     case @repo.get_by(Datastore, name: table, application_id: app_id) do
       nil ->
@@ -21,6 +22,7 @@ defmodule ApplicationRunner.Query do
     end
   end
 
+  # Get list of data by their id in a table
   def get(%{"table" => table, "ids" => ids}) when is_list(ids) do
     case @repo.get_by(Datastore, name: table) do
       nil ->
@@ -35,6 +37,7 @@ defmodule ApplicationRunner.Query do
     end
   end
 
+  # Get data referenced by ref_by (list of data id) in a table
   def get(%{"table" => table, "refBy" => ref_by}) when is_list(ref_by) do
     case @repo.get_by(Datastore, name: table) do
       nil ->
@@ -45,6 +48,7 @@ defmodule ApplicationRunner.Query do
     end
   end
 
+  # Get data referencer ref_to (list of data id) in a table
   def get(%{"table" => table, "refTo" => ref_to}) when is_list(ref_to) do
     case @repo.get_by(Datastore, name: table) do
       nil ->
@@ -69,7 +73,7 @@ defmodule ApplicationRunner.Query do
           @repo.all(
             from(d in Data,
               join: r in assoc(d, :referencers),
-              where: r.id == ^by and d.datastore_id == ^datastore,
+              where: r.referencer == ^by and d.datastore_id == ^datastore,
               select: d
             )
           )
@@ -87,7 +91,7 @@ defmodule ApplicationRunner.Query do
           @repo.all(
             from(d in Data,
               join: r in assoc(d, :referenceds),
-              where: r.id == ^to and d.datastore_id == ^datastore,
+              where: r.referenced == ^to and d.datastore_id == ^datastore,
               select: d
             )
           )
@@ -95,6 +99,7 @@ defmodule ApplicationRunner.Query do
     end)
   end
 
+  # Create Table
   def create_table(app_id, %{"name" => name}) do
     Ecto.Multi.new()
     |> Ecto.Multi.insert(:inserted_datastore, Datastore.new(app_id, name))
@@ -105,10 +110,11 @@ defmodule ApplicationRunner.Query do
     {:error, :json_format_error}
   end
 
+  # Insert data in a Table
   def insert(app_id, lists) when is_list(lists) do
     return = Enum.map(lists, fn list -> handle_insert(app_id, list) end)
     return = Enum.map(return, fn data -> handle_return(data) end)
-    {:ok, return}
+    {:ok, %{inserted_data: return}}
   end
 
   def insert(app_id, req) do
@@ -119,15 +125,12 @@ defmodule ApplicationRunner.Query do
     {:error, :json_format_error}
   end
 
+  # Normalize function returns
   defp handle_return({:ok, %{inserted_data: result}}) do
     result
   end
 
   defp handle_return({:ok, %{inserted_ref: result}}) do
-    result
-  end
-
-  defp handle_return({:ok, %{inserted_datastore: result}}) do
     result
   end
 
@@ -224,6 +227,7 @@ defmodule ApplicationRunner.Query do
     {:error, :json_format_error}
   end
 
+  # Update data
   def update(%{"id" => id, "data" => changes}) do
     case @repo.get(Data, id) do
       nil ->
@@ -240,12 +244,7 @@ defmodule ApplicationRunner.Query do
     {:error, :json_format_error}
   end
 
-  defp handle_del(list) when is_list(list) do
-    Enum.map(list, fn ref ->
-      @repo.delete(ref)
-    end)
-  end
-
+  # Delete data
   def delete(%{"id" => id}) do
     case @repo.get(Data, id) do
       nil ->
@@ -256,14 +255,21 @@ defmodule ApplicationRunner.Query do
           data
           |> @repo.preload([:referencers, :referenceds])
 
-        IO.inspect(data)
-
         Ecto.Multi.new()
         |> Ecto.Multi.run(:del_by, fn _, _ ->
-          Enum.map(data.referencers, fn by -> delete(%{"refBy" => [by.id], "refTo" => [id]}) end)
+          {:ok, delete(%{"refBy" => data.referencers, "refTo" => [data]})}
         end)
         |> Ecto.Multi.run(:del_to, fn _, _ ->
-          Enum.map(data.referenceds, fn to -> delete(%{"refBy" => [id], "refTo" => [to.id]}) end)
+          {:ok, delete(%{"refBy" => [data], "refTo" => data.referenceds})}
+        end)
+        |> Ecto.Multi.run(:del_refs, fn _,
+                                        %{
+                                          del_by: {:ok, del_by},
+                                          del_to: {:ok, del_refs}
+                                        } ->
+          to_delete = Enum.reduce(del_by, del_refs, &[&1 | &2])
+          to_delete = Enum.uniq(to_delete)
+          {:ok, handle_del(to_delete)}
         end)
         |> Ecto.Multi.delete(:deleted_data, data)
         |> @repo.transaction()
@@ -271,22 +277,27 @@ defmodule ApplicationRunner.Query do
   end
 
   def delete(%{"refBy" => ref_bys, "refTo" => ref_tos}) do
-    ref_bys =
+    [ref_bys] =
       Enum.map(ref_bys, fn by ->
-        @repo.all(from(r in Refs, where: r.referencer_id == ^by, select: r))
+        @repo.all(from(r in Refs, where: r.referencer_id == ^by.id, select: r))
       end)
 
-    ref_tos =
+    [ref_tos] =
       Enum.map(ref_tos, fn to ->
-        @repo.all(from(r in Refs, where: r.referenced_id == ^to, select: r))
+        @repo.all(from(r in Refs, where: r.referenced_id == ^to.id, select: r))
       end)
 
-    to_delete = Enum.uniq(ref_bys ++ ref_tos)
-    IO.inspect(to_delete)
-    handle_del(to_delete)
+    to_delete = Enum.reduce(ref_bys, ref_tos, &[&1 | &2])
+    {:ok, to_delete}
   end
 
   def delete(_) do
     {:error, :json_format_error}
+  end
+
+  defp handle_del(list) when is_list(list) do
+    Enum.map(list, fn ref ->
+      @repo.delete(ref)
+    end)
   end
 end

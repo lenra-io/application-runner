@@ -8,6 +8,8 @@ defmodule ApplicationRunner.QueryTest do
     %{application_id: inserted_application.id}
   end
 
+  @repo Application.compile_env!(:application_runner, :repo)
+
   describe "Query.insert_1/1" do
     test "insert datastore if json valid", %{application_id: application_id} do
       {:ok, %{inserted_datastore: inserted_datastore}} =
@@ -31,6 +33,23 @@ defmodule ApplicationRunner.QueryTest do
       data = Repo.get(Data, inserted_data.id)
 
       assert data.data == %{"name" => "toto"}
+    end
+
+    test "insert list of data if json valid", %{application_id: application_id} do
+      Query.create_table(application_id, %{"name" => "users"})
+
+      {:ok, %{inserted_data: inserted_data}} =
+        Query.insert(application_id, [
+          %{"table" => "users", "data" => %{"name" => "toto"}},
+          %{"table" => "users", "data" => %{"name" => "test"}}
+        ])
+
+      [inserted_data_one | [inserted_data_two | _tail]] = inserted_data
+      data_one = Repo.get(Data, inserted_data_one.id)
+      data_two = Repo.get(Data, inserted_data_two.id)
+
+      assert data_one.data == %{"name" => "toto"}
+      assert data_two.data == %{"name" => "test"}
     end
 
     test "return error if data json invalid", %{application_id: application_id} do
@@ -142,17 +161,58 @@ defmodule ApplicationRunner.QueryTest do
   end
 
   describe "Query.delete_1/1" do
-    test "delete data", %{application_id: application_id} do
+    # test "delete data", %{application_id: application_id} do
+    #  Query.create_table(application_id, %{"name" => "users"})
+    #
+    #  {:ok, %{inserted_data: inserted_data}} =
+    #    Query.insert(application_id, %{"table" => "users", "data" => %{"name" => "toto"}})
+    #
+    #  Query.delete(%{"id" => inserted_data.id})
+    #  data = Repo.get(Data, inserted_data.id)
+    #
+    #  assert data == nil
+    # end
+
+    test "delete data with ref", %{application_id: application_id} do
       Query.create_table(application_id, %{"name" => "users"})
 
-      {:ok, %{inserted_data: inserted_data}} =
+      {:ok, %{inserted_data: test}} =
         Query.insert(application_id, %{"table" => "users", "data" => %{"name" => "toto"}})
 
-      Query.delete(%{"id" => inserted_data.id})
+      # IO.inspect(test)
 
-      data = Repo.get(Data, inserted_data.id)
+      {:ok, %{inserted_data: refto}} =
+        Query.insert(application_id, %{
+          "table" => "users",
+          "data" => %{"name" => "refTo"},
+          "refBy" => [test.id]
+        })
+
+      # IO.inspect(refto |> @repo.preload([:referencers, :referenceds]))
+
+      {:ok, %{inserted_data: refBy}} =
+        Query.insert(application_id, %{
+          "table" => "users",
+          "data" => %{"name" => "refBy"},
+          "refTo" => [test.id]
+        })
+
+      # IO.inspect(refBy |> @repo.preload([:referencers, :referenceds]))
+
+      Query.delete(%{"id" => test.id})
+      data = Repo.get(Data, test.id)
+
+      refto =
+        Repo.get(Data, refto.id)
+        |> @repo.preload([:referencers, :referenceds])
+
+      refBy =
+        Repo.get(Data, refBy.id)
+        |> @repo.preload([:referencers, :referenceds])
 
       assert data == nil
+      assert refto.referenceds == []
+      assert refBy.referencers == []
     end
 
     test "return error if data id not found", %{application_id: _application_id} do
@@ -221,7 +281,7 @@ defmodule ApplicationRunner.QueryTest do
       assert res == []
     end
 
-    test "data by refTo in table should return a list", %{
+    test "data by refBy in table should return a list", %{
       application_id: _application_id
     } do
       {:ok, app} = Repo.insert(FakeLenraApplication.new())
@@ -246,6 +306,35 @@ defmodule ApplicationRunner.QueryTest do
       res = Query.get(app.id, %{"table" => "score", "refBy" => [user.id]})
 
       assert 2 == length(res)
+    end
+
+    test "data by refTo in table should return a list", %{
+      application_id: _application_id
+    } do
+      {:ok, app} = Repo.insert(FakeLenraApplication.new())
+      Query.create_table(app.id, %{"name" => "users"})
+      Query.create_table(app.id, %{"name" => "score"})
+
+      {:ok, %{inserted_data: pts}} =
+        Query.insert(app.id, %{
+          "table" => "score",
+          "data" => %{"points" => 10}
+        })
+
+      {:ok, %{inserted_data: user}} =
+        Query.insert(app.id, %{
+          "table" => "users",
+          "data" => %{"name" => "test"},
+          "refTo" => [pts.id]
+        })
+
+      IO.inspect(user |> @repo.preload([:referencers, :referenceds]))
+      IO.inspect(pts |> @repo.preload([:referencers, :referenceds]))
+
+      res = Query.get(app.id, %{"table" => "score", "refTo" => [pts.id]})
+
+      IO.inspect(res)
+      assert 1 == length(res)
     end
   end
 end
