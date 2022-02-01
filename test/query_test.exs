@@ -114,17 +114,24 @@ defmodule ApplicationRunner.QueryTest do
 
     test "return error if ref not found", %{application_id: application_id} do
       Query.create_table(application_id, %{"name" => "users"})
+      Query.create_table(application_id, %{"name" => "points"})
+
+      {:ok, %{inserted_data: inserted_ref}} =
+        Query.insert(application_id, %{
+          "table" => "points",
+          "data" => %{"point" => "12"}
+        })
 
       {:ok, inserted_data} =
         Query.insert(application_id, %{
           "table" => "users",
           "data" => %{"name" => "toto"},
-          "refTo" => [1, 100]
+          "refTo" => [inserted_ref.id, -1]
         })
 
       [head | tail] = inserted_data.inserted_ref
       assert head.referencer_id == inserted_data.inserted_data.id
-      assert head.referenced_id == 1
+      assert head.referenced_id == inserted_ref.id
       assert tail == [{:error, :ref_not_found}]
     end
   end
@@ -161,25 +168,23 @@ defmodule ApplicationRunner.QueryTest do
   end
 
   describe "Query.delete_1/1" do
-    # test "delete data", %{application_id: application_id} do
-    #  Query.create_table(application_id, %{"name" => "users"})
-    #
-    #  {:ok, %{inserted_data: inserted_data}} =
-    #    Query.insert(application_id, %{"table" => "users", "data" => %{"name" => "toto"}})
-    #
-    #  Query.delete(%{"id" => inserted_data.id})
-    #  data = Repo.get(Data, inserted_data.id)
-    #
-    #  assert data == nil
-    # end
+    test "delete data", %{application_id: application_id} do
+      Query.create_table(application_id, %{"name" => "users"})
+
+      {:ok, %{inserted_data: inserted_data}} =
+        Query.insert(application_id, %{"table" => "users", "data" => %{"name" => "toto"}})
+
+      Query.delete(%{"id" => inserted_data.id})
+      data = Repo.get(Data, inserted_data.id)
+
+      assert data == nil
+    end
 
     test "delete data with ref", %{application_id: application_id} do
       Query.create_table(application_id, %{"name" => "users"})
 
       {:ok, %{inserted_data: test}} =
         Query.insert(application_id, %{"table" => "users", "data" => %{"name" => "toto"}})
-
-      # IO.inspect(test)
 
       {:ok, %{inserted_data: refto}} =
         Query.insert(application_id, %{
@@ -188,16 +193,12 @@ defmodule ApplicationRunner.QueryTest do
           "refBy" => [test.id]
         })
 
-      # IO.inspect(refto |> @repo.preload([:referencers, :referenceds]))
-
       {:ok, %{inserted_data: refBy}} =
         Query.insert(application_id, %{
           "table" => "users",
           "data" => %{"name" => "refBy"},
           "refTo" => [test.id]
         })
-
-      # IO.inspect(refBy |> @repo.preload([:referencers, :referenceds]))
 
       Query.delete(%{"id" => test.id})
       data = Repo.get(Data, test.id)
@@ -328,12 +329,11 @@ defmodule ApplicationRunner.QueryTest do
           "refTo" => [pts.id]
         })
 
-      IO.inspect(user |> @repo.preload([:referencers, :referenceds]))
-      IO.inspect(pts |> @repo.preload([:referencers, :referenceds]))
+      # IO.inspect(user |> @repo.preload([:referencers, :referenceds]))
+      # IO.inspect(pts |> @repo.preload([:referencers, :referenceds]))
 
       res = Query.get(app.id, %{"table" => "score", "refTo" => [pts.id]})
 
-      IO.inspect(res)
       assert 1 == length(res)
     end
   end

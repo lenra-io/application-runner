@@ -73,7 +73,7 @@ defmodule ApplicationRunner.Query do
           @repo.all(
             from(d in Data,
               join: r in assoc(d, :referencers),
-              where: r.referencer == ^by and d.datastore_id == ^datastore,
+              where: r.referenced == ^by and d.datastore_id == ^datastore,
               select: d
             )
           )
@@ -91,7 +91,7 @@ defmodule ApplicationRunner.Query do
           @repo.all(
             from(d in Data,
               join: r in assoc(d, :referenceds),
-              where: r.referenced == ^to and d.datastore_id == ^datastore,
+              where: r.referencer == ^to and d.datastore_id == ^datastore,
               select: d
             )
           )
@@ -277,22 +277,35 @@ defmodule ApplicationRunner.Query do
   end
 
   def delete(%{"refBy" => ref_bys, "refTo" => ref_tos}) do
-    [ref_bys] =
+    ref_bys =
       Enum.map(ref_bys, fn by ->
-        @repo.all(from(r in Refs, where: r.referencer_id == ^by.id, select: r))
+        handle_delete_return(
+          @repo.all(from(r in Refs, where: r.referencer_id == ^by.id, select: r))
+        )
       end)
 
-    [ref_tos] =
+    ref_tos =
       Enum.map(ref_tos, fn to ->
-        @repo.all(from(r in Refs, where: r.referenced_id == ^to.id, select: r))
+        handle_delete_return(
+          @repo.all(from(r in Refs, where: r.referenced_id == ^to.id, select: r))
+        )
       end)
 
     to_delete = Enum.reduce(ref_bys, ref_tos, &[&1 | &2])
+    to_delete = Enum.filter(to_delete, &(!is_nil(&1)))
+
     {:ok, to_delete}
   end
 
   def delete(_) do
     {:error, :json_format_error}
+  end
+
+  def handle_delete_return([res]) do
+    res
+  end
+
+  def handle_delete_return(res) when is_list(res) do
   end
 
   defp handle_del(list) when is_list(list) do
