@@ -8,12 +8,12 @@ defmodule ApplicationRunner.Datastore do
 
   alias ApplicationRunner.{Data, Datastore}
 
-  @application_schema Application.compile_env!(:application_runner, :lenra_application_schema)
+  @environment_schema Application.compile_env!(:application_runner, :lenra_environement_schema)
 
-  @derive {Jason.Encoder, only: [:id, :application_id, :name]}
+  @derive {Jason.Encoder, only: [:id, :environment_id, :name]}
   schema "datastores" do
     has_many(:data, Data)
-    belongs_to(:application, @application_schema)
+    belongs_to(:environment, @environment_schema)
     field(:name, :string)
     timestamps()
   end
@@ -21,12 +21,12 @@ defmodule ApplicationRunner.Datastore do
   def changeset(datastore, params \\ %{}) do
     datastore
     |> cast(params, [])
-    |> validate_required([:name, :application_id])
-    |> foreign_key_constraint(:application_id)
+    |> validate_required([:name, :environment_id])
+    |> foreign_key_constraint(:environment_id)
   end
 
-  def new(application_id, name) do
-    %Datastore{application_id: application_id, name: name}
+  def new(environment_id, name) do
+    %Datastore{environment_id: environment_id, name: name}
     |> Datastore.changeset()
   end
 end

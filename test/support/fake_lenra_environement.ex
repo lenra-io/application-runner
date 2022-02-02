@@ -1,4 +1,4 @@
-defmodule ApplicationRunner.FakeLenraApplication do
+defmodule ApplicationRunner.FakeLenraEvironement do
   @moduledoc """
     The application schema.
   """
@@ -8,11 +8,11 @@ defmodule ApplicationRunner.FakeLenraApplication do
 
   alias ApplicationRunner.{
     Datastore,
-    FakeLenraApplication
+    FakeLenraEvironement
   }
 
-  schema "applications" do
-    has_one(:datastore, Datastore, foreign_key: :application_id)
+  schema "environments" do
+    has_one(:datastore, Datastore, foreign_key: :environment_id)
     timestamps()
   end
 
@@ -22,7 +22,7 @@ defmodule ApplicationRunner.FakeLenraApplication do
   end
 
   def new(params \\ %{}) do
-    %FakeLenraApplication{}
+    %FakeLenraEvironement{}
     |> changeset(params)
   end
 

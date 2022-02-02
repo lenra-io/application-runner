@@ -2,12 +2,12 @@ defmodule ApplicationRunner.Repo.Migrations.UserData do
   use Ecto.Migration
 
   def change do
-    create table(:applications) do
+    create table(:environments) do
       timestamps()
     end
 
     create table(:datastores) do
-      add(:application_id, references(:applications), null: false)
+      add(:environment_id, references(:environments), null: false)
       add(:name, :string)
 
       timestamps()
@@ -20,9 +20,9 @@ defmodule ApplicationRunner.Repo.Migrations.UserData do
       timestamps()
     end
 
-    create table(:refs) do
-      add(:referencer_id, references(:data), null: false)
-      add(:referenced_id, references(:data), null: false)
+    create table(:data_references) do
+      add(:refs_id, references(:data), null: false)
+      add(:refBy_id, references(:data), null: false)
 
       timestamps()
     end

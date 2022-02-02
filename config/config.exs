@@ -13,7 +13,7 @@ config :application_runner,
   env_inactivity_timeout: 1000 * 60 * 60,
   additional_app_modules: [],
   additional_session_modules: [],
-  lenra_application_schema: ApplicationRunner.FakeLenraApplication,
+  lenra_environement_schema: ApplicationRunner.FakeLenraEvironement,
   ecto_repos: [ApplicationRunner.Repo],
   repo: ApplicationRunner.Repo
 
