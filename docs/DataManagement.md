@@ -79,5 +79,5 @@ Server:
     - New migration to modify Datastore and create Data/DataReference
 
     work needed:
-    - change datastore_service to fit the new datastore system
-    - modify application_runner_adapter to fit new system 
+        - change datastore_service to fit the new datastore system
+        - modify application_runner_adapter to fit new system 
