@@ -22,6 +22,7 @@ defmodule ApplicationRunner.Datastore do
     datastore
     |> cast(params, [])
     |> validate_required([:name, :environment_id])
+    |> unique_constraint([:name, :environment_id])
     |> foreign_key_constraint(:environment_id)
   end
 
