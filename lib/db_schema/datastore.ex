@@ -8,7 +8,7 @@ defmodule ApplicationRunner.Datastore do
 
   alias ApplicationRunner.{Data, Datastore}
 
-  @environment_schema Application.compile_env!(:application_runner, :lenra_environement_schema)
+  @environment_schema Application.compile_env!(:application_runner, :lenra_environment_schema)
 
   @derive {Jason.Encoder, only: [:id, :environment_id, :name]}
   schema "datastores" do
