@@ -4,7 +4,7 @@ defmodule ApplicationRunner.Query do
   """
   import Ecto.Query, only: [from: 2]
 
-  alias ApplicationRunner.{Data, Datastore, DataReferences}
+  alias ApplicationRunner.{Data, DataReferences, Datastore}
 
   @repo Application.compile_env!(:application_runner, :repo)
 

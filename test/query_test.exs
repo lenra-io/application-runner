@@ -1,7 +1,7 @@
 defmodule ApplicationRunner.QueryTest do
   use ExUnit.Case, async: false
 
-  alias ApplicationRunner.{Data, Datastore, FakeLenraEvironement, Query, DataReferences, Repo}
+  alias ApplicationRunner.{Data, DataReferences, Datastore, FakeLenraEvironement, Repo, Query}
 
   setup do
     {:ok, inserted_environement} = Repo.insert(FakeLenraEvironement.new())
@@ -184,7 +184,7 @@ defmodule ApplicationRunner.QueryTest do
       {:ok, %{inserted_data: test}} =
         Query.insert(environment_id, %{"table" => "users", "data" => %{"name" => "toto"}})
 
-      {:ok, %{inserted_data: refBy}} =
+      {:ok, %{inserted_data: ref_by}} =
         Query.insert(environment_id, %{
           "table" => "users",
           "data" => %{"name" => "refs"},
@@ -205,13 +205,13 @@ defmodule ApplicationRunner.QueryTest do
         Repo.get(Data, refs.id)
         |> Repo.preload([:refs, :refBy])
 
-      refBy =
-        Repo.get(Data, refBy.id)
+      ref_by =
+        Repo.get(Data, ref_by.id)
         |> Repo.preload([:refs, :refBy])
 
       assert data == nil
       assert refs.refs == []
-      assert refBy.refBy == []
+      assert ref_by.refBy == []
     end
 
     test "return error if data id not found", %{environment_id: _environment_id} do
@@ -315,8 +315,6 @@ defmodule ApplicationRunner.QueryTest do
 
       res = Query.get(env.id, %{"table" => "score", "refBy" => [user.id]})
       [first_point | [second_point | _]] = res
-
-      IO.inspect(res)
 
       assert 2 == length(res)
       assert first_point.id == point_ten.id

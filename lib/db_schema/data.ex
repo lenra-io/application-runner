@@ -6,7 +6,7 @@ defmodule ApplicationRunner.Data do
   use Ecto.Schema
   import Ecto.Changeset
 
-  alias ApplicationRunner.{Data, Datastore, DataReferences}
+  alias ApplicationRunner.{Data, DataReferences, Datastore}
 
   @derive {Jason.Encoder, only: [:id, :datastore_id, :data]}
   schema "data" do
