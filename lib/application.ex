@@ -12,8 +12,7 @@ defmodule ApplicationRunner.Application do
         # Start the json validator server for the UI
         ApplicationRunner.JsonSchemata,
         ApplicationRunner.EnvManagers,
-        ApplicationRunner.SessionManagers,
-        ApplicationRunner.Storage
+        ApplicationRunner.SessionManagers
       ] ++
         if Mix.env() == :test do
           [ApplicationRunner.Repo]
