@@ -1,7 +1,7 @@
 defmodule ApplicationRunner.QueryTest do
   use ExUnit.Case, async: false
 
-  alias ApplicationRunner.{Data, Datastore, FakeLenraEvironement, Query, DataRaferences, Repo}
+  alias ApplicationRunner.{Data, Datastore, FakeLenraEvironement, Query, DataReferences, Repo}
 
   setup do
     {:ok, inserted_environement} = Repo.insert(FakeLenraEvironement.new())
@@ -77,7 +77,7 @@ defmodule ApplicationRunner.QueryTest do
         })
 
       data = Repo.get(Data, inserted_data.id)
-      ref = Repo.get(DataRaferences, inserted_ref.id)
+      ref = Repo.get(DataReferences, inserted_ref.id)
       data_ref = Repo.get(Data, inserted_data_ref.id)
 
       assert data.data == %{"name" => "toto"}
@@ -101,7 +101,7 @@ defmodule ApplicationRunner.QueryTest do
         })
 
       data = Repo.get(Data, inserted_data.id)
-      ref = Repo.get(DataRaferences, inserted_ref.id)
+      ref = Repo.get(DataReferences, inserted_ref.id)
       data_ref = Repo.get(Data, inserted_data_ref.id)
 
       assert data_ref.data == %{"point" => 2}
@@ -227,116 +227,130 @@ defmodule ApplicationRunner.QueryTest do
     end
   end
 
-  #
-
   describe "Query.get_1/1" do
-    # test "get all data from table should return list of data", %{environment_id: _environment_id} do
-    #  {:ok, app} = Repo.insert(FakeLenraApplication.new())
-    #  Query.create_table(app.id, %{"name" => "users"})
-    #  Query.insert(app.id, %{"table" => "users", "data" => %{"name" => "user1"}})
-    #  Query.insert(app.id, %{"table" => "users", "data" => %{"name" => "user2"}})
-    #
-    #  res = Query.get(app.id, %{"table" => "users"})
-    #
-    #  assert 2 == length(res)
-    # end
-    #
-    # test "get all data from table with incorrect table name should return error", %{
-    #  environment_id: environment_id
+    test "get all data from table should return list of data", %{environment_id: _environment_id} do
+      {:ok, env} = Repo.insert(FakeLenraEvironement.new())
+      Query.create_table(env.id, %{"name" => "users"})
+      Query.insert(env.id, %{"table" => "users", "data" => %{"name" => "user1"}})
+      Query.insert(env.id, %{"table" => "users", "data" => %{"name" => "user2"}})
+
+      res = Query.get(env.id, %{"table" => "users"})
+
+      assert 2 == length(res)
+    end
+
+    test "get all data from table with incorrect table name should return error", %{
+      environment_id: environment_id
+    } do
+      res = Query.get(environment_id, %{"table" => "1"})
+
+      assert {:error, :datastore_not_found} == res
+    end
+
+    test "data by id in table should return list of data" do
+      {:ok, env} = Repo.insert(FakeLenraEvironement.new())
+      Query.create_table(env.id, %{"name" => "users"})
+
+      {:ok, %{inserted_data: app_one}} =
+        Query.insert(env.id, %{"table" => "users", "data" => %{"name" => "user1"}})
+
+      {:ok, %{inserted_data: app_two}} =
+        Query.insert(env.id, %{"table" => "users", "data" => %{"name" => "user2"}})
+
+      res = Query.get(env.id, %{"table" => "users", "ids" => [app_one.id, app_two.id]})
+
+      assert 2 == length(res)
+    end
+
+    test "data by id in table should error if table name incorrect", %{
+      environment_id: environment_id
+    } do
+      res = Query.get(environment_id, %{"table" => "1", "ids" => []})
+
+      assert res == {:error, :datastore_not_found}
+    end
+
+    test "data by id in table should empty list if data id incorrect", %{
+      environment_id: _environment_id
+    } do
+      {:ok, env} = Repo.insert(FakeLenraEvironement.new())
+      Query.create_table(env.id, %{"name" => "users"})
+      res = Query.get(env.id, %{"table" => "users", "ids" => [-1]})
+
+      assert res == []
+    end
+
+    test "data by refBy in table should return a list", %{
+      environment_id: _environment_id
+    } do
+      {:ok, env} = Repo.insert(FakeLenraEvironement.new())
+      Query.create_table(env.id, %{"name" => "users"})
+      Query.create_table(env.id, %{"name" => "score"})
+
+      {:ok, %{inserted_data: user}} =
+        Query.insert(env.id, %{"table" => "users", "data" => %{"name" => "test"}})
+
+      {:ok, %{inserted_data: user_test}} =
+        Query.insert(env.id, %{"table" => "users", "data" => %{"name" => "test2"}})
+
+      {:ok, %{inserted_data: point_ten}} =
+        Query.insert(env.id, %{
+          "table" => "score",
+          "data" => %{"points" => 10},
+          "refBy" => [user.id]
+        })
+
+      {:ok, %{inserted_data: point_twelve}} =
+        Query.insert(env.id, %{
+          "table" => "score",
+          "data" => %{"points" => 12},
+          "refBy" => [user.id]
+        })
+
+      Query.insert(env.id, %{
+        "table" => "score",
+        "data" => %{"points" => 0},
+        "refBy" => [user_test.id]
+      })
+
+      res = Query.get(env.id, %{"table" => "score", "refBy" => [user.id]})
+      [first_point | [second_point | _]] = res
+
+      IO.inspect(res)
+
+      assert 2 == length(res)
+      assert first_point.id == point_ten.id
+      assert second_point.id == point_twelve.id
+    end
+
+    # test "data by refBy in table should return an empty list if no data refBy", %{
+    #   environment_id: _environment_id
     # } do
-    #  res = Query.get(environment_id, %{"table" => "1"})
-    #
-    #  assert {:error, :datastore_not_found} == res
-    # end
-    #
-    # test "data by id in table should return list of data" do
-    #  {:ok, app} = Repo.insert(FakeLenraApplication.new())
-    #  Query.create_table(app.id, %{"name" => "users"})
-    #
-    #  {:ok, %{inserted_data: app_one}} =
-    #    Query.insert(app.id, %{"table" => "users", "data" => %{"name" => "user1"}})
-    #
-    #  {:ok, %{inserted_data: app_two}} =
-    #    Query.insert(app.id, %{"table" => "users", "data" => %{"name" => "user2"}})
-    #
-    #  res = Query.get(app.id, %{"table" => "users", "ids" => [app_one.id, app_two.id]})
-    #
-    #  assert 2 == length(res)
-    # end
-    #
-    # test "data by id in table should error if table name incorrect", %{
-    #  environment_id: environment_id
-    # } do
-    #  res = Query.get(environment_id, %{"table" => "1", "ids" => []})
-    #
-    #  assert res == {:error, :datastore_not_found}
-    # end
-    #
-    # test "data by id in table should empty list if data id incorrect", %{
-    #  environment_id: _environment_id
-    # } do
-    #  {:ok, app} = Repo.insert(FakeLenraApplication.new())
-    #  Query.create_table(app.id, %{"name" => "users"})
-    #  res = Query.get(app.id, %{"table" => "users", "ids" => [-1]})
-    #
-    #  assert res == []
-    # end
-    #
-    # test "data by refBy in table should return a list", %{
-    #  environment_id: _environment_id
-    # } do
-    #  {:ok, app} = Repo.insert(FakeLenraApplication.new())
-    #  Query.create_table(app.id, %{"name" => "users"})
-    #  Query.create_table(app.id, %{"name" => "score"})
-    #
-    #  {:ok, %{inserted_data: user}} =
-    #    Query.insert(app.id, %{"table" => "users", "data" => %{"name" => "test"}})
-    #
-    #  Query.insert(app.id, %{
-    #    "table" => "score",
-    #    "data" => %{"points" => 10},
-    #    "refBy" => [user.id]
-    #  })
-    #
-    #  Query.insert(app.id, %{
-    #    "table" => "score",
-    #    "data" => %{"points" => 12},
-    #    "refBy" => [user.id]
-    #  })
-    #
-    #  res = Query.get(app.id, %{"table" => "score", "refBy" => [user.id]})
-    #
-    #  assert 2 == length(res)
-    # end
-    #
-    # test "data by refs in table should return a list", %{
-    #  environment_id: _environment_id
-    # } do
-    #  {:ok, app} = Repo.insert(FakeLenraApplication.new())
-    #  Query.create_table(app.id, %{"name" => "users"})
-    #  Query.create_table(app.id, %{"name" => "score"})
-    #
-    #  {:ok, %{inserted_data: pts}} =
-    #    Query.insert(app.id, %{
-    #      "table" => "score",
-    #      "data" => %{"points" => 10}
-    #    })
-    #
-    #  {:ok, %{inserted_data: user}} =
-    #    Query.insert(app.id, %{
-    #      "table" => "users",
-    #      "data" => %{"name" => "test"},
-    #      "refs" => [pts.id]
-    #    })
-    #
-    #  # IO.inspect(user |> @repo.preload([:refs, :refBy]))
-    #  # IO.inspect(pts |> @repo.preload([:refs, :refBy]))
-    #
-    #  res = Query.get(app.id, %{"table" => "score", "refs" => [pts.id]})
-    #
-    #  IO.inspect(res)
-    #
-    #  assert 1 == length(res)
+    #   {:ok, env} = Repo.insert(FakeLenraEvironement.new())
+    #   Query.create_table(env.id, %{"name" => "users"})
+    #   Query.create_table(env.id, %{"name" => "score"})
+
+    #   {:ok, %{inserted_data: user}} =
+    #     Query.insert(env.id, %{
+    #       "table" => "users",
+    #       "data" => %{"name" => "test"}
+    #     })
+
+    #   {:ok, %{inserted_data: pts}} =
+    #     Query.insert(env.id, %{
+    #       "table" => "score",
+    #       "data" => %{"points" => 10},
+    #       "refBy" => [user.id]
+    #     })
+
+    #   IO.inspect(user |> Repo.preload([:refs, :refBy]))
+    #   IO.inspect(pts |> Repo.preload([:refs, :refBy]))
+
+    #   res = Query.get(env.id, %{"table" => "users", "refBy" => [user.id]})
+
+    #   IO.inspect(res)
+
+    #   assert 0 == length(res)
     # end
   end
 end

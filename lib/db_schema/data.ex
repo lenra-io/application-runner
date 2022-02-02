@@ -6,19 +6,19 @@ defmodule ApplicationRunner.Data do
   use Ecto.Schema
   import Ecto.Changeset
 
-  alias ApplicationRunner.{Data, Datastore, DataRaferences}
+  alias ApplicationRunner.{Data, Datastore, DataReferences}
 
   @derive {Jason.Encoder, only: [:id, :datastore_id, :data]}
   schema "data" do
     belongs_to(:datastore, Datastore)
 
     many_to_many(:refs, Data,
-      join_through: DataRaferences,
+      join_through: DataReferences,
       join_keys: [refs_id: :id, refBy_id: :id]
     )
 
     many_to_many(:refBy, Data,
-      join_through: DataRaferences,
+      join_through: DataReferences,
       join_keys: [refBy_id: :id, refs_id: :id]
     )
 

@@ -1,4 +1,4 @@
-defmodule ApplicationRunner.DataRaferences do
+defmodule ApplicationRunner.DataReferences do
   @moduledoc """
     The references schema.
   """
@@ -6,7 +6,7 @@ defmodule ApplicationRunner.DataRaferences do
   use Ecto.Schema
   import Ecto.Changeset
 
-  alias ApplicationRunner.{Data, DataRaferences}
+  alias ApplicationRunner.{Data, DataReferences}
 
   @derive {Jason.Encoder, only: [:id, :refs_id, :refBy_id]}
   schema "data_references" do
@@ -25,7 +25,7 @@ defmodule ApplicationRunner.DataRaferences do
   end
 
   def new(refs_id, refBy_id) do
-    %DataRaferences{refBy_id: refBy_id, refs_id: refs_id}
-    |> DataRaferences.changeset()
+    %DataReferences{refBy_id: refBy_id, refs_id: refs_id}
+    |> DataReferences.changeset()
   end
 end

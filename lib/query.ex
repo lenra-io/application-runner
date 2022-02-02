@@ -4,7 +4,7 @@ defmodule ApplicationRunner.Query do
   """
   import Ecto.Query, only: [from: 2]
 
-  alias ApplicationRunner.{Data, Datastore, DataRaferences}
+  alias ApplicationRunner.{Data, Datastore, DataReferences}
 
   @repo Application.compile_env!(:application_runner, :repo)
 
@@ -65,38 +65,25 @@ defmodule ApplicationRunner.Query do
 
   defp handle_get_ref_by(datastore, ref_by) do
     Enum.map(ref_by, fn by ->
-      case(@repo.get(Data, by)) do
-        nil ->
-          {:error, :ref_not_found}
-
-        %Data{} ->
-          @repo.all(
-            from(d in Data,
-              join: r in assoc(d, :referenceds),
-              where: r.referencer == ^by and d.datastore_id == ^datastore,
-              select: d
-            )
-          )
-      end
+      @repo.all(
+        from(r in DataReferences,
+          left_join: d in assoc(r, :refBy),
+          where: d.datastore_id == ^datastore and r.refBy_id == ^by and r.refs_id == d.id,
+          select: d
+        )
+      )
     end)
   end
 
   defp handle_get_refs(datastore, refs) do
     Enum.map(refs, fn to ->
-      case(@repo.get(Data, to)) do
-        nil ->
-          {:error, :ref_not_found}
-
-        %Data{} ->
-          @repo.all(
-            from(d in Data,
-              join: r in assoc(d, :referenceds),
-              where:
-                r.referenced == ^to and d.datastore_id == ^datastore and r.referencer != d.id,
-              select: d
-            )
-          )
-      end
+      @repo.all(
+        from(r in DataReferences,
+          left_join: d in assoc(r, :refs),
+          where: d.datastore_id == ^datastore and r.refs_id == ^to,
+          select: d
+        )
+      )
     end)
   end
 
@@ -161,7 +148,7 @@ defmodule ApplicationRunner.Query do
            {:error, :ref_not_found}
 
          ref ->
-           {:ok, ref} = @repo.insert(DataRaferences.new(ref.id, data.id))
+           {:ok, ref} = @repo.insert(DataReferences.new(ref.id, data.id))
            ref
        end
      end)}
@@ -175,7 +162,7 @@ defmodule ApplicationRunner.Query do
            {:error, :ref_not_found}
 
          ref ->
-           {:ok, ref} = @repo.insert(DataRaferences.new(data.id, ref.id))
+           {:ok, ref} = @repo.insert(DataReferences.new(data.id, ref.id))
            ref
        end
      end)}
@@ -214,7 +201,7 @@ defmodule ApplicationRunner.Query do
         {:ok,
          Enum.map(ref_by, fn by ->
            Enum.map(refs, fn to ->
-             {:ok, ref} = @repo.insert(DataRaferences.new(by, to))
+             {:ok, ref} = @repo.insert(DataReferences.new(by, to))
              ref
            end)
          end)}
@@ -281,14 +268,14 @@ defmodule ApplicationRunner.Query do
     ref_bys =
       Enum.map(ref_bys, fn by ->
         handle_delete_return(
-          @repo.all(from(r in DataRaferences, where: r.refs_id == ^by.id, select: r))
+          @repo.all(from(r in DataReferences, where: r.refs_id == ^by.id, select: r))
         )
       end)
 
     refss =
       Enum.map(refss, fn to ->
         handle_delete_return(
-          @repo.all(from(r in DataRaferences, where: r.refBy_id == ^to.id, select: r))
+          @repo.all(from(r in DataReferences, where: r.refBy_id == ^to.id, select: r))
         )
       end)
 
