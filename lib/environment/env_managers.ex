@@ -39,7 +39,7 @@ defmodule ApplicationRunner.EnvManagers do
     If the app is already started, return `{:error, {:already_started, <PID>}}`
   """
   @spec start_env(number(), term()) ::
-          {:error, {:already_started, pid()}} | {:ok, pid()}
+          {:error, {:already_started, pid()}} | {:ok, pid()} | {:error, Atom}
   def start_env(env_id, assigns) do
     DynamicSupervisor.start_child(
       EnvManagers,
@@ -50,10 +50,11 @@ defmodule ApplicationRunner.EnvManagers do
   @doc """
     Ensure that the app env process is started. Start the app env if not.
   """
-  @spec ensure_env_started(number(), term()) :: {:ok, pid}
+  @spec ensure_env_started(number(), term()) :: {:ok, pid} | {:error, Atom}
   def ensure_env_started(env_id, assigns) do
     case EnvManagers.start_env(env_id, assigns) do
       {:ok, pid} -> {:ok, pid}
+      {:error, message} when is_atom(message) -> {:error, message}
       {:error, {:already_started, pid}} -> {:ok, pid}
     end
   end
