@@ -52,6 +52,9 @@ defmodule ApplicationRunner.EnvManager do
           env_state.inactivity_timeout
         }
 
+      {:error, :ressource_not_found} ->
+        {:stop, :application_not_found}
+
       {:error, reason} ->
         {:stop, reason}
     end
