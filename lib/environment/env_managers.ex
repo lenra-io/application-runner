@@ -50,11 +50,11 @@ defmodule ApplicationRunner.EnvManagers do
   @doc """
     Ensure that the app env process is started. Start the app env if not.
   """
-  @spec ensure_env_started(number(), term()) :: {:ok, pid} | {:error, Atom}
+  @spec ensure_env_started(number(), term()) :: {:ok, pid} | {:error, Atom | String}
   def ensure_env_started(env_id, assigns) do
     case EnvManagers.start_env(env_id, assigns) do
       {:ok, pid} -> {:ok, pid}
-      {:error, message} when is_atom(message) -> {:error, message}
+      {:error, message} when is_atom(message) or is_bitstring(message) -> {:error, message}
       {:error, {:already_started, pid}} -> {:ok, pid}
     end
   end

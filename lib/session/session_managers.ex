@@ -31,6 +31,12 @@ defmodule ApplicationRunner.SessionManagers do
         ApplicationRunner.SessionManagers,
         {SessionManager, [env_id: env_id, session_id: session_id, assigns: session_assigns]}
       )
+    else
+      {:error, :ressource_not_found} ->
+        {:error, :listeners_not_found}
+
+      {:error, reason} ->
+        {:error, reason}
     end
   end
 
