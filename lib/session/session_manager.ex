@@ -125,7 +125,7 @@ defmodule ApplicationRunner.SessionManager do
       EnvManager.notify_data_changed(session_state)
     else
       {:error, :ressource_not_found} ->
-        send(session_state.assigns.socket_pid, {:send, :error, :listeners_not_found})
+        send(session_state.assigns.socket_pid, {:send, :error, :listener_not_found})
 
       {:error, reason} ->
         send(session_state.assigns.socket_pid, {:send, :error, reason})
@@ -142,7 +142,7 @@ defmodule ApplicationRunner.SessionManager do
       EnvManager.notify_data_changed(session_state)
     else
       {:error, :ressource_not_found} ->
-        send(session_state.assigns.socket_pid, {:send, :error, :listeners_not_found})
+        send(session_state.assigns.socket_pid, {:send, :error, :listener_not_found})
 
       {:error, reason} ->
         send(session_state.assigns.socket_pid, {:send, :error, reason})

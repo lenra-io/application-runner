@@ -34,7 +34,7 @@ defmodule ApplicationRunner.SessionManagers do
         )
 
       {:error, :ressource_not_found} ->
-        {:error, :listeners_not_found}
+        {:error, :listener_not_found}
 
       {:error, reason} ->
         {:error, reason}
