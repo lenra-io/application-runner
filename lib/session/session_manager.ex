@@ -123,6 +123,12 @@ defmodule ApplicationRunner.SessionManager do
          {:ok, new_data} <- EnvManager.run_listener(session_state, code, data, event),
          :ok <- AdapterHandler.save_data(session_state, new_data) do
       EnvManager.notify_data_changed(session_state)
+    else
+      {:error, :ressource_not_found} ->
+        send(session_state.assigns.socket_pid, {:send, :error, :listener_not_found})
+
+      {:error, reason} ->
+        send(session_state.assigns.socket_pid, {:send, :error, reason})
     end
 
     {:noreply, session_state, session_state.inactivity_timeout}
@@ -134,6 +140,12 @@ defmodule ApplicationRunner.SessionManager do
          {:ok, new_data} <- EnvManager.init_data(session_state, data),
          :ok <- AdapterHandler.save_data(session_state, new_data) do
       EnvManager.notify_data_changed(session_state)
+    else
+      {:error, :ressource_not_found} ->
+        send(session_state.assigns.socket_pid, {:send, :error, :listener_not_found})
+
+      {:error, reason} ->
+        send(session_state.assigns.socket_pid, {:send, :error, reason})
     end
 
     {:noreply, session_state, session_state.inactivity_timeout}
