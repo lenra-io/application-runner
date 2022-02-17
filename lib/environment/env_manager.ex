@@ -79,7 +79,7 @@ defmodule ApplicationRunner.EnvManager do
     end
   end
 
-  @spec get_manifest(number()) :: map()
+  # @spec get_manifest(number()) :: map()
   def get_manifest(env_id) do
     with {:ok, pid} <- EnvManagers.fetch_env_manager_pid(env_id) do
       GenServer.call(pid, :get_manifest)
