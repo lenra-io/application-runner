@@ -99,6 +99,9 @@ defmodule ApplicationRunner.SessionManager do
 
       {:error, reason} ->
         send(session_state.assigns.socket_pid, {:send, :error, reason})
+
+      _err ->
+        {:error, :unknow_error}
     end
 
     {:noreply, session_state, session_state.inactivity_timeout}
