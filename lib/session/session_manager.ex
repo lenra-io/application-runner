@@ -93,6 +93,12 @@ defmodule ApplicationRunner.SessionManager do
       transformed_ui = transform_ui(ui)
       res = UiCache.diff_and_save(session_state, transformed_ui)
       AdapterHandler.on_ui_changed(session_state, res)
+    else
+      {:error, :ressource_not_found} ->
+        send(session_state.assigns.socket_pid, {:send, :error, :widget_not_found})
+
+      {:error, reason} ->
+        send(session_state.assigns.socket_pid, {:send, :error, reason})
     end
 
     {:noreply, session_state, session_state.inactivity_timeout}
