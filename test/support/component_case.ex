@@ -40,6 +40,11 @@ defmodule ApplicationRunner.ComponentCase do
         EnvManager.get_and_build_ui(session_state, "root", %{})
       end
 
+      def mock_and_run(widgets, session_state, root, data \\ %{}) do
+        ApplicationRunnerAdapter.set_mock(%{widgets: widgets})
+        EnvManager.get_and_build_ui(session_state, root, data)
+      end
+
       defmacro assert_success(expected, actual) do
         quote do
           assert {:ok, res} = unquote(actual)
