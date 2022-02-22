@@ -77,6 +77,10 @@ defmodule ApplicationRunner.ApplicationRunnerAdapter do
       {:patches, patches} ->
         # credo:disable-for-next-line
         IO.inspect(patches)
+
+      {:error, errors} ->
+        # credo:disable-for-next-line
+        IO.inspect(errors)
     end
 
     :ok

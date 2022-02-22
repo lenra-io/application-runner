@@ -95,7 +95,7 @@ defmodule ApplicationRunner.SessionManager do
       AdapterHandler.on_ui_changed(session_state, res)
     else
       {:error, :ressource_not_found} ->
-        AdapterHandler.on_ui_changed(session_state, {:error, :widget_not_found})
+        AdapterHandler.on_ui_changed(session_state, {:error, {:error, :widget_not_found}})
 
       {:error, reason} ->
         AdapterHandler.on_ui_changed(session_state, {:error, reason})
@@ -134,7 +134,7 @@ defmodule ApplicationRunner.SessionManager do
       EnvManager.notify_data_changed(session_state)
     else
       {:error, :ressource_not_found} ->
-        AdapterHandler.on_ui_changed(session_state, {:error, :listener_not_found})
+        AdapterHandler.on_ui_changed(session_state, {:error, {:error, :listener_not_found}})
 
       {:error, reason} ->
         AdapterHandler.on_ui_changed(session_state, {:error, reason})
@@ -154,7 +154,7 @@ defmodule ApplicationRunner.SessionManager do
       EnvManager.notify_data_changed(session_state)
     else
       {:error, :ressource_not_found} ->
-        AdapterHandler.on_ui_changed(session_state, {:error, :listener_not_found})
+        AdapterHandler.on_ui_changed(session_state, {:error, {:error, :listener_not_found}})
 
       {:error, reason} ->
         AdapterHandler.on_ui_changed(session_state, {:error, reason})
