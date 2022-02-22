@@ -86,7 +86,7 @@ defmodule ApplicationRunner.FlexValidatorTest do
     }
   end
 
-  def init_data(_, _) do
+  def init_data(_, _, _) do
     %{
       "type" => "widget",
       "name" => "myWidget"
@@ -98,7 +98,7 @@ defmodule ApplicationRunner.FlexValidatorTest do
            "myWidget" => &__MODULE__.my_widget/2,
            "root" => &__MODULE__.root/2
          },
-         listeners: %{"InitData" => &__MODULE__.init_data/2}
+         listeners: %{"InitData" => &__MODULE__.init_data/3}
        }
   test "valid flex with empty children in widget", %{
     session_state: _session_state,

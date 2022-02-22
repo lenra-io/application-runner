@@ -99,7 +99,7 @@ defmodule ApplicationRunner.ApplicationRunnerAdapter do
         {:reply, {:error, :ressource_not_found}, mock}
 
       widget ->
-        widget = apply(widget, [data, props])
+        widget = widget.(data, props)
         {:reply, {:ok, widget}, mock}
     end
   end
@@ -114,7 +114,7 @@ defmodule ApplicationRunner.ApplicationRunnerAdapter do
         {:reply, {:error, :ressource_not_found}, mock}
 
       listner ->
-        new_data = apply(listner, [data, props, event])
+        new_data = listner.(data, props, event)
         {:reply, {:ok, new_data}, mock}
     end
   end
