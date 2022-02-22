@@ -100,8 +100,9 @@ defmodule ApplicationRunner.SessionManager do
       {:error, reason} ->
         AdapterHandler.on_ui_changed(session_state, {:error, reason})
 
-      _err ->
+      err ->
         AdapterHandler.on_ui_changed(session_state, {:error, {:error, :unknow_error}})
+        raise err
     end
 
     {:noreply, session_state, session_state.inactivity_timeout}
@@ -139,8 +140,9 @@ defmodule ApplicationRunner.SessionManager do
       {:error, reason} ->
         AdapterHandler.on_ui_changed(session_state, {:error, reason})
 
-      _err ->
+      err ->
         AdapterHandler.on_ui_changed(session_state, {:error, {:error, :unknow_error}})
+        raise err
     end
 
     {:noreply, session_state, session_state.inactivity_timeout}
@@ -159,8 +161,9 @@ defmodule ApplicationRunner.SessionManager do
       {:error, reason} ->
         AdapterHandler.on_ui_changed(session_state, {:error, reason})
 
-      _err ->
+      err ->
         AdapterHandler.on_ui_changed(session_state, {:error, {:error, :unknow_error}})
+        raise err
     end
 
     {:noreply, session_state, session_state.inactivity_timeout}
