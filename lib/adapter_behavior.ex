@@ -23,5 +23,8 @@ defmodule ApplicationRunner.AdapterBehavior do
               {:ok, data()} | {:error, reason()}
   @callback get_data(SessionState.t()) :: {:ok, data()} | {:error, reason()}
   @callback save_data(SessionState.t(), data()) :: :ok | {:error, reason()}
-  @callback on_ui_changed(SessionState.t(), {:ui, ui()} | {:patches, patches()}) :: :ok
+  @callback on_ui_changed(
+              SessionState.t(),
+              {:ui, ui()} | {:patches, patches()} | {:error, tuple() | String.t()}
+            ) :: :ok
 end

@@ -68,15 +68,13 @@ defmodule ApplicationRunner.ApplicationRunnerAdapter do
   end
 
   @impl true
-  def on_ui_changed(_session_state, ui_update) do
-    case ui_update do
-      {:ui, ui} ->
-        # credo:disable-for-next-line
-        IO.inspect(ui)
+  def on_ui_changed(%SessionState{assigns: assigns}, ui_update) do
+    case Map.get(assigns, :test_pid, nil) do
+      pid when is_pid(pid) ->
+        send(pid, ui_update)
 
-      {:patches, patches} ->
-        # credo:disable-for-next-line
-        IO.inspect(patches)
+      _err ->
+        nil
     end
 
     :ok
@@ -96,8 +94,14 @@ defmodule ApplicationRunner.ApplicationRunnerAdapter do
 
   @impl true
   def handle_call({:get_widget, name, data, props}, _from, %{widgets: widgets} = mock) do
-    widget = apply(Map.get(widgets, name), [data, props])
-    {:reply, {:ok, widget}, mock}
+    case Map.get(widgets, name) do
+      nil ->
+        {:reply, {:error, :ressource_not_found}, mock}
+
+      widget ->
+        widget = widget.(data, props)
+        {:reply, {:ok, widget}, mock}
+    end
   end
 
   def handle_call(
@@ -105,7 +109,13 @@ defmodule ApplicationRunner.ApplicationRunnerAdapter do
         _from,
         %{listeners: listeners} = mock
       ) do
-    new_data = apply(Map.get(listeners, action), [data, props, event])
-    {:reply, new_data, mock}
+    case Map.get(listeners, action) do
+      nil ->
+        {:reply, {:error, :ressource_not_found}, mock}
+
+      listner ->
+        new_data = listner.(data, props, event)
+        {:reply, {:ok, new_data}, mock}
+    end
   end
 end

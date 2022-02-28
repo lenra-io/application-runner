@@ -94,14 +94,9 @@ defmodule ApplicationRunner.SessionManager do
       res = UiCache.diff_and_save(session_state, transformed_ui)
       AdapterHandler.on_ui_changed(session_state, res)
     else
-      {:error, :ressource_not_found} ->
-        send(session_state.assigns.socket_pid, {:send, :error, :widget_not_found})
-
-      {:error, reason} ->
-        send(session_state.assigns.socket_pid, {:send, :error, reason})
-
-      _err ->
-        {:error, :unknow_error}
+      err ->
+        AdapterHandler.on_ui_changed(session_state, {:error, {:error, :unknow_error}})
+        raise err
     end
 
     {:noreply, session_state, session_state.inactivity_timeout}
@@ -134,10 +129,14 @@ defmodule ApplicationRunner.SessionManager do
       EnvManager.notify_data_changed(session_state)
     else
       {:error, :ressource_not_found} ->
-        send(session_state.assigns.socket_pid, {:send, :error, :listener_not_found})
+        AdapterHandler.on_ui_changed(session_state, {:error, {:error, :listener_not_found}})
 
       {:error, reason} ->
-        send(session_state.assigns.socket_pid, {:send, :error, reason})
+        AdapterHandler.on_ui_changed(session_state, {:error, reason})
+
+      err ->
+        AdapterHandler.on_ui_changed(session_state, {:error, {:error, :unknow_error}})
+        raise err
     end
 
     {:noreply, session_state, session_state.inactivity_timeout}
@@ -151,10 +150,14 @@ defmodule ApplicationRunner.SessionManager do
       EnvManager.notify_data_changed(session_state)
     else
       {:error, :ressource_not_found} ->
-        send(session_state.assigns.socket_pid, {:send, :error, :listener_not_found})
+        AdapterHandler.on_ui_changed(session_state, {:error, {:error, :listener_not_found}})
 
       {:error, reason} ->
-        send(session_state.assigns.socket_pid, {:send, :error, reason})
+        AdapterHandler.on_ui_changed(session_state, {:error, reason})
+
+      err ->
+        AdapterHandler.on_ui_changed(session_state, {:error, {:error, :unknow_error}})
+        raise err
     end
 
     {:noreply, session_state, session_state.inactivity_timeout}
