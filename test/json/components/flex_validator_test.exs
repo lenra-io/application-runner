@@ -115,18 +115,5 @@ defmodule ApplicationRunner.FlexValidatorTest do
          }
        }}
     )
-
-    # assert {:ok, widget_result} = res
-    # assert %{"rootWidget" => root_id} = widget_result
-
-    # %{"widgets" => widgets} = widget_result
-    # actual_root = widgets[root_id]
-    # assert actual_root["type"] == "widget"
-    # assert actual_root["name"] == "myWidget"
-
-    # my_widget_id = widgets[root_id]["id"]
-    # actual_my_widget = widgets[my_widget_id]
-    # assert actual_my_widget["type"] == "flex"
-    # assert actual_my_widget["children"] == []
   end
 end
