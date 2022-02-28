@@ -94,12 +94,6 @@ defmodule ApplicationRunner.SessionManager do
       res = UiCache.diff_and_save(session_state, transformed_ui)
       AdapterHandler.on_ui_changed(session_state, res)
     else
-      {:error, :ressource_not_found} ->
-        AdapterHandler.on_ui_changed(session_state, {:error, {:error, :widget_not_found}})
-
-      {:error, reason} ->
-        AdapterHandler.on_ui_changed(session_state, {:error, reason})
-
       err ->
         AdapterHandler.on_ui_changed(session_state, {:error, {:error, :unknow_error}})
         raise err
