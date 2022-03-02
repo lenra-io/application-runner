@@ -27,10 +27,10 @@ defmodule ApplicationRunner.Data do
     timestamps()
   end
 
-  def changeset(dataspace, params \\ %{}) do
-    dataspace
+  def changeset(data, params \\ %{}) do
+    data
     |> cast(params, [])
-    |> validate_required([:data])
+    |> validate_required([:data, :datastore_id])
     |> foreign_key_constraint(:datastore_id)
     |> foreign_key_constraint(:refs)
     |> foreign_key_constraint(:refBy_id)
