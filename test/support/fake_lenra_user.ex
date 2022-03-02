@@ -7,8 +7,8 @@ defmodule ApplicationRunner.FakeLenraUser do
   import Ecto.Changeset
 
   alias ApplicationRunner.{
-    UserData,
-    FakeLenraUser
+    FakeLenraUser,
+    UserData
   }
 
   schema "users" do

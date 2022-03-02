@@ -6,7 +6,7 @@ defmodule ApplicationRunner.UserData do
   use Ecto.Schema
   import Ecto.Changeset
 
-  alias ApplicationRunner.{Data, DataReferences}
+  alias ApplicationRunner.{Data, UserData}
 
   @environment_schema Application.compile_env!(:application_runner, :lenra_user_schema)
 
@@ -21,13 +21,13 @@ defmodule ApplicationRunner.UserData do
   def changeset(refs, params \\ %{}) do
     refs
     |> cast(params, [])
-    |> validate_required([:refs_id, :refBy_id])
-    |> foreign_key_constraint(:refs_id)
-    |> foreign_key_constraint(:refBy_id)
+    |> validate_required([:user_id, :data_id])
+    |> foreign_key_constraint(:user_id)
+    |> foreign_key_constraint(:data_id)
   end
 
-  def new(refs_id, refBy_id) do
-    %DataReferences{refBy_id: refBy_id, refs_id: refs_id}
-    |> DataReferences.changeset()
+  def new(user_id, data_id) do
+    %UserData{user_id: user_id, data_id: data_id}
+    |> UserData.changeset()
   end
 end
