@@ -1,6 +1,6 @@
 defmodule ApplicationRunner.FakeLenraUser do
   @moduledoc """
-    The application schema.
+    The user schema.
   """
 
   use Ecto.Schema
@@ -18,7 +18,7 @@ defmodule ApplicationRunner.FakeLenraUser do
 
   def changeset(application, params \\ %{}) do
     application
-    |> cast(params, [:id])
+    |> cast(params, [])
   end
 
   def new(params \\ %{}) do
