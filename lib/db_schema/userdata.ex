@@ -12,8 +12,8 @@ defmodule ApplicationRunner.UserData do
 
   @derive {Jason.Encoder, only: [:id, :refs_id, :refBy_id]}
   schema "user_datas" do
-    belongs_to(:user_id, @environment_schema)
-    belongs_to(:data_id, Data)
+    belongs_to(:user, @environment_schema)
+    belongs_to(:data, Data)
 
     timestamps()
   end
