@@ -14,7 +14,12 @@ config :application_runner,
   additional_app_modules: [],
   additional_session_modules: [],
   lenra_environment_schema: ApplicationRunner.FakeLenraEvironement,
-  lenra_user_schema: ApplicationRunner.FakeLenraUser
+  lenra_user_schema: ApplicationRunner.FakeLenraUser,
+  ecto_repos: [ApplicationRunner.Repo]
+
+config :application_runner, ApplicationRunner.Repo,
+  database: "file::memory:?cache=shared",
+  log: false
 
 config :swarm,
   debug: false
