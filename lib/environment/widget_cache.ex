@@ -161,12 +161,21 @@ defmodule ApplicationRunner.WidgetCache do
            build_child_list(env_state, component, child_keys, ui_context, widget_context),
          {:ok, listeners_map} <-
            build_listeners(env_state, component, listeners_keys) do
+      new_context = %UiContext{
+        widgets_map:
+          Map.merge(merged_child_ui_context.widgets_map, merged_children_ui_context.widgets_map),
+        listeners_map:
+          Map.merge(
+            merged_child_ui_context.listeners_map,
+            merged_children_ui_context.listeners_map
+          )
+      }
+
       {:ok,
        component
        |> Map.merge(children_map)
        |> Map.merge(child_map)
-       |> Map.merge(listeners_map),
-       Map.merge(merged_child_ui_context, merged_children_ui_context)}
+       |> Map.merge(listeners_map), new_context}
     end
   end
 
