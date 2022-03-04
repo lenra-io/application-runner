@@ -5,6 +5,7 @@ defmodule ApplicationRunner.RepoCase do
 
   using do
     quote do
+      use ExUnit.Case, async: false
       alias ApplicationRunner.Repo
 
       import Ecto

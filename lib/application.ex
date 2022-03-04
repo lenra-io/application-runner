@@ -7,18 +7,12 @@ defmodule ApplicationRunner.Application do
   use Application
 
   def start(_type, _args) do
-    children =
-      [
-        # Start the json validator server for the UI
-        ApplicationRunner.JsonSchemata,
-        ApplicationRunner.EnvManagers,
-        ApplicationRunner.SessionManagers
-      ] ++
-        if Mix.env() == :test do
-          [ApplicationRunner.Repo]
-        else
-          []
-        end
+    children = [
+      # Start the json validator server for the UI
+      ApplicationRunner.JsonSchemata,
+      ApplicationRunner.EnvManagers,
+      ApplicationRunner.SessionManagers
+    ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html
     # for other strategies and supported options
