@@ -8,3 +8,5 @@ end
 ApplicationRunner.ApplicationRunnerAdapter.start_link([])
 
 ExUnit.start()
+
+Mix.Tasks.Ecto.Migrate.run([])

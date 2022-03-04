@@ -15,7 +15,8 @@ config :application_runner,
   additional_session_modules: [],
   lenra_environment_schema: ApplicationRunner.FakeLenraEnvironment,
   lenra_user_schema: ApplicationRunner.FakeLenraUser,
-  ecto_repos: [ApplicationRunner.Repo]
+  ecto_repos: [ApplicationRunner.Repo],
+  repo: ApplicationRunner.Repo
 
 config :application_runner, ApplicationRunner.Repo,
   database: "file::memory:?cache=shared",
