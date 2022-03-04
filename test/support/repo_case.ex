@@ -1,7 +1,6 @@
 defmodule ApplicationRunner.RepoCase do
-  @moduledoc """
+  @moduledoc false
 
-  """
   use ExUnit.CaseTemplate
 
   using do
