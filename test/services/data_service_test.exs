@@ -23,6 +23,24 @@ defmodule ApplicationRunner.DataServiceTest do
       assert data.data == %{"name" => "toto"}
     end
 
+    test "should create many data if params is list", %{env_id: env_id} do
+      {:ok, inserted_datastore} = Repo.insert(Datastore.new(env_id, "users"))
+
+      {:ok, %{inserted_data: [inserted_data_toto | [inserted_data_test | _else]]}} =
+        DataService.create(env_id, [
+          %{"table" => "users", "data" => %{"name" => "toto"}},
+          %{"table" => "users", "data" => %{"name" => "test"}}
+        ])
+
+      data_toto = Repo.get(Data, inserted_data_toto.id)
+      data_test = Repo.get(Data, inserted_data_test.id)
+
+      assert data_toto.datastore_id == inserted_datastore.id
+      assert data_toto.data == %{"name" => "toto"}
+      assert data_test.datastore_id == inserted_datastore.id
+      assert data_test.data == %{"name" => "test"}
+    end
+
     test "should return error if json invalid", %{env_id: env_id} do
       Repo.insert(Datastore.new(env_id, "users"))
 

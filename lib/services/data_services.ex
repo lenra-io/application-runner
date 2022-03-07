@@ -6,11 +6,17 @@ defmodule ApplicationRunner.DataService do
   @repo Application.compile_env!(:application_runner, :repo)
 
   def create(environment_id, lists) when is_list(lists) do
-    Enum.map(lists, fn list -> handle_create(environment_id, list) end)
+    inserted_data = Enum.map(lists, fn list -> handle_create(environment_id, list) end)
+    return = Enum.map(inserted_data, fn data -> handle_return(data) end)
+    {:ok, %{inserted_data: return}}
   end
 
   def create(environment_id, data) do
     handle_create(environment_id, data)
+  end
+
+  defp handle_return({:ok, %{inserted_data: result}}) do
+    result
   end
 
   def handle_create(environment_id, %{"table" => table, "data" => data}) do
