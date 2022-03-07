@@ -12,11 +12,7 @@ config :application_runner,
   # 60 min
   env_inactivity_timeout: 1000 * 60 * 60,
   additional_app_modules: [],
-  additional_session_modules: [],
-  lenra_environment_schema: ApplicationRunner.FakeLenraEnvironment,
-  lenra_user_schema: ApplicationRunner.FakeLenraUser,
-  ecto_repos: [ApplicationRunner.Repo],
-  repo: ApplicationRunner.Repo
+  additional_session_modules: []
 
 config :application_runner, ApplicationRunner.Repo,
   database: "file::memory:?cache=shared",
