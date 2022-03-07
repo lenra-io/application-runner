@@ -3,7 +3,7 @@ defmodule ApplicationRunner.DatastoreServices do
     The datastore service.
   """
 
-  alias ApplicationRunner.{Datastore}
+  alias ApplicationRunner.Datastore
 
   @repo Application.compile_env!(:application_runner, :repo)
 
