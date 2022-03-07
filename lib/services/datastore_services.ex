@@ -1,4 +1,4 @@
-defmodule ApplicationRunner.DatastoreService do
+defmodule ApplicationRunner.DatastoreServices do
   @moduledoc """
     The datastore service.
   """
