@@ -7,7 +7,7 @@ defmodule ApplicationRunner.DataServicesTest do
 
   setup do
     {:ok, environment} = Repo.insert(FakeLenraEvironement.new())
-    {:ok, env_id: environement.id}
+    {:ok, env_id: environment.id}
   end
 
   describe "DataServices.create_1/1" do
