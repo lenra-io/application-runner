@@ -1,4 +1,4 @@
-defmodule ApplicationRunner.FakeLenraEvironement do
+defmodule ApplicationRunner.FakeLenraEnvironment do
   @moduledoc """
     The application schema.
   """
@@ -8,7 +8,7 @@ defmodule ApplicationRunner.FakeLenraEvironement do
 
   alias ApplicationRunner.{
     Datastore,
-    FakeLenraEvironement
+    FakeLenraEnvironment
   }
 
   schema "environments" do
@@ -22,7 +22,7 @@ defmodule ApplicationRunner.FakeLenraEvironement do
   end
 
   def new(params \\ %{}) do
-    %FakeLenraEvironement{}
+    %FakeLenraEnvironment{}
     |> changeset(params)
   end
 
