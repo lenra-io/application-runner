@@ -1,12 +1,12 @@
-defmodule ApplicationRunner.DataService do
+defmodule ApplicationRunner.DataServices do
   @moduledoc false
 
   alias ApplicationRunner.{Data, Datastore}
 
   @repo Application.compile_env!(:application_runner, :repo)
 
-  def create(environment_id, lists) when is_list(lists) do
-    inserted_data = Enum.map(lists, fn list -> handle_create(environment_id, list) end)
+  def create(environment_id, data_lists) when is_list(data_lists) do
+    inserted_data = Enum.map(data_lists, fn data -> handle_create(environment_id, data) end)
     return = Enum.map(inserted_data, fn data -> handle_return(data) end)
     {:ok, %{inserted_data: return}}
   end
