@@ -13,7 +13,7 @@ defmodule ApplicationRunner.DatastoreService do
     |> @repo.transaction()
   end
 
-  def create_table(_app_id, _anything) do
+  def create(_app_id, _anything) do
     {:error, :json_format_error}
   end
 

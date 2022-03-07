@@ -20,7 +20,7 @@ defmodule ApplicationRunner.Repo.Migrations.Data do
     create(unique_index(:datastores, [:name, :environment_id], name: :datastores_name_application_id_index))
 
     create table(:datas) do
-      add(:datastore_id, references(:datastores), null: false)
+      add(:datastore_id, references(:datastores), null: false, on_delete: :delete_all)
       add(:data, :map, null: false)
 
       timestamps()
