@@ -24,7 +24,7 @@ defmodule ApplicationRunner.MixProject do
     ]
   end
 
-  defp elixirc_paths(:test), do: ["lib", "test/support", "priv/repo"]
+  defp elixirc_paths(:test), do: ["lib", "test/support"]
   defp elixirc_paths(:dev), do: ["lib", "test/support"]
   defp elixirc_paths(_), do: ["lib"]
 
@@ -38,8 +38,7 @@ defmodule ApplicationRunner.MixProject do
       {:jason, "~> 1.2"},
       {:json_diff, "~> 0.1"},
       {:swarm, "~> 3.0"},
-      {:ecto, "~> 3.7"},
-      {:ecto_sqlite3, "~> 0.7.2", only: [:test], runtime: false}
+      {:ecto_sqlite3, "~> 0.7.2"}
     ]
   end
 end
