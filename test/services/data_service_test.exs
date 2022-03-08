@@ -46,7 +46,7 @@ defmodule ApplicationRunner.DataServicesTest do
 
       data = Repo.get(Data, inserted_data.id)
 
-      DataServices.delete(%{"id" => data.id})
+      DataServices.delete(data.id)
       |> Repo.transaction()
 
       deleted_data = Repo.get(Data, inserted_data.id)
@@ -56,15 +56,7 @@ defmodule ApplicationRunner.DataServicesTest do
 
     test "should return error id invalid", %{env_id: _env_id} do
       assert {:error, :data, :data_not_found, _change_sor_far} =
-               DataServices.delete(%{"id" => -1})
-               |> Repo.transaction()
-    end
-
-    test "should return error if json invalid", %{env_id: env_id} do
-      Repo.insert(Datastore.new(env_id, "users"))
-
-      assert {:error, :data, :json_format_invalid, _change_sor_far} =
-               DataServices.delete(%{"data" => %{"name" => "toto"}})
+               DataServices.delete(-1)
                |> Repo.transaction()
     end
   end
@@ -79,7 +71,7 @@ defmodule ApplicationRunner.DataServicesTest do
 
       data = Repo.get(Data, inserted_data.id)
 
-      DataServices.update(%{"id" => data.id, "data" => %{"name" => "test"}})
+      DataServices.update(data.id, %{"data" => %{"name" => "test"}})
       |> Repo.transaction()
 
       updated_data = Repo.get(Data, inserted_data.id)
@@ -89,7 +81,7 @@ defmodule ApplicationRunner.DataServicesTest do
 
     test "should return error id invalid", %{env_id: _env_id} do
       assert {:error, :data, :data_not_found, _change_sor_far} =
-               DataServices.update(%{"id" => -1, "data" => %{}})
+               DataServices.update(-1, %{"data" => %{}})
                |> Repo.transaction()
     end
 
@@ -97,7 +89,7 @@ defmodule ApplicationRunner.DataServicesTest do
       Repo.insert(Datastore.new(env_id, "users"))
 
       assert {:error, :data, :json_format_invalid, _change_sor_far} =
-               DataServices.update(%{"data" => %{"name" => "toto"}})
+               DataServices.update(-1, %{"datastore" => %{"name" => "toto"}})
                |> Repo.transaction()
     end
   end

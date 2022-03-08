@@ -3,7 +3,7 @@ defmodule ApplicationRunner.DataServices do
 
   alias ApplicationRunner.{Data, Datastore}
 
-  def create(env_id, op), do: Ecto.Multi.new() |> create(env_id, op)
+  def create(environment_id, op), do: Ecto.Multi.new() |> create(environment_id, op)
 
   def create(multi, environment_id, %{"datastore" => datastore, "data" => data}) do
     multi
@@ -28,12 +28,12 @@ defmodule ApplicationRunner.DataServices do
     end)
   end
 
-  def update(op), do: Ecto.Multi.new() |> update(op)
+  def update(data_id, op), do: Ecto.Multi.new() |> update(data_id, op)
 
-  def update(multi, %{"id" => id, "data" => changes}) do
+  def update(multi, data_id, %{"data" => changes}) do
     multi
     |> Ecto.Multi.run(:data, fn repo, _params ->
-      case repo.get(Data, id) do
+      case repo.get(Data, data_id) do
         nil ->
           {:error, :data_not_found}
 
@@ -47,7 +47,7 @@ defmodule ApplicationRunner.DataServices do
     end)
   end
 
-  def update(multi, _invalid_json) do
+  def update(multi, _data_id, _invalid_json) do
     multi
     |> Ecto.Multi.run(:data, fn _repo, _params ->
       {:error, :json_format_invalid}
@@ -56,10 +56,10 @@ defmodule ApplicationRunner.DataServices do
 
   def delete(op), do: Ecto.Multi.new() |> delete(op)
 
-  def delete(multi, %{"id" => id}) do
+  def delete(multi, data_id) do
     multi
     |> Ecto.Multi.run(:data, fn repo, _ ->
-      case repo.get(Data, id) do
+      case repo.get(Data, data_id) do
         nil ->
           {:error, :data_not_found}
 
@@ -69,13 +69,6 @@ defmodule ApplicationRunner.DataServices do
     end)
     |> Ecto.Multi.delete(:deleted_data, fn %{data: %Data{} = data} ->
       data
-    end)
-  end
-
-  def delete(multi, _invalid_json) do
-    multi
-    |> Ecto.Multi.run(:data, fn _repo, _params ->
-      {:error, :json_format_invalid}
     end)
   end
 end
