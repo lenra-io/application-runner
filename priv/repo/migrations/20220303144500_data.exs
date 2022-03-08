@@ -34,8 +34,8 @@ defmodule ApplicationRunner.Repo.Migrations.Data do
     end
 
     create table(:data_references) do
-      add(:refs_id, references(:data), null: false)
-      add(:refBy_id, references(:data), null: false)
+      add(:refs_id, references(:datas), null: false)
+      add(:refBy_id, references(:datas), null: false)
 
       timestamps()
     end
