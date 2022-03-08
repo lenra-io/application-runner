@@ -38,7 +38,7 @@ defmodule ApplicationRunner.MixProject do
       {:jason, "~> 1.2"},
       {:json_diff, "~> 0.1"},
       {:swarm, "~> 3.0"},
-      {:ecto_sqlite3, "~> 0.7.2"}
+      {:ecto_sqlite3, "~> 0.7.2", only: [:test], runtime: false}
     ]
   end
 end
