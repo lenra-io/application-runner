@@ -12,7 +12,7 @@ defmodule ApplicationRunner.Datastore do
 
   @derive {Jason.Encoder, only: [:id, :environment_id, :name]}
   schema "datastores" do
-    has_many(:data, Data)
+    has_many(:data, Data, on_delete: :delete_all)
     belongs_to(:environment, @environment_schema)
     field(:name, :string)
     timestamps()

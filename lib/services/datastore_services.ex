@@ -5,47 +5,66 @@ defmodule ApplicationRunner.DatastoreServices do
 
   alias ApplicationRunner.Datastore
 
-  @repo Application.compile_env!(:application_runner, :repo)
+  def create(environment_id, op), do: Ecto.Multi.new() |> create(environment_id, op)
 
-  def create(environment_id, %{"name" => name}) do
-    Ecto.Multi.new()
+  def create(multi, environment_id, %{"name" => name}) do
+    multi
     |> Ecto.Multi.insert(:inserted_datastore, Datastore.new(environment_id, name))
-    |> @repo.transaction()
   end
 
-  def create(_app_id, _anything) do
-    {:error, :json_format_error}
+  def create(multi, _app_id, _anything) do
+    multi
+    |> Ecto.Multi.run(:datastore, fn _repo, _params ->
+      {:error, :json_format_invalid}
+    end)
   end
 
-  def update(environment_id, %{"name" => name, "new_name" => new_name}) do
-    Ecto.Multi.new()
+  def update(datastore_id, op), do: Ecto.Multi.new() |> update(datastore_id, op)
+
+  def update(multi, datastore_id, %{"name" => new_name}) do
+    multi
     |> Ecto.Multi.run(
       :datastore,
-      @repo.get_by(Datastore, name: name, environment_id: environment_id)
+      fn repo, _params ->
+        case repo.get(Datastore, datastore_id) do
+          nil ->
+            {:error, :datastore_not_found}
+
+          datastore ->
+            {:ok, datastore}
+        end
+      end
     )
-    |> Ecto.Multi.run(:inserted_datastore, fn _, %{datastore: %Datastore{} = datastore} ->
-      @repo.update(Ecto.Changeset.change(datastore, name: new_name))
+    |> Ecto.Multi.run(:inserted_datastore, fn repo, %{datastore: %Datastore{} = datastore} ->
+      repo.update(Ecto.Changeset.change(datastore, name: new_name))
     end)
-    |> @repo.transaction()
   end
 
-  def update(_app_id, _anything) do
-    {:error, :json_format_error}
+  def update(multi, _app_id, _anything) do
+    multi
+    |> Ecto.Multi.run(:datastore, fn _repo, _params ->
+      {:error, :json_format_invalid}
+    end)
   end
 
-  def delete(environment_id, %{"name" => name}) do
-    Ecto.Multi.new()
+  def delete(op), do: Ecto.Multi.new() |> delete(op)
+
+  def delete(multi, datastore_id) do
+    multi
     |> Ecto.Multi.run(
       :datastore,
-      @repo.get_by(Datastore, name: name, environment_id: environment_id)
-    )
-    |> Ecto.Multi.run(:inserted_datastore, fn _, %{datastore: %Datastore{} = datastore} ->
-      @repo.delete(datastore)
-    end)
-    |> @repo.transaction()
-  end
+      fn repo, _params ->
+        case repo.get(Datastore, datastore_id) do
+          nil ->
+            {:error, :datastore_not_found}
 
-  def delete(_app_id, _anything) do
-    {:error, :json_format_error}
+          datastore ->
+            {:ok, datastore}
+        end
+      end
+    )
+    |> Ecto.Multi.run(:inserted_datastore, fn repo, %{datastore: %Datastore{} = datastore} ->
+      repo.delete(datastore)
+    end)
   end
 end
