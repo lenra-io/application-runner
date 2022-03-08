@@ -3,7 +3,7 @@ defmodule ApplicationRunner.DatastoreServiceTest do
 
   use ApplicationRunner.RepoCase
 
-  alias ApplicationRunner.{Data, DatastoreServices, Datastore, FakeLenraEnvironment}
+  alias ApplicationRunner.{Data, Datastore, DatastoreServices, FakeLenraEnvironment}
 
   setup do
     {:ok, environment} = Repo.insert(FakeLenraEnvironment.new())
@@ -91,7 +91,7 @@ defmodule ApplicationRunner.DatastoreServiceTest do
         )
 
       assert deleted_datastore == nil
-      assert length(deleted_datas) == 0
+      assert Enum.empty?(deleted_datas)
     end
   end
 
