@@ -62,7 +62,7 @@ defmodule ApplicationRunner.DataServicesTest do
   end
 
   describe "DataServices.update_1/1" do
-    test "should delete data if json valid", %{env_id: env_id} do
+    test "should update data if json valid", %{env_id: env_id} do
       Repo.insert(Datastore.new(env_id, "users"))
 
       {:ok, %{inserted_data: inserted_data}} =
