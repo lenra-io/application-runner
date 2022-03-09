@@ -43,7 +43,7 @@ defmodule ApplicationRunner.DataReferenceServicesTest do
   end
 
   test "should return refs error when id invalid", %{env_id: _env_id} do
-    assert {:error, :refs, :data_not_found, _change_sor_far} =
+    assert {:error, :refs, :data_not_found, _changes_so_far} =
              DataReferencesServices.create(%{
                refs: -1,
                refBy: -1
@@ -56,7 +56,7 @@ defmodule ApplicationRunner.DataReferenceServicesTest do
 
     {:ok, inserted_user} = Repo.insert(Data.new(inserted_datastore_point.id, %{"name" => "toto"}))
 
-    assert {:error, :refBy, :data_not_found, _change_sor_far} =
+    assert {:error, :refBy, :data_not_found, _changes_so_far} =
              DataReferencesServices.create(%{
                refs: inserted_user.id,
                refBy: -1
@@ -65,7 +65,7 @@ defmodule ApplicationRunner.DataReferenceServicesTest do
   end
 
   test "should return error if json invalid", %{env_id: _env_id} do
-    assert {:error, :reference, :json_format_invalid, _change_sor_far} =
+    assert {:error, :reference, :json_format_invalid, _changes_so_far} =
              DataReferencesServices.create(%{
                refs: -1,
                refsby: -1
