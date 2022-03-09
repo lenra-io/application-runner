@@ -27,10 +27,30 @@ defmodule ApplicationRunner.DataServicesTest do
     test "should return error if json invalid", %{env_id: env_id} do
       Repo.insert(Datastore.new(env_id, "users"))
 
-      assert {:error, :data, :json_format_invalid, _change_sor_far} =
+      assert {:error, :data, :json_format_invalid, _changes_so_far} =
                DataServices.create(env_id, %{
                  "datastore" => "users",
                  "test" => %{"name" => "toto"}
+               })
+               |> Repo.transaction()
+    end
+
+    test "should return error if env_id invalid", %{env_id: env_id} do
+      Repo.insert(Datastore.new(env_id, "users"))
+
+      assert {:error, :datastore, :datastore_not_found, _changes_so_far} =
+               DataServices.create(-1, %{
+                 "datastore" => "users",
+                 "data" => %{"name" => "toto"}
+               })
+               |> Repo.transaction()
+    end
+
+    test "should return error if datastore name invalid", %{env_id: env_id} do
+      assert {:error, :datastore, :datastore_not_found, _changes_so_far} =
+               DataServices.create(env_id, %{
+                 "datastore" => "test",
+                 "data" => %{"name" => "toto"}
                })
                |> Repo.transaction()
     end
@@ -55,7 +75,7 @@ defmodule ApplicationRunner.DataServicesTest do
     end
 
     test "should return error id invalid", %{env_id: _env_id} do
-      assert {:error, :data, :data_not_found, _change_sor_far} =
+      assert {:error, :data, :data_not_found, _changes_so_far} =
                DataServices.delete(-1)
                |> Repo.transaction()
     end
@@ -80,7 +100,7 @@ defmodule ApplicationRunner.DataServicesTest do
     end
 
     test "should return error id invalid", %{env_id: _env_id} do
-      assert {:error, :data, :data_not_found, _change_sor_far} =
+      assert {:error, :data, :data_not_found, _changes_so_far} =
                DataServices.update(-1, %{"data" => %{}})
                |> Repo.transaction()
     end
@@ -88,7 +108,7 @@ defmodule ApplicationRunner.DataServicesTest do
     test "should return error if json invalid", %{env_id: env_id} do
       Repo.insert(Datastore.new(env_id, "users"))
 
-      assert {:error, :data, :json_format_invalid, _change_sor_far} =
+      assert {:error, :data, :json_format_invalid, _changes_so_far} =
                DataServices.update(-1, %{"datastore" => %{"name" => "toto"}})
                |> Repo.transaction()
     end

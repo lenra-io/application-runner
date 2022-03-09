@@ -1,5 +1,7 @@
 defmodule ApplicationRunner.DataServices do
-  @moduledoc false
+  @moduledoc """
+    The service that manages actions on data.
+  """
 
   alias ApplicationRunner.{Data, Datastore}
 
