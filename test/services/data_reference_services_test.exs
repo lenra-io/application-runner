@@ -40,36 +40,37 @@ defmodule ApplicationRunner.DataReferenceServicesTest do
       assert ref_by.id == inserted_user.id
       assert ref_by.data == %{"name" => "toto"}
     end
-  end
 
-  test "should return refs error when id invalid", %{env_id: _env_id} do
-    assert {:error, :refs, :data_not_found, _changes_so_far} =
-             DataReferencesServices.create(%{
-               refs: -1,
-               refBy: -1
-             })
-             |> Repo.transaction()
-  end
+    test "should return refs error when id invalid", %{env_id: _env_id} do
+      assert {:error, :refs, :data_not_found, _changes_so_far} =
+               DataReferencesServices.create(%{
+                 refs: -1,
+                 refBy: -1
+               })
+               |> Repo.transaction()
+    end
 
-  test "should return refBy error when id invalid", %{env_id: env_id} do
-    {:ok, inserted_datastore_point} = Repo.insert(Datastore.new(env_id, "users"))
+    test "should return refBy error when id invalid", %{env_id: env_id} do
+      {:ok, inserted_datastore_point} = Repo.insert(Datastore.new(env_id, "users"))
 
-    {:ok, inserted_user} = Repo.insert(Data.new(inserted_datastore_point.id, %{"name" => "toto"}))
+      {:ok, inserted_user} =
+        Repo.insert(Data.new(inserted_datastore_point.id, %{"name" => "toto"}))
 
-    assert {:error, :refBy, :data_not_found, _changes_so_far} =
-             DataReferencesServices.create(%{
-               refs: inserted_user.id,
-               refBy: -1
-             })
-             |> Repo.transaction()
-  end
+      assert {:error, :refBy, :data_not_found, _changes_so_far} =
+               DataReferencesServices.create(%{
+                 refs: inserted_user.id,
+                 refBy: -1
+               })
+               |> Repo.transaction()
+    end
 
-  test "should return error if json invalid", %{env_id: _env_id} do
-    assert {:error, :reference, :json_format_invalid, _changes_so_far} =
-             DataReferencesServices.create(%{
-               refs: -1,
-               refsby: -1
-             })
-             |> Repo.transaction()
+    test "should return error if json invalid", %{env_id: _env_id} do
+      assert {:error, :reference, :json_format_invalid, _changes_so_far} =
+               DataReferencesServices.create(%{
+                 refs: -1,
+                 refsby: -1
+               })
+               |> Repo.transaction()
+    end
   end
 end
