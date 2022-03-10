@@ -3,7 +3,13 @@ defmodule ApplicationRunner.DataReferenceServicesTest do
 
   use ApplicationRunner.RepoCase
 
-  alias ApplicationRunner.{Data, DataReferencesServices, Datastore, FakeLenraEnvironment}
+  alias ApplicationRunner.{
+    Data,
+    DataReferences,
+    DataReferencesServices,
+    Datastore,
+    FakeLenraEnvironment
+  }
 
   setup do
     {:ok, environment} = Repo.insert(FakeLenraEnvironment.new())
@@ -22,8 +28,8 @@ defmodule ApplicationRunner.DataReferenceServicesTest do
 
       {:ok, %{inserted_reference: _inserted_reference}} =
         DataReferencesServices.create(%{
-          refs_id: inserted_user.id,
-          refBy_id: inserted_point.id
+          refs_id: inserted_point.id,
+          refBy_id: inserted_user.id
         })
         |> Repo.transaction()
 
@@ -90,6 +96,31 @@ defmodule ApplicationRunner.DataReferenceServicesTest do
                  refBy_id: inserted_point.id
                })
                |> Repo.transaction()
+    end
+  end
+
+  describe "DataReferenceServices.delete_1/1" do
+    test "should delete ref if json valid", %{env_id: env_id} do
+      {:ok, inserted_datastore_user} = Repo.insert(Datastore.new(env_id, %{name: "users"}))
+      {:ok, inserted_datastore_point} = Repo.insert(Datastore.new(env_id, %{name: "points"}))
+
+      {:ok, inserted_user} =
+        Repo.insert(Data.new(inserted_datastore_user.id, %{"name" => "toto"}))
+
+      {:ok, inserted_point} = Repo.insert(Data.new(inserted_datastore_point.id, %{"score" => 10}))
+
+      {:ok, %{inserted_reference: inserted_reference}} =
+        DataReferencesServices.create(%{
+          refs_id: inserted_point.id,
+          refBy_id: inserted_user.id
+        })
+        |> Repo.transaction()
+
+      {:ok, _deleted_ref} =
+        DataReferencesServices.delete(%{refs: inserted_point.id, refBy: inserted_user.id})
+        |> Repo.transaction()
+
+      assert nil == Repo.get(DataReferences, inserted_reference.id)
     end
   end
 end
