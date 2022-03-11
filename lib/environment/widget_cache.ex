@@ -73,7 +73,12 @@ defmodule ApplicationRunner.WidgetCache do
     with {:ok, widget} <- get_widget(env_state, current_widget),
          {:ok, component, new_app_context} <-
            build_component(env_state, widget, ui_context, current_widget) do
-      {:ok, put_in(new_app_context.widgets_map[current_widget.id], component)}
+      IO.puts("GET AND BUILD WIDGET")
+      IO.puts(inspect(new_app_context.widgets_map))
+      IO.puts(inspect(current_widget.id))
+      res = put_in(new_app_context.widgets_map[current_widget.id], component)
+      IO.puts(inspect(res))
+      {:ok, res}
     end
   end
 
