@@ -11,7 +11,7 @@ defmodule ApplicationRunner.DataReferenceServicesTest do
   end
 
   describe "DataReferenceServices.create_1/1" do
-    test "should create ref if json valid", %{env_id: env_id} do
+    test "should create ref if params valid", %{env_id: env_id} do
       {:ok, inserted_datastore_user} = Repo.insert(Datastore.new(env_id, "users"))
       {:ok, inserted_datastore_point} = Repo.insert(Datastore.new(env_id, "points"))
 
@@ -22,8 +22,8 @@ defmodule ApplicationRunner.DataReferenceServicesTest do
 
       {:ok, %{inserted_reference: _inserted_reference}} =
         DataReferencesServices.create(%{
-          refs: inserted_user.id,
-          refBy: inserted_point.id
+          refs_id: inserted_user.id,
+          refBy_id: inserted_point.id
         })
         |> Repo.transaction()
 
@@ -42,10 +42,12 @@ defmodule ApplicationRunner.DataReferenceServicesTest do
     end
 
     test "should return refs error when id invalid", %{env_id: _env_id} do
-      assert {:error, :refs, :data_not_found, _changes_so_far} =
+      assert {:error, :inserted_reference,
+              %{errors: [refs_id: {"refs_id not found", _constraint}]},
+              _changes_so_far} =
                DataReferencesServices.create(%{
-                 refs: -1,
-                 refBy: -1
+                 refs_id: -1,
+                 refBy_id: -1
                })
                |> Repo.transaction()
     end
@@ -56,19 +58,38 @@ defmodule ApplicationRunner.DataReferenceServicesTest do
       {:ok, inserted_user} =
         Repo.insert(Data.new(inserted_datastore_point.id, %{"name" => "toto"}))
 
-      assert {:error, :refBy, :data_not_found, _changes_so_far} =
+      assert {:error, :inserted_reference,
+              %{errors: [refBy_id: {"refBy_id not found", _constraint}]},
+              _changes_so_far} =
                DataReferencesServices.create(%{
-                 refs: inserted_user.id,
-                 refBy: -1
+                 refs_id: inserted_user.id,
+                 refBy_id: -1
                })
                |> Repo.transaction()
     end
 
-    test "should return error if json invalid", %{env_id: _env_id} do
-      assert {:error, :reference, :json_format_invalid, _changes_so_far} =
+    test "add same reference twice should return an error", %{env_id: env_id} do
+      {:ok, inserted_datastore_user} = Repo.insert(Datastore.new(env_id, "users"))
+      {:ok, inserted_datastore_point} = Repo.insert(Datastore.new(env_id, "points"))
+
+      {:ok, inserted_user} =
+        Repo.insert(Data.new(inserted_datastore_user.id, %{"name" => "toto"}))
+
+      {:ok, inserted_point} = Repo.insert(Data.new(inserted_datastore_point.id, %{"score" => 10}))
+
+      {:ok, %{inserted_reference: _inserted_reference}} =
+        DataReferencesServices.create(%{
+          refs_id: inserted_user.id,
+          refBy_id: inserted_point.id
+        })
+        |> Repo.transaction()
+
+      assert {:error, :inserted_reference,
+              %{errors: [refs_id: {"has already been taken", _constraint}]},
+              _changes_so_far} =
                DataReferencesServices.create(%{
-                 refs: -1,
-                 refsby: -1
+                 refs_id: inserted_user.id,
+                 refBy_id: inserted_point.id
                })
                |> Repo.transaction()
     end

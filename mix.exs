@@ -38,8 +38,8 @@ defmodule ApplicationRunner.MixProject do
       {:jason, "~> 1.2"},
       {:json_diff, "~> 0.1"},
       {:swarm, "~> 3.0"},
-      {:ecto, "~> 3.7"},
-      {:ecto_sqlite3, "~> 0.7.2", only: [:test], runtime: false}
+      {:ecto_sql, "~> 3.4"},
+      {:postgrex, "~> 0.15.8", only: [:test], runtime: false}
     ]
   end
 end
