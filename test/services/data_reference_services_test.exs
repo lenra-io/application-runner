@@ -42,8 +42,7 @@ defmodule ApplicationRunner.DataReferenceServicesTest do
     end
 
     test "should return refs error when id invalid", %{env_id: _env_id} do
-      assert {:error, :inserted_reference,
-              %{errors: [refs_id: {"refs_id not found", _constraint}]},
+      assert {:error, :inserted_reference, %{errors: [refs_id: {"does not exist", _constraint}]},
               _changes_so_far} =
                DataReferencesServices.create(%{
                  refs_id: -1,
@@ -58,8 +57,7 @@ defmodule ApplicationRunner.DataReferenceServicesTest do
       {:ok, inserted_user} =
         Repo.insert(Data.new(inserted_datastore_point.id, %{"name" => "toto"}))
 
-      assert {:error, :inserted_reference,
-              %{errors: [refBy_id: {"refBy_id not found", _constraint}]},
+      assert {:error, :inserted_reference, %{errors: [refBy_id: {"does not exist", _constraint}]},
               _changes_so_far} =
                DataReferencesServices.create(%{
                  refs_id: inserted_user.id,

@@ -20,14 +20,8 @@ defmodule ApplicationRunner.DataReferences do
     refs
     |> cast(params, [:refs_id, :refBy_id])
     |> validate_required([:refs_id, :refBy_id])
-    |> foreign_key_constraint(:refs_id,
-      message: "refs_id not found",
-      name: :data_references_refs_id_fkey
-    )
-    |> foreign_key_constraint(:refBy_id,
-      message: "refBy_id not found",
-      name: :data_references_refBy_id_fkey
-    )
+    |> foreign_key_constraint(:refs_id)
+    |> foreign_key_constraint(:refBy_id)
     |> unique_constraint([:refs_id, :refBy_id], name: :data_references_refs_id_refBy_id)
   end
 
