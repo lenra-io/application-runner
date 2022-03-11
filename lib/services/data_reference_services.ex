@@ -1,7 +1,7 @@
 defmodule ApplicationRunner.DataReferencesServices do
   @moduledoc false
 
-  alias ApplicationRunner.{DataReferences}
+  alias ApplicationRunner.DataReferences
 
   def create(params), do: Ecto.Multi.new() |> create(params)
 
