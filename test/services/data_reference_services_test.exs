@@ -12,8 +12,8 @@ defmodule ApplicationRunner.DataReferenceServicesTest do
 
   describe "DataReferenceServices.create_1/1" do
     test "should create ref if params valid", %{env_id: env_id} do
-      {:ok, inserted_datastore_user} = Repo.insert(Datastore.new(env_id, "users"))
-      {:ok, inserted_datastore_point} = Repo.insert(Datastore.new(env_id, "points"))
+      {:ok, inserted_datastore_user} = Repo.insert(Datastore.new(env_id, %{name: "users"}))
+      {:ok, inserted_datastore_point} = Repo.insert(Datastore.new(env_id, %{name: "points"}))
 
       {:ok, inserted_user} =
         Repo.insert(Data.new(inserted_datastore_user.id, %{"name" => "toto"}))
@@ -52,7 +52,7 @@ defmodule ApplicationRunner.DataReferenceServicesTest do
     end
 
     test "should return refBy error when id invalid", %{env_id: env_id} do
-      {:ok, inserted_datastore_point} = Repo.insert(Datastore.new(env_id, "users"))
+      {:ok, inserted_datastore_point} = Repo.insert(Datastore.new(env_id, %{name: "users"}))
 
       {:ok, inserted_user} =
         Repo.insert(Data.new(inserted_datastore_point.id, %{"name" => "toto"}))
@@ -67,8 +67,8 @@ defmodule ApplicationRunner.DataReferenceServicesTest do
     end
 
     test "add same reference twice should return an error", %{env_id: env_id} do
-      {:ok, inserted_datastore_user} = Repo.insert(Datastore.new(env_id, "users"))
-      {:ok, inserted_datastore_point} = Repo.insert(Datastore.new(env_id, "points"))
+      {:ok, inserted_datastore_user} = Repo.insert(Datastore.new(env_id, %{name: "users"}))
+      {:ok, inserted_datastore_point} = Repo.insert(Datastore.new(env_id, %{name: "points"}))
 
       {:ok, inserted_user} =
         Repo.insert(Data.new(inserted_datastore_user.id, %{"name" => "toto"}))
