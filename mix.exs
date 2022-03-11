@@ -47,6 +47,7 @@ defmodule ApplicationRunner.MixProject do
   defp aliases do
     [
       test: [
+        "ecto.drop --repo ApplicationRunner.Repo",
         "ecto.create --quiet",
         "ecto.migrate",
         "test"
