@@ -6,6 +6,7 @@ defmodule ApplicationRunner.MixProject do
       app: :application_runner,
       version: "0.0.0-dev",
       elixir: "~> 1.12",
+      aliases: aliases(),
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
       deps: deps(),
@@ -38,8 +39,18 @@ defmodule ApplicationRunner.MixProject do
       {:jason, "~> 1.2"},
       {:json_diff, "~> 0.1"},
       {:swarm, "~> 3.0"},
-      {:ecto, "~> 3.7"},
-      {:ecto_sqlite3, "~> 0.7.2", only: [:test], runtime: false}
+      {:ecto_sql, "~> 3.4"},
+      {:postgrex, "~> 0.15.8", only: [:test], runtime: false}
+    ]
+  end
+
+  defp aliases do
+    [
+      test: [
+        "ecto.create --quiet",
+        "ecto.migrate",
+        "test"
+      ]
     ]
   end
 end

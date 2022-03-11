@@ -18,14 +18,15 @@ defmodule ApplicationRunner.DataReferences do
 
   def changeset(refs, params \\ %{}) do
     refs
-    |> cast(params, [])
+    |> cast(params, [:refs_id, :refBy_id])
     |> validate_required([:refs_id, :refBy_id])
     |> foreign_key_constraint(:refs_id)
     |> foreign_key_constraint(:refBy_id)
+    |> unique_constraint([:refs_id, :refBy_id], name: :data_references_refs_id_refBy_id)
   end
 
-  def new(refs_id, refBy_id) do
-    %DataReferences{refBy_id: refBy_id, refs_id: refs_id}
-    |> DataReferences.changeset()
+  def new(params) do
+    %DataReferences{}
+    |> DataReferences.changeset(params)
   end
 end
