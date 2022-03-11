@@ -20,14 +20,19 @@ defmodule ApplicationRunner.Datastore do
 
   def changeset(datastore, params \\ %{}) do
     datastore
-    |> cast(params, [])
+    |> cast(params, [:name])
     |> validate_required([:name, :environment_id])
     |> unique_constraint([:name, :environment_id])
     |> foreign_key_constraint(:environment_id)
   end
 
-  def new(environment_id, name) do
-    %Datastore{environment_id: environment_id, name: name}
-    |> Datastore.changeset()
+  def new(environment_id, params) do
+    %Datastore{environment_id: environment_id}
+    |> Datastore.changeset(params)
+  end
+
+  def update(datastore, params) do
+    datastore
+    |> Datastore.changeset(params)
   end
 end
