@@ -14,7 +14,7 @@ defmodule ApplicationRunner.DataReferencesServices do
 
   def delete(params), do: Ecto.Multi.new() |> delete(params)
 
-  def delete(multi, %{refs: refs, refBy: refBy}) do
+  def delete(multi, %{refs_id: refs, refBy_id: refBy}) do
     multi
     |> Ecto.Multi.run(:reference, fn repo, _params ->
       case repo.get_by(DataReferences, refs_id: refs, refBy_id: refBy) do
@@ -25,8 +25,15 @@ defmodule ApplicationRunner.DataReferencesServices do
           {:ok, ref}
       end
     end)
-    |> Ecto.Multi.delete(:inserted_reference, fn %{reference: %DataReferences{} = reference} ->
+    |> Ecto.Multi.delete(:deleted_reference, fn %{reference: %DataReferences{} = reference} ->
       reference
+    end)
+  end
+
+  def delete(multi, _params) do
+    multi
+    |> Ecto.Multi.run(:reference, fn _repo, _params ->
+      {:error, :json_format_invalid}
     end)
   end
 end

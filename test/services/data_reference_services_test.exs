@@ -117,10 +117,55 @@ defmodule ApplicationRunner.DataReferenceServicesTest do
         |> Repo.transaction()
 
       {:ok, _deleted_ref} =
-        DataReferencesServices.delete(%{refs: inserted_point.id, refBy: inserted_user.id})
+        DataReferencesServices.delete(%{refs_id: inserted_point.id, refBy_id: inserted_user.id})
         |> Repo.transaction()
 
       assert nil == Repo.get(DataReferences, inserted_reference.id)
+    end
+
+    test "should return error if ref not found", %{env_id: env_id} do
+      {:ok, inserted_datastore_user} = Repo.insert(Datastore.new(env_id, %{name: "users"}))
+      {:ok, _inserted_datastore_point} = Repo.insert(Datastore.new(env_id, %{name: "points"}))
+
+      {:ok, inserted_user} =
+        Repo.insert(Data.new(inserted_datastore_user.id, %{"name" => "toto"}))
+
+      {:error, :reference, :reference_not_found, %{}} =
+        DataReferencesServices.delete(%{
+          refs_id: -1,
+          refBy_id: inserted_user.id
+        })
+        |> Repo.transaction()
+    end
+
+    test "should return error if refBy not found", %{env_id: env_id} do
+      {:ok, inserted_datastore_user} = Repo.insert(Datastore.new(env_id, %{name: "users"}))
+      {:ok, _inserted_datastore_point} = Repo.insert(Datastore.new(env_id, %{name: "points"}))
+
+      {:ok, inserted_user} =
+        Repo.insert(Data.new(inserted_datastore_user.id, %{"name" => "toto"}))
+
+      {:error, :reference, :reference_not_found, %{}} =
+        DataReferencesServices.delete(%{
+          refs_id: inserted_user.id,
+          refBy_id: -1
+        })
+        |> Repo.transaction()
+    end
+
+    test "should return ", %{env_id: env_id} do
+      {:ok, inserted_datastore_user} = Repo.insert(Datastore.new(env_id, %{name: "users"}))
+      {:ok, _inserted_datastore_point} = Repo.insert(Datastore.new(env_id, %{name: "points"}))
+
+      {:ok, inserted_user} =
+        Repo.insert(Data.new(inserted_datastore_user.id, %{"name" => "toto"}))
+
+      {:error, :reference, :json_format_invalid, %{}} =
+        DataReferencesServices.delete(%{
+          refs_id: inserted_user.id,
+          refsBy_id: -1
+        })
+        |> Repo.transaction()
     end
   end
 end
