@@ -125,4 +125,71 @@ defmodule ApplicationRunner.UserDataServicesTest do
                |> Repo.transaction()
     end
   end
+
+  describe "UserDataServices.delete_1/1" do
+    test "should delete user_data if params valid", %{env_id: env_id, user_id: user_id} do
+      {:ok, _inserted_datastore} = Repo.insert(Datastore.new(env_id, %{"name" => "users"}))
+
+      {:ok, %{inserted_data: inserted_data}} =
+        DataServices.create(env_id, %{"datastore" => "users", "data" => %{"name" => "toto"}})
+        |> Repo.transaction()
+
+      {:ok, %{inserted_user_data: inserted_user_data}} =
+        UserDataServices.create(%{user_id: user_id, data_id: inserted_data.id})
+        |> Repo.transaction()
+
+      user_data = Repo.get(UserData, inserted_user_data.id)
+
+      assert user_data.user_id == user_id
+      assert user_data.data_id == inserted_data.id
+
+      {:ok, %{deleted_user_data: _deleted_user_data}} =
+        UserDataServices.delete(%{user_id: user_id, data_id: inserted_data.id})
+        |> Repo.transaction()
+
+      assert nil == Repo.get(UserData, inserted_user_data.id)
+    end
+
+    test "should return an error if user_id invalid", %{env_id: env_id, user_id: user_id} do
+      {:ok, _inserted_datastore} = Repo.insert(Datastore.new(env_id, %{"name" => "users"}))
+
+      {:ok, %{inserted_data: inserted_data}} =
+        DataServices.create(env_id, %{"datastore" => "users", "data" => %{"name" => "toto"}})
+        |> Repo.transaction()
+
+      {:ok, %{inserted_user_data: inserted_user_data}} =
+        UserDataServices.create(%{user_id: user_id, data_id: inserted_data.id})
+        |> Repo.transaction()
+
+      user_data = Repo.get(UserData, inserted_user_data.id)
+
+      assert user_data.user_id == user_id
+      assert user_data.data_id == inserted_data.id
+
+      assert {:error, :user_data, :user_data_not_found, _change_so_far} =
+               UserDataServices.delete(%{user_id: -1, data_id: inserted_data.id})
+               |> Repo.transaction()
+    end
+
+    test "should return an error if data_id invalid", %{env_id: env_id, user_id: user_id} do
+      {:ok, _inserted_datastore} = Repo.insert(Datastore.new(env_id, %{"name" => "users"}))
+
+      {:ok, %{inserted_data: inserted_data}} =
+        DataServices.create(env_id, %{"datastore" => "users", "data" => %{"name" => "toto"}})
+        |> Repo.transaction()
+
+      {:ok, %{inserted_user_data: inserted_user_data}} =
+        UserDataServices.create(%{user_id: user_id, data_id: inserted_data.id})
+        |> Repo.transaction()
+
+      user_data = Repo.get(UserData, inserted_user_data.id)
+
+      assert user_data.user_id == user_id
+      assert user_data.data_id == inserted_data.id
+
+      assert {:error, :user_data, :user_data_not_found, _change_so_far} =
+               UserDataServices.delete(%{user_id: user_id, data_id: -1})
+               |> Repo.transaction()
+    end
+  end
 end

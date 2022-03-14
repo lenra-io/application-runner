@@ -13,4 +13,25 @@ defmodule ApplicationRunner.UserDataServices do
       UserData.new(params)
     end)
   end
+
+  def delete(params), do: Ecto.Multi.new() |> delete(params)
+
+  def delete(multi, params) do
+    multi
+    |> Ecto.Multi.run(
+      :user_data,
+      fn repo, _params ->
+        case repo.get_by(UserData, params) do
+          nil ->
+            {:error, :user_data_not_found}
+
+          datastore ->
+            {:ok, datastore}
+        end
+      end
+    )
+    |> Ecto.Multi.delete(:deleted_user_data, fn %{user_data: %UserData{} = user_data} ->
+      user_data
+    end)
+  end
 end
