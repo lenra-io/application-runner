@@ -114,7 +114,7 @@ defmodule ApplicationRunner.UserDataServicesTest do
       assert {:error, :inserted_userdata,
               %{
                 errors: [
-                  {:user_id, {"has already been taken", _constraint}}
+                  {:user_id, {"User are already link to this data", _constraint}}
                 ]
               },
               _change_so_far} =
