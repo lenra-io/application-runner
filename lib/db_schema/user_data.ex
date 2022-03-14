@@ -20,14 +20,18 @@ defmodule ApplicationRunner.UserData do
 
   def changeset(refs, params \\ %{}) do
     refs
-    |> cast(params, [])
+    |> cast(params, [:user_id, :data_id])
     |> validate_required([:user_id, :data_id])
+    |> unique_constraint([:user_id, :data_id],
+      name: :user_datas_user_id_data_id,
+      message: "This user is already linked to this data"
+    )
     |> foreign_key_constraint(:user_id)
     |> foreign_key_constraint(:data_id)
   end
 
-  def new(user_id, data_id) do
-    %UserData{user_id: user_id, data_id: data_id}
-    |> UserData.changeset()
+  def new(params) do
+    %UserData{}
+    |> UserData.changeset(params)
   end
 end
