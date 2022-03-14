@@ -9,7 +9,7 @@ defmodule ApplicationRunner.UserDataServices do
 
   def create(multi, params) do
     multi
-    |> Ecto.Multi.insert(:inserted_userdata, fn _params ->
+    |> Ecto.Multi.insert(:inserted_user_data, fn _params ->
       UserData.new(params)
     end)
   end
