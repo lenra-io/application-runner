@@ -153,7 +153,7 @@ defmodule ApplicationRunner.DataReferenceServicesTest do
         |> Repo.transaction()
     end
 
-    test "should return ", %{env_id: env_id} do
+    test "should return error if json key invalid ", %{env_id: env_id} do
       {:ok, inserted_datastore_user} = Repo.insert(Datastore.new(env_id, %{name: "users"}))
       {:ok, _inserted_datastore_point} = Repo.insert(Datastore.new(env_id, %{name: "points"}))
 
