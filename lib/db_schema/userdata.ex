@@ -24,7 +24,7 @@ defmodule ApplicationRunner.UserData do
     |> validate_required([:user_id, :data_id])
     |> unique_constraint([:user_id, :data_id],
       name: :user_datas_user_id_data_id,
-      message: "User are already link to this data"
+      message: "This user is already linked to this data"
     )
     |> foreign_key_constraint(:user_id)
     |> foreign_key_constraint(:data_id)
