@@ -20,7 +20,7 @@ defmodule ApplicationRunner.UserDataServicesTest do
 
   describe "UserDataServices.create_1/1" do
     test "should create Userdata if params valid", %{env_id: env_id, user_id: user_id} do
-      {:ok, _inserted_datastore} = Repo.insert(Datastore.new(env_id, "users"))
+      {:ok, _inserted_datastore} = Repo.insert(Datastore.new(env_id, %{"name" => "users"}))
 
       {:ok, %{inserted_data: inserted_data}} =
         DataServices.create(env_id, %{"datastore" => "users", "data" => %{"name" => "toto"}})
@@ -36,37 +36,88 @@ defmodule ApplicationRunner.UserDataServicesTest do
       assert userdata.data_id == inserted_data.id
     end
 
-    test "should return error if user_id invalid", %{env_id: env_id, user_id: user_id} do
-      {:ok, _inserted_datastore} = Repo.insert(Datastore.new(env_id, "users"))
+    test "should return error if user_id invalid", %{env_id: env_id, user_id: _user_id} do
+      {:ok, _inserted_datastore} = Repo.insert(Datastore.new(env_id, %{"name" => "users"}))
 
       {:ok, %{inserted_data: inserted_data}} =
         DataServices.create(env_id, %{"datastore" => "users", "data" => %{"name" => "toto"}})
         |> Repo.transaction()
 
-      assert =
-        {:ok, %{inserted_userdata: _inserted_userdata}} =
-        UserDataServices.create(%{user_id: -1, data_id: inserted_data.id})
-        |> Repo.transaction()
+      assert {:error, :inserted_userdata, %{errors: [user_id: {"does not exist", _constraint}]},
+              _changes_so_far} =
+               UserDataServices.create(%{user_id: -1, data_id: inserted_data.id})
+               |> Repo.transaction()
     end
 
     test "should return error if data_id invalid", %{env_id: _env_id, user_id: user_id} do
-      assert {:ok, %{inserted_userdata: _inserted_userdata}} =
+      assert {:error, :inserted_userdata, %{errors: [data_id: {"does not exist", _cosntraint}]},
+              _change_so_far} =
                UserDataServices.create(%{user_id: user_id, data_id: -1})
                |> Repo.transaction()
     end
 
-    test "should return error if inserte twice", %{env_id: env_id, user_id: user_id} do
-      {:ok, _inserted_datastore} = Repo.insert(Datastore.new(env_id, "users"))
+    test "should create user_data if insert user_id twice but data_id are unique", %{
+      env_id: env_id,
+      user_id: user_id
+    } do
+      {:ok, _inserted_datastore} = Repo.insert(Datastore.new(env_id, %{"name" => "users"}))
 
       {:ok, %{inserted_data: inserted_data}} =
         DataServices.create(env_id, %{"datastore" => "users", "data" => %{"name" => "toto"}})
         |> Repo.transaction()
 
-      {:ok, %{inserted_userdata: inserted_userdata}} =
+      {:ok, %{inserted_data: inserted_data_two}} =
+        DataServices.create(env_id, %{"datastore" => "users", "data" => %{"name" => "toto"}})
+        |> Repo.transaction()
+
+      {:ok, %{inserted_userdata: _inserted_userdata}} =
         UserDataServices.create(%{user_id: user_id, data_id: inserted_data.id})
         |> Repo.transaction()
 
-      assert {:error, %{inserted_userdata: inserted_userdata}} =
+      assert {:ok, %{inserted_userdata: _inserted_userdata}} =
+               UserDataServices.create(%{user_id: user_id, data_id: inserted_data_two.id})
+               |> Repo.transaction()
+    end
+
+    test "should create user_data if insert data_id twice but user_id are unique", %{
+      env_id: env_id,
+      user_id: user_id
+    } do
+      {:ok, _inserted_datastore} = Repo.insert(Datastore.new(env_id, %{"name" => "users"}))
+
+      {:ok, %{inserted_data: inserted_data}} =
+        DataServices.create(env_id, %{"datastore" => "users", "data" => %{"name" => "toto"}})
+        |> Repo.transaction()
+
+      {:ok, user_two} = Repo.insert(FakeLenraUser.new())
+
+      {:ok, %{inserted_userdata: _inserted_userdata}} =
+        UserDataServices.create(%{user_id: user_id, data_id: inserted_data.id})
+        |> Repo.transaction()
+
+      assert {:ok, %{inserted_userdata: _inserted_userdata}} =
+               UserDataServices.create(%{user_id: user_two.id, data_id: inserted_data.id})
+               |> Repo.transaction()
+    end
+
+    test "should return error if inserte twice", %{env_id: env_id, user_id: user_id} do
+      {:ok, _inserted_datastore} = Repo.insert(Datastore.new(env_id, %{"name" => "users"}))
+
+      {:ok, %{inserted_data: inserted_data}} =
+        DataServices.create(env_id, %{"datastore" => "users", "data" => %{"name" => "toto"}})
+        |> Repo.transaction()
+
+      {:ok, %{inserted_userdata: _inserted_userdata}} =
+        UserDataServices.create(%{user_id: user_id, data_id: inserted_data.id})
+        |> Repo.transaction()
+
+      assert {:error, :inserted_userdata,
+              %{
+                errors: [
+                  {:user_id, {"has already been taken", _constraint}}
+                ]
+              },
+              _change_so_far} =
                UserDataServices.create(%{user_id: user_id, data_id: inserted_data.id})
                |> Repo.transaction()
     end
