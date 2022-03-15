@@ -29,7 +29,7 @@ defmodule ApplicationRunner.Data do
 
   def changeset(data, params \\ %{}) do
     data
-    |> cast(params, [])
+    |> cast(params, [:data, :datastore_id])
     |> validate_required([:data, :datastore_id])
     |> foreign_key_constraint(:datastore_id)
     |> foreign_key_constraint(:refs)
@@ -42,5 +42,10 @@ defmodule ApplicationRunner.Data do
       data: data
     }
     |> Data.changeset()
+  end
+
+  def update(data, params) do
+    data
+    |> Data.changeset(params)
   end
 end

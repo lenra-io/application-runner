@@ -258,5 +258,42 @@ defmodule ApplicationRunner.DataServicesTest do
                DataServices.update(-1, %{"datastore" => %{"name" => "toto"}})
                |> Repo.transaction()
     end
+
+    test "should add reference on update", %{env_id: env_id} do
+      {:ok, _inserted_datastore} = Repo.insert(Datastore.new(env_id, %{"name" => "users"}))
+      {:ok, _inserted_datastore} = Repo.insert(Datastore.new(env_id, %{"name" => "points"}))
+
+      {:ok, %{inserted_data: inserted_point}} =
+        DataServices.create(env_id, %{
+          "datastore" => "points",
+          "data" => %{"score" => "10"}
+        })
+        |> Repo.transaction()
+
+      {:ok, %{inserted_data: inserted_point_bis}} =
+        DataServices.create(env_id, %{
+          "datastore" => "points",
+          "data" => %{"score" => "12"}
+        })
+        |> Repo.transaction()
+
+      {:ok, %{inserted_data: inserted_data}} =
+        DataServices.create(env_id, %{
+          "datastore" => "users",
+          "data" => %{"name" => "toto"},
+          "refs" => [inserted_point.id]
+        })
+        |> Repo.transaction()
+
+      {:ok, %{inserted_data: updated_data}} =
+        DataServices.update(inserted_data.id, %{
+          "refs" => [inserted_point_bis.id]
+        })
+        |> Repo.transaction()
+
+      updated_data = Repo.get(DataReferences, updated_data.id)
+
+      IO.inspect(updated_data |> Repo.preload(:refs))
+    end
   end
 end

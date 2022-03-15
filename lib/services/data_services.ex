@@ -84,7 +84,7 @@ defmodule ApplicationRunner.DataServices do
 
   def update(data_id, op), do: Ecto.Multi.new() |> update(data_id, op)
 
-  def update(multi, data_id, %{"data" => changes}) do
+  def update(multi, data_id, changes) do
     multi
     |> Ecto.Multi.run(:data, fn repo, _params ->
       case repo.get(Data, data_id) do
@@ -95,18 +95,87 @@ defmodule ApplicationRunner.DataServices do
           {:ok, data}
       end
     end)
+    |> handle_update_ref(changes)
     |> Ecto.Multi.update(:updated_data, fn %{data: %Data{} = data} ->
       data
-      |> Ecto.Changeset.change(data: changes)
+      |> Data.update(changes)
     end)
   end
 
-  def update(multi, _data_id, _invalid_json) do
+  defp handle_update_ref(multi, %{"refs" => refs, "refBy" => ref_by})
+       when is_list(refs) and is_list(ref_by) do
     multi
-    |> Ecto.Multi.run(:data, fn _repo, _params ->
-      {:error, :json_format_invalid}
+    |> Ecto.Multi.run(:references, fn repo, %{data: %Data{} = data} ->
+      data
+      |> repo.preload(:refs)
+      |> repo.preload(:refBy)
+      |> Ecto.Changeset.change()
+      |> Ecto.Changeset.put_assoc(
+        :refs,
+        Enum.map(refs, fn ref ->
+          repo.insert(DataReferences.new(%{refs_id: ref, refBy_id: data.id}))
+        end)
+      )
+      |> Ecto.Changeset.put_assoc(
+        :refBy,
+        Enum.map(ref_by, fn ref ->
+          repo.insert(DataReferences.new(%{refs_id: data.id, refBy_id: ref}))
+        end)
+      )
     end)
   end
+
+  defp handle_update_ref(multi, %{"refs" => refs})
+       when is_list(refs) do
+    multi
+    |> Ecto.Multi.run(:references, fn repo, %{data: %Data{} = data} ->
+      res =
+        data
+        |> repo.preload(:refs)
+        |> Ecto.Changeset.change()
+        |> Ecto.Changeset.put_assoc(
+          :refs,
+          Enum.map(refs, fn ref ->
+            repo.insert(DataReferences.new(%{refs_id: ref, refBy_id: data.id}))
+          end)
+        )
+
+      case res.valid? do
+        true -> {:ok, res}
+        false -> {:error, res}
+      end
+    end)
+  end
+
+  defp handle_update_ref(multi, %{"refBy" => ref_by})
+       when is_list(ref_by) do
+    multi
+    |> Ecto.Multi.run(:references, fn repo, %{data: %Data{} = data} ->
+      data
+      |> repo.preload(:refBy)
+      |> Ecto.Changeset.change()
+      |> Ecto.Changeset.put_assoc(
+        :refBy,
+        Enum.map(ref_by, fn ref ->
+          repo.insert(DataReferences.new(%{refs_id: data.id, refBy_id: ref}))
+        end)
+      )
+    end)
+  end
+
+  defp handle_update_ref(multi, _no_ref_json) do
+    multi
+  end
+
+  # defp handle_update_ref(multi, _invalid_json) do
+  #   multi
+  #   |> Ecto.Multi.run(:reference, fn _repo, _params ->
+  #     {:error, :json_format_invalid}
+  #   end)
+  # end
+
+  # defp update_ref(data, ref) do
+  # end
 
   def delete(op), do: Ecto.Multi.new() |> delete(op)
 
