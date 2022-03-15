@@ -3,9 +3,36 @@ defmodule ApplicationRunner.DataServices do
     The service that manages actions on data.
   """
 
-  alias ApplicationRunner.{Data, Datastore}
+  alias ApplicationRunner.{Data, DataReferences, Datastore}
 
   def create(environment_id, op), do: Ecto.Multi.new() |> create(environment_id, op)
+
+  def create(multi, environment_id, %{
+        "datastore" => datastore,
+        "data" => data,
+        "refs" => refs,
+        "refBy" => ref_by
+      })
+      when is_list(refs) and is_list(ref_by) do
+    multi
+    |> create(environment_id, %{"datastore" => datastore, "data" => data})
+    |> handle_refs(refs)
+    |> handle_ref_by(ref_by)
+  end
+
+  def create(multi, environment_id, %{"datastore" => datastore, "data" => data, "refs" => refs})
+      when is_list(refs) do
+    multi
+    |> create(environment_id, %{"datastore" => datastore, "data" => data})
+    |> handle_refs(refs)
+  end
+
+  def create(multi, environment_id, %{"datastore" => datastore, "data" => data, "refBy" => ref_by})
+      when is_list(ref_by) do
+    multi
+    |> create(environment_id, %{"datastore" => datastore, "data" => data})
+    |> handle_ref_by(ref_by)
+  end
 
   def create(multi, environment_id, %{"datastore" => datastore, "data" => data}) do
     multi
@@ -27,6 +54,31 @@ defmodule ApplicationRunner.DataServices do
     multi
     |> Ecto.Multi.run(:data, fn _repo, _params ->
       {:error, :json_format_invalid}
+    end)
+  end
+
+  defp handle_refs(multi, refs) do
+    Enum.reduce(refs, multi, fn ref, multi ->
+      multi
+      |> Ecto.Multi.run(String.to_atom("inserted_refs_#{ref}"), fn repo,
+                                                                   %{
+                                                                     inserted_data: %Data{} = data
+                                                                   } ->
+        repo.insert(DataReferences.new(%{refs_id: ref, refBy_id: data.id}))
+      end)
+    end)
+  end
+
+  defp handle_ref_by(multi, refBy) do
+    Enum.reduce(refBy, multi, fn ref, multi ->
+      multi
+      |> Ecto.Multi.run(String.to_atom("inserted_refBy_#{ref}"), fn repo,
+                                                                    %{
+                                                                      inserted_data:
+                                                                        %Data{} = data
+                                                                    } ->
+        repo.insert(DataReferences.new(%{refs_id: data.id, refBy_id: ref}))
+      end)
     end)
   end
 
