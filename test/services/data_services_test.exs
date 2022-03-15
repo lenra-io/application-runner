@@ -3,7 +3,7 @@ defmodule ApplicationRunner.DataServicesTest do
 
   use ApplicationRunner.RepoCase
 
-  alias ApplicationRunner.{Data, DataServices, Datastore, FakeLenraEnvironment}
+  alias ApplicationRunner.{Data, DataServices, Datastore, DataReferences, FakeLenraEnvironment}
 
   setup do
     {:ok, environment} = Repo.insert(FakeLenraEnvironment.new())
@@ -51,6 +51,152 @@ defmodule ApplicationRunner.DataServicesTest do
                DataServices.create(env_id, %{
                  "datastore" => "test",
                  "data" => %{"name" => "toto"}
+               })
+               |> Repo.transaction()
+    end
+
+    test "should create reference if refs id is valid", %{env_id: env_id} do
+      {:ok, _inserted_datastore} = Repo.insert(Datastore.new(env_id, %{"name" => "users"}))
+      {:ok, _inserted_datastore} = Repo.insert(Datastore.new(env_id, %{"name" => "points"}))
+
+      {:ok, %{inserted_data: inserted_point}} =
+        DataServices.create(env_id, %{
+          "datastore" => "points",
+          "data" => %{"score" => "10"}
+        })
+        |> Repo.transaction()
+
+      {:ok, %{inserted_data: inserted_data}} =
+        DataServices.create(env_id, %{
+          "datastore" => "users",
+          "data" => %{"name" => "toto"},
+          "refs" => [inserted_point.id]
+        })
+        |> Repo.transaction()
+
+      assert !is_nil(
+               Repo.get_by(DataReferences, refs_id: inserted_point.id, refBy_id: inserted_data.id)
+             )
+    end
+
+    test "should create 2 if give 2 refs_id", %{env_id: env_id} do
+      {:ok, _inserted_datastore} = Repo.insert(Datastore.new(env_id, %{"name" => "users"}))
+      {:ok, _inserted_datastore} = Repo.insert(Datastore.new(env_id, %{"name" => "points"}))
+
+      {:ok, %{inserted_data: inserted_point}} =
+        DataServices.create(env_id, %{
+          "datastore" => "points",
+          "data" => %{"score" => "10"}
+        })
+        |> Repo.transaction()
+
+      {:ok, %{inserted_data: inserted_point_bis}} =
+        DataServices.create(env_id, %{
+          "datastore" => "points",
+          "data" => %{"score" => "12"}
+        })
+        |> Repo.transaction()
+
+      {:ok, %{inserted_data: inserted_data}} =
+        DataServices.create(env_id, %{
+          "datastore" => "users",
+          "data" => %{"name" => "toto"},
+          "refs" => [inserted_point.id, inserted_point_bis.id]
+        })
+        |> Repo.transaction()
+
+      assert !is_nil(
+               Repo.get_by(DataReferences, refs_id: inserted_point.id, refBy_id: inserted_data.id)
+             )
+
+      assert !is_nil(
+               Repo.get_by(DataReferences,
+                 refs_id: inserted_point_bis.id,
+                 refBy_id: inserted_data.id
+               )
+             )
+    end
+
+    test "should create reference if refBy id is valid", %{env_id: env_id} do
+      {:ok, _inserted_datastore} = Repo.insert(Datastore.new(env_id, %{"name" => "users"}))
+      {:ok, _inserted_datastore} = Repo.insert(Datastore.new(env_id, %{"name" => "points"}))
+
+      {:ok, %{inserted_data: inserted_user}} =
+        DataServices.create(env_id, %{"datastore" => "users", "data" => %{"name" => "toto"}})
+        |> Repo.transaction()
+
+      {:ok, %{inserted_data: inserted_data}} =
+        DataServices.create(env_id, %{
+          "datastore" => "points",
+          "data" => %{"score" => "10"},
+          "refBy" => [inserted_user.id]
+        })
+        |> Repo.transaction()
+
+      assert !is_nil(
+               Repo.get_by(DataReferences, refs_id: inserted_data.id, refBy_id: inserted_user.id)
+             )
+    end
+
+    test "should create reference if refs and refBy id is valid", %{env_id: env_id} do
+      {:ok, _inserted_datastore} = Repo.insert(Datastore.new(env_id, %{"name" => "team"}))
+      {:ok, _inserted_datastore} = Repo.insert(Datastore.new(env_id, %{"name" => "users"}))
+      {:ok, _inserted_datastore} = Repo.insert(Datastore.new(env_id, %{"name" => "points"}))
+
+      {:ok, %{inserted_data: inserted_team}} =
+        DataServices.create(env_id, %{"datastore" => "team", "data" => %{"name" => "test"}})
+        |> Repo.transaction()
+
+      {:ok, %{inserted_data: inserted_point}} =
+        DataServices.create(env_id, %{
+          "datastore" => "points",
+          "data" => %{"scrore" => "10"}
+        })
+        |> Repo.transaction()
+
+      {:ok, %{inserted_data: inserted_user}} =
+        DataServices.create(env_id, %{
+          "datastore" => "users",
+          "data" => %{"name" => "toto"},
+          "refs" => [inserted_point.id],
+          "refBy" => [inserted_team.id]
+        })
+        |> Repo.transaction()
+
+      assert !is_nil(
+               Repo.get_by(DataReferences, refs_id: inserted_user.id, refBy_id: inserted_team.id)
+             )
+
+      assert !is_nil(
+               Repo.get_by(DataReferences, refs_id: inserted_point.id, refBy_id: inserted_user.id)
+             )
+    end
+
+    test "should return error if refs id invalid ", %{env_id: env_id} do
+      {:ok, _inserted_datastore} = Repo.insert(Datastore.new(env_id, %{"name" => "users"}))
+      {:ok, _inserted_datastore} = Repo.insert(Datastore.new(env_id, %{"name" => "points"}))
+
+      assert {:error, :"inserted_refs_-1", %{errors: [refs_id: {"does not exist", _constraint}]},
+              _change_so_far} =
+               DataServices.create(env_id, %{
+                 "datastore" => "users",
+                 "data" => %{"name" => "toto"},
+                 "refs" => [-1]
+               })
+               |> Repo.transaction()
+    end
+
+    test "should return error if refBy_id invalid", %{env_id: env_id} do
+      {:ok, _inserted_datastore} = Repo.insert(Datastore.new(env_id, %{"name" => "users"}))
+      {:ok, _inserted_datastore} = Repo.insert(Datastore.new(env_id, %{"name" => "points"}))
+
+      assert {:error, :"inserted_refBy_-1",
+              %{errors: [refBy_id: {"does not exist", _constraint}]},
+              _change_so_far} =
+               DataServices.create(env_id, %{
+                 "datastore" => "points",
+                 "data" => %{"score" => "10"},
+                 "refBy" => [-1]
                })
                |> Repo.transaction()
     end
