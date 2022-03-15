@@ -25,7 +25,7 @@ defmodule ApplicationRunner.ListenerCacheTest do
                   ListenersCache.generate_listeners_key(action, almost_props))
   end
 
-  test "test save_listener and fetch_listenet", %{env_state: env_state} do
+  test "test save_listener and fetch_listener", %{env_state: env_state} do
     action = "go"
     props = %{"value" => "ok"}
 
