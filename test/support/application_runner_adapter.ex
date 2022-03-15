@@ -96,7 +96,7 @@ defmodule ApplicationRunner.ApplicationRunnerAdapter do
   def handle_call({:get_widget, name, data, props}, _from, %{widgets: widgets} = mock) do
     case Map.get(widgets, name) do
       nil ->
-        {:reply, {:error, :ressource_not_found}, mock}
+        {:reply, {:error, :widget_not_found}, mock}
 
       widget ->
         widget = widget.(data, props)
@@ -111,7 +111,7 @@ defmodule ApplicationRunner.ApplicationRunnerAdapter do
       ) do
     case Map.get(listeners, action) do
       nil ->
-        {:reply, {:error, :ressource_not_found}, mock}
+        {:reply, {:error, :listener_not_found}, mock}
 
       listner ->
         new_data = listner.(data, props, event)

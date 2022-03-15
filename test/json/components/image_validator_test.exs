@@ -36,7 +36,7 @@ defmodule ApplicationRunner.ImageValidatorTest do
     }
 
     res = mock_root_and_run(json, session_state)
-    assert_error({:error, [{"Invalid component type", ""}]}, res)
+    assert_error({:error, :invalid_ui, [{"Invalid component type", ""}]}, res)
   end
 
   test "Invalid image with no path", %{session_state: session_state} do
@@ -45,7 +45,7 @@ defmodule ApplicationRunner.ImageValidatorTest do
     }
 
     res = mock_root_and_run(json, session_state)
-    assert_error({:error, [{"Required property src was not present.", ""}]}, res)
+    assert_error({:error, :invalid_ui, [{"Required property src was not present.", ""}]}, res)
   end
 
   test "Invalid image wrong types on width and height", %{session_state: session_state} do
@@ -59,7 +59,7 @@ defmodule ApplicationRunner.ImageValidatorTest do
     res = mock_root_and_run(json, session_state)
 
     assert_error(
-      {:error,
+      {:error, :invalid_ui,
        [
          {"Type mismatch. Expected Number but got String.", "/height"},
          {"Type mismatch. Expected Number but got String.", "/width"}

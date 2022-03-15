@@ -34,7 +34,7 @@ defmodule ApplicationRunner.TextValidatorTest do
     }
 
     res = mock_root_and_run(json, session_state)
-    assert_error({:error, [{"Invalid component type", ""}]}, res)
+    assert_error({:error, :invalid_ui, [{"Invalid component type", ""}]}, res)
   end
 
   test "invalid text no value", %{session_state: session_state} do
@@ -43,7 +43,7 @@ defmodule ApplicationRunner.TextValidatorTest do
     }
 
     res = mock_root_and_run(json, session_state)
-    assert_error({:error, [{"Required property value was not present.", ""}]}, res)
+    assert_error({:error, :invalid_ui, [{"Required property value was not present.", ""}]}, res)
   end
 
   test "invalid text no string value type", %{session_state: session_state} do
@@ -53,6 +53,10 @@ defmodule ApplicationRunner.TextValidatorTest do
     }
 
     res = mock_root_and_run(json, session_state)
-    assert_error({:error, [{"Type mismatch. Expected String but got Integer.", "/value"}]}, res)
+
+    assert_error(
+      {:error, :invalid_ui, [{"Type mismatch. Expected String but got Integer.", "/value"}]},
+      res
+    )
   end
 end

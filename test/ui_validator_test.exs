@@ -98,6 +98,7 @@ defmodule ApplicationRunner.UIValidatorTest do
     assert_error(
       {
         :error,
+        :invalid_ui,
         [
           {"Schema does not allow additional properties.",
            "/children/0/children/0/onChanged/name"},
@@ -131,6 +132,7 @@ defmodule ApplicationRunner.UIValidatorTest do
     assert_error(
       {
         :error,
+        :invalid_ui,
         [
           {"Type mismatch. Expected Component but got Object.", "/children/0"},
           {"Type mismatch. Expected Component but got Object.", "/children/1"}
