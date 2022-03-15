@@ -145,7 +145,6 @@ defmodule ApplicationRunner.SessionManager do
       EnvManager.notify_data_changed(session_state)
     else
       error ->
-        Logger.error(inspect(error))
         send_error(session_state, error)
     end
 
@@ -154,7 +153,6 @@ defmodule ApplicationRunner.SessionManager do
 
   defp send_error(session_state, error) do
     AdapterHandler.on_ui_changed(session_state, {:error, error})
-    Logger.error(inspect(error))
   end
 
   defp transform_ui(%{"rootWidget" => root_widget, "widgets" => widgets}) do
