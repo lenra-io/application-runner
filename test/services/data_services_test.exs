@@ -3,7 +3,7 @@ defmodule ApplicationRunner.DataServicesTest do
 
   use ApplicationRunner.RepoCase
 
-  alias ApplicationRunner.{Data, DataServices, Datastore, DataReferences, FakeLenraEnvironment}
+  alias ApplicationRunner.{Data, DataReferences, DataServices, Datastore, FakeLenraEnvironment}
 
   setup do
     {:ok, environment} = Repo.insert(FakeLenraEnvironment.new())

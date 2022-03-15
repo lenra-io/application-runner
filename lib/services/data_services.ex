@@ -3,7 +3,7 @@ defmodule ApplicationRunner.DataServices do
     The service that manages actions on data.
   """
 
-  alias ApplicationRunner.{Data, Datastore, DataReferences}
+  alias ApplicationRunner.{Data, DataReferences, Datastore}
 
   def create(environment_id, op), do: Ecto.Multi.new() |> create(environment_id, op)
 
@@ -11,13 +11,13 @@ defmodule ApplicationRunner.DataServices do
         "datastore" => datastore,
         "data" => data,
         "refs" => refs,
-        "refBy" => refBy
+        "refBy" => ref_by
       })
-      when is_list(refs) and is_list(refBy) do
+      when is_list(refs) and is_list(ref_by) do
     multi
     |> create(environment_id, %{"datastore" => datastore, "data" => data})
     |> handle_refs(refs)
-    |> handle_refBy(refBy)
+    |> handle_ref_by(ref_by)
   end
 
   def create(multi, environment_id, %{"datastore" => datastore, "data" => data, "refs" => refs})
@@ -27,11 +27,11 @@ defmodule ApplicationRunner.DataServices do
     |> handle_refs(refs)
   end
 
-  def create(multi, environment_id, %{"datastore" => datastore, "data" => data, "refBy" => refBy})
-      when is_list(refBy) do
+  def create(multi, environment_id, %{"datastore" => datastore, "data" => data, "refBy" => ref_by})
+      when is_list(ref_by) do
     multi
     |> create(environment_id, %{"datastore" => datastore, "data" => data})
-    |> handle_refBy(refBy)
+    |> handle_ref_by(ref_by)
   end
 
   def create(multi, environment_id, %{"datastore" => datastore, "data" => data}) do
@@ -69,7 +69,7 @@ defmodule ApplicationRunner.DataServices do
     end)
   end
 
-  defp handle_refBy(multi, refBy) do
+  defp handle_ref_by(multi, refBy) do
     Enum.reduce(refBy, multi, fn ref, multi ->
       multi
       |> Ecto.Multi.run(String.to_atom("inserted_refBy_#{ref}"), fn repo,
