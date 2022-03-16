@@ -4,6 +4,8 @@ defmodule ApplicationRunner.SessionManager do
   """
   use GenServer
 
+  require Logger
+
   alias ApplicationRunner.{
     AdapterHandler,
     EnvManager,
@@ -94,9 +96,8 @@ defmodule ApplicationRunner.SessionManager do
       res = UiCache.diff_and_save(session_state, transformed_ui)
       AdapterHandler.on_ui_changed(session_state, res)
     else
-      err ->
-        AdapterHandler.on_ui_changed(session_state, {:error, {:error, :unknow_error}})
-        raise err
+      error ->
+        send_error(session_state, error)
     end
 
     {:noreply, session_state, session_state.inactivity_timeout}
@@ -124,19 +125,13 @@ defmodule ApplicationRunner.SessionManager do
   @impl true
   def handle_cast({:run_listener, code, event}, session_state) do
     with {:ok, data} <- AdapterHandler.get_data(session_state),
-         {:ok, new_data} <- EnvManager.run_listener(session_state, code, data, event),
+         {:ok, new_data} <-
+           EnvManager.run_listener(session_state, code, data, event),
          :ok <- AdapterHandler.save_data(session_state, new_data) do
       EnvManager.notify_data_changed(session_state)
     else
-      {:error, :ressource_not_found} ->
-        AdapterHandler.on_ui_changed(session_state, {:error, {:error, :listener_not_found}})
-
-      {:error, reason} ->
-        AdapterHandler.on_ui_changed(session_state, {:error, reason})
-
-      err ->
-        AdapterHandler.on_ui_changed(session_state, {:error, {:error, :unknow_error}})
-        raise err
+      error ->
+        send_error(session_state, error)
     end
 
     {:noreply, session_state, session_state.inactivity_timeout}
@@ -149,18 +144,15 @@ defmodule ApplicationRunner.SessionManager do
          :ok <- AdapterHandler.save_data(session_state, new_data) do
       EnvManager.notify_data_changed(session_state)
     else
-      {:error, :ressource_not_found} ->
-        AdapterHandler.on_ui_changed(session_state, {:error, {:error, :listener_not_found}})
-
-      {:error, reason} ->
-        AdapterHandler.on_ui_changed(session_state, {:error, reason})
-
-      err ->
-        AdapterHandler.on_ui_changed(session_state, {:error, {:error, :unknow_error}})
-        raise err
+      error ->
+        send_error(session_state, error)
     end
 
     {:noreply, session_state, session_state.inactivity_timeout}
+  end
+
+  defp send_error(session_state, error) do
+    AdapterHandler.on_ui_changed(session_state, {:error, error})
   end
 
   defp transform_ui(%{"rootWidget" => root_widget, "widgets" => widgets}) do

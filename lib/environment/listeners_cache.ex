@@ -18,13 +18,13 @@ defmodule ApplicationRunner.ListenersCache do
     :ok
   end
 
-  @spec get_listener(EnvState.t(), String.t()) :: map()
-  def get_listener(%EnvState{} = env_state, code) do
+  @spec fetch_listener(EnvState.t(), String.t()) :: {:ok, map()} | {:error, atom()}
+  def fetch_listener(%EnvState{} = env_state, code) do
     pid = EnvManager.fetch_module_pid!(env_state, __MODULE__)
 
     case get(pid, code) do
-      nil -> raise "No listener found with code #{code}"
-      res -> res
+      nil -> {:error, :no_listener_with_code}
+      res -> {:ok, res}
     end
   end
 

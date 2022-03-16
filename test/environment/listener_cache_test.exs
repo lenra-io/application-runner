@@ -25,7 +25,7 @@ defmodule ApplicationRunner.ListenerCacheTest do
                   ListenersCache.generate_listeners_key(action, almost_props))
   end
 
-  test "test save_listener and get_listener", %{env_state: env_state} do
+  test "test save_listener and fetch_listener", %{env_state: env_state} do
     action = "go"
     props = %{"value" => "ok"}
 
@@ -36,13 +36,10 @@ defmodule ApplicationRunner.ListenerCacheTest do
 
     code = ListenersCache.generate_listeners_key(action, props)
 
-    assert_raise(
-      RuntimeError,
-      "No listener found with code #{code}",
-      fn -> ListenersCache.get_listener(env_state, code) end
-    )
+    assert {:error, :no_listener_with_code} ==
+             ListenersCache.fetch_listener(env_state, code)
 
     assert :ok == ListenersCache.save_listener(env_state, code, listener)
-    assert listener == ListenersCache.get_listener(env_state, code)
+    assert {:ok, listener} == ListenersCache.fetch_listener(env_state, code)
   end
 end

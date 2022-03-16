@@ -53,7 +53,7 @@ defmodule ApplicationRunner.ButtonValidatorTest do
 
     # Setup mock
     res = mock_root_and_run(json, session_state)
-    assert_error({:error, [{"Invalid component type", ""}]}, res)
+    assert_error({:error, :invalid_ui, [{"Invalid component type", ""}]}, res)
   end
 
   test "invalid button with no value", %{session_state: session_state} do
@@ -63,7 +63,7 @@ defmodule ApplicationRunner.ButtonValidatorTest do
 
     # Setup mock
     res = mock_root_and_run(json, session_state)
-    assert_error({:error, [{"Required property text was not present.", ""}]}, res)
+    assert_error({:error, :invalid_ui, [{"Required property text was not present.", ""}]}, res)
   end
 
   test "invalid button with invalid action and props in listener", %{session_state: session_state} do
@@ -80,7 +80,7 @@ defmodule ApplicationRunner.ButtonValidatorTest do
     res = mock_root_and_run(json, session_state)
 
     assert_error(
-      {:error,
+      {:error, :invalid_ui,
        [
          {"Type mismatch. Expected String but got Integer.", "/onPressed/action"},
          {"Type mismatch. Expected Object but got String.", "/onPressed/props"}
@@ -103,7 +103,7 @@ defmodule ApplicationRunner.ButtonValidatorTest do
     res = mock_root_and_run(json, session_state)
 
     assert_error(
-      {:error,
+      {:error, :invalid_ui,
        [
          {"Schema does not allow additional properties.", "/onChange"}
        ]},

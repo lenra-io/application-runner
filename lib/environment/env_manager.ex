@@ -132,25 +132,31 @@ defmodule ApplicationRunner.EnvManager do
         res = {:ok, %{"rootWidget" => id, "widgets" => ui_context.widgets_map}}
         {:reply, res, env_state, env_state.inactivity_timeout}
 
-      error_res ->
-        {:reply, error_res, env_state, env_state.inactivity_timeout}
+      {:error, reason} when is_atom(reason) ->
+        {:reply, {:error, reason}, env_state, env_state.inactivity_timeout}
+
+      {:error, ui_error_list} when is_list(ui_error_list) ->
+        {:reply, {:error, :invalid_ui, ui_error_list}, env_state, env_state.inactivity_timeout}
     end
   end
 
   @impl true
-  def handle_call({:get_listener, code}, _from, env_state) do
-    res = ListenersCache.get_listener(env_state, code)
+  def handle_call({:fetch_listener, code}, _from, env_state) do
+    res = ListenersCache.fetch_listener(env_state, code)
     {:reply, res, env_state, env_state.inactivity_timeout}
   end
 
   @impl true
   def handle_call({:run_listener, code, data, event}, _from, env_state) do
-    listener = ListenersCache.get_listener(env_state, code)
-    action = Map.fetch!(listener, "action")
-    props = Map.get(listener, "props", %{})
-    res = AdapterHandler.run_listener(env_state, action, data, props, event)
-
-    {:reply, res, env_state, env_state.inactivity_timeout}
+    with {:ok, listener} <- ListenersCache.fetch_listener(env_state, code),
+         {:ok, action} <- Map.fetch(listener, "action"),
+         props <- Map.get(listener, "props", %{}) do
+      res = AdapterHandler.run_listener(env_state, action, data, props, event)
+      {:reply, res, env_state, env_state.inactivity_timeout}
+    else
+      err ->
+        {:reply, err, env_state, env_state.inactivity_timeout}
+    end
   end
 
   @impl true

@@ -40,7 +40,7 @@ defmodule ApplicationRunner.FlexValidatorTest do
 
     res = mock_root_and_run(json, session_state)
 
-    assert_error({:error, [{"Invalid component type", ""}]}, res)
+    assert_error({:error, :invalid_ui, [{"Invalid component type", ""}]}, res)
   end
 
   test "invalide component inside the flex", %{session_state: session_state} do
@@ -59,7 +59,7 @@ defmodule ApplicationRunner.FlexValidatorTest do
 
     res = mock_root_and_run(json, session_state)
 
-    assert_error({:error, [{"Invalid component type", "/children/1"}]}, res)
+    assert_error({:error, :invalid_ui, [{"Invalid component type", "/children/1"}]}, res)
   end
 
   test "invalid flex with no children property", %{session_state: session_state} do
@@ -69,7 +69,10 @@ defmodule ApplicationRunner.FlexValidatorTest do
 
     res = mock_root_and_run(json, session_state)
 
-    assert_error({:error, [{"Required property children was not present.", ""}]}, res)
+    assert_error(
+      {:error, :invalid_ui, [{"Required property children was not present.", ""}]},
+      res
+    )
   end
 
   def my_widget(_, _) do

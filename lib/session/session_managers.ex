@@ -26,18 +26,11 @@ defmodule ApplicationRunner.SessionManagers do
   @spec start_session(term(), term(), term(), term()) ::
           {:error, any} | {:ok, pid()}
   def start_session(session_id, env_id, session_assigns, env_assigns) do
-    case EnvManagers.ensure_env_started(env_id, env_assigns) do
-      {:ok, _pid} ->
-        DynamicSupervisor.start_child(
-          ApplicationRunner.SessionManagers,
-          {SessionManager, [env_id: env_id, session_id: session_id, assigns: session_assigns]}
-        )
-
-      {:error, :ressource_not_found} ->
-        {:error, :listener_not_found}
-
-      {:error, reason} ->
-        {:error, reason}
+    with {:ok, _pid} <- EnvManagers.ensure_env_started(env_id, env_assigns) do
+      DynamicSupervisor.start_child(
+        ApplicationRunner.SessionManagers,
+        {SessionManager, [env_id: env_id, session_id: session_id, assigns: session_assigns]}
+      )
     end
   end
 
