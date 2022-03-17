@@ -433,9 +433,9 @@ defmodule ApplicationRunner.DataServicesTest do
         |> Repo.preload(:refBy)
         |> Repo.preload(:refs)
 
-      assert 0 == Enum.empty?(data.refBy)
+      assert true == Enum.empty?(data.refBy)
 
-      assert 0 == Enum.empty?(data.refs)
+      assert true == Enum.empty?(data.refs)
     end
   end
 end
