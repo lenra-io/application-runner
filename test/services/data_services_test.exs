@@ -251,15 +251,7 @@ defmodule ApplicationRunner.DataServicesTest do
                |> Repo.transaction()
     end
 
-    test "should return error if json invalid", %{env_id: env_id} do
-      Repo.insert(Datastore.new(env_id, %{"name" => "users"}))
-
-      assert {:error, :data, :json_format_invalid, _changes_so_far} =
-               DataServices.update(-1, %{"datastore" => %{"name" => "toto"}})
-               |> Repo.transaction()
-    end
-
-    test "should add reference on update", %{env_id: env_id} do
+    test "should also update refs on update", %{env_id: env_id} do
       {:ok, _inserted_datastore} = Repo.insert(Datastore.new(env_id, %{"name" => "users"}))
       {:ok, _inserted_datastore} = Repo.insert(Datastore.new(env_id, %{"name" => "points"}))
 
@@ -285,15 +277,165 @@ defmodule ApplicationRunner.DataServicesTest do
         })
         |> Repo.transaction()
 
-      {:ok, %{inserted_data: updated_data}} =
+      {:ok, %{data: updated_data}} =
         DataServices.update(inserted_data.id, %{
           "refs" => [inserted_point_bis.id]
         })
         |> Repo.transaction()
 
-      updated_data = Repo.get(DataReferences, updated_data.id)
+      data = Repo.get(Data, updated_data.id) |> Repo.preload(:refs)
 
-      IO.inspect(updated_data |> Repo.preload(:refs))
+      assert 1 == length(data.refs)
+
+      assert List.first(data.refs).id ==
+               inserted_point_bis.id
+    end
+
+    test "should also update refBy on update", %{env_id: env_id} do
+      {:ok, _inserted_datastore} = Repo.insert(Datastore.new(env_id, %{"name" => "users"}))
+      {:ok, _inserted_datastore} = Repo.insert(Datastore.new(env_id, %{"name" => "points"}))
+
+      {:ok, %{inserted_data: inserted_data}} =
+        DataServices.create(env_id, %{
+          "datastore" => "users",
+          "data" => %{"name" => "toto"}
+        })
+        |> Repo.transaction()
+
+      {:ok, %{inserted_data: inserted_data_bis}} =
+        DataServices.create(env_id, %{
+          "datastore" => "users",
+          "data" => %{"name" => "test"}
+        })
+        |> Repo.transaction()
+
+      {:ok, %{inserted_data: inserted_point}} =
+        DataServices.create(env_id, %{
+          "datastore" => "points",
+          "data" => %{"score" => "10"},
+          "refBy" => [inserted_data.id]
+        })
+        |> Repo.transaction()
+
+      {:ok, %{data: updated_data}} =
+        DataServices.update(inserted_point.id, %{
+          "refBy" => [inserted_data_bis.id]
+        })
+        |> Repo.transaction()
+
+      data = Repo.get(Data, updated_data.id) |> Repo.preload(:refBy)
+
+      assert 1 == length(data.refBy)
+
+      assert List.first(data.refBy).id ==
+               inserted_data_bis.id
+    end
+
+    test "should also update refs and refBy on update", %{env_id: env_id} do
+      {:ok, _inserted_datastore} = Repo.insert(Datastore.new(env_id, %{"name" => "team"}))
+      {:ok, _inserted_datastore} = Repo.insert(Datastore.new(env_id, %{"name" => "users"}))
+      {:ok, _inserted_datastore} = Repo.insert(Datastore.new(env_id, %{"name" => "points"}))
+
+      {:ok, %{inserted_data: inserted_team}} =
+        DataServices.create(env_id, %{
+          "datastore" => "team",
+          "data" => %{"name" => "team1"}
+        })
+        |> Repo.transaction()
+
+      {:ok, %{inserted_data: inserted_team_bis}} =
+        DataServices.create(env_id, %{
+          "datastore" => "team",
+          "data" => %{"name" => "team2"}
+        })
+        |> Repo.transaction()
+
+      {:ok, %{inserted_data: inserted_point}} =
+        DataServices.create(env_id, %{
+          "datastore" => "points",
+          "data" => %{"name" => "10"}
+        })
+        |> Repo.transaction()
+
+      {:ok, %{inserted_data: inserted_point_bis}} =
+        DataServices.create(env_id, %{
+          "datastore" => "points",
+          "data" => %{"name" => "12"}
+        })
+        |> Repo.transaction()
+
+      {:ok, %{inserted_data: inserted_user}} =
+        DataServices.create(env_id, %{
+          "datastore" => "users",
+          "data" => %{"name" => "toto"},
+          "refs" => [inserted_point.id],
+          "refBy" => [inserted_team.id]
+        })
+        |> Repo.transaction()
+
+      {:ok, %{data: updated_data}} =
+        DataServices.update(inserted_user.id, %{
+          "refs" => [inserted_point_bis.id],
+          "refBy" => [inserted_team_bis.id]
+        })
+        |> Repo.transaction()
+
+      data = Repo.get(Data, updated_data.id) |> Repo.preload(:refBy) |> Repo.preload(:refs)
+
+      assert 1 == length(data.refBy)
+
+      assert List.first(data.refBy).id ==
+               inserted_team_bis.id
+
+      assert 1 == length(data.refs)
+
+      assert List.first(data.refs).id ==
+               inserted_point_bis.id
+    end
+
+    test "should update reference with empty list if update with invalid id", %{env_id: env_id} do
+      {:ok, _inserted_datastore} = Repo.insert(Datastore.new(env_id, %{"name" => "team"}))
+      {:ok, _inserted_datastore} = Repo.insert(Datastore.new(env_id, %{"name" => "users"}))
+      {:ok, _inserted_datastore} = Repo.insert(Datastore.new(env_id, %{"name" => "points"}))
+
+      {:ok, %{inserted_data: inserted_team}} =
+        DataServices.create(env_id, %{
+          "datastore" => "team",
+          "data" => %{"name" => "team1"}
+        })
+        |> Repo.transaction()
+
+      {:ok, %{inserted_data: inserted_point}} =
+        DataServices.create(env_id, %{
+          "datastore" => "points",
+          "data" => %{"name" => "10"}
+        })
+        |> Repo.transaction()
+
+      {:ok, %{inserted_data: inserted_user}} =
+        DataServices.create(env_id, %{
+          "datastore" => "users",
+          "data" => %{"name" => "toto"},
+          "refs" => [inserted_point.id],
+          "refBy" => [inserted_team.id]
+        })
+        |> Repo.transaction()
+
+      {:ok, %{data: updated_data}} =
+        DataServices.update(inserted_user.id, %{
+          "refs" => [-1],
+          "refBy" => [-2]
+        })
+        |> Repo.transaction()
+
+      data =
+        Repo.get(Data, updated_data.id)
+        |> Repo.preload(:refBy)
+        |> Repo.preload(:refs)
+
+      assert 0 == Enum.empty?(data.refBy)
+
+      assert 0 == Enum.empty?(data.refs)
     end
   end
 end
