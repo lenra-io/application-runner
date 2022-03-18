@@ -225,6 +225,40 @@ defmodule ApplicationRunner.DataServicesTest do
                DataServices.delete(-1)
                |> Repo.transaction()
     end
+
+    test "should also remove refence but not referenced data", %{env_id: env_id} do
+      Repo.insert(Datastore.new(env_id, %{"name" => "users"}))
+      Repo.insert(Datastore.new(env_id, %{"name" => "points"}))
+
+      {:ok, %{inserted_data: inserted_user}} =
+        DataServices.create(env_id, %{"datastore" => "users", "data" => %{"name" => "toto"}})
+        |> Repo.transaction()
+
+      {:ok, %{inserted_data: inserted_point}} =
+        DataServices.create(env_id, %{
+          "datastore" => "users",
+          "data" => %{"name" => "toto"},
+          "refBy" => [inserted_user.id]
+        })
+        |> Repo.transaction()
+
+      data = Repo.get(Data, inserted_user.id)
+
+      assert false == is_nil(Repo.get_by(DataReferences, refs_id: inserted_point.id))
+
+      DataServices.delete(data.id)
+      |> Repo.transaction()
+
+      deleted_data = Repo.get(Data, inserted_user.id)
+
+      assert deleted_data == nil
+
+      not_deleted_data = Repo.get(Data, inserted_point.id)
+
+      assert not_deleted_data.id == inserted_point.id
+
+      assert true == is_nil(Repo.get_by(DataReferences, refs_id: inserted_point.id))
+    end
   end
 
   describe "DataServices.update_1/1" do
