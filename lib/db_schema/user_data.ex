@@ -10,7 +10,7 @@ defmodule ApplicationRunner.UserData do
 
   @environment_schema Application.compile_env!(:application_runner, :lenra_user_schema)
 
-  @derive {Jason.Encoder, only: [:id, :refs_id, :refBy_id]}
+  @derive {Jason.Encoder, only: [:id, :user_id, :data_id]}
   schema "user_datas" do
     belongs_to(:user, @environment_schema)
     belongs_to(:data, Data)
