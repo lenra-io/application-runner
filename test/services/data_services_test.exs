@@ -393,17 +393,9 @@ defmodule ApplicationRunner.DataServicesTest do
                inserted_point_bis.id
     end
 
-    test "should update reference with empty list if update with invalid id", %{env_id: env_id} do
-      {:ok, _inserted_datastore} = Repo.insert(Datastore.new(env_id, %{"name" => "team"}))
+    test "should return error if update with invalid refs id", %{env_id: env_id} do
       {:ok, _inserted_datastore} = Repo.insert(Datastore.new(env_id, %{"name" => "users"}))
       {:ok, _inserted_datastore} = Repo.insert(Datastore.new(env_id, %{"name" => "points"}))
-
-      {:ok, %{inserted_data: inserted_team}} =
-        DataServices.create(env_id, %{
-          "datastore" => "team",
-          "data" => %{"name" => "team1"}
-        })
-        |> Repo.transaction()
 
       {:ok, %{inserted_data: inserted_point}} =
         DataServices.create(env_id, %{
@@ -416,26 +408,41 @@ defmodule ApplicationRunner.DataServicesTest do
         DataServices.create(env_id, %{
           "datastore" => "users",
           "data" => %{"name" => "toto"},
-          "refs" => [inserted_point.id],
+          "refs" => [inserted_point.id]
+        })
+        |> Repo.transaction()
+
+      {:error, :refs, :references_not_found, _change_so_far} =
+        DataServices.update(inserted_user.id, %{
+          "refs" => [-1]
+        })
+        |> Repo.transaction()
+    end
+
+    test "should return error if update with invalid ref_by id", %{env_id: env_id} do
+      {:ok, _inserted_datastore} = Repo.insert(Datastore.new(env_id, %{"name" => "team"}))
+      {:ok, _inserted_datastore} = Repo.insert(Datastore.new(env_id, %{"name" => "users"}))
+
+      {:ok, %{inserted_data: inserted_team}} =
+        DataServices.create(env_id, %{
+          "datastore" => "team",
+          "data" => %{"name" => "team1"}
+        })
+        |> Repo.transaction()
+
+      {:ok, %{inserted_data: inserted_user}} =
+        DataServices.create(env_id, %{
+          "datastore" => "users",
+          "data" => %{"name" => "toto"},
           "refBy" => [inserted_team.id]
         })
         |> Repo.transaction()
 
-      {:ok, %{data: updated_data}} =
+      {:error, :refBy, :references_not_found, _change_so_far} =
         DataServices.update(inserted_user.id, %{
-          "refs" => [-1],
-          "refBy" => [-2]
+          "refBy" => [-1]
         })
         |> Repo.transaction()
-
-      data =
-        Repo.get(Data, updated_data.id)
-        |> Repo.preload(:refBy)
-        |> Repo.preload(:refs)
-
-      assert true == Enum.empty?(data.refBy)
-
-      assert true == Enum.empty?(data.refs)
     end
   end
 end

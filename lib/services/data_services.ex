@@ -104,7 +104,7 @@ defmodule ApplicationRunner.DataServices do
     end)
   end
 
-  defp update_refs(multi, %{"refs" => refs}) do
+  defp update_refs(multi, %{"refs" => refs}) when is_list(refs) do
     data_ref =
       from(d in Data,
         where: d.id in ^refs,
@@ -113,20 +113,28 @@ defmodule ApplicationRunner.DataServices do
 
     multi
     |> Ecto.Multi.run(:refs, fn repo, %{data: %Data{} = data} ->
-      data
-      |> repo.preload(:refs)
-      |> Ecto.Changeset.change()
-      |> Ecto.Changeset.put_assoc(
-        :refs,
-        repo.all(data_ref)
-      )
-      |> repo.update()
+      data_ref = repo.all(data_ref)
+
+      case length(refs) == length(data_ref) do
+        true ->
+          data
+          |> repo.preload(:refs)
+          |> Ecto.Changeset.change()
+          |> Ecto.Changeset.put_assoc(
+            :refs,
+            data_ref
+          )
+          |> repo.update()
+
+        false ->
+          {:error, :references_not_found}
+      end
     end)
   end
 
   defp update_refs(multi, _json), do: multi
 
-  defp update_ref_by(multi, %{"refBy" => ref_by}) do
+  defp update_ref_by(multi, %{"refBy" => ref_by}) when is_list(ref_by) do
     data_ref_by =
       from(d in Data,
         where: d.id in ^ref_by,
@@ -135,14 +143,22 @@ defmodule ApplicationRunner.DataServices do
 
     multi
     |> Ecto.Multi.run(:refBy, fn repo, %{data: %Data{} = data} ->
-      data
-      |> repo.preload(:refBy)
-      |> Ecto.Changeset.change()
-      |> Ecto.Changeset.put_assoc(
-        :refBy,
-        repo.all(data_ref_by)
-      )
-      |> repo.update()
+      data_ref_by = repo.all(data_ref_by)
+
+      case length(ref_by) == length(data_ref_by) do
+        true ->
+          data
+          |> repo.preload(:refBy)
+          |> Ecto.Changeset.change()
+          |> Ecto.Changeset.put_assoc(
+            :refBy,
+            data_ref_by
+          )
+          |> repo.update()
+
+        false ->
+          {:error, :references_not_found}
+      end
     end)
   end
 
