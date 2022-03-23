@@ -444,5 +444,44 @@ defmodule ApplicationRunner.DataServicesTest do
         })
         |> Repo.transaction()
     end
+
+    test "should not update data if env_id not the same", %{env_id: env_id} do
+      {:ok, environment} = Repo.insert(FakeLenraEnvironment.new())
+
+      {:ok, _inserted_datastore} = Repo.insert(Datastore.new(env_id, %{"name" => "team"}))
+
+      {:ok, _inserted_datastore} =
+        Repo.insert(Datastore.new(environment.id, %{"name" => "team2"}))
+
+      {:ok, _inserted_datastore} = Repo.insert(Datastore.new(env_id, %{"name" => "users"}))
+
+      {:ok, %{inserted_data: inserted_team}} =
+        DataServices.create(env_id, %{
+          "datastore" => "team",
+          "data" => %{"name" => "team1"}
+        })
+        |> Repo.transaction()
+
+      {:ok, %{inserted_data: inserted_team_bis}} =
+        DataServices.create(environment.id, %{
+          "datastore" => "team2",
+          "data" => %{"name" => "team2"}
+        })
+        |> Repo.transaction()
+
+      {:ok, %{inserted_data: inserted_user}} =
+        DataServices.create(env_id, %{
+          "datastore" => "users",
+          "data" => %{"name" => "toto"},
+          "refBy" => [inserted_team.id]
+        })
+        |> Repo.transaction()
+
+      {:error, :refBy, :references_not_found, _change_so_far} =
+        DataServices.update(inserted_user.id, %{
+          "refBy" => [inserted_team_bis.id]
+        })
+        |> Repo.transaction()
+    end
   end
 end
