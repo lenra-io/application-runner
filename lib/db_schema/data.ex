@@ -14,12 +14,14 @@ defmodule ApplicationRunner.Data do
 
     many_to_many(:refs, Data,
       join_through: DataReferences,
-      join_keys: [refBy_id: :id, refs_id: :id]
+      join_keys: [refBy_id: :id, refs_id: :id],
+      on_replace: :delete
     )
 
     many_to_many(:refBy, Data,
       join_through: DataReferences,
-      join_keys: [refs_id: :id, refBy_id: :id]
+      join_keys: [refs_id: :id, refBy_id: :id],
+      on_replace: :delete
     )
 
     field(:data, :map)
@@ -29,7 +31,7 @@ defmodule ApplicationRunner.Data do
 
   def changeset(data, params \\ %{}) do
     data
-    |> cast(params, [])
+    |> cast(params, [:data, :datastore_id])
     |> validate_required([:data, :datastore_id])
     |> foreign_key_constraint(:datastore_id)
     |> foreign_key_constraint(:refs)
@@ -42,5 +44,10 @@ defmodule ApplicationRunner.Data do
       data: data
     }
     |> Data.changeset()
+  end
+
+  def update(data, params) do
+    data
+    |> Data.changeset(params)
   end
 end

@@ -4,6 +4,7 @@ defmodule ApplicationRunner.DataServices do
   """
 
   alias ApplicationRunner.{Data, DataReferences, Datastore}
+  import Ecto.Query, only: [from: 2]
 
   def create(environment_id, op), do: Ecto.Multi.new() |> create(environment_id, op)
 
@@ -82,9 +83,9 @@ defmodule ApplicationRunner.DataServices do
     end)
   end
 
-  def update(data_id, op), do: Ecto.Multi.new() |> update(data_id, op)
+  def update(data_id, changes), do: Ecto.Multi.new() |> update(data_id, changes)
 
-  def update(multi, data_id, %{"data" => changes}) do
+  def update(multi, data_id, changes) do
     multi
     |> Ecto.Multi.run(:data, fn repo, _params ->
       case repo.get(Data, data_id) do
@@ -95,16 +96,67 @@ defmodule ApplicationRunner.DataServices do
           {:ok, data}
       end
     end)
+    |> update_reference(changes)
     |> Ecto.Multi.update(:updated_data, fn %{data: %Data{} = data} ->
       data
-      |> Ecto.Changeset.change(data: changes)
+      |> Data.update(changes)
     end)
   end
 
-  def update(multi, _data_id, _invalid_json) do
+  defp update_reference(multi, %{"refs" => refs, "refBy" => ref_by})
+       when is_list(refs) and is_list(ref_by) do
     multi
-    |> Ecto.Multi.run(:data, fn _repo, _params ->
-      {:error, :json_format_invalid}
+    |> handle_update_reference(refs, :refs)
+    |> handle_update_reference(ref_by, :refBy)
+  end
+
+  defp update_reference(multi, %{"refs" => refs}) when is_list(refs) do
+    multi
+    |> handle_update_reference(refs, :refs)
+  end
+
+  defp update_reference(multi, %{"refBy" => ref_by}) when is_list(ref_by) do
+    multi
+    |> handle_update_reference(ref_by, :refBy)
+  end
+
+  defp update_reference(multi, _json), do: multi
+
+  defp handle_update_reference(multi, references, key) do
+    multi
+    |> Ecto.Multi.run(key, fn repo, %{data: %Data{} = data} ->
+      env_id =
+        from(ds in Datastore,
+          join: d in Data,
+          on: d.datastore_id == ds.id,
+          where: d.id == ^data.id,
+          select: ds.environment_id
+        )
+        |> repo.one()
+
+      data_ref =
+        from(d in Data,
+          join: ds in Datastore,
+          on: d.datastore_id == ds.id,
+          where: d.id in ^references and ds.environment_id == ^env_id,
+          select: d
+        )
+        |> repo.all()
+
+      case length(data_ref) == length(references) do
+        true ->
+          data
+          |> repo.preload(key)
+          |> Ecto.Changeset.change()
+          |> Ecto.Changeset.put_assoc(
+            key,
+            data_ref
+          )
+          |> repo.update()
+
+        false ->
+          {:error, :references_not_found}
+      end
     end)
   end
 
