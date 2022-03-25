@@ -63,8 +63,7 @@ defmodule ApplicationRunner.DataReferenceServicesTest do
       {:ok, inserted_user} =
         Repo.insert(Data.new(inserted_datastore_point.id, %{"name" => "toto"}))
 
-      assert {:error, :inserted_reference, %{errors: [refBy_id: {"does not exist", _constraint}]},
-              _changes_so_far} =
+      assert {:error, :data_reference, :reference_not_found, _change_so_far} =
                DataReferencesServices.create(%{
                  refs_id: inserted_user.id,
                  refBy_id: -1
@@ -96,6 +95,27 @@ defmodule ApplicationRunner.DataReferenceServicesTest do
                  refBy_id: inserted_point.id
                })
                |> Repo.transaction()
+    end
+
+    test "should return error if data not same env_id", %{env_id: env_id} do
+      {:ok, environment} = Repo.insert(FakeLenraEnvironment.new())
+
+      {:ok, inserted_datastore_user} = Repo.insert(Datastore.new(env_id, %{name: "users"}))
+
+      {:ok, inserted_datastore_point} =
+        Repo.insert(Datastore.new(environment.id, %{name: "points"}))
+
+      {:ok, inserted_user} =
+        Repo.insert(Data.new(inserted_datastore_user.id, %{"name" => "toto"}))
+
+      {:ok, inserted_point} = Repo.insert(Data.new(inserted_datastore_point.id, %{"score" => 10}))
+
+      {:error, :data_reference, :reference_not_found, _change_so_far} =
+        DataReferencesServices.create(%{
+          refs_id: inserted_user.id,
+          refBy_id: inserted_point.id
+        })
+        |> Repo.transaction()
     end
   end
 
