@@ -29,7 +29,9 @@ defmodule ApplicationRunner.ComponentCase do
           ApplicationRunner.ApplicationRunnerAdapter.set_mock(context[:mock])
         end
 
-        {:ok, pid} = SessionManagers.start_session(session_id, env_id, %{test_pid: self()}, %{})
+        {:ok, pid} =
+          SessionManagers.start_session(session_id, env_id, %{test_pid: self(), user: %{}}, %{})
+
         session_state = :sys.get_state(pid)
 
         on_exit(fn ->

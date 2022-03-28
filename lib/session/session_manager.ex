@@ -78,6 +78,12 @@ defmodule ApplicationRunner.SessionManager do
       assigns: assigns
     }
 
+    with {:ok, data} <- AdapterHandler.get_data(session_state),
+         false <- Map.has_key?(data, "_user") do
+      # TODO: change this line to add datastore 'UserDatas' in data params when data request avalaible
+      AdapterHandler.save_data(session_state, %{"_user" => assigns.user})
+    end
+
     {:ok, session_state, session_state.inactivity_timeout}
   end
 
