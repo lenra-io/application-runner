@@ -78,7 +78,16 @@ defmodule ApplicationRunner.SessionManager do
       assigns: assigns
     }
 
+    ensure_user_data_created(session_state)
+
     {:ok, session_state, session_state.inactivity_timeout}
+  end
+
+  defp ensure_user_data_created(session_state) do
+    # TODO: change this to get and save in Datastore "UserDatas" when request available
+    if AdapterHandler.get_data(session_state) == {:ok, nil} do
+      AdapterHandler.save_data(session_state, %{})
+    end
   end
 
   @impl true

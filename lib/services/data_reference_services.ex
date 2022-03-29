@@ -2,7 +2,7 @@ defmodule ApplicationRunner.DataReferencesServices do
   @moduledoc false
   import Ecto.Query, only: [from: 2]
 
-  alias ApplicationRunner.{Data, Datastore, DataReferences}
+  alias ApplicationRunner.{Data, DataReferences, Datastore}
 
   def create(params), do: Ecto.Multi.new() |> create(params)
 
@@ -21,11 +21,11 @@ defmodule ApplicationRunner.DataReferencesServices do
         repo
         |> get_env_id(refs)
 
-      refBy_env_id =
+      ref_by_env_id =
         repo
         |> get_env_id(refBy)
 
-      case refs_env_id == refBy_env_id do
+      case refs_env_id == ref_by_env_id do
         true ->
           {:ok, %{refs_id: refs, refBy_id: refBy}}
 
