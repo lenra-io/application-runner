@@ -65,7 +65,7 @@ defmodule ApplicationRunner.DataServices do
                                                                    %{
                                                                      inserted_data: %Data{} = data
                                                                    } ->
-        repo.insert(DataReferences.new(%{refs_id: ref, refBy_id: data.id}))
+        repo.insert(DataReferences.new(%{refs_id: ref, ref_by_id: data.id}))
       end)
     end)
   end
@@ -78,7 +78,7 @@ defmodule ApplicationRunner.DataServices do
                                                                       inserted_data:
                                                                         %Data{} = data
                                                                     } ->
-        repo.insert(DataReferences.new(%{refs_id: data.id, refBy_id: ref}))
+        repo.insert(DataReferences.new(%{refs_id: data.id, ref_by_id: ref}))
       end)
     end)
   end

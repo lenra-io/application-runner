@@ -75,7 +75,7 @@ defmodule ApplicationRunner.DataServicesTest do
         |> Repo.transaction()
 
       assert !is_nil(
-               Repo.get_by(DataReferences, refs_id: inserted_point.id, refBy_id: inserted_data.id)
+               Repo.get_by(DataReferences, refs_id: inserted_point.id, ref_by_id: inserted_data.id)
              )
     end
 
@@ -106,13 +106,13 @@ defmodule ApplicationRunner.DataServicesTest do
         |> Repo.transaction()
 
       assert !is_nil(
-               Repo.get_by(DataReferences, refs_id: inserted_point.id, refBy_id: inserted_data.id)
+               Repo.get_by(DataReferences, refs_id: inserted_point.id, ref_by_id: inserted_data.id)
              )
 
       assert !is_nil(
                Repo.get_by(DataReferences,
                  refs_id: inserted_point_bis.id,
-                 refBy_id: inserted_data.id
+                 ref_by_id: inserted_data.id
                )
              )
     end
@@ -134,7 +134,7 @@ defmodule ApplicationRunner.DataServicesTest do
         |> Repo.transaction()
 
       assert !is_nil(
-               Repo.get_by(DataReferences, refs_id: inserted_data.id, refBy_id: inserted_user.id)
+               Repo.get_by(DataReferences, refs_id: inserted_data.id, ref_by_id: inserted_user.id)
              )
     end
 
@@ -164,11 +164,11 @@ defmodule ApplicationRunner.DataServicesTest do
         |> Repo.transaction()
 
       assert !is_nil(
-               Repo.get_by(DataReferences, refs_id: inserted_user.id, refBy_id: inserted_team.id)
+               Repo.get_by(DataReferences, refs_id: inserted_user.id, ref_by_id: inserted_team.id)
              )
 
       assert !is_nil(
-               Repo.get_by(DataReferences, refs_id: inserted_point.id, refBy_id: inserted_user.id)
+               Repo.get_by(DataReferences, refs_id: inserted_point.id, ref_by_id: inserted_user.id)
              )
     end
 
@@ -186,12 +186,12 @@ defmodule ApplicationRunner.DataServicesTest do
                |> Repo.transaction()
     end
 
-    test "should return error if refBy_id invalid", %{env_id: env_id} do
+    test "should return error if ref_by_id invalid", %{env_id: env_id} do
       {:ok, _inserted_datastore} = Repo.insert(Datastore.new(env_id, %{"name" => "users"}))
       {:ok, _inserted_datastore} = Repo.insert(Datastore.new(env_id, %{"name" => "points"}))
 
       assert {:error, :"inserted_refBy_-1",
-              %{errors: [refBy_id: {"does not exist", _constraint}]},
+              %{errors: [ref_by_id: {"does not exist", _constraint}]},
               _change_so_far} =
                DataServices.create(env_id, %{
                  "datastore" => "points",

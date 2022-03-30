@@ -14,13 +14,13 @@ defmodule ApplicationRunner.Data do
 
     many_to_many(:refs, Data,
       join_through: DataReferences,
-      join_keys: [refBy_id: :id, refs_id: :id],
+      join_keys: [ref_by_id: :id, refs_id: :id],
       on_replace: :delete
     )
 
     many_to_many(:refBy, Data,
       join_through: DataReferences,
-      join_keys: [refs_id: :id, refBy_id: :id],
+      join_keys: [refs_id: :id, ref_by_id: :id],
       on_replace: :delete
     )
 
@@ -35,7 +35,7 @@ defmodule ApplicationRunner.Data do
     |> validate_required([:data, :datastore_id])
     |> foreign_key_constraint(:datastore_id)
     |> foreign_key_constraint(:refs)
-    |> foreign_key_constraint(:refBy_id)
+    |> foreign_key_constraint(:ref_by_id)
   end
 
   def new(datastore_id, data) do

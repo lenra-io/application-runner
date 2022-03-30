@@ -14,7 +14,7 @@ defmodule ApplicationRunner.DataReferencesServices do
     end)
   end
 
-  defp check_env(multi, %{refs_id: refs, refBy_id: refBy}) do
+  defp check_env(multi, %{refs_id: refs, ref_by_id: refBy}) do
     multi
     |> Ecto.Multi.run(:data_reference, fn repo, _params ->
       refs_env_id =
@@ -27,7 +27,7 @@ defmodule ApplicationRunner.DataReferencesServices do
 
       case refs_env_id == ref_by_env_id do
         true ->
-          {:ok, %{refs_id: refs, refBy_id: refBy}}
+          {:ok, %{refs_id: refs, ref_by_id: refBy}}
 
         false ->
           {:error, :reference_not_found}
@@ -51,10 +51,10 @@ defmodule ApplicationRunner.DataReferencesServices do
 
   def delete(params), do: Ecto.Multi.new() |> delete(params)
 
-  def delete(multi, %{refs_id: refs, refBy_id: refBy}) do
+  def delete(multi, %{refs_id: refs, ref_by_id: refBy}) do
     multi
     |> Ecto.Multi.run(:reference, fn repo, _params ->
-      case repo.get_by(DataReferences, refs_id: refs, refBy_id: refBy) do
+      case repo.get_by(DataReferences, refs_id: refs, ref_by_id: refBy) do
         nil ->
           {:error, :reference_not_found}
 
