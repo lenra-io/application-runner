@@ -1,25 +1,19 @@
 defmodule ApplicationRunner.AST.Parser do
+  @moduledoc """
+    This module parse Json query into an AST tree.
+    It takes care of simplifications and organize a tree that is easy to navigate into.
+  """
   alias ApplicationRunner.AST.{
-    Query,
-    Find,
-    Select,
     And,
-    Eq,
-    ValueRef,
-    StringValue,
+    ArrayValue,
     DataKey,
+    Eq,
+    Find,
     NumberValue,
-    ArrayValue
+    Query,
+    Select,
+    StringValue
   }
-
-  #   var query = {
-  #     "$find": {
-  #       "$and": [
-  #         {"_datastore": { "$eq": "userData"}},
-  #         {"_id": { "$eq": "$me"}}
-  #        ]
-  #     }
-  # }
 
   def from_json(q) do
     parse_query(q, %{})
