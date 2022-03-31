@@ -6,6 +6,7 @@ defmodule ApplicationRunner.AdapterHandler do
   require Logger
 
   @behaviour ApplicationRunner.AdapterBehavior
+
   defdelegate get_manifest(env_state),
     to: Application.compile_env!(:application_runner, :adapter)
 

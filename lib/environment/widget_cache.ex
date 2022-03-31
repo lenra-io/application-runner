@@ -14,8 +14,8 @@ defmodule ApplicationRunner.WidgetCache do
     EnvState,
     JsonSchemata,
     ListenersCache,
+    SessionState,
     UiContext,
-    Sessionstate,
     WidgetContext
   }
 
@@ -27,10 +27,11 @@ defmodule ApplicationRunner.WidgetCache do
   @doc """
     Call the Adapter to get the Widget corresponding to the given the `WidgetContext`
   """
-  @spec get_widget(EnvState.t(), WidgetContext.t()) :: {:ok, map()} | {:error, any()}
+  @spec get_widget(EnvState.t(), SessionState.t(), WidgetContext.t()) ::
+          {:ok, map()} | {:error, any()}
   def get_widget(
         %EnvState{} = env_state,
-        %Sessionstate{} = session_state,
+        %SessionState{} = session_state,
         %WidgetContext{} = current_widget
       ) do
     AdapterHandler.get_widget(
@@ -46,11 +47,11 @@ defmodule ApplicationRunner.WidgetCache do
     Call the `get_and_build_widget_cached/3` function and cache the result.
     All subsequent call of this function with the same arguments will return the same old cached result.
   """
-  @spec get_and_build_widget(EnvState.t(), UiContext.t(), WidgetContext.t()) ::
+  @spec get_and_build_widget(EnvState.t(), SessionState.t(), UiContext.t(), WidgetContext.t()) ::
           {:ok, UiContext.t()} | {:error, any()}
   def get_and_build_widget(
         %EnvState{} = env_state,
-        %Sessionstate{} = session_state,
+        %SessionState{} = session_state,
         %UiContext{} = ui_context,
         %WidgetContext{} = current_widget
       ) do
@@ -69,19 +70,20 @@ defmodule ApplicationRunner.WidgetCache do
     The build phase will transform the listeners and get_and_build all child widgets.
   """
   @spec get_and_build_widget_cached(
-          ApplicationRunner.EnvState.t(),
-          ApplicationRunner.UiContext.t(),
-          ApplicationRunner.WidgetContext.t()
+          EnvState.t(),
+          SessionState.t(),
+          UiContext.t(),
+          WidgetContext.t()
         ) :: {:error, build_errors()} | {:ok, map()}
   def get_and_build_widget_cached(
         %EnvState{} = env_state,
-        %Sessionstate{} = session_state,
+        %SessionState{} = session_state,
         %UiContext{} = ui_context,
         %WidgetContext{} = current_widget
       ) do
     with {:ok, widget} <- get_widget(env_state, session_state, current_widget),
          {:ok, component, new_app_context} <-
-           build_component(env_state, widget, ui_context, current_widget) do
+           build_component(env_state, session_state, widget, ui_context, current_widget) do
       {:ok, put_in(new_app_context.widgets_map[current_widget.id], component)}
     end
   end
@@ -91,10 +93,17 @@ defmodule ApplicationRunner.WidgetCache do
     If the component type is "widget" this is considered a Widget and will be handled like one.
     Everything else will be handled as a simple component.
   """
-  @spec build_component(EnvState.t(), widget_ui(), UiContext.t(), WidgetContext.t()) ::
+  @spec build_component(
+          EnvState.t(),
+          SessionState.t(),
+          widget_ui(),
+          UiContext.t(),
+          WidgetContext.t()
+        ) ::
           {:ok, component(), UiContext.t()} | {:error, build_errors()}
   def build_component(
         env_state,
+        session_state,
         %{"type" => comp_type} = component,
         ui_context,
         widget_context
@@ -103,10 +112,17 @@ defmodule ApplicationRunner.WidgetCache do
          {:ok, validation_data} <- validate_with_error(schema_path, component, widget_context) do
       case comp_type do
         "widget" ->
-          handle_widget(env_state, component, ui_context, widget_context)
+          handle_widget(env_state, session_state, component, ui_context, widget_context)
 
         _ ->
-          handle_component(env_state, component, ui_context, widget_context, validation_data)
+          handle_component(
+            env_state,
+            session_state,
+            component,
+            ui_context,
+            widget_context,
+            validation_data
+          )
       end
     end
   end
@@ -118,9 +134,15 @@ defmodule ApplicationRunner.WidgetCache do
     - Create a new WidgetContext corresponding to the Widget
     - Recursively get_and_build_widget.
   """
-  @spec handle_widget(EnvState.t(), widget_ui(), UiContext.t(), WidgetContext.t()) ::
+  @spec handle_widget(
+          EnvState.t(),
+          SessionState.t(),
+          widget_ui(),
+          UiContext.t(),
+          WidgetContext.t()
+        ) ::
           {:ok, component(), UiContext.t()}
-  def handle_widget(env_state, component, ui_context, widget_context) do
+  def handle_widget(env_state, session_state, component, ui_context, widget_context) do
     name = Map.get(component, "name")
     props = Map.get(component, "props")
     id = generate_widget_id(name, widget_context.data, props)
@@ -133,7 +155,7 @@ defmodule ApplicationRunner.WidgetCache do
       prefix_path: widget_context.prefix_path
     }
 
-    case get_and_build_widget(env_state, ui_context, new_widget_context) do
+    case get_and_build_widget(env_state, session_state, ui_context, new_widget_context) do
       {:ok, new_app_context} ->
         {:ok, %{"type" => "widget", "id" => id, "name" => name}, new_app_context}
 
@@ -149,10 +171,18 @@ defmodule ApplicationRunner.WidgetCache do
       - Build all listeners
       - Then merge all children/child context/widget with the current one.
   """
-  @spec handle_component(EnvState.t(), component(), UiContext.t(), WidgetContext.t(), map()) ::
+  @spec handle_component(
+          EnvState.t(),
+          SessionState.t(),
+          component(),
+          UiContext.t(),
+          WidgetContext.t(),
+          map()
+        ) ::
           {:ok, component(), UiContext.t()} | {:error, build_errors()}
   def handle_component(
         %EnvState{} = env_state,
+        %SessionState{} = session_state,
         component,
         ui_context,
         widget_context,
@@ -161,13 +191,21 @@ defmodule ApplicationRunner.WidgetCache do
     with {:ok, children_map, merged_children_ui_context} <-
            build_children_list(
              env_state,
+             session_state,
              component,
              children_keys,
              ui_context,
              widget_context
            ),
          {:ok, child_map, merged_child_ui_context} <-
-           build_child_list(env_state, component, child_keys, ui_context, widget_context),
+           build_child_list(
+             env_state,
+             session_state,
+             component,
+             child_keys,
+             ui_context,
+             widget_context
+           ),
          {:ok, listeners_map} <-
            build_listeners(env_state, component, listeners_keys) do
       new_context = %UiContext{
@@ -215,6 +253,7 @@ defmodule ApplicationRunner.WidgetCache do
   """
   @spec build_child_list(
           EnvState.t(),
+          SessionState.t(),
           component(),
           list(String.t()),
           UiContext.t(),
@@ -223,12 +262,20 @@ defmodule ApplicationRunner.WidgetCache do
           {:ok, map(), UiContext.t()} | {:error, build_errors()}
   def build_child_list(
         env_state,
+        session_state,
         component,
         child_list,
         ui_context,
         widget_context
       ) do
-    case reduce_child_list(env_state, component, child_list, ui_context, widget_context) do
+    case reduce_child_list(
+           env_state,
+           session_state,
+           component,
+           child_list,
+           ui_context,
+           widget_context
+         ) do
       {comp, merged_ui_context, []} -> {:ok, comp, merged_ui_context}
       {_, _, errors} -> {:error, errors}
     end
@@ -236,6 +283,7 @@ defmodule ApplicationRunner.WidgetCache do
 
   defp reduce_child_list(
          env_state,
+         session_state,
          component,
          child_list,
          ui_context,
@@ -254,6 +302,7 @@ defmodule ApplicationRunner.WidgetCache do
 
             build_comp_and_format(
               env_state,
+              session_state,
               child_map,
               child_comp,
               child_key,
@@ -269,6 +318,7 @@ defmodule ApplicationRunner.WidgetCache do
 
   defp build_comp_and_format(
          env_state,
+         session_state,
          child_map,
          child_comp,
          child_key,
@@ -279,6 +329,7 @@ defmodule ApplicationRunner.WidgetCache do
        ) do
     case build_component(
            env_state,
+           session_state,
            child_comp,
            ui_context,
            widget_context
@@ -302,6 +353,7 @@ defmodule ApplicationRunner.WidgetCache do
   """
   @spec build_children_list(
           EnvState.t(),
+          SessionState.t(),
           component(),
           list(),
           UiContext.t(),
@@ -310,6 +362,7 @@ defmodule ApplicationRunner.WidgetCache do
           {:ok, map(), UiContext.t()} | {:error, build_errors()}
   def build_children_list(
         env_state,
+        session_state,
         component,
         children_keys,
         %UiContext{} = ui_context,
@@ -323,6 +376,7 @@ defmodule ApplicationRunner.WidgetCache do
 
         case build_children(
                env_state,
+               session_state,
                component,
                children_key,
                ui_context,
@@ -351,20 +405,35 @@ defmodule ApplicationRunner.WidgetCache do
   @doc """
     This will build a child list (children).
   """
-  @spec build_children(EnvState.t(), map, String.t(), UiContext.t(), WidgetContext.t()) ::
+  @spec build_children(
+          EnvState.t(),
+          SessionState.t(),
+          map,
+          String.t(),
+          UiContext.t(),
+          WidgetContext.t()
+        ) ::
           {:error, list(error_tuple())} | {:ok, list(component()), UiContext.t()}
-  def build_children(env_state, component, children_key, ui_context, widget_context) do
+  def build_children(
+        env_state,
+        session_state,
+        component,
+        children_key,
+        ui_context,
+        widget_context
+      ) do
     case Map.get(component, children_key) do
       nil ->
         {:ok, [], ui_context}
 
       children ->
-        build_children_map(env_state, children, ui_context, widget_context)
+        build_children_map(env_state, session_state, children, ui_context, widget_context)
     end
   end
 
   defp build_children_map(
          env_state,
+         session_state,
          children,
          ui_context,
          %WidgetContext{prefix_path: prefix_path} = widget_context
@@ -378,6 +447,7 @@ defmodule ApplicationRunner.WidgetCache do
 
         case build_component(
                env_state,
+               session_state,
                child,
                ui_context,
                Map.put(widget_context, :prefix_path, children_path)

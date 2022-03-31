@@ -140,6 +140,12 @@ defmodule ApplicationRunner.SessionManager do
   end
 
   @impl true
+  def handle_cast({:save_token, token}, session_state) do
+    assigns = [%{token: token} | session_state.assigns]
+    {:noreply, Map.replace(session_state, :assigns, assigns)}
+  end
+
+  @impl true
   def handle_cast({:run_listener, code, event}, session_state) do
     with {:ok, data} <- AdapterHandler.get_data(session_state),
          {:ok, new_data} <-
@@ -177,14 +183,8 @@ defmodule ApplicationRunner.SessionManager do
     {:ok, token}
   end
 
-  defp extract_token(%{assigns: [token: token]}) do
+  defp extract_token(%{assigns: []}) do
     {:error, :no_token_found}
-  end
-
-  @impl true
-  def handle_cast({:save_token, token}, session_state) do
-    assigns = [{token: token} | session_state.assigns]
-    {:noreply, Map.replace(session_state, :assigns, assigns)}
   end
 
   defp send_error(session_state, error) do
