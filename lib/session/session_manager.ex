@@ -45,6 +45,14 @@ defmodule ApplicationRunner.SessionManager do
     GenServer.cast(session_manager_pid, :init_data)
   end
 
+  def get_token(session_manager_pid) do
+    GenServer.cast(session_manager_pid, {:get_token})
+  end
+
+  def save_token(session_manager_pid, token) do
+    GenServer.cast(session_manager_pid, {:save_token, token})
+  end
+
   @spec start_link(keyword) :: :ignore | {:error, any} | {:ok, pid}
   def start_link(opts) do
     session_id = Keyword.fetch!(opts, :session_id)
@@ -158,6 +166,25 @@ defmodule ApplicationRunner.SessionManager do
     end
 
     {:noreply, session_state, session_state.inactivity_timeout}
+  end
+
+  @impl true
+  def handle_cast({:get_token}, session_state) do
+    extract_token(session_state)
+  end
+
+  defp extract_token(%{assigns: [token: token]}) do
+    {:ok, token}
+  end
+
+  defp extract_token(%{assigns: [token: token]}) do
+    {:error, :no_token_found}
+  end
+
+  @impl true
+  def handle_cast({:save_token, token}, session_state) do
+    assigns = [{token: token} | session_state.assigns]
+    {:noreply, Map.replace(session_state, :assigns, assigns)}
   end
 
   defp send_error(session_state, error) do

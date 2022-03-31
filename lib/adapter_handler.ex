@@ -9,10 +9,10 @@ defmodule ApplicationRunner.AdapterHandler do
   defdelegate get_manifest(env_state),
     to: Application.compile_env!(:application_runner, :adapter)
 
-  defdelegate get_widget(env_state, widget, data, props),
+  defdelegate get_widget(env_state, session_state, widget, data, props),
     to: Application.compile_env!(:application_runner, :adapter)
 
-  defdelegate run_listener(env_state, action, data, props, event),
+  defdelegate run_listener(env_state, session_state, action, data, props, event),
     to: Application.compile_env!(:application_runner, :adapter)
 
   defdelegate get_data(session_state), to: Application.compile_env!(:application_runner, :adapter)

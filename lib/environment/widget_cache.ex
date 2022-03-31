@@ -15,6 +15,7 @@ defmodule ApplicationRunner.WidgetCache do
     JsonSchemata,
     ListenersCache,
     UiContext,
+    Sessionstate,
     WidgetContext
   }
 
@@ -27,9 +28,14 @@ defmodule ApplicationRunner.WidgetCache do
     Call the Adapter to get the Widget corresponding to the given the `WidgetContext`
   """
   @spec get_widget(EnvState.t(), WidgetContext.t()) :: {:ok, map()} | {:error, any()}
-  def get_widget(%EnvState{} = env_state, %WidgetContext{} = current_widget) do
+  def get_widget(
+        %EnvState{} = env_state,
+        %Sessionstate{} = session_state,
+        %WidgetContext{} = current_widget
+      ) do
     AdapterHandler.get_widget(
       env_state,
+      session_state,
       current_widget.name,
       current_widget.data,
       current_widget.props
@@ -44,6 +50,7 @@ defmodule ApplicationRunner.WidgetCache do
           {:ok, UiContext.t()} | {:error, any()}
   def get_and_build_widget(
         %EnvState{} = env_state,
+        %Sessionstate{} = session_state,
         %UiContext{} = ui_context,
         %WidgetContext{} = current_widget
       ) do
@@ -51,6 +58,7 @@ defmodule ApplicationRunner.WidgetCache do
 
     call_function(pid, __MODULE__, :get_and_build_widget_cached, [
       env_state,
+      session_state,
       ui_context,
       current_widget
     ])
@@ -67,10 +75,11 @@ defmodule ApplicationRunner.WidgetCache do
         ) :: {:error, build_errors()} | {:ok, map()}
   def get_and_build_widget_cached(
         %EnvState{} = env_state,
+        %Sessionstate{} = session_state,
         %UiContext{} = ui_context,
         %WidgetContext{} = current_widget
       ) do
-    with {:ok, widget} <- get_widget(env_state, current_widget),
+    with {:ok, widget} <- get_widget(env_state, session_state, current_widget),
          {:ok, component, new_app_context} <-
            build_component(env_state, widget, ui_context, current_widget) do
       {:ok, put_in(new_app_context.widgets_map[current_widget.id], component)}

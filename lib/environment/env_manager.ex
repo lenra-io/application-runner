@@ -88,19 +88,19 @@ defmodule ApplicationRunner.EnvManager do
 
   def get_and_build_ui(session_state, root_widget, data) do
     with {:ok, pid} <- EnvManagers.fetch_env_manager_pid(session_state.env_id) do
-      GenServer.call(pid, {:get_and_build_ui, root_widget, data})
+      GenServer.call(pid, {:get_and_build_ui, root_widget, data, session_state})
     end
   end
 
   def run_listener(session_state, code, data, event) do
     with {:ok, pid} <- EnvManagers.fetch_env_manager_pid(session_state.env_id) do
-      GenServer.call(pid, {:run_listener, code, data, event})
+      GenServer.call(pid, {:run_listener, code, data, event, session_state})
     end
   end
 
   def init_data(session_state, data) do
     with {:ok, pid} <- EnvManagers.fetch_env_manager_pid(session_state.env_id) do
-      GenServer.call(pid, {:init_data, data})
+      GenServer.call(pid, {:init_data, data, session_state})
     end
   end
 
@@ -111,11 +111,12 @@ defmodule ApplicationRunner.EnvManager do
   end
 
   @impl true
-  def handle_call({:get_and_build_ui, root_widget, data}, _from, env_state) do
+  def handle_call({:get_and_build_ui, root_widget, data, session_state}, _from, env_state) do
     id = WidgetCache.generate_widget_id(root_widget, data, %{})
 
     WidgetCache.get_and_build_widget(
       env_state,
+      session_state,
       %UiContext{
         widgets_map: %{},
         listeners_map: %{}
@@ -147,11 +148,11 @@ defmodule ApplicationRunner.EnvManager do
   end
 
   @impl true
-  def handle_call({:run_listener, code, data, event}, _from, env_state) do
+  def handle_call({:run_listener, code, data, event, session_state}, _from, env_state) do
     with {:ok, listener} <- ListenersCache.fetch_listener(env_state, code),
          {:ok, action} <- Map.fetch(listener, "action"),
          props <- Map.get(listener, "props", %{}) do
-      res = AdapterHandler.run_listener(env_state, action, data, props, event)
+      res = AdapterHandler.run_listener(env_state, session_state, action, data, props, event)
       {:reply, res, env_state, env_state.inactivity_timeout}
     else
       err ->
@@ -160,8 +161,8 @@ defmodule ApplicationRunner.EnvManager do
   end
 
   @impl true
-  def handle_call({:init_data, data}, _from, env_state) do
-    res = AdapterHandler.run_listener(env_state, "InitData", data, %{}, %{})
+  def handle_call({:init_data, data, session_state}, _from, env_state) do
+    res = AdapterHandler.run_listener(env_state, session_state, "InitData", data, %{}, %{})
     {:reply, res, env_state, env_state.inactivity_timeout}
   end
 
