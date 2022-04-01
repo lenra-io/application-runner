@@ -301,8 +301,7 @@ defmodule ApplicationRunner.WidgetCache do
             child_path = "#{prefix_path || ""}/#{child_key}"
 
             build_comp_and_format(
-              env_state,
-              session_state,
+              {env_state, session_state},
               child_map,
               child_comp,
               child_key,
@@ -317,8 +316,7 @@ defmodule ApplicationRunner.WidgetCache do
   end
 
   defp build_comp_and_format(
-         env_state,
-         session_state,
+         {env_state, session_state},
          child_map,
          child_comp,
          child_key,
