@@ -32,8 +32,8 @@ defmodule ApplicationRunner.ApplicationRunnerAdapter do
   def manifest_const, do: @manifest
 
   @impl true
-  def get_widget(_env_state, name, data, props) do
-    GenServer.call(__MODULE__, {:get_widget, name, data, props})
+  def get_widget(_env_state, session_state, name, data, props) do
+    GenServer.call(__MODULE__, {:get_widget, name, data, props, session_state})
   end
 
   def set_mock(mock) do
@@ -41,8 +41,8 @@ defmodule ApplicationRunner.ApplicationRunnerAdapter do
   end
 
   @impl true
-  def run_listener(%EnvState{}, action, data, props, event) do
-    GenServer.call(__MODULE__, {:run_listener, action, data, props, event})
+  def run_listener(%EnvState{}, session_state, action, data, props, event) do
+    GenServer.call(__MODULE__, {:run_listener, action, data, props, event, session_state})
   end
 
   @impl true
@@ -93,7 +93,11 @@ defmodule ApplicationRunner.ApplicationRunnerAdapter do
   end
 
   @impl true
-  def handle_call({:get_widget, name, data, props}, _from, %{widgets: widgets} = mock) do
+  def handle_call(
+        {:get_widget, name, data, props, _session_state},
+        _from,
+        %{widgets: widgets} = mock
+      ) do
     case Map.get(widgets, name) do
       nil ->
         {:reply, {:error, :widget_not_found}, mock}
@@ -105,7 +109,7 @@ defmodule ApplicationRunner.ApplicationRunnerAdapter do
   end
 
   def handle_call(
-        {:run_listener, action, data, props, event},
+        {:run_listener, action, data, props, event, _session_state},
         _from,
         %{listeners: listeners} = mock
       ) do
