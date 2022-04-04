@@ -18,7 +18,7 @@ defmodule ApplicationRunner.Data do
       on_replace: :delete
     )
 
-    many_to_many(:refBy, Data,
+    many_to_many(:ref_by, Data,
       join_through: DataReferences,
       join_keys: [refs_id: :id, ref_by_id: :id],
       on_replace: :delete

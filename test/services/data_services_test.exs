@@ -357,11 +357,11 @@ defmodule ApplicationRunner.DataServicesTest do
         })
         |> Repo.transaction()
 
-      data = Repo.get(Data, updated_data.id) |> Repo.preload(:refBy)
+      data = Repo.get(Data, updated_data.id) |> Repo.preload(:ref_by)
 
-      assert 1 == length(data.refBy)
+      assert 1 == length(data.ref_by)
 
-      assert List.first(data.refBy).id ==
+      assert List.first(data.ref_by).id ==
                inserted_data_bis.id
     end
 
@@ -414,11 +414,11 @@ defmodule ApplicationRunner.DataServicesTest do
         })
         |> Repo.transaction()
 
-      data = Repo.get(Data, updated_data.id) |> Repo.preload(:refBy) |> Repo.preload(:refs)
+      data = Repo.get(Data, updated_data.id) |> Repo.preload(:ref_by) |> Repo.preload(:refs)
 
-      assert 1 == length(data.refBy)
+      assert 1 == length(data.ref_by)
 
-      assert List.first(data.refBy).id ==
+      assert List.first(data.ref_by).id ==
                inserted_team_bis.id
 
       assert 1 == length(data.refs)
@@ -472,7 +472,7 @@ defmodule ApplicationRunner.DataServicesTest do
         })
         |> Repo.transaction()
 
-      {:error, :refBy, :references_not_found, _change_so_far} =
+      {:error, :ref_by, :references_not_found, _change_so_far} =
         DataServices.update(inserted_user.id, %{
           "refBy" => [-1]
         })
@@ -511,7 +511,7 @@ defmodule ApplicationRunner.DataServicesTest do
         })
         |> Repo.transaction()
 
-      {:error, :refBy, :references_not_found, _change_so_far} =
+      {:error, :ref_by, :references_not_found, _change_so_far} =
         DataServices.update(inserted_user.id, %{
           "refBy" => [inserted_team_bis.id]
         })

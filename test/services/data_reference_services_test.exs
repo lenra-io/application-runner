@@ -37,9 +37,9 @@ defmodule ApplicationRunner.DataReferenceServicesTest do
         inserted_user
         |> Repo.preload(:refs)
 
-      %{refBy: [ref_by | _tail]} =
+      %{ref_by: [ref_by | _tail]} =
         inserted_point
-        |> Repo.preload(:refBy)
+        |> Repo.preload(:ref_by)
 
       assert ref.id == inserted_point.id
       assert ref.data == %{"score" => 10}

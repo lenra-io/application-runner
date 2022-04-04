@@ -2,7 +2,15 @@ defmodule ApplicationRunner.Repo.Migrations.DataQueryView do
   use Ecto.Migration
 
   def change do
-    rename table(:data_references), :refBy_id, to: :ref_by_id
+
+    alter table(:data_references) do
+      remove(:refBy_id, references(:datas), null: false)
+      add(:ref_by_id, references(:datas, on_delete: :delete_all), null: false)
+    end
+
+    create(unique_index(:data_references, [:refs_id, :ref_by_id], name: :data_references_refs_id_ref_by_id))
+
+
 
     alter table(:users) do
       add(:email, :string, null: false, default: "test@lenra.io")

@@ -107,7 +107,7 @@ defmodule ApplicationRunner.DataServices do
        when is_list(refs) and is_list(ref_by) do
     multi
     |> handle_update_reference(refs, :refs)
-    |> handle_update_reference(ref_by, :refBy)
+    |> handle_update_reference(ref_by, :ref_by)
   end
 
   defp update_reference(multi, %{"refs" => refs}) when is_list(refs) do
@@ -117,7 +117,7 @@ defmodule ApplicationRunner.DataServices do
 
   defp update_reference(multi, %{"refBy" => ref_by}) when is_list(ref_by) do
     multi
-    |> handle_update_reference(ref_by, :refBy)
+    |> handle_update_reference(ref_by, :ref_by)
   end
 
   defp update_reference(multi, _json), do: multi

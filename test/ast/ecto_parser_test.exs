@@ -2,73 +2,97 @@ defmodule ApplicationRunner.ATS.EctoParserTest do
   use ApplicationRunner.RepoCase
 
   alias ApplicationRunner.AST.{
-    Parser,
-    EctoParser
+    EctoParser,
+    Parser
   }
 
   alias ApplicationRunner.{
-    Repo,
-    FakeLenraUser,
-    FakeLenraEnvironment,
+    DataServices,
     DatastoreServices,
-    UserDataServices,
-    DataServices
+    FakeLenraEnvironment,
+    FakeLenraUser,
+    Repo,
+    UserDataServices
   }
 
-  setup_all do
-    FakeLenraUser.new() |> Repo.insert()
-    FakeLenraEnvironment.new() |> Repo.insert()
+  setup do
+    {:ok, %{id: user_id}} = FakeLenraUser.new() |> Repo.insert()
+    {:ok, %{id: env_id}} = FakeLenraEnvironment.new() |> Repo.insert()
 
-    DatastoreServices.create(1, %{"name" => "userData"}) |> Repo.transaction()
-    DatastoreServices.create(1, %{"name" => "todoList"}) |> Repo.transaction()
-    DatastoreServices.create(1, %{"name" => "todos"}) |> Repo.transaction()
+    DatastoreServices.create(env_id, %{"name" => "userData"}) |> Repo.transaction()
+    DatastoreServices.create(env_id, %{"name" => "todoList"}) |> Repo.transaction()
+    DatastoreServices.create(env_id, %{"name" => "todos"}) |> Repo.transaction()
     # 1
-    DataServices.create(1, %{"datastore" => "userData", "data" => %{"score" => 42}})
-    |> Repo.transaction()
+    {:ok, %{inserted_data: %{id: user_data_id}}} =
+      DataServices.create(env_id, %{"datastore" => "userData", "data" => %{"score" => 42}})
+      |> Repo.transaction()
 
-    UserDataServices.create(%{user_id: 1, data_id: 1}) |> Repo.transaction()
+    UserDataServices.create(%{user_id: user_id, data_id: user_data_id}) |> Repo.transaction()
     # 2
-    DataServices.create(1, %{
-      "datastore" => "todoList",
-      "data" => %{"name" => "favorites"},
-      "refBy" => [1]
-    })
-    |> Repo.transaction()
+    {:ok, %{inserted_data: %{id: todolist1_id}}} =
+      DataServices.create(env_id, %{
+        "datastore" => "todoList",
+        "data" => %{"name" => "favorites"},
+        "refBy" => [user_data_id]
+      })
+      |> Repo.transaction()
 
     # 3
-    DataServices.create(1, %{
-      "datastore" => "todoList",
-      "data" => %{"name" => "not fav"},
-      "refBy" => [1]
-    })
-    |> Repo.transaction()
+    {:ok, %{inserted_data: %{id: todolist2_id}}} =
+      DataServices.create(env_id, %{
+        "datastore" => "todoList",
+        "data" => %{"name" => "not fav"},
+        "refBy" => [user_data_id]
+      })
+      |> Repo.transaction()
 
     # 4
-    DataServices.create(1, %{
-      "datastore" => "todos",
-      "data" => %{"title" => "Faire la vaisselle"},
-      "refBy" => [2]
-    })
-    |> Repo.transaction()
+    {:ok, %{inserted_data: %{id: todo1_id}}} =
+      DataServices.create(env_id, %{
+        "datastore" => "todos",
+        "data" => %{"title" => "Faire la vaisselle"},
+        "refBy" => [todolist1_id]
+      })
+      |> Repo.transaction()
 
     # 5
-    DataServices.create(1, %{
-      "datastore" => "todos",
-      "data" => %{"title" => "Faire la cuisine"},
-      "refBy" => [2]
-    })
-    |> Repo.transaction()
+    {:ok, %{inserted_data: %{id: todo2_id}}} =
+      DataServices.create(env_id, %{
+        "datastore" => "todos",
+        "data" => %{"title" => "Faire la cuisine"},
+        "refBy" => [todolist1_id]
+      })
+      |> Repo.transaction()
 
     # 6
-    DataServices.create(1, %{
-      "datastore" => "todos",
-      "data" => %{"title" => "Faire le ménage", "nullField" => nil},
-      "refBy" => [3]
-    })
-    |> Repo.transaction()
+    {:ok, %{inserted_data: %{id: todo3_id}}} =
+      DataServices.create(env_id, %{
+        "datastore" => "todos",
+        "data" => %{"title" => "Faire le ménage", "nullField" => nil},
+        "refBy" => [todolist2_id]
+      })
+      |> Repo.transaction()
+
+    {:ok,
+     %{
+       user_id: user_id,
+       user_data_id: user_data_id,
+       todolist1_id: todolist1_id,
+       todolist2_id: todolist2_id,
+       todo1_id: todo1_id,
+       todo2_id: todo2_id,
+       todo3_id: todo3_id
+     }}
   end
 
-  test "Base test, select all" do
+  test "Base test, select all", %{
+    user_data_id: user_data_id,
+    todolist1_id: todolist1_id,
+    todolist2_id: todolist2_id,
+    todo1_id: todo1_id,
+    todo2_id: todo2_id,
+    todo3_id: todo3_id
+  } do
     res =
       %{"$find" => %{}}
       |> Parser.from_json()
@@ -77,10 +101,18 @@ defmodule ApplicationRunner.ATS.EctoParserTest do
 
     assert Enum.count(res) == 6
 
-    assert res |> Enum.map(fn e -> e.id end) |> MapSet.new() == MapSet.new([1, 2, 3, 4, 5, 6])
+    assert res
+           |> Enum.map(fn e -> e.id end)
+           |> MapSet.new() ==
+             MapSet.new([user_data_id, todolist1_id, todolist2_id, todo1_id, todo2_id, todo3_id])
   end
 
-  test "Select where datastore userData" do
+  test "Select where datastore userData", %{
+    user_id: user_id,
+    user_data_id: user_data_id,
+    todolist1_id: todolist1_id,
+    todolist2_id: todolist2_id
+  } do
     res =
       %{"$find" => %{"_datastore" => "userData"}}
       |> Parser.from_json()
@@ -91,19 +123,16 @@ defmodule ApplicationRunner.ATS.EctoParserTest do
              data: %{
                "_data" => %{"score" => 42},
                "_datastore" => "userData",
-               "_id" => 1,
+               "_id" => ^user_data_id,
                "_refBy" => [],
-               "_refs" => [2, 3],
-               "_user" => %{"email" => "test@lenra.io", "id" => 1}
+               "_refs" => [^todolist1_id, ^todolist2_id],
+               "_user" => %{"email" => "test@lenra.io", "id" => ^user_id}
              },
-             id: 1
+             id: ^user_data_id
            } = res
   end
 
   test "Select where datastore Todo" do
-    # null value in data should stay
-    # Empty _refs/_refBy should return empty array
-
     res =
       %{"$find" => %{"_datastore" => "todos"}}
       |> Parser.from_json()
@@ -111,57 +140,61 @@ defmodule ApplicationRunner.ATS.EctoParserTest do
       |> Repo.all()
 
     assert Enum.count(res) == 3
-
-    assert [
-             %ApplicationRunner.DataQueryView{
-               data: %{
-                 "_data" => %{"title" => "Faire la cuisine"},
-                 "_datastore" => "todos",
-                 "_id" => 5,
-                 "_refBy" => [2],
-                 "_refs" => []
-               },
-               id: 5
-             },
-             %ApplicationRunner.DataQueryView{
-               data: %{
-                 "_data" => %{"nullField" => nil, "title" => "Faire le ménage"},
-                 "_datastore" => "todos",
-                 "_id" => 6,
-                 "_refBy" => [3],
-                 "_refs" => []
-               },
-               id: 6
-             },
-             %ApplicationRunner.DataQueryView{
-               data: %{
-                 "_data" => %{"title" => "Faire la vaisselle"},
-                 "_datastore" => "todos",
-                 "_id" => 4,
-                 "_refBy" => [2],
-                 "_refs" => []
-               },
-               id: 4
-             }
-           ] = res
   end
 
-  test "Select with multi where" do
+  test "Select with multi where", %{todo3_id: todo3_id} do
+    # null value in data should stay
+    # Empty _refs/_refBy should return empty array
+
     res =
-      %{"$find" => %{"_datastore" => "todos", "_id" => 4}}
+      %{"$find" => %{"_datastore" => "todos", "_id" => todo3_id}}
+      |> Parser.from_json()
+      |> EctoParser.to_ecto()
+      |> Repo.one()
+
+    assert %{
+             "_data" => %{"title" => "Faire le ménage", "nullField" => nil},
+             "_refs" => []
+           } = res.data
+  end
+
+  test "Select with where on list of number", %{
+    todolist1_id: todolist1_id,
+    todolist2_id: todolist2_id
+  } do
+    res =
+      %{"$find" => %{"_refs" => [todolist1_id, todolist2_id]}}
       |> Parser.from_json()
       |> EctoParser.to_ecto()
       |> Repo.one()
 
     assert %ApplicationRunner.DataQueryView{
              data: %{
-               "_data" => %{"title" => "Faire la vaisselle"},
-               "_datastore" => "todos",
-               "_id" => 4,
-               "_refBy" => [2],
-               "_refs" => []
+               "_data" => %{"score" => 42},
+               "_datastore" => "userData",
+               "_user" => %{"email" => "test@lenra.io"}
+             }
+           } = res
+  end
+
+  test "Select with where on number", %{
+    user_data_id: user_data_id
+  } do
+    res =
+      %{"$find" => %{"_id" => user_data_id}}
+      |> Parser.from_json()
+      |> EctoParser.to_ecto()
+      |> Repo.one()
+
+    assert %ApplicationRunner.DataQueryView{
+             data: %{
+               "_data" => %{"score" => 42},
+               "_datastore" => "userData",
+               "_user" => %{"email" => "test@lenra.io"},
+               "_id" => ^user_data_id,
+               "_refBy" => []
              },
-             id: 4
+             id: ^user_data_id
            } = res
   end
 end

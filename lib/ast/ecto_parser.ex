@@ -1,5 +1,8 @@
 defmodule ApplicationRunner.AST.EctoParser do
-  alias ApplicationRunner.{DataQueryView}
+  @moduledoc """
+    This module parse AST tree into Ecto query.
+  """
+  alias ApplicationRunner.DataQueryView
 
   alias ApplicationRunner.AST.{
     And,
@@ -13,7 +16,6 @@ defmodule ApplicationRunner.AST.EctoParser do
   }
 
   import Ecto.Query
-  import ApplicationRunner.EctoPgJsonb
 
   def to_ecto(%Query{find: find, select: _select}) do
     where_clauses = parse_expr(find)
@@ -45,14 +47,18 @@ defmodule ApplicationRunner.AST.EctoParser do
   end
 
   defp parse_expr(%DataKey{key_path: key_path}) do
-    dynamic([d], fragment("? #>> ?", d.data, ^key_path))
+    dynamic([d], fragment("? #> ?", d.data, ^key_path))
   end
 
   defp parse_expr(%StringValue{value: value}) do
     value
   end
 
+  defp parse_expr(%ArrayValue{values: values}) do
+    Enum.map(values, fn value -> parse_expr(value) end)
+  end
+
   defp parse_expr(%NumberValue{value: value}) do
-    value |> Integer.to_string()
+    value
   end
 end
