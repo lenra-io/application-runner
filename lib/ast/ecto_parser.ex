@@ -9,11 +9,11 @@ defmodule ApplicationRunner.AST.EctoParser do
     Find,
     NumberValue,
     Query,
-    Select,
     StringValue
   }
 
   import Ecto.Query
+  import ApplicationRunner.EctoPgJsonb
 
   def to_ecto(%Query{find: find, select: _select}) do
     where_clauses = parse_expr(find)
@@ -44,8 +44,8 @@ defmodule ApplicationRunner.AST.EctoParser do
     dynamic([d], ^parsed_left == ^parsed_right)
   end
 
-  defp parse_expr(%DataKey{key: key}) do
-    dynamic([d], fragment("data ->> ?", ^key))
+  defp parse_expr(%DataKey{key_path: key_path}) do
+    dynamic([d], fragment("? #>> ?", d.data, ^key_path))
   end
 
   defp parse_expr(%StringValue{value: value}) do
