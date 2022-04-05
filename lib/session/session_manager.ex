@@ -46,7 +46,7 @@ defmodule ApplicationRunner.SessionManager do
   end
 
   def get_token(session_manager_pid) do
-    GenServer.cast(session_manager_pid, {:get_token})
+    GenServer.cast(session_manager_pid, :get_token)
   end
 
   def save_token(session_manager_pid, token) do
@@ -175,7 +175,7 @@ defmodule ApplicationRunner.SessionManager do
   end
 
   @impl true
-  def handle_cast({:get_token}, session_state) do
+  def handle_cast(:get_token, session_state) do
     extract_token(session_state)
   end
 
