@@ -88,7 +88,7 @@ defmodule ApplicationRunner.EnvManager do
 
   def get_and_build_ui(session_state, root_widget, data) do
     with {:ok, pid} <- EnvManagers.fetch_env_manager_pid(session_state.env_id) do
-      GenServer.call(pid, {:get_and_build_ui, root_widget, data, session_state})
+      GenServer.call(pid, {:get_and_build_ui, root_widget, data})
     end
   end
 
@@ -111,12 +111,11 @@ defmodule ApplicationRunner.EnvManager do
   end
 
   @impl true
-  def handle_call({:get_and_build_ui, root_widget, data, session_state}, _from, env_state) do
+  def handle_call({:get_and_build_ui, root_widget, data}, _from, env_state) do
     id = WidgetCache.generate_widget_id(root_widget, data, %{})
 
     WidgetCache.get_and_build_widget(
       env_state,
-      session_state,
       %UiContext{
         widgets_map: %{},
         listeners_map: %{}

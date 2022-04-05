@@ -94,7 +94,7 @@ defmodule ApplicationRunner.ApplicationRunnerAdapter do
 
   @impl true
   def handle_call(
-        {:get_widget, name, data, props, _session_state},
+        {:get_widget, name, data, props},
         _from,
         %{widgets: widgets} = mock
       ) do
