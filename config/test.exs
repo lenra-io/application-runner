@@ -11,3 +11,6 @@ config :application_runner, ApplicationRunner.Repo,
   database: "applicationrunner_test#{System.get_env("MIX_TEST_PARTITION")}",
   hostname: System.get_env("POSTGRES_HOST", "localhost"),
   pool: Ecto.Adapters.SQL.Sandbox
+
+config :swarm,
+  sync_nodes_timeout: 0
