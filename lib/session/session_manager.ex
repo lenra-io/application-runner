@@ -45,12 +45,12 @@ defmodule ApplicationRunner.SessionManager do
     GenServer.cast(session_manager_pid, :init_data)
   end
 
-  def get_token(session_manager_pid) do
-    GenServer.cast(session_manager_pid, :get_token)
+  def get_assigns(session_manager_pid) do
+    GenServer.cast(session_manager_pid, :get_assigns)
   end
 
-  def save_token(session_manager_pid, token) do
-    GenServer.cast(session_manager_pid, {:save_token, token})
+  def set_assigns(session_manager_pid, assigns) do
+    GenServer.cast(session_manager_pid, {:set_assigns, assigns})
   end
 
   @spec start_link(keyword) :: :ignore | {:error, any} | {:ok, pid}
@@ -140,8 +140,8 @@ defmodule ApplicationRunner.SessionManager do
   end
 
   @impl true
-  def handle_cast({:save_token, token}, session_state) do
-    assigns = [%{token: token} | session_state.assigns]
+  def handle_cast({:set_assigns, assigns}, session_state) do
+    assigns = [assigns | session_state.assigns]
     {:noreply, Map.replace(session_state, :assigns, assigns)}
   end
 
@@ -175,16 +175,8 @@ defmodule ApplicationRunner.SessionManager do
   end
 
   @impl true
-  def handle_cast(:get_token, session_state) do
-    extract_token(session_state)
-  end
-
-  defp extract_token(%{assigns: [token: token]}) do
-    {:ok, token}
-  end
-
-  defp extract_token(%{assigns: []}) do
-    {:error, :no_token_found}
+  def handle_cast(:get_assigns, session_state) do
+    session_state.assigns
   end
 
   defp send_error(session_state, error) do

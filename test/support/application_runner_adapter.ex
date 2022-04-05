@@ -32,8 +32,8 @@ defmodule ApplicationRunner.ApplicationRunnerAdapter do
   def manifest_const, do: @manifest
 
   @impl true
-  def get_widget(_env_state, session_state, name, data, props) do
-    GenServer.call(__MODULE__, {:get_widget, name, data, props, session_state})
+  def get_widget(_env_state, name, data, props) do
+    GenServer.call(__MODULE__, {:get_widget, name, data, props})
   end
 
   def set_mock(mock) do
@@ -41,8 +41,8 @@ defmodule ApplicationRunner.ApplicationRunnerAdapter do
   end
 
   @impl true
-  def run_listener(%EnvState{}, session_state, action, data, props, event) do
-    GenServer.call(__MODULE__, {:run_listener, action, data, props, event, session_state})
+  def run_listener(%EnvState{}, session_id, action, data, props, event) do
+    GenServer.call(__MODULE__, {:run_listener, action, data, props, event, session_id})
   end
 
   @impl true
