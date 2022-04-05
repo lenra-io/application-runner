@@ -28,7 +28,7 @@ defmodule ApplicationRunner.DatastoreServices do
         end
       end
     )
-    |> Ecto.Multi.run(:inserted_datastore, fn repo, %{datastore: %Datastore{} = datastore} ->
+    |> Ecto.Multi.run(:updated_datastore, fn repo, %{datastore: %Datastore{} = datastore} ->
       repo.update(Datastore.update(datastore, params))
     end)
   end
@@ -49,7 +49,7 @@ defmodule ApplicationRunner.DatastoreServices do
         end
       end
     )
-    |> Ecto.Multi.run(:inserted_datastore, fn repo, %{datastore: %Datastore{} = datastore} ->
+    |> Ecto.Multi.run(:deleted_datastore, fn repo, %{datastore: %Datastore{} = datastore} ->
       repo.delete(datastore)
     end)
   end
