@@ -1,6 +1,7 @@
 defmodule ApplicationRunner.DataQueryView do
   @moduledoc """
-    The data schema.
+    The schema that represent the json data view by the dev.
+    This is the table to apply the query on.
   """
 
   use Ecto.Schema
