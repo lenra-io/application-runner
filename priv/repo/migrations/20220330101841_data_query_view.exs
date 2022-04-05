@@ -3,19 +3,31 @@ defmodule ApplicationRunner.Repo.Migrations.DataQueryView do
 
   def change do
 
+    # change :refBy_id to :ref_by_id
     alter table(:data_references) do
       remove(:refBy_id, references(:datas), null: false)
       add(:ref_by_id, references(:datas, on_delete: :delete_all), null: false)
     end
 
+    # Update the index accordingly
     create(unique_index(:data_references, [:refs_id, :ref_by_id], name: :data_references_refs_id_ref_by_id))
 
 
 
+    # Add an email on the fake user schema for test purpose.
     alter table(:users) do
       add(:email, :string, null: false, default: "test@lenra.io")
     end
 
+    # Create the view to send the query on.
+    # 3 fields:
+    # id -> id of the data
+    # environment_id -> Self explainatory
+    # data -> the json object that represent the data with refs/datastore/userData...
+    # This allow to query every field exactly like classic user data.
+    # This migration will be copy on server/devtools to create the same view.
+    # "_user" field will only be added if we are on "userData" datastore
+    # "_refs" and "_refBy" field will be empty array if there is no references (instead of null)
     execute("
     CREATE VIEW data_query_view AS
     SELECT
