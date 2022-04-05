@@ -20,6 +20,7 @@ defmodule ApplicationRunner.Repo.Migrations.DataQueryView do
     CREATE VIEW data_query_view AS
     SELECT
     d.id as id,
+    ds.environment_id as environment_id,
     jsonb_build_object(
       '_datastore', ds.name,
       '_id', d.id,

@@ -17,10 +17,11 @@ defmodule ApplicationRunner.AST.EctoParser do
 
   import Ecto.Query
 
-  def to_ecto(%Query{find: find, select: _select}) do
+  def to_ecto(%Query{find: find, select: _select}, env_id) do
     where_clauses = parse_expr(find)
 
     DataQueryView
+    |> where([d], d.environment_id == ^env_id)
     |> where([d], ^where_clauses)
   end
 
