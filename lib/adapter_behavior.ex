@@ -19,7 +19,7 @@ defmodule ApplicationRunner.AdapterBehavior do
   @callback get_manifest(EnvState.t()) :: {:ok, manifest()} | {:error, reason()}
   @callback get_widget(EnvState.t(), widget_name(), data(), props()) ::
               {:ok, widget()} | {:error, reason()}
-  @callback run_listener(EnvState.t(), Integer, action(), data(), props(), event()) ::
+  @callback run_listener(EnvState.t(), binary(), action(), data(), props(), event()) ::
               {:ok, data()} | {:error, reason()}
   @callback get_data(SessionState.t()) :: {:ok, data()} | {:error, reason()}
   @callback save_data(SessionState.t(), data()) :: :ok | {:error, reason()}
