@@ -30,7 +30,7 @@ defmodule ApplicationRunner.ApplicationRunnerAdapter do
   end
 
   @impl true
-  def run_listener(%SessionState{}, action, props, event) do
+  def run_listener(%{}, action, props, event) do
     GenServer.call(__MODULE__, {:run_listener, action, props, event})
   end
 
