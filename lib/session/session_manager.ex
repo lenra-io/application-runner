@@ -37,12 +37,14 @@ defmodule ApplicationRunner.SessionManager do
     end
   end
 
-  def run_listener(session_manager_pid, code, event) do
-    GenServer.cast(session_manager_pid, {:run_listener, code, event})
+  @spec send_client_event(pid(), String.t(), map()) :: :ok
+  def send_client_event(session_manager_pid, code, event) do
+    GenServer.cast(session_manager_pid, {:send_client_event, code, event})
   end
 
-  def init_data(session_manager_pid) do
-    GenServer.cast(session_manager_pid, :init_data)
+  @spec send_special_event(pid(), String.t(), map()) :: :ok
+  def send_special_event(session_manager_pid, action, event) do
+    GenServer.cast(session_manager_pid, {:send_special_event, action, event})
   end
 
   @spec start_link(keyword) :: :ignore | {:error, any} | {:ok, pid}
@@ -97,22 +99,6 @@ defmodule ApplicationRunner.SessionManager do
   end
 
   @impl true
-  def handle_info(:data_changed, %SessionState{} = session_state) do
-    with %{"rootWidget" => root_widget} <- EnvManager.get_manifest(session_state.env_id),
-         {:ok, data} <- AdapterHandler.get_data(session_state),
-         {:ok, ui} <- EnvManager.get_and_build_ui(session_state, root_widget, data) do
-      transformed_ui = transform_ui(ui)
-      res = UiCache.diff_and_save(session_state, transformed_ui)
-      AdapterHandler.on_ui_changed(session_state, res)
-    else
-      error ->
-        send_error(session_state, error)
-    end
-
-    {:noreply, session_state, session_state.inactivity_timeout}
-  end
-
-  @impl true
   def handle_call(:get_session_supervisor_pid, _from, session_state) do
     case Map.fetch!(session_state, :session_supervisor_pid) do
       nil -> raise "No SessionSupervisor. This should not happen."
@@ -131,13 +117,29 @@ defmodule ApplicationRunner.SessionManager do
     {:noreply, state}
   end
 
-  @impl true
-  def handle_cast({:run_listener, code, event}, session_state) do
-    with {:ok, data} <- AdapterHandler.get_data(session_state),
-         {:ok, new_data} <-
-           EnvManager.run_listener(session_state, code, data, event),
-         :ok <- AdapterHandler.save_data(session_state, new_data) do
-      EnvManager.notify_data_changed(session_state)
+  def handle_cast({:send_client_event, code, event}, session_state) do
+    with {:ok, listener} <- EnvManager.fetch_listener(session_state, code),
+         {:ok, action} <- Map.fetch(listener, "action"),
+         props <- Map.get(listener, "props", %{}) do
+      run_listener_and_rebuild(session_state, action, props, event)
+    else
+      error ->
+        send_error(session_state, error)
+        {:noreply, session_state, session_state.inactivity_timeout}
+    end
+  end
+
+  def handle_cast({:send_special_event, action, event}, session_state) do
+    run_listener_and_rebuild(session_state, action, %{}, event)
+  end
+
+  def handle_cast(:data_changed, %SessionState{} = session_state) do
+    with %{"rootWidget" => root_widget} <- EnvManager.get_manifest(session_state.env_id),
+         {:ok, data} <- AdapterHandler.get_data(session_state),
+         {:ok, ui} <- EnvManager.get_and_build_ui(session_state, root_widget, data) do
+      transformed_ui = transform_ui(ui)
+      res = UiCache.diff_and_save(session_state, transformed_ui)
+      AdapterHandler.on_ui_changed(session_state, res)
     else
       error ->
         send_error(session_state, error)
@@ -146,13 +148,11 @@ defmodule ApplicationRunner.SessionManager do
     {:noreply, session_state, session_state.inactivity_timeout}
   end
 
-  @impl true
-  def handle_cast(:init_data, session_state) do
-    with {:ok, data} <- AdapterHandler.get_data(session_state),
-         {:ok, new_data} <- EnvManager.init_data(session_state, data),
-         :ok <- AdapterHandler.save_data(session_state, new_data) do
-      EnvManager.notify_data_changed(session_state)
-    else
+  defp run_listener_and_rebuild(session_state, action, props, event) do
+    case AdapterHandler.run_listener(session_state, action, props, event) do
+      :ok ->
+        nil
+
       error ->
         send_error(session_state, error)
     end

@@ -8,17 +8,6 @@ defmodule ApplicationRunner.ApplicationRunnerAdapter do
 
   use GenServer
 
-  # @root %{
-  #   "type" => "flex",
-  #   "children" => [
-  #     %{"type" => "text", "value" => "foo"},
-  #     %{"type" => "widget", "name" => "w1"},
-  #     %{"type" => "widget", "name" => "w2"}
-  #   ]
-  # }
-  # @w1 %{"type" => "text", "value" => "bar"}
-  # @w2 %{"type" => "button", "text" => "butt", "onPressed" => %{"action" => "inc", "props" => %{}}}
-
   @manifest %{"rootWidget" => "root"}
 
   @impl true
@@ -41,8 +30,8 @@ defmodule ApplicationRunner.ApplicationRunnerAdapter do
   end
 
   @impl true
-  def run_listener(%EnvState{}, action, data, props, event) do
-    GenServer.call(__MODULE__, {:run_listener, action, data, props, event})
+  def run_listener(%SessionState{}, action, props, event) do
+    GenServer.call(__MODULE__, {:run_listener, action, props, event})
   end
 
   @impl true
@@ -105,7 +94,7 @@ defmodule ApplicationRunner.ApplicationRunnerAdapter do
   end
 
   def handle_call(
-        {:run_listener, action, data, props, event},
+        {:run_listener, action, props, event},
         _from,
         %{listeners: listeners} = mock
       ) do
@@ -114,8 +103,8 @@ defmodule ApplicationRunner.ApplicationRunnerAdapter do
         {:reply, {:error, :listener_not_found}, mock}
 
       listner ->
-        new_data = listner.(data, props, event)
-        {:reply, {:ok, new_data}, mock}
+        listner.(props, event)
+        {:reply, :ok, mock}
     end
   end
 end

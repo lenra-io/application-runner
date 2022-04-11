@@ -43,32 +43,25 @@ defmodule ApplicationRunner.SessionManagerTest do
     }
   end
 
-  def init_data(_, _, _) do
+  def init_data(_, _) do
     %{}
   end
 
-  describe "SessionManager.initData/2" do
+  describe "SessionManager.send_special_event/2" do
     @tag mock: %{
            widgets: %{
              "root" => &__MODULE__.my_widget/2
            },
-           listeners: %{"InitData" => &__MODULE__.init_data/3}
+           listeners: %{"InitData" => &__MODULE__.init_data/2}
          }
-    test "should return ui if listeners correct", %{
+    test "should call the InitData listener", %{
       session_state: _session_state,
       session_pid: session_pid
     } do
-      ApplicationRunner.SessionManager.init_data(session_pid)
+      ApplicationRunner.SessionManager.send_special_event(session_pid, "InitData", %{})
 
-      assert_receive(
-        {:ui,
-         %{
-           "root" => %{
-             "type" => "flex",
-             "children" => []
-           }
-         }}
-      )
+      refute_receive({:ui, _})
+      refute_receive({:error, _})
     end
 
     @tag mock: %{
@@ -77,11 +70,11 @@ defmodule ApplicationRunner.SessionManagerTest do
            },
            listeners: %{}
          }
-    test "should return error if listeners initData not found", %{
+    test "should return error if listeners InitData not found", %{
       session_state: _session_state,
       session_pid: session_pid
     } do
-      ApplicationRunner.SessionManager.init_data(session_pid)
+      ApplicationRunner.SessionManager.send_special_event(session_pid, "InitData", %{})
 
       assert_receive({:error, {:error, :listener_not_found}})
     end
