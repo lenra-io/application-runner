@@ -52,13 +52,13 @@ defmodule ApplicationRunner.SessionManagerTest do
            widgets: %{
              "root" => &__MODULE__.my_widget/2
            },
-           listeners: %{"InitData" => &__MODULE__.init_data/2}
+           listeners: %{"onSessionStart" => &__MODULE__.init_data/2}
          }
     test "should call the InitData listener", %{
       session_state: _session_state,
-      session_pid: session_pid
+      session_id: _session_id
     } do
-      ApplicationRunner.SessionManager.send_special_event(session_pid, "InitData", %{})
+      # ApplicationRunner.SessionManager.send_on_session_start_event(session_id)
 
       refute_receive({:ui, _})
       refute_receive({:error, _})
@@ -72,9 +72,9 @@ defmodule ApplicationRunner.SessionManagerTest do
          }
     test "should return error if listeners InitData not found", %{
       session_state: _session_state,
-      session_pid: session_pid
+      session_id: _session_id
     } do
-      ApplicationRunner.SessionManager.send_special_event(session_pid, "InitData", %{})
+      # ApplicationRunner.SessionManager.send_on_session_start_event(session_id)
 
       assert_receive({:error, {:error, :listener_not_found}})
     end

@@ -39,7 +39,7 @@ defmodule ApplicationRunner.ComponentCase do
           EnvManagers.stop_env(env_id)
         end)
 
-        %{session_state: session_state, session_pid: pid}
+        %{session_state: session_state, session_pid: pid, session_id: session_id, env_id: env_id}
       end
 
       def mock_root_and_run(json, session_state) do

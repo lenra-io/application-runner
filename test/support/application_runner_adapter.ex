@@ -107,4 +107,12 @@ defmodule ApplicationRunner.ApplicationRunnerAdapter do
         {:reply, :ok, mock}
     end
   end
+
+  def handle_call(
+        {:run_listener, _action, _props, _event},
+        _from,
+        mock
+      ) do
+    {:reply, :ok, mock}
+  end
 end

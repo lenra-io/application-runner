@@ -92,17 +92,11 @@ defmodule ApplicationRunner.EnvManager do
   end
 
   def send_on_env_start_event(env_id), do: send_special_event(env_id, "onEnvStart", %{})
-  def send_on_env_stop_event(env_id), do: send_special_event(env_id, "onEnvStop", %{}, false)
+  def send_on_env_stop_event(env_id), do: send_special_event(env_id, "onEnvStop", %{})
 
-  defp send_special_event(env_id, action, event, async \\ true) do
+  defp send_special_event(env_id, action, event) do
     with {:ok, pid} <- EnvManagers.fetch_env_manager_pid(env_id) do
-      case async do
-        true ->
-          GenServer.cast(pid, {:send_special_event, action, event})
-
-        false ->
-          GenServer.call(pid, {:send_special_event, action, event})
-      end
+      GenServer.cast(pid, {:send_special_event, action, event})
     end
   end
 
@@ -163,11 +157,6 @@ defmodule ApplicationRunner.EnvManager do
 
   def handle_call({:fetch_listener, code}, _from, env_state) do
     ListenersCache.fetch_listener(env_state, code)
-  end
-
-  def handle_call({:send_special_event, action, event}, env_state) do
-    res = AdapterHandler.run_listener(env_state, action, %{}, event)
-    {:reply, res, env_state, env_state.inactivity_timeout}
   end
 
   @impl true

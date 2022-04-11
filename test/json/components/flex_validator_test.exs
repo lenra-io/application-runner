@@ -101,13 +101,13 @@ defmodule ApplicationRunner.FlexValidatorTest do
            "myWidget" => &__MODULE__.my_widget/2,
            "root" => &__MODULE__.root/2
          },
-         listeners: %{"InitData" => &__MODULE__.init_data/2}
+         listeners: %{"onSessionStart" => &__MODULE__.init_data/2}
        }
   test "valid flex with empty children in widget", %{
     session_state: _session_state,
-    session_pid: session_pid
+    session_id: _session_id
   } do
-    ApplicationRunner.SessionManager.send_special_event(session_pid, "InitData", %{})
+    #  ApplicationRunner.SessionManager.send_on_session_start_event(session_id)
 
     refute_receive({:ui, _})
     refute_receive({:error, _})
