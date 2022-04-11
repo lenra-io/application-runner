@@ -11,6 +11,8 @@ jobs:
     name: PR is WIP?
     runs-on: ubuntu-latest
     timeout-minutes: 2
+    outputs:
+      isWip: ${{ steps.prIsWip.outputs.isWip }}
     steps:
       - id: pr-is-wip
         uses: shiipou/pr-is-wip-action@v1.1.0
@@ -20,7 +22,7 @@ jobs:
     name: Checks
     needs: 
       - prIsWip
-    if: ${{ needs.prIsWip.outputs.isWip == 'false' }}
+    if: needs.prIsWip.outputs.isWip == 'false'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     env:
