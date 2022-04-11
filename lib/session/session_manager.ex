@@ -46,7 +46,7 @@ defmodule ApplicationRunner.SessionManager do
   end
 
   def get_assigns(session_manager_pid) do
-    GenServer.cast(session_manager_pid, :get_assigns)
+    GenServer.call(session_manager_pid, :get_assigns)
   end
 
   def set_assigns(session_manager_pid, assigns) do
@@ -128,6 +128,11 @@ defmodule ApplicationRunner.SessionManager do
     end
   end
 
+  @impl true
+  def handle_call(:get_assigns, _from, session_state) do
+    {:reply, session_state.assigns, session_state}
+  end
+
   @doc """
     This callback is called when the `SessionManagers` is asked to kill this node.
     We cannot call directly `DynamicSupervisor.terminate_child/2` as we could be asking it on the wrong node.
@@ -141,7 +146,6 @@ defmodule ApplicationRunner.SessionManager do
 
   @impl true
   def handle_cast({:set_assigns, assigns}, session_state) do
-    assigns = [assigns | session_state.assigns]
     {:noreply, Map.replace(session_state, :assigns, assigns)}
   end
 
@@ -172,11 +176,6 @@ defmodule ApplicationRunner.SessionManager do
     end
 
     {:noreply, session_state, session_state.inactivity_timeout}
-  end
-
-  @impl true
-  def handle_cast(:get_assigns, session_state) do
-    session_state.assigns
   end
 
   defp send_error(session_state, error) do
