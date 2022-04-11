@@ -75,7 +75,7 @@ defmodule ApplicationRunner.DataServicesTest do
         |> Repo.transaction()
 
       assert !is_nil(
-               Repo.get_by(DataReferences, refs_id: inserted_point.id, refBy_id: inserted_data.id)
+               Repo.get_by(DataReferences, refs_id: inserted_point.id, ref_by_id: inserted_data.id)
              )
     end
 
@@ -106,13 +106,13 @@ defmodule ApplicationRunner.DataServicesTest do
         |> Repo.transaction()
 
       assert !is_nil(
-               Repo.get_by(DataReferences, refs_id: inserted_point.id, refBy_id: inserted_data.id)
+               Repo.get_by(DataReferences, refs_id: inserted_point.id, ref_by_id: inserted_data.id)
              )
 
       assert !is_nil(
                Repo.get_by(DataReferences,
                  refs_id: inserted_point_bis.id,
-                 refBy_id: inserted_data.id
+                 ref_by_id: inserted_data.id
                )
              )
     end
@@ -134,7 +134,7 @@ defmodule ApplicationRunner.DataServicesTest do
         |> Repo.transaction()
 
       assert !is_nil(
-               Repo.get_by(DataReferences, refs_id: inserted_data.id, refBy_id: inserted_user.id)
+               Repo.get_by(DataReferences, refs_id: inserted_data.id, ref_by_id: inserted_user.id)
              )
     end
 
@@ -164,11 +164,11 @@ defmodule ApplicationRunner.DataServicesTest do
         |> Repo.transaction()
 
       assert !is_nil(
-               Repo.get_by(DataReferences, refs_id: inserted_user.id, refBy_id: inserted_team.id)
+               Repo.get_by(DataReferences, refs_id: inserted_user.id, ref_by_id: inserted_team.id)
              )
 
       assert !is_nil(
-               Repo.get_by(DataReferences, refs_id: inserted_point.id, refBy_id: inserted_user.id)
+               Repo.get_by(DataReferences, refs_id: inserted_point.id, ref_by_id: inserted_user.id)
              )
     end
 
@@ -186,12 +186,12 @@ defmodule ApplicationRunner.DataServicesTest do
                |> Repo.transaction()
     end
 
-    test "should return error if refBy_id invalid", %{env_id: env_id} do
+    test "should return error if ref_by_id invalid", %{env_id: env_id} do
       {:ok, _inserted_datastore} = Repo.insert(Datastore.new(env_id, %{"name" => "users"}))
       {:ok, _inserted_datastore} = Repo.insert(Datastore.new(env_id, %{"name" => "points"}))
 
       assert {:error, :"inserted_refBy_-1",
-              %{errors: [refBy_id: {"does not exist", _constraint}]},
+              %{errors: [ref_by_id: {"does not exist", _constraint}]},
               _change_so_far} =
                DataServices.create(env_id, %{
                  "datastore" => "points",
@@ -357,11 +357,11 @@ defmodule ApplicationRunner.DataServicesTest do
         })
         |> Repo.transaction()
 
-      data = Repo.get(Data, updated_data.id) |> Repo.preload(:refBy)
+      data = Repo.get(Data, updated_data.id) |> Repo.preload(:ref_by)
 
-      assert 1 == length(data.refBy)
+      assert 1 == length(data.ref_by)
 
-      assert List.first(data.refBy).id ==
+      assert List.first(data.ref_by).id ==
                inserted_data_bis.id
     end
 
@@ -414,11 +414,11 @@ defmodule ApplicationRunner.DataServicesTest do
         })
         |> Repo.transaction()
 
-      data = Repo.get(Data, updated_data.id) |> Repo.preload(:refBy) |> Repo.preload(:refs)
+      data = Repo.get(Data, updated_data.id) |> Repo.preload(:ref_by) |> Repo.preload(:refs)
 
-      assert 1 == length(data.refBy)
+      assert 1 == length(data.ref_by)
 
-      assert List.first(data.refBy).id ==
+      assert List.first(data.ref_by).id ==
                inserted_team_bis.id
 
       assert 1 == length(data.refs)
@@ -472,7 +472,7 @@ defmodule ApplicationRunner.DataServicesTest do
         })
         |> Repo.transaction()
 
-      {:error, :refBy, :references_not_found, _change_so_far} =
+      {:error, :ref_by, :references_not_found, _change_so_far} =
         DataServices.update(inserted_user.id, %{
           "refBy" => [-1]
         })
@@ -511,7 +511,7 @@ defmodule ApplicationRunner.DataServicesTest do
         })
         |> Repo.transaction()
 
-      {:error, :refBy, :references_not_found, _change_so_far} =
+      {:error, :ref_by, :references_not_found, _change_so_far} =
         DataServices.update(inserted_user.id, %{
           "refBy" => [inserted_team_bis.id]
         })

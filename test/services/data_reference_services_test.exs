@@ -29,7 +29,7 @@ defmodule ApplicationRunner.DataReferenceServicesTest do
       {:ok, %{inserted_reference: _inserted_reference}} =
         DataReferencesServices.create(%{
           refs_id: inserted_point.id,
-          refBy_id: inserted_user.id
+          ref_by_id: inserted_user.id
         })
         |> Repo.transaction()
 
@@ -37,9 +37,9 @@ defmodule ApplicationRunner.DataReferenceServicesTest do
         inserted_user
         |> Repo.preload(:refs)
 
-      %{refBy: [ref_by | _tail]} =
+      %{ref_by: [ref_by | _tail]} =
         inserted_point
-        |> Repo.preload(:refBy)
+        |> Repo.preload(:ref_by)
 
       assert ref.id == inserted_point.id
       assert ref.data == %{"score" => 10}
@@ -52,7 +52,7 @@ defmodule ApplicationRunner.DataReferenceServicesTest do
               _changes_so_far} =
                DataReferencesServices.create(%{
                  refs_id: -1,
-                 refBy_id: -1
+                 ref_by_id: -1
                })
                |> Repo.transaction()
     end
@@ -66,7 +66,7 @@ defmodule ApplicationRunner.DataReferenceServicesTest do
       assert {:error, :data_reference, :reference_not_found, _change_so_far} =
                DataReferencesServices.create(%{
                  refs_id: inserted_user.id,
-                 refBy_id: -1
+                 ref_by_id: -1
                })
                |> Repo.transaction()
     end
@@ -83,7 +83,7 @@ defmodule ApplicationRunner.DataReferenceServicesTest do
       {:ok, %{inserted_reference: _inserted_reference}} =
         DataReferencesServices.create(%{
           refs_id: inserted_user.id,
-          refBy_id: inserted_point.id
+          ref_by_id: inserted_point.id
         })
         |> Repo.transaction()
 
@@ -92,7 +92,7 @@ defmodule ApplicationRunner.DataReferenceServicesTest do
               _changes_so_far} =
                DataReferencesServices.create(%{
                  refs_id: inserted_user.id,
-                 refBy_id: inserted_point.id
+                 ref_by_id: inserted_point.id
                })
                |> Repo.transaction()
     end
@@ -113,7 +113,7 @@ defmodule ApplicationRunner.DataReferenceServicesTest do
       {:error, :data_reference, :reference_not_found, _change_so_far} =
         DataReferencesServices.create(%{
           refs_id: inserted_user.id,
-          refBy_id: inserted_point.id
+          ref_by_id: inserted_point.id
         })
         |> Repo.transaction()
     end
@@ -132,12 +132,12 @@ defmodule ApplicationRunner.DataReferenceServicesTest do
       {:ok, %{inserted_reference: inserted_reference}} =
         DataReferencesServices.create(%{
           refs_id: inserted_point.id,
-          refBy_id: inserted_user.id
+          ref_by_id: inserted_user.id
         })
         |> Repo.transaction()
 
       {:ok, _deleted_ref} =
-        DataReferencesServices.delete(%{refs_id: inserted_point.id, refBy_id: inserted_user.id})
+        DataReferencesServices.delete(%{refs_id: inserted_point.id, ref_by_id: inserted_user.id})
         |> Repo.transaction()
 
       assert nil == Repo.get(DataReferences, inserted_reference.id)
@@ -153,7 +153,7 @@ defmodule ApplicationRunner.DataReferenceServicesTest do
       {:error, :reference, :reference_not_found, %{}} =
         DataReferencesServices.delete(%{
           refs_id: -1,
-          refBy_id: inserted_user.id
+          ref_by_id: inserted_user.id
         })
         |> Repo.transaction()
     end
@@ -168,7 +168,7 @@ defmodule ApplicationRunner.DataReferenceServicesTest do
       {:error, :reference, :reference_not_found, %{}} =
         DataReferencesServices.delete(%{
           refs_id: inserted_user.id,
-          refBy_id: -1
+          ref_by_id: -1
         })
         |> Repo.transaction()
     end

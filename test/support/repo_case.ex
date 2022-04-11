@@ -2,6 +2,7 @@ defmodule ApplicationRunner.RepoCase do
   @moduledoc false
 
   use ExUnit.CaseTemplate
+  alias Ecto.Adapters.SQL.Sandbox
 
   using do
     quote do
@@ -14,5 +15,9 @@ defmodule ApplicationRunner.RepoCase do
 
       # and any other stuff
     end
+  end
+
+  setup _tags do
+    :ok = Sandbox.checkout(ApplicationRunner.Repo)
   end
 end

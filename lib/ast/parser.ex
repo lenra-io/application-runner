@@ -79,6 +79,6 @@ defmodule ApplicationRunner.AST.Parser do
   end
 
   defp from_k(key, _ctx) when is_bitstring(key) do
-    %DataKey{key: key}
+    %DataKey{key_path: String.split(key, ".")}
   end
 end

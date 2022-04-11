@@ -51,7 +51,9 @@ defmodule ApplicationRunner.MixProject do
         "ecto.create --quiet",
         "ecto.migrate",
         "test"
-      ]
+      ],
+      "ecto.setup": ["ecto.create", "ecto.migrate"],
+      "ecto.reset": ["ecto.drop", "ecto.setup"]
     ]
   end
 end

@@ -65,7 +65,7 @@ defmodule ApplicationRunner.DataServices do
                                                                    %{
                                                                      inserted_data: %Data{} = data
                                                                    } ->
-        repo.insert(DataReferences.new(%{refs_id: ref, refBy_id: data.id}))
+        repo.insert(DataReferences.new(%{refs_id: ref, ref_by_id: data.id}))
       end)
     end)
   end
@@ -78,7 +78,7 @@ defmodule ApplicationRunner.DataServices do
                                                                       inserted_data:
                                                                         %Data{} = data
                                                                     } ->
-        repo.insert(DataReferences.new(%{refs_id: data.id, refBy_id: ref}))
+        repo.insert(DataReferences.new(%{refs_id: data.id, ref_by_id: ref}))
       end)
     end)
   end
@@ -107,7 +107,7 @@ defmodule ApplicationRunner.DataServices do
        when is_list(refs) and is_list(ref_by) do
     multi
     |> handle_update_reference(refs, :refs)
-    |> handle_update_reference(ref_by, :refBy)
+    |> handle_update_reference(ref_by, :ref_by)
   end
 
   defp update_reference(multi, %{"refs" => refs}) when is_list(refs) do
@@ -117,7 +117,7 @@ defmodule ApplicationRunner.DataServices do
 
   defp update_reference(multi, %{"refBy" => ref_by}) when is_list(ref_by) do
     multi
-    |> handle_update_reference(ref_by, :refBy)
+    |> handle_update_reference(ref_by, :ref_by)
   end
 
   defp update_reference(multi, _json), do: multi

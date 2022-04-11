@@ -7,6 +7,6 @@ defmodule ApplicationRunner.AST.DataKey do
     `%AST.DataKey{key: "_datastore"}`
   """
 
-  @enforce_keys [:key]
-  defstruct [:key]
+  @enforce_keys [:key_path]
+  defstruct [:key_path]
 end

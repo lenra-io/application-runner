@@ -13,12 +13,13 @@ defmodule ApplicationRunner.FakeLenraUser do
 
   schema "users" do
     has_many(:user_datas, UserData, foreign_key: :user_id)
+    field(:email, :string)
     timestamps()
   end
 
   def changeset(application, params \\ %{}) do
     application
-    |> cast(params, [])
+    |> cast(params, [:email])
   end
 
   def new(params \\ %{}) do

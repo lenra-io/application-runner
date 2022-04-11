@@ -25,7 +25,7 @@ defmodule ApplicationRunner.AST.ParserTest do
            }) == %AST.Query{
              find: %AST.Find{
                clause: %AST.Eq{
-                 left: %AST.DataKey{key: "_datastore"},
+                 left: %AST.DataKey{key_path: ["_datastore"]},
                  right: %AST.StringValue{value: "userData"}
                }
              },
@@ -44,11 +44,11 @@ defmodule ApplicationRunner.AST.ParserTest do
                clause: %AST.And{
                  clauses: [
                    %AST.Eq{
-                     left: %AST.DataKey{key: "_datastore"},
+                     left: %AST.DataKey{key_path: ["_datastore"]},
                      right: %AST.StringValue{value: "userData"}
                    },
                    %AST.Eq{
-                     left: %AST.DataKey{key: "name"},
+                     left: %AST.DataKey{key_path: ["name"]},
                      right: %AST.StringValue{value: "Jean Neige"}
                    }
                  ]
@@ -71,11 +71,11 @@ defmodule ApplicationRunner.AST.ParserTest do
                clause: %AST.And{
                  clauses: [
                    %AST.Eq{
-                     left: %AST.DataKey{key: "_datastore"},
+                     left: %AST.DataKey{key_path: ["_datastore"]},
                      right: %AST.StringValue{value: "userData"}
                    },
                    %AST.Eq{
-                     left: %AST.DataKey{key: "name"},
+                     left: %AST.DataKey{key_path: ["name"]},
                      right: %AST.StringValue{value: "Jean Neige"}
                    }
                  ]
@@ -95,7 +95,7 @@ defmodule ApplicationRunner.AST.ParserTest do
            }) == %AST.Query{
              find: %AST.Find{
                clause: %AST.Eq{
-                 left: %AST.DataKey{key: "_datastore"},
+                 left: %AST.DataKey{key_path: ["_datastore"]},
                  right: %AST.StringValue{value: "userData"}
                }
              },
@@ -109,7 +109,7 @@ defmodule ApplicationRunner.AST.ParserTest do
            }) == %AST.Query{
              find: %AST.Find{
                clause: %AST.Eq{
-                 left: %AST.DataKey{key: "_id"},
+                 left: %AST.DataKey{key_path: ["_id"]},
                  right: %AST.NumberValue{value: 42}
                }
              },
@@ -123,7 +123,7 @@ defmodule ApplicationRunner.AST.ParserTest do
            }) == %AST.Query{
              find: %AST.Find{
                clause: %AST.Eq{
-                 left: %AST.DataKey{key: "_refs"},
+                 left: %AST.DataKey{key_path: ["_refs"]},
                  right: %AST.ArrayValue{
                    values: [
                      %AST.NumberValue{value: 1},
@@ -158,7 +158,7 @@ defmodule ApplicationRunner.AST.ParserTest do
                        %AST.And{
                          clauses: [
                            %AST.Eq{
-                             left: %AST.DataKey{key: "_refBy"},
+                             left: %AST.DataKey{key_path: ["_refBy"]},
                              right: %AST.ArrayValue{
                                values: [
                                  %AST.NumberValue{value: 1337}
@@ -166,7 +166,7 @@ defmodule ApplicationRunner.AST.ParserTest do
                              }
                            },
                            %AST.Eq{
-                             left: %AST.DataKey{key: "_truc"},
+                             left: %AST.DataKey{key_path: ["_truc"]},
                              right: %AST.ArrayValue{
                                values: [
                                  %AST.StringValue{value: "a"},
@@ -177,13 +177,13 @@ defmodule ApplicationRunner.AST.ParserTest do
                          ]
                        },
                        %AST.Eq{
-                         left: %AST.DataKey{key: "_score"},
+                         left: %AST.DataKey{key_path: ["_score"]},
                          right: %AST.NumberValue{value: 42}
                        }
                      ]
                    },
                    %AST.Eq{
-                     left: %AST.DataKey{key: "_refs"},
+                     left: %AST.DataKey{key_path: ["_refs"]},
                      right: %AST.ArrayValue{
                        values: [
                          %AST.NumberValue{value: 1},
