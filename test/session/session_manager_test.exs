@@ -74,7 +74,6 @@ defmodule ApplicationRunner.SessionManagerTest do
       session_state: _session_state,
       session_id: _session_id
     } do
-      # ApplicationRunner.SessionManager.send_on_session_start_event(session_id)
 
       assert_receive({:error, {:error, :listener_not_found}})
     end
