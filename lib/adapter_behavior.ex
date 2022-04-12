@@ -2,7 +2,7 @@ defmodule ApplicationRunner.AdapterBehavior do
   @moduledoc """
   ApplicationRunner's AdapterBehavior
   """
-  alias ApplicationRunner.{EnvState, SessionState}
+  alias ApplicationRunner.{EnvState, SessionState, AST}
 
   @type widget() :: map()
   @type manifest() :: map()
@@ -23,6 +23,7 @@ defmodule ApplicationRunner.AdapterBehavior do
               :ok | {:error, reason()}
   @callback get_data(SessionState.t()) :: {:ok, data()} | {:error, reason()}
   @callback save_data(SessionState.t(), data()) :: :ok | {:error, reason()}
+  @callback exec_query(SessionState.t(), AST.Query.t()) :: :ok | {:error, reason()}
   @callback on_ui_changed(
               SessionState.t(),
               {:ui, ui()} | {:patches, patches()} | {:error, tuple() | String.t()}

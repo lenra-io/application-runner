@@ -14,7 +14,8 @@ defmodule ApplicationRunner.ComponentCase do
         ApplicationRunnerAdapter,
         EnvManager,
         EnvManagers,
-        SessionManagers
+        SessionManagers,
+        SessionManager
       }
 
       setup context do
@@ -44,12 +45,12 @@ defmodule ApplicationRunner.ComponentCase do
 
       def mock_root_and_run(json, session_state) do
         ApplicationRunnerAdapter.set_mock(%{widgets: %{"root" => fn _, _ -> json end}})
-        EnvManager.get_and_build_ui(session_state, "root", %{})
+        SessionManager.get_and_build_ui(session_state, "root", %{})
       end
 
       def mock_and_run(widgets, listeners, session_state, root, data \\ %{}) do
         ApplicationRunnerAdapter.set_mock(%{widgets: widgets, listeners: listeners})
-        EnvManager.get_and_build_ui(session_state, root, data)
+        SessionManager.get_and_build_ui(session_state, root, data)
       end
 
       defmacro assert_success(expected, actual) do

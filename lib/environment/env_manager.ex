@@ -8,11 +8,7 @@ defmodule ApplicationRunner.EnvManager do
     AdapterHandler,
     EnvManagers,
     EnvState,
-    EnvSupervisor,
-    ListenersCache,
-    UiContext,
-    WidgetCache,
-    WidgetContext
+    EnvSupervisor
   }
 
   def start_link(opts) do
@@ -99,12 +95,6 @@ defmodule ApplicationRunner.EnvManager do
     end
   end
 
-  def get_and_build_ui(session_state, root_widget, data) do
-    with {:ok, pid} <- EnvManagers.fetch_env_manager_pid(session_state.env_id) do
-      GenServer.call(pid, {:get_and_build_ui, root_widget, data})
-    end
-  end
-
   def send_on_env_start_event(env_id), do: send_special_event(env_id, "onEnvStart", %{})
   def send_on_env_stop_event(env_id), do: send_special_event(env_id, "onEnvStop", %{})
 
@@ -114,42 +104,7 @@ defmodule ApplicationRunner.EnvManager do
     end
   end
 
-  def fetch_listener(session_state, code) do
-    with {:ok, pid} <- EnvManagers.fetch_env_manager_pid(session_state.env_id) do
-      GenServer.call(pid, {:fetch_listener, code})
-    end
-  end
-
   @impl true
-  def handle_call({:get_and_build_ui, root_widget, data}, _from, env_state) do
-    id = WidgetCache.generate_widget_id(root_widget, data, %{})
-
-    WidgetCache.get_and_build_widget(
-      env_state,
-      %UiContext{
-        widgets_map: %{},
-        listeners_map: %{}
-      },
-      %WidgetContext{
-        id: id,
-        name: root_widget,
-        prefix_path: "",
-        data: data
-      }
-    )
-    |> case do
-      {:ok, ui_context} ->
-        res = {:ok, %{"rootWidget" => id, "widgets" => ui_context.widgets_map}}
-        {:reply, res, env_state, env_state.inactivity_timeout}
-
-      {:error, reason} when is_atom(reason) ->
-        {:reply, {:error, reason}, env_state, env_state.inactivity_timeout}
-
-      {:error, ui_error_list} when is_list(ui_error_list) ->
-        {:reply, {:error, :invalid_ui, ui_error_list}, env_state, env_state.inactivity_timeout}
-    end
-  end
-
   def handle_call(:get_manifest, _from, env_state) do
     {:reply, Map.get(env_state, :manifest), env_state, env_state.inactivity_timeout}
   end
@@ -167,10 +122,6 @@ defmodule ApplicationRunner.EnvManager do
   """
   def handle_call({:swarm, :begin_handoff}, _from, state) do
     {:reply, :restart, state}
-  end
-
-  def handle_call({:fetch_listener, code}, _from, env_state) do
-    ListenersCache.fetch_listener(env_state, code)
   end
 
   def handle_call(:fetch_assigns, _from, env_state) do

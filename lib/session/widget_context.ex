@@ -7,6 +7,7 @@ defmodule ApplicationRunner.WidgetContext do
     :id,
     :name,
     :data,
+    :query,
     :props,
     :prefix_path
   ]
@@ -15,6 +16,7 @@ defmodule ApplicationRunner.WidgetContext do
           id: String.t(),
           name: String.t(),
           data: map() | nil,
+          query: map() | nil,
           props: map() | nil,
           prefix_path: String.t() | nil
         }

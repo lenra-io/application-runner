@@ -16,6 +16,8 @@ defmodule ApplicationRunner.AST.Parser do
     StringValue
   }
 
+  def from_json(nil), do: nil
+
   def from_json(q) do
     parse_query(q, %{})
   end

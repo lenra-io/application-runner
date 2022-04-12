@@ -12,7 +12,11 @@ defmodule ApplicationRunner.SessionManager do
     SessionManagers,
     SessionState,
     SessionSupervisor,
-    UiCache
+    UiCache,
+    UiContext,
+    WidgetContext,
+    WidgetCache,
+    ListenersCache
   }
 
   @doc """
@@ -151,7 +155,7 @@ defmodule ApplicationRunner.SessionManager do
   end
 
   def handle_cast({:send_client_event, code, event}, session_state) do
-    with {:ok, listener} <- EnvManager.fetch_listener(session_state, code),
+    with {:ok, listener} <- ListenersCache.fetch_listener(session_state, code),
          {:ok, action} <- Map.fetch(listener, "action"),
          props <- Map.get(listener, "props", %{}) do
       send_event(session_state, action, props, event)
@@ -170,8 +174,7 @@ defmodule ApplicationRunner.SessionManager do
 
   def handle_cast(:data_changed, %SessionState{} = session_state) do
     with %{"rootWidget" => root_widget} <- EnvManager.get_manifest(session_state.env_id),
-         {:ok, data} <- AdapterHandler.get_data(session_state),
-         {:ok, ui} <- EnvManager.get_and_build_ui(session_state, root_widget, data) do
+         {:ok, ui} <- get_and_build_ui(session_state, root_widget) do
       transformed_ui = transform_ui(ui)
       res = UiCache.diff_and_save(session_state, transformed_ui)
       AdapterHandler.on_ui_changed(session_state, res)
@@ -194,6 +197,41 @@ defmodule ApplicationRunner.SessionManager do
     end
 
     {:noreply, session_state, session_state.inactivity_timeout}
+  end
+
+  @spec get_and_build_ui(SessionState.t(), String.t()) ::
+          {:ok, map()} | {:error, any()}
+  def get_and_build_ui(session_state, root_widget) do
+    props = %{}
+    query = nil
+    data = %{}
+    id = WidgetCache.generate_widget_id(root_widget, query, props)
+
+    WidgetCache.get_and_build_widget(
+      session_state,
+      %UiContext{
+        widgets_map: %{},
+        listeners_map: %{}
+      },
+      %WidgetContext{
+        id: id,
+        name: root_widget,
+        prefix_path: "",
+        query: query,
+        data: data,
+        props: props
+      }
+    )
+    |> case do
+      {:ok, ui_context} ->
+        {:ok, %{"rootWidget" => id, "widgets" => ui_context.widgets_map}}
+
+      {:error, reason} when is_atom(reason) ->
+        {:error, reason}
+
+      {:error, ui_error_list} when is_list(ui_error_list) ->
+        {:error, :invalid_ui, ui_error_list}
+    end
   end
 
   defp send_event(session_state, action, props, event) do

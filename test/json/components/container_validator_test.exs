@@ -3,7 +3,6 @@ defmodule ApplicationRunner.ContainerValidatorTest do
 
   alias ApplicationRunner.{
     ApplicationRunnerAdapter,
-    EnvManager,
     EnvManagers,
     SessionManagers
   }

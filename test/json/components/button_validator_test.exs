@@ -3,7 +3,6 @@ defmodule ApplicationRunner.ButtonValidatorTest do
 
   alias ApplicationRunner.{
     ApplicationRunnerAdapter,
-    EnvManager,
     EnvManagers,
     SessionManagers
   }

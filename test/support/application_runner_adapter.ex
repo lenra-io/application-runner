@@ -21,7 +21,7 @@ defmodule ApplicationRunner.ApplicationRunnerAdapter do
   def manifest_const, do: @manifest
 
   @impl true
-  def get_widget(_env_state, name, data, props) do
+  def get_widget(_session_state, name, data, props) do
     GenServer.call(__MODULE__, {:get_widget, name, data, props})
   end
 
@@ -33,6 +33,13 @@ defmodule ApplicationRunner.ApplicationRunnerAdapter do
   def run_listener(%struct_module{}, action, props, event)
       when struct_module in [EnvState, SessionState] do
     GenServer.call(__MODULE__, {:run_listener, action, props, event})
+  end
+
+  @impl true
+  def exec_query(%SessionState{env_id: env_id} = _session_state, query) do
+    query
+    |> ApplicationRunner.AST.EctoParser.to_ecto(env_id)
+    |> ApplicationRunner.Repo.all()
   end
 
   @impl true
