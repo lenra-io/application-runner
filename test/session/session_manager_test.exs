@@ -43,32 +43,23 @@ defmodule ApplicationRunner.SessionManagerTest do
     }
   end
 
-  def init_data(_, _, _) do
+  def init_data(_, _) do
     %{}
   end
 
-  describe "SessionManager.initData/2" do
+  describe "SessionManager.send_special_event/2" do
     @tag mock: %{
            widgets: %{
              "root" => &__MODULE__.my_widget/2
            },
-           listeners: %{"InitData" => &__MODULE__.init_data/3}
+           listeners: %{"onSessionStart" => &__MODULE__.init_data/2}
          }
-    test "should return ui if listeners correct", %{
+    test "should call the InitData listener", %{
       session_state: _session_state,
-      session_pid: session_pid
+      session_id: _session_id
     } do
-      ApplicationRunner.SessionManager.init_data(session_pid)
-
-      assert_receive(
-        {:ui,
-         %{
-           "root" => %{
-             "type" => "flex",
-             "children" => []
-           }
-         }}
-      )
+      refute_receive({:ui, _})
+      refute_receive({:error, _})
     end
 
     @tag mock: %{
@@ -77,13 +68,18 @@ defmodule ApplicationRunner.SessionManagerTest do
            },
            listeners: %{}
          }
-    test "should return error if listeners initData not found", %{
+    test "should return error if listeners InitData not found", %{
       session_state: _session_state,
-      session_pid: session_pid
+      session_id: _session_id
     } do
-      ApplicationRunner.SessionManager.init_data(session_pid)
-
       assert_receive({:error, {:error, :listener_not_found}})
+    end
+  end
+
+  describe "SessionManager.fetch_assigns/set_assigns" do
+    test "Set assign then get retrive the same data", %{session_id: session_id} do
+      SessionManager.set_assigns(session_id, %{foo: "bar"})
+      assert {:ok, %{foo: "bar"}} = SessionManager.fetch_assigns(session_id)
     end
   end
 end

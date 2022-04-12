@@ -58,4 +58,13 @@ defmodule ApplicationRunner.EnvManagerTest do
     assert {:ok, pid} = EnvManagers.start_env(make_ref(), %{})
     assert Enum.member?(Swarm.members(:envs), pid)
   end
+
+  describe "EnvManager.fetch_assigns/set_assigns" do
+    test "Set assign then get retrive the same data" do
+      env_id = make_ref()
+      assert {:ok, _pid} = EnvManagers.start_env(env_id, %{})
+      EnvManager.set_assigns(env_id, %{foo: "bar"})
+      assert {:ok, %{foo: "bar"}} = EnvManager.fetch_assigns(env_id)
+    end
+  end
 end
