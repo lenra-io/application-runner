@@ -12,7 +12,8 @@ defmodule ApplicationRunner.AST.EctoParser do
     Find,
     NumberValue,
     Query,
-    StringValue
+    StringValue,
+    MeRef
   }
 
   import Ecto.Query
@@ -53,6 +54,10 @@ defmodule ApplicationRunner.AST.EctoParser do
 
   defp parse_expr(%StringValue{value: value}) do
     value
+  end
+
+  defp parse_expr(%MeRef{id: id}) do
+    id
   end
 
   defp parse_expr(%ArrayValue{values: values}) do

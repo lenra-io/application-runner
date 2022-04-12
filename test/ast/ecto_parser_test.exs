@@ -97,7 +97,7 @@ defmodule ApplicationRunner.ATS.EctoParserTest do
   } do
     res =
       %{"$find" => %{}}
-      |> Parser.from_json()
+      |> Parser.from_json(user_data_id)
       |> EctoParser.to_ecto(env_id)
       |> Repo.all()
 
@@ -110,11 +110,12 @@ defmodule ApplicationRunner.ATS.EctoParserTest do
   end
 
   test "Select all wrong env_id", %{
-    env_id: env_id
+    env_id: env_id,
+    user_data_id: user_data_id
   } do
     res =
       %{"$find" => %{}}
-      |> Parser.from_json()
+      |> Parser.from_json(user_data_id)
       |> EctoParser.to_ecto(env_id + 1)
       |> Repo.all()
 
@@ -130,7 +131,7 @@ defmodule ApplicationRunner.ATS.EctoParserTest do
   } do
     res =
       %{"$find" => %{"_datastore" => "userData"}}
-      |> Parser.from_json()
+      |> Parser.from_json(user_data_id)
       |> EctoParser.to_ecto(env_id)
       |> Repo.one()
 
@@ -147,23 +148,27 @@ defmodule ApplicationRunner.ATS.EctoParserTest do
            } = res
   end
 
-  test "Select where datastore Todo", %{env_id: env_id} do
+  test "Select where datastore Todo", %{env_id: env_id, user_data_id: user_data_id} do
     res =
       %{"$find" => %{"_datastore" => "todos"}}
-      |> Parser.from_json()
+      |> Parser.from_json(user_data_id)
       |> EctoParser.to_ecto(env_id)
       |> Repo.all()
 
     assert Enum.count(res) == 3
   end
 
-  test "Select with multi where", %{todo3_id: todo3_id, env_id: env_id} do
+  test "Select with multi where", %{
+    todo3_id: todo3_id,
+    env_id: env_id,
+    user_data_id: user_data_id
+  } do
     # null value in data should stay
     # Empty _refs/_refBy should return empty array
 
     res =
       %{"$find" => %{"_datastore" => "todos", "_id" => todo3_id}}
-      |> Parser.from_json()
+      |> Parser.from_json(user_data_id)
       |> EctoParser.to_ecto(env_id)
       |> Repo.one()
 
@@ -176,11 +181,12 @@ defmodule ApplicationRunner.ATS.EctoParserTest do
   test "Select with where on list of number", %{
     todolist1_id: todolist1_id,
     todolist2_id: todolist2_id,
-    env_id: env_id
+    env_id: env_id,
+    user_data_id: user_data_id
   } do
     res =
       %{"$find" => %{"_refs" => [todolist1_id, todolist2_id]}}
-      |> Parser.from_json()
+      |> Parser.from_json(user_data_id)
       |> EctoParser.to_ecto(env_id)
       |> Repo.one()
 
@@ -193,13 +199,35 @@ defmodule ApplicationRunner.ATS.EctoParserTest do
            } = res
   end
 
+  test "Select with where on id with @me", %{
+    user_data_id: user_data_id,
+    env_id: env_id
+  } do
+    res =
+      %{"$find" => %{"_id" => "@me"}}
+      |> Parser.from_json(user_data_id)
+      |> EctoParser.to_ecto(env_id)
+      |> Repo.one()
+
+    assert %ApplicationRunner.DataQueryView{
+             data: %{
+               "_data" => %{"score" => 42},
+               "_datastore" => "userData",
+               "_user" => %{"email" => "test@lenra.io"},
+               "_id" => ^user_data_id,
+               "_refBy" => []
+             },
+             id: ^user_data_id
+           } = res
+  end
+
   test "Select with where on number", %{
     user_data_id: user_data_id,
     env_id: env_id
   } do
     res =
       %{"$find" => %{"_id" => user_data_id}}
-      |> Parser.from_json()
+      |> Parser.from_json(user_data_id)
       |> EctoParser.to_ecto(env_id)
       |> Repo.one()
 

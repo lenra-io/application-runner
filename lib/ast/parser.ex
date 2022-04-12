@@ -16,8 +16,8 @@ defmodule ApplicationRunner.AST.Parser do
     MeRef
   }
 
-  def from_json(q, user_id) do
-    parse_query(q, %{user_id: user_id})
+  def from_json(q, user_data_id) do
+    parse_query(q, %{user_data_id: user_data_id})
   end
 
   defp parse_query(%{"$find" => find}, ctx) do
@@ -58,7 +58,7 @@ defmodule ApplicationRunner.AST.Parser do
   end
 
   defp parse_expr("@me", ctx) do
-    %MeRef{id: Map.fetch!(ctx, :user_id)}
+    %MeRef{id: Map.fetch!(ctx, :user_data_id)}
   end
 
   defp parse_expr(value, _ctx) when is_bitstring(value) do
