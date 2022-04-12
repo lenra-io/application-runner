@@ -58,7 +58,6 @@ defmodule ApplicationRunner.SessionManagerTest do
       session_state: _session_state,
       session_id: _session_id
     } do
-
       refute_receive({:ui, _})
       refute_receive({:error, _})
     end
@@ -73,7 +72,6 @@ defmodule ApplicationRunner.SessionManagerTest do
       session_state: _session_state,
       session_id: _session_id
     } do
-
       assert_receive({:error, {:error, :listener_not_found}})
     end
   end
