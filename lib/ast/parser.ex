@@ -9,11 +9,11 @@ defmodule ApplicationRunner.AST.Parser do
     DataKey,
     Eq,
     Find,
+    MeRef,
     NumberValue,
     Query,
     Select,
-    StringValue,
-    MeRef
+    StringValue
   }
 
   def from_json(q, user_data_id) do

@@ -10,10 +10,10 @@ defmodule ApplicationRunner.AST.EctoParser do
     DataKey,
     Eq,
     Find,
+    MeRef,
     NumberValue,
     Query,
-    StringValue,
-    MeRef
+    StringValue
   }
 
   import Ecto.Query
