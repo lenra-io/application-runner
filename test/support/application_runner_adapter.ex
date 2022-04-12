@@ -30,7 +30,8 @@ defmodule ApplicationRunner.ApplicationRunnerAdapter do
   end
 
   @impl true
-  def run_listener(%{}, action, props, event) do
+  def run_listener(%struct_module{}, action, props, event)
+      when struct_module in [EnvState, SessionState] do
     GenServer.call(__MODULE__, {:run_listener, action, props, event})
   end
 
