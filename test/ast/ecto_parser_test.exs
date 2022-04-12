@@ -97,8 +97,8 @@ defmodule ApplicationRunner.ATS.EctoParserTest do
   } do
     res =
       %{"$find" => %{}}
-      |> Parser.from_json(user_data_id)
-      |> EctoParser.to_ecto(env_id)
+      |> Parser.from_json()
+      |> EctoParser.to_ecto(env_id, user_data_id)
       |> Repo.all()
 
     assert Enum.count(res) == 6
@@ -115,8 +115,8 @@ defmodule ApplicationRunner.ATS.EctoParserTest do
   } do
     res =
       %{"$find" => %{}}
-      |> Parser.from_json(user_data_id)
-      |> EctoParser.to_ecto(env_id + 1)
+      |> Parser.from_json()
+      |> EctoParser.to_ecto(env_id + 1, user_data_id)
       |> Repo.all()
 
     assert Enum.empty?(res)
@@ -131,8 +131,8 @@ defmodule ApplicationRunner.ATS.EctoParserTest do
   } do
     res =
       %{"$find" => %{"_datastore" => "userData"}}
-      |> Parser.from_json(user_data_id)
-      |> EctoParser.to_ecto(env_id)
+      |> Parser.from_json()
+      |> EctoParser.to_ecto(env_id, user_data_id)
       |> Repo.one()
 
     assert %ApplicationRunner.DataQueryView{
@@ -151,8 +151,8 @@ defmodule ApplicationRunner.ATS.EctoParserTest do
   test "Select where datastore Todo", %{env_id: env_id, user_data_id: user_data_id} do
     res =
       %{"$find" => %{"_datastore" => "todos"}}
-      |> Parser.from_json(user_data_id)
-      |> EctoParser.to_ecto(env_id)
+      |> Parser.from_json()
+      |> EctoParser.to_ecto(env_id, user_data_id)
       |> Repo.all()
 
     assert Enum.count(res) == 3
@@ -168,8 +168,8 @@ defmodule ApplicationRunner.ATS.EctoParserTest do
 
     res =
       %{"$find" => %{"_datastore" => "todos", "_id" => todo3_id}}
-      |> Parser.from_json(user_data_id)
-      |> EctoParser.to_ecto(env_id)
+      |> Parser.from_json()
+      |> EctoParser.to_ecto(env_id, user_data_id)
       |> Repo.one()
 
     assert %{
@@ -186,8 +186,8 @@ defmodule ApplicationRunner.ATS.EctoParserTest do
   } do
     res =
       %{"$find" => %{"_refs" => [todolist1_id, todolist2_id]}}
-      |> Parser.from_json(user_data_id)
-      |> EctoParser.to_ecto(env_id)
+      |> Parser.from_json()
+      |> EctoParser.to_ecto(env_id, user_data_id)
       |> Repo.one()
 
     assert %ApplicationRunner.DataQueryView{
@@ -205,8 +205,8 @@ defmodule ApplicationRunner.ATS.EctoParserTest do
   } do
     res =
       %{"$find" => %{"_id" => "@me"}}
-      |> Parser.from_json(user_data_id)
-      |> EctoParser.to_ecto(env_id)
+      |> Parser.from_json()
+      |> EctoParser.to_ecto(env_id, user_data_id)
       |> Repo.one()
 
     assert %ApplicationRunner.DataQueryView{
@@ -227,8 +227,8 @@ defmodule ApplicationRunner.ATS.EctoParserTest do
   } do
     res =
       %{"$find" => %{"_id" => user_data_id}}
-      |> Parser.from_json(user_data_id)
-      |> EctoParser.to_ecto(env_id)
+      |> Parser.from_json()
+      |> EctoParser.to_ecto(env_id, user_data_id)
       |> Repo.one()
 
     assert %ApplicationRunner.DataQueryView{

@@ -16,8 +16,8 @@ defmodule ApplicationRunner.AST.Parser do
     StringValue
   }
 
-  def from_json(q, user_data_id) do
-    parse_query(q, %{user_data_id: user_data_id})
+  def from_json(q) do
+    parse_query(q, %{})
   end
 
   defp parse_query(%{"$find" => find}, ctx) do
@@ -57,8 +57,8 @@ defmodule ApplicationRunner.AST.Parser do
     %ArrayValue{values: Enum.map(clauses, &parse_expr(&1, ctx))}
   end
 
-  defp parse_expr("@me", ctx) do
-    %MeRef{id: Map.fetch!(ctx, :user_data_id)}
+  defp parse_expr("@me", _ctx) do
+    %MeRef{}
   end
 
   defp parse_expr(value, _ctx) when is_bitstring(value) do
