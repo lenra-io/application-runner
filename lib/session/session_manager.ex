@@ -184,14 +184,25 @@ defmodule ApplicationRunner.SessionManager do
   end
 
   def handle_cast({:set_assigns, assigns}, session_state) do
-    {:noreply, Map.put(session_state, :assigns, assigns)}
+    {:noreply, Map.put(session_state, :assigns, assigns), session_state.inactivity_timeout}
+  end
+
+  def handle_cast({:run_listener_result, res}, session_state) do
+    case res do
+      :ok -> :ok
+      error -> send_error(session_state, error)
+    end
+
+    {:noreply, session_state, session_state.inactivity_timeout}
   end
 
   defp send_event(session_state, action, props, event) do
-    case AdapterHandler.run_listener(session_state, action, props, event) do
-      :ok -> :ok
-      err -> send_error(session_state, err)
-    end
+    from = self()
+
+    spawn(fn ->
+      res = AdapterHandler.run_listener(session_state, action, props, event)
+      GenServer.cast(from, {:run_listener_result, res})
+    end)
   end
 
   defp send_error(session_state, error) do

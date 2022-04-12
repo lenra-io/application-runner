@@ -179,7 +179,10 @@ defmodule ApplicationRunner.EnvManager do
 
   @impl true
   def handle_cast({:send_special_event, action, event}, env_state) do
-    AdapterHandler.run_listener(env_state, action, %{}, event)
+    spawn(fn ->
+      AdapterHandler.run_listener(env_state, action, %{}, event)
+    end)
+
     {:noreply, env_state, env_state.inactivity_timeout}
   end
 
