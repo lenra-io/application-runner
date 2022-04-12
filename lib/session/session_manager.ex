@@ -60,6 +60,20 @@ defmodule ApplicationRunner.SessionManager do
     end
   end
 
+  @spec fetch_assigns(number()) :: {:ok, any()} | {:error, :session_not_started}
+  def fetch_assigns(session_id) do
+    with {:ok, pid} <- SessionManagers.fetch_session_manager_pid(session_id) do
+      GenServer.call(pid, :fetch_assigns)
+    end
+  end
+
+  @spec set_assigns(number(), any()) :: :ok | {:error, :session_not_started}
+  def set_assigns(session_id, assigns) do
+    with {:ok, pid} <- SessionManagers.fetch_session_manager_pid(session_id) do
+      GenServer.cast(pid, {:set_assigns, assigns})
+    end
+  end
+
   @spec start_link(keyword) :: :ignore | {:error, any} | {:ok, pid}
   def start_link(opts) do
     session_id = Keyword.fetch!(opts, :session_id)
@@ -121,6 +135,10 @@ defmodule ApplicationRunner.SessionManager do
     end
   end
 
+  def handle_call(:fetch_assigns, _from, session_state) do
+    {:reply, {:ok, session_state.assigns}, session_state}
+  end
+
   @doc """
     This callback is called when the `SessionManagers` is asked to kill this node.
     We cannot call directly `DynamicSupervisor.terminate_child/2` as we could be asking it on the wrong node.
@@ -163,6 +181,10 @@ defmodule ApplicationRunner.SessionManager do
     end
 
     {:noreply, session_state, session_state.inactivity_timeout}
+  end
+
+  def handle_cast({:set_assigns, assigns}, session_state) do
+    {:noreply, Map.put(session_state, :assigns, assigns)}
   end
 
   defp send_event(session_state, action, props, event) do

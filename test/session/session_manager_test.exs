@@ -79,4 +79,11 @@ defmodule ApplicationRunner.SessionManagerTest do
       assert_receive({:error, {:error, :listener_not_found}})
     end
   end
+
+  describe "SessionManager.fetch_assigns/set_assigns" do
+    test "Set assign then get retrive the same data", %{session_id: session_id} do
+      SessionManager.set_assigns(session_id, %{foo: "bar"})
+      assert {:ok, %{foo: "bar"}} = SessionManager.fetch_assigns(session_id)
+    end
+  end
 end

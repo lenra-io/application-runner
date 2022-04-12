@@ -85,6 +85,20 @@ defmodule ApplicationRunner.EnvManager do
     end
   end
 
+  @spec fetch_assigns(number()) :: {:ok, any()} | {:error, :env_not_started}
+  def fetch_assigns(env_id) do
+    with {:ok, pid} <- EnvManagers.fetch_env_manager_pid(env_id) do
+      GenServer.call(pid, :fetch_assigns)
+    end
+  end
+
+  @spec(set_assigns(number(), term()) :: :ok, {:error, :env_not_started})
+  def set_assigns(env_id, assigns) do
+    with {:ok, pid} <- EnvManagers.fetch_env_manager_pid(env_id) do
+      GenServer.cast(pid, {:set_assigns, assigns})
+    end
+  end
+
   def get_and_build_ui(session_state, root_widget, data) do
     with {:ok, pid} <- EnvManagers.fetch_env_manager_pid(session_state.env_id) do
       GenServer.call(pid, {:get_and_build_ui, root_widget, data})
@@ -159,6 +173,10 @@ defmodule ApplicationRunner.EnvManager do
     ListenersCache.fetch_listener(env_state, code)
   end
 
+  def handle_call(:fetch_assigns, _from, env_state) do
+    {:reply, {:ok, env_state.assigns}, env_state}
+  end
+
   @impl true
   def handle_cast({:send_special_event, action, event}, env_state) do
     AdapterHandler.run_listener(env_state, action, %{}, event)
@@ -173,6 +191,10 @@ defmodule ApplicationRunner.EnvManager do
   def handle_cast(:stop, state) do
     EnvManagers.terminate_app(self())
     {:noreply, state}
+  end
+
+  def handle_cast({:set_assigns, assigns}, env_state) do
+    {:noreply, Map.put(env_state, :assigns, assigns)}
   end
 
   @impl true
