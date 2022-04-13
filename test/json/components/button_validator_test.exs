@@ -11,7 +11,7 @@ defmodule ApplicationRunner.ButtonValidatorTest do
     Test the "button.schema.json" schema
   """
 
-  test "valid button", %{session_state: session_state} do
+  test "valid button", %{session_id: session_id} do
     json = %{
       "type" => "button",
       "text" => "",
@@ -24,48 +24,48 @@ defmodule ApplicationRunner.ButtonValidatorTest do
       }
     }
 
-    # Setup mock
-    res = mock_root_and_run(json, session_state)
+    mock_root_and_run(json, session_id)
 
-    assert_success(
-      %{"onPressed" => %{"code" => _}, "text" => "", "type" => "button"},
-      res
-    )
+    assert_success(%{
+      "onPressed" => %{"code" => "QaEIonDgErbXwK1vTqyhIOsm14ScEH3Kk/JGNBywBK4="},
+      "text" => "",
+      "type" => "button"
+    })
   end
 
-  test "valid button with no listener", %{session_state: session_state} do
+  test "valid button with no listener", %{session_id: session_id} do
     json = %{
       "type" => "button",
       "text" => "test"
     }
 
     # Setup mock
-    res = mock_root_and_run(json, session_state)
-    assert_success(%{"type" => "button", "text" => "test"}, res)
+    mock_root_and_run(json, session_id)
+    assert_success(%{"type" => "button", "text" => "test"})
   end
 
-  test "invalid button type", %{session_state: session_state} do
+  test "invalid button type", %{session_id: session_id} do
     json = %{
       "type" => "buttons",
       "text" => "test"
     }
 
     # Setup mock
-    res = mock_root_and_run(json, session_state)
-    assert_error({:error, :invalid_ui, [{"Invalid component type", ""}]}, res)
+    mock_root_and_run(json, session_id)
+    assert_error({:error, :invalid_ui, [{"Invalid component type", ""}]})
   end
 
-  test "invalid button with no value", %{session_state: session_state} do
+  test "invalid button with no value", %{session_id: session_id} do
     json = %{
       "type" => "button"
     }
 
     # Setup mock
-    res = mock_root_and_run(json, session_state)
-    assert_error({:error, :invalid_ui, [{"Required property text was not present.", ""}]}, res)
+    mock_root_and_run(json, session_id)
+    assert_error({:error, :invalid_ui, [{"Required property text was not present.", ""}]})
   end
 
-  test "invalid button with invalid action and props in listener", %{session_state: session_state} do
+  test "invalid button with invalid action and props in listener", %{session_id: session_id} do
     json = %{
       "type" => "button",
       "text" => "test",
@@ -76,19 +76,18 @@ defmodule ApplicationRunner.ButtonValidatorTest do
     }
 
     # Setup mock
-    res = mock_root_and_run(json, session_state)
+    mock_root_and_run(json, session_id)
 
     assert_error(
       {:error, :invalid_ui,
        [
          {"Type mismatch. Expected String but got Integer.", "/onPressed/action"},
          {"Type mismatch. Expected Object but got String.", "/onPressed/props"}
-       ]},
-      res
+       ]}
     )
   end
 
-  test "invalid button with invalid listener key", %{session_state: session_state} do
+  test "invalid button with invalid listener key", %{session_id: session_id} do
     json = %{
       "type" => "button",
       "text" => "test",
@@ -99,24 +98,23 @@ defmodule ApplicationRunner.ButtonValidatorTest do
     }
 
     # Setup mock
-    res = mock_root_and_run(json, session_state)
+    mock_root_and_run(json, session_id)
 
     assert_error(
       {:error, :invalid_ui,
        [
          {"Schema does not allow additional properties.", "/onChange"}
-       ]},
-      res
+       ]}
     )
   end
 
-  test "valid button with empty text", %{session_state: session_state} do
+  test "valid button with empty text", %{session_id: session_id} do
     json = %{
       "type" => "button",
       "text" => ""
     }
 
-    res = mock_root_and_run(json, session_state)
-    assert_success(^json, res)
+    mock_root_and_run(json, session_id)
+    assert_success(^json)
   end
 end

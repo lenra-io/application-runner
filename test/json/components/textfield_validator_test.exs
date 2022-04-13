@@ -5,7 +5,7 @@ defmodule ApplicationRunner.TextfieldValidatorTest do
     Test the "textfield.schema.json" schema
   """
 
-  test "valid textfield", %{session_state: session_state} do
+  test "valid textfield", %{session_id: session_id} do
     json = %{
       "type" => "textfield",
       "value" => "",
@@ -18,52 +18,49 @@ defmodule ApplicationRunner.TextfieldValidatorTest do
       }
     }
 
-    res = mock_root_and_run(json, session_state)
+    mock_root_and_run(json, session_id)
 
-    assert_success(
-      %{
-        "type" => "textfield",
-        "value" => "",
-        "onChanged" => %{
-          "code" => _
-        }
-      },
-      res
-    )
+    assert_success(%{
+      "type" => "textfield",
+      "value" => "",
+      "onChanged" => %{
+        "code" => _
+      }
+    })
   end
 
-  test "valid textfield with no listener", %{session_state: session_state} do
+  test "valid textfield with no listener", %{session_id: session_id} do
     json = %{
       "type" => "textfield",
       "value" => "test"
     }
 
-    res = mock_root_and_run(json, session_state)
+    mock_root_and_run(json, session_id)
 
-    assert_success(^json, res)
+    assert_success(^json)
   end
 
-  test "invalid type textfield", %{session_state: session_state} do
+  test "invalid type textfield", %{session_id: session_id} do
     json = %{
       "type" => "textfields",
       "value" => "test"
     }
 
-    res = mock_root_and_run(json, session_state)
-    assert_error({:error, :invalid_ui, [{"Invalid component type", ""}]}, res)
+    mock_root_and_run(json, session_id)
+    assert_error({:error, :invalid_ui, [{"Invalid component type", ""}]})
   end
 
-  test "invalid textfield with no value", %{session_state: session_state} do
+  test "invalid textfield with no value", %{session_id: session_id} do
     json = %{
       "type" => "textfield"
     }
 
-    res = mock_root_and_run(json, session_state)
-    assert_error({:error, :invalid_ui, [{"Required property value was not present.", ""}]}, res)
+    mock_root_and_run(json, session_id)
+    assert_error({:error, :invalid_ui, [{"Required property value was not present.", ""}]})
   end
 
   test "invalid textfield with invalid action and props in listener", %{
-    session_state: session_state
+    session_id: session_id
   } do
     json = %{
       "type" => "textfield",
@@ -74,19 +71,18 @@ defmodule ApplicationRunner.TextfieldValidatorTest do
       }
     }
 
-    res = mock_root_and_run(json, session_state)
+    mock_root_and_run(json, session_id)
 
     assert_error(
       {:error, :invalid_ui,
        [
          {"Type mismatch. Expected String but got Integer.", "/onChanged/action"},
          {"Type mismatch. Expected Object but got String.", "/onChanged/props"}
-       ]},
-      res
+       ]}
     )
   end
 
-  test "invalid textfield with invalid listener key", %{session_state: session_state} do
+  test "invalid textfield with invalid listener key", %{session_id: session_id} do
     json = %{
       "type" => "textfield",
       "value" => "test",
@@ -96,31 +92,27 @@ defmodule ApplicationRunner.TextfieldValidatorTest do
       }
     }
 
-    res = mock_root_and_run(json, session_state)
+    mock_root_and_run(json, session_id)
 
     assert_error(
       {:error, :invalid_ui,
        [
          {"Schema does not allow additional properties.", "/onClick"}
-       ]},
-      res
+       ]}
     )
   end
 
-  test "valid textfield with empty value", %{session_state: session_state} do
+  test "valid textfield with empty value", %{session_id: session_id} do
     json = %{
       "type" => "textfield",
       "value" => ""
     }
 
-    res = mock_root_and_run(json, session_state)
+    mock_root_and_run(json, session_id)
 
-    assert_success(
-      %{
-        "type" => "textfield",
-        "value" => ""
-      },
-      res
-    )
+    assert_success(%{
+      "type" => "textfield",
+      "value" => ""
+    })
   end
 end

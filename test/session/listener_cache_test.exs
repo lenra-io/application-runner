@@ -1,16 +1,17 @@
 defmodule ApplicationRunner.ListenerCacheTest do
   use ExUnit.Case, async: false
-  alias ApplicationRunner.{EnvManagers, ListenersCache}
+  alias ApplicationRunner.{EnvManagers, SessionManagers, ListenersCache}
 
   setup do
     start_supervised(EnvManagers)
+    start_supervised(SessionManagers)
 
-    {:ok, pid} = EnvManagers.start_env(make_ref(), %{})
+    {:ok, pid} = SessionManagers.start_session(make_ref(), make_ref(), %{}, %{})
 
-    {:ok, %{env_state: :sys.get_state(pid)}}
+    {:ok, %{session_state: :sys.get_state(pid)}}
   end
 
-  test "test generate_listeners_key", %{env_state: _env_state} do
+  test "test generate_listeners_key", %{session_state: _session_state} do
     action = "go"
     props = %{"value" => "ok"}
     almost_props = %{"value" => "ok."}
@@ -25,7 +26,7 @@ defmodule ApplicationRunner.ListenerCacheTest do
                   ListenersCache.generate_listeners_key(action, almost_props))
   end
 
-  test "test save_listener and fetch_listener", %{env_state: env_state} do
+  test "test save_listener and fetch_listener", %{session_state: session_state} do
     action = "go"
     props = %{"value" => "ok"}
 
@@ -37,9 +38,9 @@ defmodule ApplicationRunner.ListenerCacheTest do
     code = ListenersCache.generate_listeners_key(action, props)
 
     assert {:error, :no_listener_with_code} ==
-             ListenersCache.fetch_listener(env_state, code)
+             ListenersCache.fetch_listener(session_state, code)
 
-    assert :ok == ListenersCache.save_listener(env_state, code, listener)
-    assert {:ok, listener} == ListenersCache.fetch_listener(env_state, code)
+    assert :ok == ListenersCache.save_listener(session_state, code, listener)
+    assert {:ok, listener} == ListenersCache.fetch_listener(session_state, code)
   end
 end

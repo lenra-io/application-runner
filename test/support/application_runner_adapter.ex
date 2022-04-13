@@ -41,6 +41,10 @@ defmodule ApplicationRunner.ApplicationRunnerAdapter do
   end
 
   @impl true
+  def run_listener(%EnvState{assigns: %{environment: env}}, action, props, event) do
+    GenServer.call(__MODULE__, {:run_listener, action, props, event, %{env_id: env.id}})
+  end
+
   def run_listener(%SessionState{assigns: %{environment: env, user: user}}, action, props, event) do
     user_data_id = get_user_data_id(env, user)
 
@@ -56,6 +60,10 @@ defmodule ApplicationRunner.ApplicationRunnerAdapter do
     )
   end
 
+  def run_listener(_state, _action, _props, _event) do
+    :ok
+  end
+
   defp get_user_data_id(env, user) do
     from(ud in UserData,
       join: d in Data,
@@ -66,11 +74,6 @@ defmodule ApplicationRunner.ApplicationRunnerAdapter do
       select: ud.data_id
     )
     |> Repo.one()
-  end
-
-  @impl true
-  def run_listener(%EnvState{assigns: %{environment: env}}, action, props, event) do
-    GenServer.call(__MODULE__, {:run_listener, action, props, event, %{env_id: env.id}})
   end
 
   @impl true
@@ -93,9 +96,13 @@ defmodule ApplicationRunner.ApplicationRunnerAdapter do
       {:ok, _} ->
         :ok
 
-      err ->
+      _err ->
         {:error, :unable_to_create_user_data}
     end
+  end
+
+  def ensure_user_data_created(_session_state) do
+    :ok
   end
 
   @impl true

@@ -104,7 +104,7 @@ defmodule ApplicationRunner.ATS.EctoParserTest do
     assert Enum.count(res) == 6
 
     assert res
-           |> Enum.map(fn e -> e.id end)
+           |> Enum.map(fn e -> e["_id"] end)
            |> MapSet.new() ==
              MapSet.new([user_data_id, todolist1_id, todolist2_id, todo1_id, todo2_id, todo3_id])
   end
@@ -135,16 +135,13 @@ defmodule ApplicationRunner.ATS.EctoParserTest do
       |> EctoParser.to_ecto(env_id, user_data_id)
       |> Repo.one()
 
-    assert %ApplicationRunner.DataQueryView{
-             data: %{
-               "_data" => %{"score" => 42},
-               "_datastore" => "userData",
-               "_id" => ^user_data_id,
-               "_refBy" => [],
-               "_refs" => [^todolist1_id, ^todolist2_id],
-               "_user" => %{"email" => "test@lenra.io", "id" => ^user_id}
-             },
-             id: ^user_data_id
+    assert %{
+             "_data" => %{"score" => 42},
+             "_datastore" => "userData",
+             "_id" => ^user_data_id,
+             "_refBy" => [],
+             "_refs" => [^todolist1_id, ^todolist2_id],
+             "_user" => %{"email" => "test@lenra.io", "id" => ^user_id}
            } = res
   end
 
@@ -175,7 +172,7 @@ defmodule ApplicationRunner.ATS.EctoParserTest do
     assert %{
              "_data" => %{"title" => "Faire le ménage", "nullField" => nil},
              "_refs" => []
-           } = res.data
+           } = res
   end
 
   test "Select with where on list of number", %{
@@ -190,12 +187,10 @@ defmodule ApplicationRunner.ATS.EctoParserTest do
       |> EctoParser.to_ecto(env_id, user_data_id)
       |> Repo.one()
 
-    assert %ApplicationRunner.DataQueryView{
-             data: %{
-               "_data" => %{"score" => 42},
-               "_datastore" => "userData",
-               "_user" => %{"email" => "test@lenra.io"}
-             }
+    assert %{
+             "_data" => %{"score" => 42},
+             "_datastore" => "userData",
+             "_user" => %{"email" => "test@lenra.io"}
            } = res
   end
 
@@ -209,15 +204,12 @@ defmodule ApplicationRunner.ATS.EctoParserTest do
       |> EctoParser.to_ecto(env_id, user_data_id)
       |> Repo.one()
 
-    assert %ApplicationRunner.DataQueryView{
-             data: %{
-               "_data" => %{"score" => 42},
-               "_datastore" => "userData",
-               "_user" => %{"email" => "test@lenra.io"},
-               "_id" => ^user_data_id,
-               "_refBy" => []
-             },
-             id: ^user_data_id
+    assert %{
+             "_data" => %{"score" => 42},
+             "_datastore" => "userData",
+             "_user" => %{"email" => "test@lenra.io"},
+             "_id" => ^user_data_id,
+             "_refBy" => []
            } = res
   end
 
@@ -231,15 +223,12 @@ defmodule ApplicationRunner.ATS.EctoParserTest do
       |> EctoParser.to_ecto(env_id, user_data_id)
       |> Repo.one()
 
-    assert %ApplicationRunner.DataQueryView{
-             data: %{
-               "_data" => %{"score" => 42},
-               "_datastore" => "userData",
-               "_user" => %{"email" => "test@lenra.io"},
-               "_id" => ^user_data_id,
-               "_refBy" => []
-             },
-             id: ^user_data_id
+    assert %{
+             "_data" => %{"score" => 42},
+             "_datastore" => "userData",
+             "_user" => %{"email" => "test@lenra.io"},
+             "_id" => ^user_data_id,
+             "_refBy" => []
            } = res
   end
 end

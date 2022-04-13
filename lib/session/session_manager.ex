@@ -46,23 +46,17 @@ defmodule ApplicationRunner.SessionManager do
     GenServer.cast(session_manager_pid, {:send_client_event, code, event})
   end
 
-  def send_on_user_first_join_event(session_id),
-    do: send_special_event(session_id, "onUserFirstJoin", %{})
+  def send_on_user_first_join_event(session_state),
+    do: do_send_event(session_state, "onUserFirstJoin", %{}, %{})
 
-  def send_on_user_quit_event(session_id),
-    do: send_special_event(session_id, "onUserQuit", %{})
+  def send_on_user_quit_event(session_state),
+    do: do_send_event(session_state, "onUserQuit", %{}, %{})
 
-  def send_on_session_start_event(session_id),
-    do: send_special_event(session_id, "onSessionStart", %{})
+  def send_on_session_start_event(session_state),
+    do: do_send_event(session_state, "onSessionStart", %{}, %{})
 
-  def send_on_session_end_event(session_state),
-    do: send_event(session_state, "onSessionEnd", %{}, %{})
-
-  defp send_special_event(session_id, action, event) do
-    with {:ok, session_manager_pid} <- SessionManagers.fetch_session_manager_pid(session_id) do
-      GenServer.cast(session_manager_pid, {:send_special_event, action, event})
-    end
-  end
+  def send_on_session_stop_event(session_state),
+    do: do_send_event(session_state, "onSessionStop", %{}, %{})
 
   @spec fetch_assigns(number()) :: {:ok, any()} | {:error, :session_not_started}
   def fetch_assigns(session_id) do
@@ -118,19 +112,20 @@ defmodule ApplicationRunner.SessionManager do
       assigns: assigns
     }
 
-    case AdapterHandler.ensure_user_data_created(session_state) do
-      :ok ->
-        send_on_session_start_event(session_id)
-        {:ok, session_state, session_state.inactivity_timeout}
-
-      {:error, reason} ->
+    with :ok <- AdapterHandler.ensure_user_data_created(session_state),
+         :ok <- send_on_session_start_event(session_state) do
+      {:ok, session_state, session_state.inactivity_timeout}
+    else
+      {:error, reason} = err ->
+        send_error(session_state, err)
         {:stop, reason}
     end
   end
 
   @impl true
+
   def handle_info(:timeout, session_state) do
-    stop(session_state)
+    stop(session_state, nil)
     {:noreply, session_state}
   end
 
@@ -146,22 +141,22 @@ defmodule ApplicationRunner.SessionManager do
     {:reply, {:ok, session_state.assigns}, session_state}
   end
 
+  def handle_call(:stop, from, session_state) do
+    stop(session_state, from)
+    {:noreply, session_state}
+  end
+
   @doc """
     This callback is called when the `SessionManagers` is asked to kill this node.
     We cannot call directly `DynamicSupervisor.terminate_child/2` as we could be asking it on the wrong node.
     To prevent this we simply ask the child to call `DynamicSupervisor.terminate_child/2`to ensure that the correct SessionManagers is called.
   """
   @impl true
-  def handle_cast(:stop, session_state) do
-    stop(session_state)
-    {:noreply, session_state}
-  end
-
   def handle_cast({:send_client_event, code, event}, session_state) do
     with {:ok, listener} <- ListenersCache.fetch_listener(session_state, code),
          {:ok, action} <- Map.fetch(listener, "action"),
-         props <- Map.get(listener, "props", %{}) do
-      send_event(session_state, action, props, event)
+         props <- Map.get(listener, "props", %{}),
+         :ok <- do_send_event(session_state, action, props, event) do
     else
       error ->
         send_error(session_state, error)
@@ -171,7 +166,14 @@ defmodule ApplicationRunner.SessionManager do
   end
 
   def handle_cast({:send_special_event, action, event}, session_state) do
-    send_event(session_state, action, %{}, event)
+    case do_send_event(session_state, action, %{}, event) do
+      :ok ->
+        :ok
+
+      error ->
+        send_error(session_state, error)
+    end
+
     {:noreply, session_state, session_state.inactivity_timeout}
   end
 
@@ -192,15 +194,6 @@ defmodule ApplicationRunner.SessionManager do
 
   def handle_cast({:set_assigns, assigns}, session_state) do
     {:noreply, Map.put(session_state, :assigns, assigns), session_state.inactivity_timeout}
-  end
-
-  def handle_cast({:run_listener_result, res}, session_state) do
-    case res do
-      :ok -> :ok
-      error -> send_error(session_state, error)
-    end
-
-    {:noreply, session_state, session_state.inactivity_timeout}
   end
 
   @spec get_and_build_ui(SessionState.t(), String.t()) ::
@@ -238,21 +231,17 @@ defmodule ApplicationRunner.SessionManager do
     end
   end
 
-  defp send_event(session_state, action, props, event) do
-    from = self()
-
-    spawn(fn ->
-      res = AdapterHandler.run_listener(session_state, action, props, event)
-      GenServer.cast(from, {:run_listener_result, res})
-    end)
+  defp do_send_event(session_state, action, props, event) do
+    AdapterHandler.run_listener(session_state, action, props, event)
   end
 
   defp send_error(session_state, error) do
     AdapterHandler.on_ui_changed(session_state, {:error, error})
   end
 
-  defp stop(session_state) do
-    send_on_session_end_event(session_state)
+  defp stop(session_state, from) do
+    send_on_session_stop_event(session_state)
+    if not is_nil(from), do: GenServer.reply(from, :ok)
     SessionManagers.terminate_session(self())
   end
 
