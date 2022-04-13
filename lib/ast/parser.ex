@@ -9,6 +9,7 @@ defmodule ApplicationRunner.AST.Parser do
     DataKey,
     Eq,
     Find,
+    MeRef,
     NumberValue,
     Query,
     Select,
@@ -42,7 +43,8 @@ defmodule ApplicationRunner.AST.Parser do
 
   # A simple k => v clause
   defp parse_expr({k, v}, ctx) do
-    parse_expr(v, %{left: from_k(k, ctx)})
+    ctx = Map.merge(ctx, %{left: from_k(k, ctx)})
+    parse_expr(v, ctx)
   end
 
   # If there is a left in context, and is not a function, this is a simplified $eq function
@@ -53,6 +55,10 @@ defmodule ApplicationRunner.AST.Parser do
   # List with eq_value ctx is an ArrayValue
   defp parse_expr(clauses, ctx) when is_list(clauses) do
     %ArrayValue{values: Enum.map(clauses, &parse_expr(&1, ctx))}
+  end
+
+  defp parse_expr("@me", _ctx) do
+    %MeRef{}
   end
 
   defp parse_expr(value, _ctx) when is_bitstring(value) do

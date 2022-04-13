@@ -117,6 +117,20 @@ defmodule ApplicationRunner.AST.ParserTest do
            }
   end
 
+  test "Find with @me" do
+    assert AST.Parser.from_json(%{
+             "$find" => %{"_id" => "@me"}
+           }) == %AST.Query{
+             find: %AST.Find{
+               clause: %AST.Eq{
+                 left: %AST.DataKey{key_path: ["_id"]},
+                 right: %AST.MeRef{}
+               }
+             },
+             select: %AST.Select{clause: nil}
+           }
+  end
+
   test "Find with list of number" do
     assert AST.Parser.from_json(%{
              "$find" => %{"_refs" => [1, 2, 3]}
