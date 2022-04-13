@@ -3,7 +3,10 @@ defmodule ApplicationRunner.UserDataServices do
     The service that manages actions on data.
   """
 
-  alias ApplicationRunner.{UserData, DataServices}
+  alias ApplicationRunner.{
+    DataServices,
+    UserData
+  }
 
   def create(params), do: Ecto.Multi.new() |> create(params)
 

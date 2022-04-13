@@ -10,13 +10,13 @@ defmodule ApplicationRunner.WidgetCache do
 
   alias ApplicationRunner.{
     AdapterHandler,
-    SessionManager,
-    SessionState,
+    AST,
     JsonSchemata,
     ListenersCache,
+    SessionManager,
+    SessionState,
     UiContext,
-    WidgetContext,
-    AST
+    WidgetContext
   }
 
   @type widget_ui :: map()

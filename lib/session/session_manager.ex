@@ -9,14 +9,14 @@ defmodule ApplicationRunner.SessionManager do
   alias ApplicationRunner.{
     AdapterHandler,
     EnvManager,
+    ListenersCache,
     SessionManagers,
     SessionState,
     SessionSupervisor,
     UiCache,
     UiContext,
-    WidgetContext,
     WidgetCache,
-    ListenersCache
+    WidgetContext
   }
 
   @doc """

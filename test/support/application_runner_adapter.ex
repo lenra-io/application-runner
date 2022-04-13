@@ -7,14 +7,14 @@ defmodule ApplicationRunner.ApplicationRunnerAdapter do
   import Ecto.Query
 
   alias ApplicationRunner.{
-    EnvState,
-    SessionState,
     AST,
-    UserDataServices,
-    UserData,
     Data,
     Datastore,
-    Repo
+    EnvState,
+    Repo,
+    SessionState,
+    UserData,
+    UserDataServices
   }
 
   use GenServer

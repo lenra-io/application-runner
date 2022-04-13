@@ -1,6 +1,11 @@
 defmodule ApplicationRunner.ListenerCacheTest do
   use ExUnit.Case, async: false
-  alias ApplicationRunner.{EnvManagers, SessionManagers, ListenersCache}
+
+  alias ApplicationRunner.{
+    EnvManagers,
+    ListenersCache,
+    SessionManagers
+  }
 
   setup do
     start_supervised(EnvManagers)

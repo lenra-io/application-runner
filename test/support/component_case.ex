@@ -14,8 +14,8 @@ defmodule ApplicationRunner.ComponentCase do
         ApplicationRunnerAdapter,
         EnvManager,
         EnvManagers,
-        SessionManagers,
-        SessionManager
+        SessionManager,
+        SessionManagers
       }
 
       setup context do

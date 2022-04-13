@@ -2,11 +2,15 @@ defmodule ApplicationRunner.AdapterBehavior do
   @moduledoc """
   ApplicationRunner's AdapterBehavior
   """
-  alias ApplicationRunner.{EnvState, SessionState, AST}
+  alias ApplicationRunner.{
+    AST,
+    EnvState,
+    SessionState
+  }
 
   @type widget() :: map()
   @type manifest() :: map()
-  @type data() :: list(map())
+  @type data() :: list(map()) | map()
   @type props() :: map()
   @type event() :: map()
   @type reason() :: atom()
