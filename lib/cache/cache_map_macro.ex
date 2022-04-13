@@ -29,6 +29,11 @@ defmodule ApplicationRunner.CacheMapMacro do
         GenServer.cast(pid, {:delete, key})
       end
 
+      @spec clear(pid()) :: :ok
+      def clear(pid) do
+        GenServer.cast(pid, :clear)
+      end
+
       def init(_) do
         state = %{}
         {:ok, state}
@@ -40,6 +45,10 @@ defmodule ApplicationRunner.CacheMapMacro do
 
       def handle_cast({:delete, key}, state) do
         {:noreply, Map.delete(state, key)}
+      end
+
+      def handle_cast(:clear, state) do
+        {:noreply, %{}}
       end
 
       def handle_call({:get, key}, _from, state) do

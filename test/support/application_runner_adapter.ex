@@ -4,7 +4,18 @@ defmodule ApplicationRunner.ApplicationRunnerAdapter do
   """
   @behaviour ApplicationRunner.AdapterBehavior
 
-  alias ApplicationRunner.{EnvState, SessionState}
+  import Ecto.Query
+
+  alias ApplicationRunner.{
+    EnvState,
+    SessionState,
+    AST,
+    UserDataServices,
+    UserData,
+    Data,
+    Datastore,
+    Repo
+  }
 
   use GenServer
 
@@ -30,38 +41,61 @@ defmodule ApplicationRunner.ApplicationRunnerAdapter do
   end
 
   @impl true
-  def run_listener(%struct_module{}, action, props, event)
-      when struct_module in [EnvState, SessionState] do
-    GenServer.call(__MODULE__, {:run_listener, action, props, event})
+  def run_listener(%SessionState{assigns: %{environment: env, user: user}}, action, props, event) do
+    user_data_id = get_user_data_id(env, user)
+
+    GenServer.call(
+      __MODULE__,
+      {
+        :run_listener,
+        action,
+        props,
+        event,
+        %{env_id: env.id, user_data_id: user_data_id}
+      }
+    )
+  end
+
+  defp get_user_data_id(env, user) do
+    from(ud in UserData,
+      join: d in Data,
+      on: ud.data_id == d.id,
+      join: ds in Datastore,
+      on: d.datastore_id == ds.id,
+      where: ud.user_id == ^user.id and ds.environment_id == ^env.id,
+      select: ud.data_id
+    )
+    |> Repo.one()
   end
 
   @impl true
-  def exec_query(%SessionState{env_id: env_id} = _session_state, query) do
+  def run_listener(%EnvState{assigns: %{environment: env}}, action, props, event) do
+    GenServer.call(__MODULE__, {:run_listener, action, props, event, %{env_id: env.id}})
+  end
+
+  @impl true
+  def exec_query(
+        %SessionState{assigns: %{environment: environment, user: user}},
+        query
+      ) do
+    user_data_id = get_user_data_id(environment, user)
+
     query
-    |> ApplicationRunner.AST.EctoParser.to_ecto(env_id)
-    |> ApplicationRunner.Repo.all()
+    |> AST.EctoParser.to_ecto(environment.id, user_data_id)
+    |> Repo.all()
   end
 
   @impl true
-  def get_data(%SessionState{session_id: session_id} = _session_state) do
-    if :ets.whereis(:data) == :undefined do
-      :ets.new(:data, [:named_table, :public])
-    end
+  def ensure_user_data_created(%SessionState{assigns: %{environment: environment, user: user}}) do
+    UserDataServices.create_with_data(environment.id, user.id)
+    |> Repo.transaction()
+    |> case do
+      {:ok, _} ->
+        :ok
 
-    case :ets.lookup(:data, session_id) do
-      [{_, data}] -> {:ok, data}
-      [] -> {:ok, %{}}
+      err ->
+        {:error, :unable_to_create_user_data}
     end
-  end
-
-  @impl true
-  def save_data(%SessionState{session_id: session_id} = _session_state, data) do
-    if :ets.whereis(:data) == :undefined do
-      :ets.new(:data, [:named_table])
-    end
-
-    :ets.insert(:data, {session_id, data})
-    :ok
   end
 
   @impl true
@@ -102,7 +136,7 @@ defmodule ApplicationRunner.ApplicationRunnerAdapter do
   end
 
   def handle_call(
-        {:run_listener, action, props, event},
+        {:run_listener, action, props, event, apiOptions},
         _from,
         %{listeners: listeners} = mock
       ) do
@@ -110,8 +144,8 @@ defmodule ApplicationRunner.ApplicationRunnerAdapter do
       nil ->
         {:reply, {:error, :listener_not_found}, mock}
 
-      listner ->
-        listner.(props, event)
+      listener ->
+        listener.(props, event, apiOptions)
         {:reply, :ok, mock}
     end
   end

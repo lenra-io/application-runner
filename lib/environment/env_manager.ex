@@ -41,11 +41,8 @@ defmodule ApplicationRunner.EnvManager do
 
     case AdapterHandler.get_manifest(env_state) do
       {:ok, manifest} ->
-        {
-          :ok,
-          Map.put(env_state, :manifest, manifest),
-          env_state.inactivity_timeout
-        }
+        send_on_env_start_event(env_id)
+        {:ok, Map.put(env_state, :manifest, manifest), env_state.inactivity_timeout}
 
       {:error, reason} ->
         {:stop, reason}
@@ -142,9 +139,9 @@ defmodule ApplicationRunner.EnvManager do
     We cannot call directly `DynamicSupervisor.terminate_child/2` as we could be asking it on the wrong node.
     To prevent this we simply ask the child to call `DynamicSupervisor.terminate_child/2`to ensure that the correct EnvManager is called.
   """
-  def handle_cast(:stop, state) do
-    EnvManagers.terminate_app(self())
-    {:noreply, state}
+  def handle_cast(:stop, env_state) do
+    stop(env_state)
+    {:noreply, env_state}
   end
 
   def handle_cast({:set_assigns, assigns}, env_state) do
@@ -152,8 +149,13 @@ defmodule ApplicationRunner.EnvManager do
   end
 
   @impl true
-  def handle_info(:timeout, state) do
+  def handle_info(:timeout, env_state) do
+    stop(env_state)
+    {:noreply, env_state}
+  end
+
+  defp stop(%EnvState{} = env_state) do
+    send_on_env_stop_event(env_state.env_id)
     EnvManagers.terminate_app(self())
-    {:noreply, state}
   end
 end

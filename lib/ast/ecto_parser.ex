@@ -29,6 +29,7 @@ defmodule ApplicationRunner.AST.EctoParser do
     DataQueryView
     |> where([d], d.environment_id == ^env_id)
     |> where([d], ^where_clauses)
+    |> select([d], d.data)
   end
 
   defp parse_expr(%Find{clause: clause}, ctx) do

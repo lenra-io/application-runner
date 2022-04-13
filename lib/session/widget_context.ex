@@ -15,7 +15,7 @@ defmodule ApplicationRunner.WidgetContext do
   @type t :: %ApplicationRunner.WidgetContext{
           id: String.t(),
           name: String.t(),
-          data: map() | nil,
+          data: list(map()) | map() | nil,
           query: map() | nil,
           props: map() | nil,
           prefix_path: String.t() | nil

@@ -24,6 +24,13 @@ defmodule ApplicationRunner.WidgetCache do
   @type error_tuple :: {String.t(), String.t()}
   @type build_errors :: list(error_tuple())
 
+  @spec clear_cache(SessionState.t()) :: :ok
+  def clear_cache(%SessionState{} = session_state) do
+    pid = SessionManager.fetch_module_pid!(session_state, __MODULE__)
+
+    clear(pid)
+  end
+
   @doc """
     Call the Adapter to get the Widget corresponding to the given the `WidgetContext`
   """
@@ -116,10 +123,7 @@ defmodule ApplicationRunner.WidgetCache do
     name = Map.get(component, "name")
     props = Map.get(component, "props")
 
-    query =
-      component
-      |> Map.get("query")
-      |> AST.Parser.from_json()
+    query = component |> Map.get("query") |> AST.Parser.from_json()
 
     data = AdapterHandler.exec_query(session_state, query)
 
@@ -128,7 +132,7 @@ defmodule ApplicationRunner.WidgetCache do
     new_widget_context = %WidgetContext{
       id: id,
       name: name,
-      data: widget_context.data,
+      data: data,
       props: props,
       prefix_path: widget_context.prefix_path
     }

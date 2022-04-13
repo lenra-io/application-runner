@@ -6,13 +6,12 @@ defmodule ApplicationRunner.AdapterBehavior do
 
   @type widget() :: map()
   @type manifest() :: map()
-  @type data() :: map()
+  @type data() :: list(map())
   @type props() :: map()
   @type event() :: map()
   @type reason() :: atom()
   @type ui() :: map()
   @type patches() :: list(map())
-  @type code() :: String.t()
   @type action() :: String.t()
   @type widget_name() :: String.t()
 
@@ -21,9 +20,8 @@ defmodule ApplicationRunner.AdapterBehavior do
               {:ok, widget()} | {:error, reason()}
   @callback run_listener(SessionState.t() | EnvState.t(), action(), props(), event()) ::
               :ok | {:error, reason()}
-  @callback get_data(SessionState.t()) :: {:ok, data()} | {:error, reason()}
-  @callback save_data(SessionState.t(), data()) :: :ok | {:error, reason()}
-  @callback exec_query(SessionState.t(), AST.Query.t()) :: :ok | {:error, reason()}
+  @callback exec_query(SessionState.t(), AST.Query.t()) :: data()
+  @callback ensure_user_data_created(SessionState.t()) :: :ok | {:error, reason()}
   @callback on_ui_changed(
               SessionState.t(),
               {:ui, ui()} | {:patches, patches()} | {:error, tuple() | String.t()}

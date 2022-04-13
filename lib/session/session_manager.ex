@@ -78,6 +78,13 @@ defmodule ApplicationRunner.SessionManager do
     end
   end
 
+  @spec reload_ui(number()) :: :ok | {:error, :session_not_started}
+  def reload_ui(session_id) do
+    with {:ok, pid} <- SessionManagers.fetch_session_manager_pid(session_id) do
+      GenServer.cast(pid, :data_changed)
+    end
+  end
+
   @spec start_link(keyword) :: :ignore | {:error, any} | {:ok, pid}
   def start_link(opts) do
     session_id = Keyword.fetch!(opts, :session_id)
@@ -111,17 +118,13 @@ defmodule ApplicationRunner.SessionManager do
       assigns: assigns
     }
 
-    send_on_session_start_event(session_id)
+    case AdapterHandler.ensure_user_data_created(session_state) do
+      :ok ->
+        send_on_session_start_event(session_id)
+        {:ok, session_state, session_state.inactivity_timeout}
 
-    ensure_user_data_created(session_state)
-
-    {:ok, session_state, session_state.inactivity_timeout}
-  end
-
-  defp ensure_user_data_created(session_state) do
-    # TODO: change this to get and save in Datastore "UserDatas" when request available
-    if AdapterHandler.get_data(session_state) == {:ok, nil} do
-      AdapterHandler.save_data(session_state, %{})
+      {:error, reason} ->
+        {:stop, reason}
     end
   end
 
@@ -174,6 +177,7 @@ defmodule ApplicationRunner.SessionManager do
 
   def handle_cast(:data_changed, %SessionState{} = session_state) do
     with %{"rootWidget" => root_widget} <- EnvManager.get_manifest(session_state.env_id),
+         :ok <- WidgetCache.clear_cache(session_state),
          {:ok, ui} <- get_and_build_ui(session_state, root_widget) do
       transformed_ui = transform_ui(ui)
       res = UiCache.diff_and_save(session_state, transformed_ui)
@@ -204,7 +208,7 @@ defmodule ApplicationRunner.SessionManager do
   def get_and_build_ui(session_state, root_widget) do
     props = %{}
     query = nil
-    data = %{}
+    data = []
     id = WidgetCache.generate_widget_id(root_widget, query, props)
 
     WidgetCache.get_and_build_widget(
