@@ -13,8 +13,8 @@ defmodule ApplicationRunner.WidgetCache do
     AST,
     JsonSchemata,
     ListenersCache,
-    SessionSupervisor,
     SessionState,
+    SessionSupervisor,
     UiContext,
     WidgetContext
   }

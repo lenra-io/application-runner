@@ -7,7 +7,7 @@ defmodule ApplicationRunner.UiCache do
   """
   use GenServer
 
-  alias ApplicationRunner.{SessionSupervisor, SessionState}
+  alias ApplicationRunner.{SessionState, SessionSupervisor}
 
   def start_link(_) do
     GenServer.start_link(__MODULE__, :ok, [])

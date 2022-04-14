@@ -5,7 +5,7 @@ defmodule ApplicationRunner.SessionSupervisor do
   """
   use Supervisor
 
-  alias ApplicationRunner.{SessionManagers}
+  alias ApplicationRunner.SessionManagers
 
   @doc """
     return the app-level module.
@@ -28,7 +28,7 @@ defmodule ApplicationRunner.SessionSupervisor do
   end
 
   def fetch_module_pid!(session_id, module_name) do
-    with {:ok, session_manager_pid} = SessionManagers.fetch_session_manager_pid(session_id),
+    with {:ok, session_manager_pid} <- SessionManagers.fetch_session_manager_pid(session_id),
          session_supervisor_pid <-
            GenServer.call(session_manager_pid, :fetch_session_supervisor_pid!) do
       fetch_module_pid!(session_supervisor_pid, module_name)

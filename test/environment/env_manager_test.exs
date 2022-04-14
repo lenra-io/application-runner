@@ -9,8 +9,8 @@ defmodule ApplicationRunner.EnvManagerTest do
     ApplicationRunnerAdapter,
     EnvManager,
     EnvManagers,
-    MockGenServer,
-    EnvSupervisor
+    EnvSupervisor,
+    MockGenServer
   }
 
   setup do

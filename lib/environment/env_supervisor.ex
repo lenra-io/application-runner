@@ -26,7 +26,7 @@ defmodule ApplicationRunner.EnvSupervisor do
   end
 
   def fetch_module_pid!(env_id, module_name) do
-    with {:ok, env_manager_pid} = EnvManagers.fetch_env_manager_pid(env_id),
+    with {:ok, env_manager_pid} <- EnvManagers.fetch_env_manager_pid(env_id),
          env_supervisor_pid <- GenServer.call(env_manager_pid, :fetch_env_supervisor_pid!) do
       fetch_module_pid!(env_supervisor_pid, module_name)
     end
