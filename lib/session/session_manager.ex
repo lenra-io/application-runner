@@ -19,28 +19,6 @@ defmodule ApplicationRunner.SessionManager do
     WidgetContext
   }
 
-  @doc """
-    return the app-level module.
-    This can be used to get module declared in the `SessionSupervisor` (like the cache module for example)
-  """
-  @spec fetch_module_pid!(SessionState.t(), atom()) :: pid()
-  def fetch_module_pid!(
-        %SessionState{session_supervisor_pid: session_supervisor_pid},
-        module_name
-      ) do
-    Supervisor.which_children(session_supervisor_pid)
-    |> Enum.find({:error, :no_such_module}, fn
-      {name, _, _, _} -> module_name == name
-    end)
-    |> case do
-      {_, pid, _, _} ->
-        pid
-
-      {:error, :no_such_module} ->
-        raise "No such Module in SessionSupervisor. This should not happen."
-    end
-  end
-
   @spec send_client_event(pid(), String.t(), map()) :: :ok
   def send_client_event(session_manager_pid, code, event) do
     GenServer.cast(session_manager_pid, {:send_client_event, code, event})
@@ -130,7 +108,7 @@ defmodule ApplicationRunner.SessionManager do
   end
 
   @impl true
-  def handle_call(:get_session_supervisor_pid, _from, session_state) do
+  def handle_call(:fetch_session_supervisor_pid!, _from, session_state) do
     case Map.fetch!(session_state, :session_supervisor_pid) do
       nil -> raise "No SessionSupervisor. This should not happen."
       res -> {:reply, res, session_state, session_state.inactivity_timeout}

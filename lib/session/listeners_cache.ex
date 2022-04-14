@@ -7,20 +7,20 @@ defmodule ApplicationRunner.ListenersCache do
   use ApplicationRunner.CacheMapMacro
 
   alias ApplicationRunner.{
-    SessionManager,
-    SessionState
+    SessionState,
+    SessionSupervisor
   }
 
   @spec save_listener(SessionState.t(), String.t(), map()) :: :ok
   def save_listener(%SessionState{} = session_state, code, listener) do
-    pid = SessionManager.fetch_module_pid!(session_state, __MODULE__)
+    pid = SessionSupervisor.fetch_module_pid!(session_state.session_supervisor_pid, __MODULE__)
     put(pid, code, listener)
     :ok
   end
 
   @spec fetch_listener(SessionState.t(), String.t()) :: {:ok, map()} | {:error, atom()}
   def fetch_listener(%SessionState{} = session_state, code) do
-    pid = SessionManager.fetch_module_pid!(session_state, __MODULE__)
+    pid = SessionSupervisor.fetch_module_pid!(session_state.session_supervisor_pid, __MODULE__)
 
     case get(pid, code) do
       nil -> {:error, :no_listener_with_code}

@@ -49,28 +49,6 @@ defmodule ApplicationRunner.EnvManager do
     end
   end
 
-  #  defdelegate load_env_state(env_id),
-  #    to: Application.compile_env!(:application_runner, :app_loader)
-
-  @doc """
-    return the app-level module.
-    This can be used to get module declared in the `EnvSupervisor` (like the cache module for example)
-  """
-  @spec fetch_module_pid!(EnvState.t(), atom()) :: pid()
-  def fetch_module_pid!(%EnvState{} = env_state, module_name) do
-    Supervisor.which_children(env_state.env_supervisor_pid)
-    |> Enum.find({:error, :no_such_module}, fn
-      {name, _, _, _} -> module_name == name
-    end)
-    |> case do
-      {_, pid, _, _} ->
-        pid
-
-      {:error, :no_such_module} ->
-        raise "No such Module in EnvSupervisor. This should not happen."
-    end
-  end
-
   @spec get_manifest(number()) :: map()
   def get_manifest(env_id) do
     with {:ok, pid} <- EnvManagers.fetch_env_manager_pid(env_id) do
@@ -103,7 +81,7 @@ defmodule ApplicationRunner.EnvManager do
     {:reply, Map.get(env_state, :manifest), env_state, env_state.inactivity_timeout}
   end
 
-  def handle_call(:get_env_supervisor_pid, _from, env_state) do
+  def handle_call(:fetch_env_supervisor_pid!, _from, env_state) do
     case Map.get(env_state, :env_supervisor_pid) do
       nil -> raise "No EnvSupervisor. This should not happen."
       res -> {:reply, res, env_state, env_state.inactivity_timeout}

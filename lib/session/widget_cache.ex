@@ -13,7 +13,7 @@ defmodule ApplicationRunner.WidgetCache do
     AST,
     JsonSchemata,
     ListenersCache,
-    SessionManager,
+    SessionSupervisor,
     SessionState,
     UiContext,
     WidgetContext
@@ -26,7 +26,7 @@ defmodule ApplicationRunner.WidgetCache do
 
   @spec clear_cache(SessionState.t()) :: :ok
   def clear_cache(%SessionState{} = session_state) do
-    pid = SessionManager.fetch_module_pid!(session_state, __MODULE__)
+    pid = SessionSupervisor.fetch_module_pid!(session_state.session_supervisor_pid, __MODULE__)
 
     clear(pid)
   end
@@ -55,7 +55,7 @@ defmodule ApplicationRunner.WidgetCache do
         %UiContext{} = ui_context,
         %WidgetContext{} = current_widget
       ) do
-    pid = SessionManager.fetch_module_pid!(session_state, __MODULE__)
+    pid = SessionSupervisor.fetch_module_pid!(session_state.session_supervisor_pid, __MODULE__)
 
     call_function(pid, __MODULE__, :get_and_build_widget_cached, [
       session_state,

@@ -7,7 +7,7 @@ defmodule ApplicationRunner.UiCache do
   """
   use GenServer
 
-  alias ApplicationRunner.{SessionManager, SessionState}
+  alias ApplicationRunner.{SessionSupervisor, SessionState}
 
   def start_link(_) do
     GenServer.start_link(__MODULE__, :ok, [])
@@ -29,7 +29,7 @@ defmodule ApplicationRunner.UiCache do
   end
 
   def diff_and_save(%SessionState{} = session_state, ui) do
-    pid = SessionManager.fetch_module_pid!(session_state, __MODULE__)
+    pid = SessionSupervisor.fetch_module_pid!(session_state.session_supervisor_pid, __MODULE__)
     GenServer.call(pid, {:diff_and_save, ui})
   end
 end
