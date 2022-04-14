@@ -11,11 +11,7 @@ defmodule ApplicationRunner.EnvSupervisor do
   @impl true
 
   def init(_opts) do
-    children =
-      [
-        ApplicationRunner.ListenersCache,
-        ApplicationRunner.WidgetCache
-      ] ++ Application.get_env(:application_runner, :additional_env_modules, [])
+    children = [] ++ Application.get_env(:application_runner, :additional_env_modules, [])
 
     Supervisor.init(children, strategy: :one_for_one)
   end

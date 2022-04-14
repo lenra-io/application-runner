@@ -51,28 +51,11 @@ defmodule ApplicationRunner.SessionManagerTest do
     @tag mock: %{
            widgets: %{
              "root" => &__MODULE__.my_widget/2
-           },
-           listeners: %{"onSessionStart" => &__MODULE__.init_data/2}
+           }
          }
-    test "should call the InitData listener", %{
-      session_state: _session_state,
-      session_id: _session_id
-    } do
+    test "Special listeners are optionnal. Nothing happen if not set." do
       refute_receive({:ui, _})
       refute_receive({:error, _})
-    end
-
-    @tag mock: %{
-           widgets: %{
-             "root" => &__MODULE__.my_widget/2
-           },
-           listeners: %{}
-         }
-    test "should return error if listeners InitData not found", %{
-      session_state: _session_state,
-      session_id: _session_id
-    } do
-      assert_receive({:error, {:error, :listener_not_found}})
     end
   end
 

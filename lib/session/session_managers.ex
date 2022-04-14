@@ -41,7 +41,7 @@ defmodule ApplicationRunner.SessionManagers do
   @spec stop_session(number()) :: :ok | {:error, :app_not_started}
   def stop_session(session_id) do
     with {:ok, pid} <- fetch_session_manager_pid(session_id) do
-      GenServer.cast(pid, :stop)
+      GenServer.call(pid, :stop)
     end
   end
 

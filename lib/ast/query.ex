@@ -5,4 +5,9 @@ defmodule ApplicationRunner.AST.Query do
   """
   @enforce_keys [:find, :select]
   defstruct [:find, :select]
+
+  @type t :: %ApplicationRunner.AST.Query{
+          find: struct(),
+          select: struct()
+        }
 end

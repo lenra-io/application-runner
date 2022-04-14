@@ -18,12 +18,18 @@ defmodule ApplicationRunner.AST.EctoParser do
 
   import Ecto.Query
 
+  def to_ecto(nil, _env_id, _user_data_id) do
+    DataQueryView
+    |> where([d], false)
+  end
+
   def to_ecto(%Query{find: find, select: _select}, env_id, user_data_id) do
     where_clauses = parse_expr(find, %{user_data_id: user_data_id})
 
     DataQueryView
     |> where([d], d.environment_id == ^env_id)
     |> where([d], ^where_clauses)
+    |> select([d], d.data)
   end
 
   defp parse_expr(%Find{clause: clause}, ctx) do

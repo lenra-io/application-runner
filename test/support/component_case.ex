@@ -14,56 +14,48 @@ defmodule ApplicationRunner.ComponentCase do
         ApplicationRunnerAdapter,
         EnvManager,
         EnvManagers,
+        SessionManager,
         SessionManagers
       }
 
       setup context do
         start_supervised(EnvManagers)
         start_supervised(SessionManagers)
-        # start session
-        # These make_ref() create a uniq ref that avoid collision across two test.
+        start_supervised(ApplicationRunnerAdapter)
         session_id = make_ref()
         env_id = make_ref()
 
         if context[:mock] != nil do
-          ApplicationRunner.ApplicationRunnerAdapter.set_mock(context[:mock])
+          ApplicationRunnerAdapter.set_mock(context[:mock])
         end
 
-        {:ok, pid} =
-          SessionManagers.start_session(session_id, env_id, %{test_pid: self(), user: %{}}, %{})
+        {:ok, pid} = SessionManagers.start_session(session_id, env_id, %{test_pid: self()}, %{})
 
         session_state = :sys.get_state(pid)
 
         on_exit(fn ->
-          SessionManagers.stop_session(session_id)
           EnvManagers.stop_env(env_id)
         end)
 
         %{session_state: session_state, session_pid: pid, session_id: session_id, env_id: env_id}
       end
 
-      def mock_root_and_run(json, session_state) do
+      def mock_root_and_run(json, session_id) do
         ApplicationRunnerAdapter.set_mock(%{widgets: %{"root" => fn _, _ -> json end}})
-        EnvManager.get_and_build_ui(session_state, "root", %{})
+        SessionManager.reload_ui(session_id)
       end
 
-      def mock_and_run(widgets, listeners, session_state, root, data \\ %{}) do
-        ApplicationRunnerAdapter.set_mock(%{widgets: widgets, listeners: listeners})
-        EnvManager.get_and_build_ui(session_state, root, data)
-      end
-
-      defmacro assert_success(expected, actual) do
+      defmacro assert_success(expected) do
         quote do
-          assert {:ok, res} = unquote(actual)
-          assert %{"rootWidget" => root_widget} = res
-          assert %{"widgets" => %{^root_widget => widget}} = res
-          assert unquote(expected) = widget
+          assert_receive {:ui, %{"root" => res}}
+          assert unquote(expected) = res
         end
       end
 
-      defmacro assert_error(expected, actual) do
+      defmacro assert_error(expected) do
         quote do
-          assert unquote(expected) = unquote(actual)
+          assert_receive {:error, res}
+          assert res = unquote(expected)
         end
       end
     end
