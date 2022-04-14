@@ -25,20 +25,6 @@ defmodule ApplicationRunner.SessionManager do
     GenServer.cast(session_manager_pid, {:send_client_event, code, event})
   end
 
-  @spec fetch_assigns(number()) :: {:ok, any()} | {:error, :session_not_started}
-  def fetch_assigns(session_id) do
-    with {:ok, pid} <- SessionManagers.fetch_session_manager_pid(session_id) do
-      GenServer.call(pid, :fetch_assigns)
-    end
-  end
-
-  @spec set_assigns(number(), any()) :: :ok | {:error, :session_not_started}
-  def set_assigns(session_id, assigns) do
-    with {:ok, pid} <- SessionManagers.fetch_session_manager_pid(session_id) do
-      GenServer.cast(pid, {:set_assigns, assigns})
-    end
-  end
-
   @spec reload_ui(number()) :: :ok | {:error, :session_not_started}
   def reload_ui(session_id) do
     with {:ok, pid} <- SessionManagers.fetch_session_manager_pid(session_id) do
@@ -117,10 +103,6 @@ defmodule ApplicationRunner.SessionManager do
     end
   end
 
-  def handle_call(:fetch_assigns, _from, session_state) do
-    {:reply, {:ok, session_state.assigns}, session_state}
-  end
-
   def handle_call(:stop, from, session_state) do
     stop(session_state, from)
     {:noreply, session_state}
@@ -155,10 +137,6 @@ defmodule ApplicationRunner.SessionManager do
     end
 
     {:noreply, session_state, session_state.inactivity_timeout}
-  end
-
-  def handle_cast({:set_assigns, assigns}, session_state) do
-    {:noreply, Map.put(session_state, :assigns, assigns), session_state.inactivity_timeout}
   end
 
   @spec get_and_build_ui(SessionState.t(), String.t()) ::

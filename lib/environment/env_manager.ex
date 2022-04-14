@@ -19,20 +19,6 @@ defmodule ApplicationRunner.EnvManager do
     end
   end
 
-  @spec fetch_assigns(number()) :: {:ok, any()} | {:error, :env_not_started}
-  def fetch_assigns(env_id) do
-    with {:ok, pid} <- EnvManagers.fetch_env_manager_pid(env_id) do
-      GenServer.call(pid, :fetch_assigns)
-    end
-  end
-
-  @spec(set_assigns(number(), term()) :: :ok, {:error, :env_not_started})
-  def set_assigns(env_id, assigns) do
-    with {:ok, pid} <- EnvManagers.fetch_env_manager_pid(env_id) do
-      GenServer.cast(pid, {:set_assigns, assigns})
-    end
-  end
-
   def wait_until_ready(env_id) do
     with {:ok, pid} <- EnvManagers.fetch_env_manager_pid(env_id) do
       GenServer.call(pid, :wait_until_ready)
@@ -115,18 +101,9 @@ defmodule ApplicationRunner.EnvManager do
     {:reply, :restart, state}
   end
 
-  def handle_call(:fetch_assigns, _from, env_state) do
-    {:reply, {:ok, env_state.assigns}, env_state}
-  end
-
   def handle_call(:stop, from, env_state) do
     stop(env_state, from)
     {:reply, :ok, env_state}
-  end
-
-  @impl true
-  def handle_cast({:set_assigns, assigns}, env_state) do
-    {:noreply, Map.put(env_state, :assigns, assigns)}
   end
 
   @impl true
