@@ -38,8 +38,10 @@ defmodule ApplicationRunner.EnvSupervisor do
 
   @impl true
 
-  def init(_opts) do
-    children = [] ++ Application.get_env(:application_runner, :additional_env_modules, [])
+  def init(opts) do
+    children =
+      [] ++
+        Application.get_env(:application_runner, :additional_env_modules, fn _ -> [] end).(opts)
 
     Supervisor.init(children, strategy: :one_for_one)
   end
