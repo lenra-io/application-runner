@@ -8,7 +8,9 @@ defmodule ApplicationRunner.EnvState do
     :manifest,
     :env_supervisor_pid,
     :inactivity_timeout,
-    :assigns
+    :assigns,
+    :ready?,
+    :waiting_pid
   ]
 
   @type t :: %ApplicationRunner.EnvState{
@@ -16,6 +18,8 @@ defmodule ApplicationRunner.EnvState do
           manifest: map(),
           env_supervisor_pid: pid(),
           inactivity_timeout: number(),
-          assigns: term()
+          assigns: term(),
+          ready?: boolean(),
+          waiting_pid: list(pid())
         }
 end

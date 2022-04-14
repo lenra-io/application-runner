@@ -9,6 +9,7 @@ defmodule ApplicationRunner.SessionManager do
   alias ApplicationRunner.{
     AdapterHandler,
     EnvManager,
+    EventHandler,
     ListenersCache,
     SessionManagers,
     SessionState,
@@ -19,57 +20,9 @@ defmodule ApplicationRunner.SessionManager do
     WidgetContext
   }
 
-  @doc """
-    return the app-level module.
-    This can be used to get module declared in the `SessionSupervisor` (like the cache module for example)
-  """
-  @spec fetch_module_pid!(SessionState.t(), atom()) :: pid()
-  def fetch_module_pid!(
-        %SessionState{session_supervisor_pid: session_supervisor_pid},
-        module_name
-      ) do
-    Supervisor.which_children(session_supervisor_pid)
-    |> Enum.find({:error, :no_such_module}, fn
-      {name, _, _, _} -> module_name == name
-    end)
-    |> case do
-      {_, pid, _, _} ->
-        pid
-
-      {:error, :no_such_module} ->
-        raise "No such Module in SessionSupervisor. This should not happen."
-    end
-  end
-
   @spec send_client_event(pid(), String.t(), map()) :: :ok
   def send_client_event(session_manager_pid, code, event) do
     GenServer.cast(session_manager_pid, {:send_client_event, code, event})
-  end
-
-  def send_on_user_first_join_event(session_state),
-    do: do_send_event(session_state, "onUserFirstJoin", %{}, %{})
-
-  def send_on_user_quit_event(session_state),
-    do: do_send_event(session_state, "onUserQuit", %{}, %{})
-
-  def send_on_session_start_event(session_state),
-    do: do_send_event(session_state, "onSessionStart", %{}, %{})
-
-  def send_on_session_stop_event(session_state),
-    do: do_send_event(session_state, "onSessionStop", %{}, %{})
-
-  @spec fetch_assigns(number()) :: {:ok, any()} | {:error, :session_not_started}
-  def fetch_assigns(session_id) do
-    with {:ok, pid} <- SessionManagers.fetch_session_manager_pid(session_id) do
-      GenServer.call(pid, :fetch_assigns)
-    end
-  end
-
-  @spec set_assigns(number(), any()) :: :ok | {:error, :session_not_started}
-  def set_assigns(session_id, assigns) do
-    with {:ok, pid} <- SessionManagers.fetch_session_manager_pid(session_id) do
-      GenServer.cast(pid, {:set_assigns, assigns})
-    end
   end
 
   @spec reload_ui(number()) :: :ok | {:error, :session_not_started}
@@ -103,6 +56,9 @@ defmodule ApplicationRunner.SessionManager do
     # The SessionManager should be restarted by the SessionManagers then it will restart the supervisor.
     Process.link(session_supervisor_pid)
 
+    event_handler_pid = SessionSupervisor.fetch_module_pid!(session_supervisor_pid, EventHandler)
+    EventHandler.subscribe(event_handler_pid)
+
     session_state = %SessionState{
       session_id: session_id,
       env_id: env_id,
@@ -112,7 +68,8 @@ defmodule ApplicationRunner.SessionManager do
       assigns: assigns
     }
 
-    with :ok <- AdapterHandler.ensure_user_data_created(session_state),
+    with :ok <- EnvManager.wait_until_ready(env_id),
+         :ok <- AdapterHandler.ensure_user_data_created(session_state),
          :ok <- send_on_session_start_event(session_state) do
       {:ok, session_state, session_state.inactivity_timeout}
     else
@@ -129,16 +86,21 @@ defmodule ApplicationRunner.SessionManager do
     {:noreply, session_state}
   end
 
+  def handle_info({:event_finished, _action, result}, session_state) do
+    case result do
+      :ok -> :ok
+      err -> send_error(session_state, err)
+    end
+
+    {:noreply, session_state}
+  end
+
   @impl true
-  def handle_call(:get_session_supervisor_pid, _from, session_state) do
+  def handle_call(:fetch_session_supervisor_pid!, _from, session_state) do
     case Map.fetch!(session_state, :session_supervisor_pid) do
       nil -> raise "No SessionSupervisor. This should not happen."
       res -> {:reply, res, session_state, session_state.inactivity_timeout}
     end
-  end
-
-  def handle_call(:fetch_assigns, _from, session_state) do
-    {:reply, {:ok, session_state.assigns}, session_state}
   end
 
   def handle_call(:stop, from, session_state) do
@@ -155,23 +117,8 @@ defmodule ApplicationRunner.SessionManager do
   def handle_cast({:send_client_event, code, event}, session_state) do
     with {:ok, listener} <- ListenersCache.fetch_listener(session_state, code),
          {:ok, action} <- Map.fetch(listener, "action"),
-         props <- Map.get(listener, "props", %{}),
-         :ok <- do_send_event(session_state, action, props, event) do
-    else
-      error ->
-        send_error(session_state, error)
-    end
-
-    {:noreply, session_state, session_state.inactivity_timeout}
-  end
-
-  def handle_cast({:send_special_event, action, event}, session_state) do
-    case do_send_event(session_state, action, %{}, event) do
-      :ok ->
-        :ok
-
-      error ->
-        send_error(session_state, error)
+         props <- Map.get(listener, "props", %{}) do
+      do_send_event(session_state, action, props, event)
     end
 
     {:noreply, session_state, session_state.inactivity_timeout}
@@ -190,10 +137,6 @@ defmodule ApplicationRunner.SessionManager do
     end
 
     {:noreply, session_state, session_state.inactivity_timeout}
-  end
-
-  def handle_cast({:set_assigns, assigns}, session_state) do
-    {:noreply, Map.put(session_state, :assigns, assigns), session_state.inactivity_timeout}
   end
 
   @spec get_and_build_ui(SessionState.t(), String.t()) ::
@@ -230,8 +173,23 @@ defmodule ApplicationRunner.SessionManager do
     end
   end
 
+  defp send_on_user_first_join_event(session_state),
+    do: do_send_event(session_state, "onUserFirstJoin", %{}, %{})
+
+  defp send_on_user_quit_event(session_state),
+    do: do_send_event(session_state, "onUserQuit", %{}, %{})
+
+  defp send_on_session_start_event(session_state),
+    do: do_send_event(session_state, "onSessionStart", %{}, %{})
+
+  defp send_on_session_stop_event(session_state),
+    do: do_send_event(session_state, "onSessionStop", %{}, %{})
+
   defp do_send_event(session_state, action, props, event) do
-    AdapterHandler.run_listener(session_state, action, props, event)
+    event_handler_pid =
+      SessionSupervisor.fetch_module_pid!(session_state.session_supervisor_pid, EventHandler)
+
+    EventHandler.send_event(event_handler_pid, session_state, action, props, event)
   end
 
   defp send_error(session_state, error) do

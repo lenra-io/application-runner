@@ -9,6 +9,7 @@ defmodule ApplicationRunner.EnvManagerTest do
     ApplicationRunnerAdapter,
     EnvManager,
     EnvManagers,
+    EnvSupervisor,
     MockGenServer
   }
 
@@ -21,7 +22,7 @@ defmodule ApplicationRunner.EnvManagerTest do
     assert {:ok, pid} = EnvManagers.start_env(make_ref(), %{})
     env_state = :sys.get_state(pid)
 
-    assert is_pid(EnvManager.fetch_module_pid!(env_state, MockGenServer))
+    assert is_pid(EnvSupervisor.fetch_module_pid!(env_state.env_supervisor_pid, MockGenServer))
   end
 
   test "Can EnvManager supervisor should not have the NotExistGenServer" do
@@ -31,7 +32,7 @@ defmodule ApplicationRunner.EnvManagerTest do
     assert_raise(
       RuntimeError,
       "No such Module in EnvSupervisor. This should not happen.",
-      fn -> EnvManager.fetch_module_pid!(env_state, NotExistGenServer) end
+      fn -> EnvSupervisor.fetch_module_pid!(env_state.env_supervisor_pid, NotExistGenServer) end
     )
   end
 
@@ -57,14 +58,5 @@ defmodule ApplicationRunner.EnvManagerTest do
   test "EnvManager should exist in Swarm group :envs" do
     assert {:ok, pid} = EnvManagers.start_env(make_ref(), %{})
     assert Enum.member?(Swarm.members(:envs), pid)
-  end
-
-  describe "EnvManager.fetch_assigns/set_assigns" do
-    test "Set assign then get retrive the same data" do
-      env_id = make_ref()
-      assert {:ok, _pid} = EnvManagers.start_env(env_id, %{})
-      EnvManager.set_assigns(env_id, %{foo: "bar"})
-      assert {:ok, %{foo: "bar"}} = EnvManager.fetch_assigns(env_id)
-    end
   end
 end

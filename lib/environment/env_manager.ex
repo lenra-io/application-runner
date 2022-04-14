@@ -8,8 +8,22 @@ defmodule ApplicationRunner.EnvManager do
     AdapterHandler,
     EnvManagers,
     EnvState,
-    EnvSupervisor
+    EnvSupervisor,
+    EventHandler
   }
+
+  @spec get_manifest(number()) :: map()
+  def get_manifest(env_id) do
+    with {:ok, pid} <- EnvManagers.fetch_env_manager_pid(env_id) do
+      GenServer.call(pid, :get_manifest)
+    end
+  end
+
+  def wait_until_ready(env_id) do
+    with {:ok, pid} <- EnvManagers.fetch_env_manager_pid(env_id) do
+      GenServer.call(pid, :wait_until_ready)
+    end
+  end
 
   def start_link(opts) do
     env_id = Keyword.fetch!(opts, :env_id)
@@ -31,79 +45,52 @@ defmodule ApplicationRunner.EnvManager do
     # The EnvManager should be restarted by the EnvManagers then it will restart the supervisor.
     Process.link(env_supervisor_pid)
 
+    event_handler_pid = EnvSupervisor.fetch_module_pid!(env_supervisor_pid, EventHandler)
+    EventHandler.subscribe(event_handler_pid)
+
     env_state = %EnvState{
       env_id: env_id,
       assigns: assigns,
       env_supervisor_pid: env_supervisor_pid,
       inactivity_timeout:
-        Application.get_env(:application_runner, :env_inactivity_timeout, 1000 * 60 * 60)
+        Application.get_env(:application_runner, :env_inactivity_timeout, 1000 * 60 * 60),
+      ready?: false,
+      waiting_pid: []
     }
 
     with {:ok, manifest} <- AdapterHandler.get_manifest(env_state),
-         env_state <- Map.put(env_state, :manifest, manifest),
-         :ok <- send_on_env_start_event(env_state) do
-      {:ok, env_state, env_state.inactivity_timeout}
+         env_state <- Map.put(env_state, :manifest, manifest) do
+      {:ok, env_state, {:continue, :after_init}}
     else
       {:error, reason} ->
         {:stop, reason}
     end
   end
 
-  #  defdelegate load_env_state(env_id),
-  #    to: Application.compile_env!(:application_runner, :app_loader)
-
-  @doc """
-    return the app-level module.
-    This can be used to get module declared in the `EnvSupervisor` (like the cache module for example)
-  """
-  @spec fetch_module_pid!(EnvState.t(), atom()) :: pid()
-  def fetch_module_pid!(%EnvState{} = env_state, module_name) do
-    Supervisor.which_children(env_state.env_supervisor_pid)
-    |> Enum.find({:error, :no_such_module}, fn
-      {name, _, _, _} -> module_name == name
-    end)
-    |> case do
-      {_, pid, _, _} ->
-        pid
-
-      {:error, :no_such_module} ->
-        raise "No such Module in EnvSupervisor. This should not happen."
-    end
+  @impl true
+  def handle_continue(:after_init, env_state) do
+    send_on_env_start_event(env_state)
+    {:noreply, env_state}
   end
-
-  @spec get_manifest(number()) :: map()
-  def get_manifest(env_id) do
-    with {:ok, pid} <- EnvManagers.fetch_env_manager_pid(env_id) do
-      GenServer.call(pid, :get_manifest)
-    end
-  end
-
-  @spec fetch_assigns(number()) :: {:ok, any()} | {:error, :env_not_started}
-  def fetch_assigns(env_id) do
-    with {:ok, pid} <- EnvManagers.fetch_env_manager_pid(env_id) do
-      GenServer.call(pid, :fetch_assigns)
-    end
-  end
-
-  @spec(set_assigns(number(), term()) :: :ok, {:error, :env_not_started})
-  def set_assigns(env_id, assigns) do
-    with {:ok, pid} <- EnvManagers.fetch_env_manager_pid(env_id) do
-      GenServer.cast(pid, {:set_assigns, assigns})
-    end
-  end
-
-  def send_on_env_start_event(env_state),
-    do: do_send_special_event(env_state, "onEnvStart", %{}, %{})
-
-  def send_on_env_stop_event(env_state),
-    do: do_send_special_event(env_state, "onEnvStop", %{}, %{})
 
   @impl true
   def handle_call(:get_manifest, _from, env_state) do
     {:reply, Map.get(env_state, :manifest), env_state, env_state.inactivity_timeout}
   end
 
-  def handle_call(:get_env_supervisor_pid, _from, env_state) do
+  def handle_call(:wait_until_ready, {pid, _}, env_state) do
+    ready? = Map.get(env_state, :ready?)
+
+    if ready? do
+      {:reply, :ok, env_state, env_state.inactivity_timeout}
+    else
+      waiting_pid = Map.get(env_state, :waiting_pid, [])
+      env_state = Map.put(env_state, :waiting_pid, [pid, waiting_pid])
+      {:noreply, env_state, env_state.inactivity_timeout}
+    end
+  end
+
+  def handle_call(:fetch_env_supervisor_pid!, _from, env_state) do
     case Map.get(env_state, :env_supervisor_pid) do
       nil -> raise "No EnvSupervisor. This should not happen."
       res -> {:reply, res, env_state, env_state.inactivity_timeout}
@@ -114,24 +101,9 @@ defmodule ApplicationRunner.EnvManager do
     {:reply, :restart, state}
   end
 
-  def handle_call(:fetch_assigns, _from, env_state) do
-    {:reply, {:ok, env_state.assigns}, env_state}
-  end
-
   def handle_call(:stop, from, env_state) do
     stop(env_state, from)
     {:reply, :ok, env_state}
-  end
-
-  @impl true
-  def handle_cast({:send_special_event, action, event}, env_state) do
-    do_send_special_event(env_state, action, %{}, event)
-
-    {:noreply, env_state, env_state.inactivity_timeout}
-  end
-
-  def handle_cast({:set_assigns, assigns}, env_state) do
-    {:noreply, Map.put(env_state, :assigns, assigns)}
   end
 
   @impl true
@@ -140,9 +112,34 @@ defmodule ApplicationRunner.EnvManager do
     {:noreply, env_state}
   end
 
-  defp do_send_special_event(env_state, action, props, event) do
-    AdapterHandler.run_listener(env_state, action, props, event)
+  def handle_info({:event_finished, "onEnvStart", result}, env_state) do
+    waiting_pid = Map.get(env_state, :waiting_pid, [])
+    Enum.each(waiting_pid, fn pid -> GenServer.reply(pid, result) end)
+
+    env_state =
+      env_state
+      |> Map.put(:ready?, true)
+      |> Map.put(:waiting_pid, [])
+
+    {:noreply, env_state}
   end
+
+  def handle_info({:event_finished, _action, _result}, env_state) do
+    {:noreply, env_state}
+  end
+
+  defp do_send_event(env_state, action, props, event) do
+    event_handler_pid =
+      EnvSupervisor.fetch_module_pid!(env_state.env_supervisor_pid, EventHandler)
+
+    EventHandler.send_event(event_handler_pid, env_state, action, props, event)
+  end
+
+  defp send_on_env_start_event(env_state),
+    do: do_send_event(env_state, "onEnvStart", %{}, %{})
+
+  defp send_on_env_stop_event(env_state),
+    do: do_send_event(env_state, "onEnvStop", %{}, %{})
 
   defp stop(%EnvState{} = env_state, from) do
     # Stop all the session node for the given app and stop the app.

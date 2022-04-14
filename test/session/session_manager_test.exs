@@ -8,15 +8,16 @@ defmodule ApplicationRunner.SessionManagerTest do
   alias ApplicationRunner.{
     MockGenServer,
     SessionManager,
-    SessionManagers
+    SessionManagers,
+    SessionSupervisor
   }
 
   test "SessionManager supervisor should exist and have the MockGenServer." do
     assert {:ok, pid} = SessionManagers.start_session(make_ref(), make_ref(), %{user: %{}}, %{})
 
     assert _pid =
-             SessionManager.fetch_module_pid!(
-               :sys.get_state(pid),
+             SessionSupervisor.fetch_module_pid!(
+               :sys.get_state(pid).session_supervisor_pid,
                MockGenServer
              )
   end
@@ -28,8 +29,8 @@ defmodule ApplicationRunner.SessionManagerTest do
       RuntimeError,
       "No such Module in SessionSupervisor. This should not happen.",
       fn ->
-        SessionManager.fetch_module_pid!(
-          :sys.get_state(pid),
+        SessionSupervisor.fetch_module_pid!(
+          :sys.get_state(pid).session_supervisor_pid,
           NotExistGenServer
         )
       end
@@ -56,13 +57,6 @@ defmodule ApplicationRunner.SessionManagerTest do
     test "Special listeners are optionnal. Nothing happen if not set." do
       refute_receive({:ui, _})
       refute_receive({:error, _})
-    end
-  end
-
-  describe "SessionManager.fetch_assigns/set_assigns" do
-    test "Set assign then get retrive the same data", %{session_id: session_id} do
-      SessionManager.set_assigns(session_id, %{foo: "bar"})
-      assert {:ok, %{foo: "bar"}} = SessionManager.fetch_assigns(session_id)
     end
   end
 end
