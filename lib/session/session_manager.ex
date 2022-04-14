@@ -214,7 +214,6 @@ defmodule ApplicationRunner.SessionManager do
         id: id,
         name: root_widget,
         prefix_path: "",
-        query: query,
         data: data,
         props: props
       }
