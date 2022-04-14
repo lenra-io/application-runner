@@ -89,7 +89,7 @@ defmodule ApplicationRunner.ApplicationRunnerAdapter do
   end
 
   @impl true
-  def ensure_user_data_created(%SessionState{assigns: %{environment: environment, user: user}}) do
+  def create_user_data(%SessionState{assigns: %{environment: environment, user: user}}) do
     UserDataServices.create_with_data(environment.id, user.id)
     |> Repo.transaction()
     |> case do
@@ -101,9 +101,17 @@ defmodule ApplicationRunner.ApplicationRunnerAdapter do
     end
   end
 
-  def ensure_user_data_created(_session_state) do
+  def create_user_data(_session_state) do
     :ok
   end
+
+  @impl true
+  def first_time_user?(%SessionState{assigns: %{environment: environment, user: user}}) do
+    UserDataServices.current_user_data_query(environment.id, user.id)
+    |> Repo.exists?()
+  end
+
+  def first_time_user?(_), do: false
 
   @impl true
   def on_ui_changed(%SessionState{assigns: assigns}, ui_update) do

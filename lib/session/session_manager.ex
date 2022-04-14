@@ -68,8 +68,10 @@ defmodule ApplicationRunner.SessionManager do
       assigns: assigns
     }
 
+    first_time_user = AdapterHandler.first_time_user?(session_state)
+
     with :ok <- EnvManager.wait_until_ready(env_id),
-         :ok <- AdapterHandler.ensure_user_data_created(session_state),
+         :ok <- create_user_data_if_needed(session_state, first_time_user),
          :ok <- send_on_session_start_event(session_state) do
       {:ok, session_state, session_state.inactivity_timeout}
     else
@@ -77,6 +79,15 @@ defmodule ApplicationRunner.SessionManager do
         send_error(session_state, err)
         {:stop, reason}
     end
+  end
+
+  defp create_user_data_if_needed(session_state, true) do
+    AdapterHandler.create_user_data(session_state)
+    send_on_user_first_join_event(session_state)
+  end
+
+  defp create_user_data_if_needed(_session_state, false) do
+    :ok
   end
 
   @impl true

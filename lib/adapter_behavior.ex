@@ -25,7 +25,8 @@ defmodule ApplicationRunner.AdapterBehavior do
   @callback run_listener(SessionState.t() | EnvState.t(), action(), props(), event()) ::
               :ok | {:error, reason()}
   @callback exec_query(SessionState.t(), AST.Query.t()) :: data()
-  @callback ensure_user_data_created(SessionState.t()) :: :ok | {:error, reason()}
+  @callback create_user_data(SessionState.t()) :: :ok | {:error, reason()}
+  @callback first_time_user?(SessionState.t()) :: boolean()
   @callback on_ui_changed(
               SessionState.t(),
               {:ui, ui()} | {:patches, patches()} | {:error, tuple() | String.t()}
