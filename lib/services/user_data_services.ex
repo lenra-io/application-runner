@@ -3,8 +3,12 @@ defmodule ApplicationRunner.UserDataServices do
     The service that manages actions on data.
   """
 
+  import Ecto.Query, only: [from: 2]
+
   alias ApplicationRunner.{
+    Data,
     DataServices,
+    Datastore,
     UserData
   }
 
@@ -23,5 +27,17 @@ defmodule ApplicationRunner.UserDataServices do
     |> Ecto.Multi.insert(:inserted_user_data, fn %{inserted_data: data} ->
       UserData.new(%{user_id: user_id, data_id: data.id})
     end)
+  end
+
+  def current_user_data_query(env_id, user_id) do
+    from(
+      ud in UserData,
+      join: d in Data,
+      on: d.id == ud.data_id,
+      join: ds in Datastore,
+      on: d.datastore_id == ds.id,
+      where: ds.env_id == ^env_id and ud.user_id == ^user_id,
+      select: d
+    )
   end
 end

@@ -18,7 +18,10 @@ defmodule ApplicationRunner.AdapterHandler do
   defdelegate exec_query(session_state, query),
     to: Application.compile_env!(:application_runner, :adapter)
 
-  defdelegate ensure_user_data_created(session_state),
+  defdelegate create_user_data(session_state),
+    to: Application.compile_env!(:application_runner, :adapter)
+
+  defdelegate first_time_user?(session_state),
     to: Application.compile_env!(:application_runner, :adapter)
 
   defdelegate on_ui_changed(session_state, ui_update),
