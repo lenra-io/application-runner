@@ -40,7 +40,7 @@ defmodule ApplicationRunner.EnvSupervisor do
 
   def init(opts) do
     children =
-      [] ++
+      [ApplicationRunner.EventHandler] ++
         Application.get_env(:application_runner, :additional_env_modules, fn _ -> [] end).(opts)
 
     Supervisor.init(children, strategy: :one_for_one)

@@ -45,7 +45,8 @@ defmodule ApplicationRunner.SessionSupervisor do
       [
         ApplicationRunner.UiCache,
         ApplicationRunner.ListenersCache,
-        ApplicationRunner.WidgetCache
+        ApplicationRunner.WidgetCache,
+        ApplicationRunner.EventHandler
       ] ++
         Application.get_env(:application_runner, :additional_session_modules, fn _ -> [] end).(
           opts
