@@ -69,8 +69,6 @@ defmodule ApplicationRunner.DataReferencesServices do
 
   def delete(multi, _params) do
     multi
-    |> Ecto.Multi.run(:reference, fn _repo, _params ->
-      {:error, :json_format_invalid}
-    end)
+    |> Ecto.Multi.error(:reference, :json_format_invalid)
   end
 end

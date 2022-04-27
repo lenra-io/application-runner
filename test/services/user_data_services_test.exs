@@ -23,7 +23,7 @@ defmodule ApplicationRunner.UserDataServicesTest do
       {:ok, _inserted_datastore} = Repo.insert(Datastore.new(env_id, %{"name" => "users"}))
 
       {:ok, %{inserted_data: inserted_data}} =
-        DataServices.create(env_id, %{"datastore" => "users", "data" => %{"name" => "toto"}})
+        DataServices.create(env_id, %{"_datastore" => "users", "name" => "toto"})
         |> Repo.transaction()
 
       {:ok, %{inserted_user_data: inserted_user_data}} =
@@ -40,7 +40,7 @@ defmodule ApplicationRunner.UserDataServicesTest do
       {:ok, _inserted_datastore} = Repo.insert(Datastore.new(env_id, %{"name" => "users"}))
 
       {:ok, %{inserted_data: inserted_data}} =
-        DataServices.create(env_id, %{"datastore" => "users", "data" => %{"name" => "toto"}})
+        DataServices.create(env_id, %{"_datastore" => "users", "name" => "toto"})
         |> Repo.transaction()
 
       assert {:error, :inserted_user_data, %{errors: [user_id: {"does not exist", _constraint}]},
@@ -63,11 +63,11 @@ defmodule ApplicationRunner.UserDataServicesTest do
       {:ok, _inserted_datastore} = Repo.insert(Datastore.new(env_id, %{"name" => "users"}))
 
       {:ok, %{inserted_data: inserted_data}} =
-        DataServices.create(env_id, %{"datastore" => "users", "data" => %{"name" => "toto"}})
+        DataServices.create(env_id, %{"_datastore" => "users", "name" => "toto"})
         |> Repo.transaction()
 
       {:ok, %{inserted_data: inserted_data_two}} =
-        DataServices.create(env_id, %{"datastore" => "users", "data" => %{"name" => "toto"}})
+        DataServices.create(env_id, %{"_datastore" => "users", "name" => "toto"})
         |> Repo.transaction()
 
       {:ok, %{inserted_user_data: _inserted_user_data}} =
@@ -86,7 +86,7 @@ defmodule ApplicationRunner.UserDataServicesTest do
       {:ok, _inserted_datastore} = Repo.insert(Datastore.new(env_id, %{"name" => "users"}))
 
       {:ok, %{inserted_data: inserted_data}} =
-        DataServices.create(env_id, %{"datastore" => "users", "data" => %{"name" => "toto"}})
+        DataServices.create(env_id, %{"_datastore" => "users", "name" => "toto"})
         |> Repo.transaction()
 
       {:ok, user_two} = Repo.insert(FakeLenraUser.new())
@@ -107,7 +107,7 @@ defmodule ApplicationRunner.UserDataServicesTest do
       {:ok, _inserted_datastore} = Repo.insert(Datastore.new(env_id, %{"name" => "users"}))
 
       {:ok, %{inserted_data: inserted_data}} =
-        DataServices.create(env_id, %{"datastore" => "users", "data" => %{"name" => "toto"}})
+        DataServices.create(env_id, %{"_datastore" => "users", "name" => "toto"})
         |> Repo.transaction()
 
       {:ok, %{inserted_user_data: _inserted_user_data}} =

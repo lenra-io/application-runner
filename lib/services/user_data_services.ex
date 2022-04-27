@@ -23,7 +23,7 @@ defmodule ApplicationRunner.UserDataServices do
 
   def create_with_data(env_id, user_id) do
     Ecto.Multi.new()
-    |> DataServices.create(env_id, %{"datastore" => "UserData", "data" => %{}})
+    |> DataServices.create(env_id, %{"_datastore" => "UserData"})
     |> Ecto.Multi.insert(:inserted_user_data, fn %{inserted_data: data} ->
       UserData.new(%{user_id: user_id, data_id: data.id})
     end)
@@ -36,7 +36,7 @@ defmodule ApplicationRunner.UserDataServices do
       on: d.id == ud.data_id,
       join: ds in Datastore,
       on: d.datastore_id == ds.id,
-      where: ds.env_id == ^env_id and ud.user_id == ^user_id,
+      where: ds.environment_id == ^env_id and ud.user_id == ^user_id,
       select: d
     )
   end

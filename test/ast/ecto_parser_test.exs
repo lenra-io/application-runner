@@ -24,52 +24,53 @@ defmodule ApplicationRunner.ATS.EctoParserTest do
     DatastoreServices.create(env_id, %{"name" => "todos"}) |> Repo.transaction()
     # 1
     {:ok, %{inserted_data: %{id: user_data_id}}} =
-      DataServices.create(env_id, %{"datastore" => "userData", "data" => %{"score" => 42}})
+      DataServices.create(env_id, %{"_datastore" => "userData", "score" => 42})
       |> Repo.transaction()
 
     UserDataServices.create(%{user_id: user_id, data_id: user_data_id}) |> Repo.transaction()
     # 2
     {:ok, %{inserted_data: %{id: todolist1_id}}} =
       DataServices.create(env_id, %{
-        "datastore" => "todoList",
-        "data" => %{"name" => "favorites"},
-        "refBy" => [user_data_id]
+        "_datastore" => "todoList",
+        "name" => "favorites",
+        "_refBy" => [user_data_id]
       })
       |> Repo.transaction()
 
     # 3
     {:ok, %{inserted_data: %{id: todolist2_id}}} =
       DataServices.create(env_id, %{
-        "datastore" => "todoList",
-        "data" => %{"name" => "not fav"},
-        "refBy" => [user_data_id]
+        "_datastore" => "todoList",
+        "name" => "not fav",
+        "_refBy" => [user_data_id]
       })
       |> Repo.transaction()
 
     # 4
     {:ok, %{inserted_data: %{id: todo1_id}}} =
       DataServices.create(env_id, %{
-        "datastore" => "todos",
-        "data" => %{"title" => "Faire la vaisselle"},
-        "refBy" => [todolist1_id]
+        "_datastore" => "todos",
+        "title" => "Faire la vaisselle",
+        "_refBy" => [todolist1_id]
       })
       |> Repo.transaction()
 
     # 5
     {:ok, %{inserted_data: %{id: todo2_id}}} =
       DataServices.create(env_id, %{
-        "datastore" => "todos",
-        "data" => %{"title" => "Faire la cuisine"},
-        "refBy" => [todolist1_id]
+        "_datastore" => "todos",
+        "title" => "Faire la cuisine",
+        "_refBy" => [todolist1_id]
       })
       |> Repo.transaction()
 
     # 6
     {:ok, %{inserted_data: %{id: todo3_id}}} =
       DataServices.create(env_id, %{
-        "datastore" => "todos",
-        "data" => %{"title" => "Faire le ménage", "nullField" => nil},
-        "refBy" => [todolist2_id]
+        "_datastore" => "todos",
+        "title" => "Faire le ménage",
+        "nullField" => nil,
+        "_refBy" => [todolist2_id]
       })
       |> Repo.transaction()
 

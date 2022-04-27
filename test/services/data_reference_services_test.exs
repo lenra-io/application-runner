@@ -87,8 +87,7 @@ defmodule ApplicationRunner.DataReferenceServicesTest do
         })
         |> Repo.transaction()
 
-      assert {:error, :inserted_reference,
-              %{errors: [refs_id: {"has already been taken", _constraint}]},
+      assert {:error, :inserted_reference, %{errors: [refs_id: {"has already been taken", _}]},
               _changes_so_far} =
                DataReferencesServices.create(%{
                  refs_id: inserted_user.id,
@@ -110,12 +109,12 @@ defmodule ApplicationRunner.DataReferenceServicesTest do
 
       {:ok, inserted_point} = Repo.insert(Data.new(inserted_datastore_point.id, %{"score" => 10}))
 
-      {:error, :data_reference, :reference_not_found, _change_so_far} =
-        DataReferencesServices.create(%{
-          refs_id: inserted_user.id,
-          ref_by_id: inserted_point.id
-        })
-        |> Repo.transaction()
+      assert {:error, :data_reference, :reference_not_found, _change_so_far} =
+               DataReferencesServices.create(%{
+                 refs_id: inserted_user.id,
+                 ref_by_id: inserted_point.id
+               })
+               |> Repo.transaction()
     end
   end
 
@@ -150,12 +149,12 @@ defmodule ApplicationRunner.DataReferenceServicesTest do
       {:ok, inserted_user} =
         Repo.insert(Data.new(inserted_datastore_user.id, %{"name" => "toto"}))
 
-      {:error, :reference, :reference_not_found, %{}} =
-        DataReferencesServices.delete(%{
-          refs_id: -1,
-          ref_by_id: inserted_user.id
-        })
-        |> Repo.transaction()
+      assert {:error, :reference, :reference_not_found, %{}} ==
+               DataReferencesServices.delete(%{
+                 refs_id: -1,
+                 ref_by_id: inserted_user.id
+               })
+               |> Repo.transaction()
     end
 
     test "should return error if refBy not found", %{env_id: env_id} do
@@ -180,12 +179,12 @@ defmodule ApplicationRunner.DataReferenceServicesTest do
       {:ok, inserted_user} =
         Repo.insert(Data.new(inserted_datastore_user.id, %{"name" => "toto"}))
 
-      {:error, :reference, :json_format_invalid, %{}} =
-        DataReferencesServices.delete(%{
-          refs_id: inserted_user.id,
-          refsBy_id: -1
-        })
-        |> Repo.transaction()
+      assert {:error, :reference, :json_format_invalid, %{}} ==
+               DataReferencesServices.delete(%{
+                 refs_id: inserted_user.id,
+                 refsBy_id: -1
+               })
+               |> Repo.transaction()
     end
   end
 end

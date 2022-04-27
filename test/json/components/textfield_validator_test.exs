@@ -5,7 +5,7 @@ defmodule ApplicationRunner.TextfieldValidatorTest do
     Test the "textfield.schema.json" schema
   """
 
-  test "valid textfield", %{session_id: session_id} do
+  test "valid textfield", %{env_id: env_id} do
     json = %{
       "type" => "textfield",
       "value" => "",
@@ -18,7 +18,7 @@ defmodule ApplicationRunner.TextfieldValidatorTest do
       }
     }
 
-    mock_root_and_run(json, session_id)
+    mock_root_and_run(json, env_id)
 
     assert_success(%{
       "type" => "textfield",
@@ -29,38 +29,38 @@ defmodule ApplicationRunner.TextfieldValidatorTest do
     })
   end
 
-  test "valid textfield with no listener", %{session_id: session_id} do
+  test "valid textfield with no listener", %{env_id: env_id} do
     json = %{
       "type" => "textfield",
       "value" => "test"
     }
 
-    mock_root_and_run(json, session_id)
+    mock_root_and_run(json, env_id)
 
     assert_success(^json)
   end
 
-  test "invalid type textfield", %{session_id: session_id} do
+  test "invalid type textfield", %{env_id: env_id} do
     json = %{
       "type" => "textfields",
       "value" => "test"
     }
 
-    mock_root_and_run(json, session_id)
+    mock_root_and_run(json, env_id)
     assert_error({:error, :invalid_ui, [{"Invalid component type", ""}]})
   end
 
-  test "invalid textfield with no value", %{session_id: session_id} do
+  test "invalid textfield with no value", %{env_id: env_id} do
     json = %{
       "type" => "textfield"
     }
 
-    mock_root_and_run(json, session_id)
+    mock_root_and_run(json, env_id)
     assert_error({:error, :invalid_ui, [{"Required property value was not present.", ""}]})
   end
 
   test "invalid textfield with invalid action and props in listener", %{
-    session_id: session_id
+    env_id: env_id
   } do
     json = %{
       "type" => "textfield",
@@ -71,7 +71,7 @@ defmodule ApplicationRunner.TextfieldValidatorTest do
       }
     }
 
-    mock_root_and_run(json, session_id)
+    mock_root_and_run(json, env_id)
 
     assert_error(
       {:error, :invalid_ui,
@@ -82,7 +82,7 @@ defmodule ApplicationRunner.TextfieldValidatorTest do
     )
   end
 
-  test "invalid textfield with invalid listener key", %{session_id: session_id} do
+  test "invalid textfield with invalid listener key", %{env_id: env_id} do
     json = %{
       "type" => "textfield",
       "value" => "test",
@@ -92,7 +92,7 @@ defmodule ApplicationRunner.TextfieldValidatorTest do
       }
     }
 
-    mock_root_and_run(json, session_id)
+    mock_root_and_run(json, env_id)
 
     assert_error(
       {:error, :invalid_ui,
@@ -102,13 +102,13 @@ defmodule ApplicationRunner.TextfieldValidatorTest do
     )
   end
 
-  test "valid textfield with empty value", %{session_id: session_id} do
+  test "valid textfield with empty value", %{env_id: env_id} do
     json = %{
       "type" => "textfield",
       "value" => ""
     }
 
-    mock_root_and_run(json, session_id)
+    mock_root_and_run(json, env_id)
 
     assert_success(%{
       "type" => "textfield",

@@ -10,7 +10,7 @@ defmodule ApplicationRunner.EnvState do
     :inactivity_timeout,
     :assigns,
     :ready?,
-    :waiting_pid
+    :waiting_from
   ]
 
   @type t :: %ApplicationRunner.EnvState{
@@ -20,6 +20,6 @@ defmodule ApplicationRunner.EnvState do
           inactivity_timeout: number(),
           assigns: term(),
           ready?: boolean(),
-          waiting_pid: list(pid())
+          waiting_from: list(pid())
         }
 end

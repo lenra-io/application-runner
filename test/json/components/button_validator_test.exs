@@ -11,7 +11,7 @@ defmodule ApplicationRunner.ButtonValidatorTest do
     Test the "button.schema.json" schema
   """
 
-  test "valid button", %{session_id: session_id} do
+  test "valid button", %{env_id: env_id} do
     json = %{
       "type" => "button",
       "text" => "",
@@ -24,7 +24,7 @@ defmodule ApplicationRunner.ButtonValidatorTest do
       }
     }
 
-    mock_root_and_run(json, session_id)
+    mock_root_and_run(json, env_id)
 
     assert_success(%{
       "onPressed" => %{"code" => "QaEIonDgErbXwK1vTqyhIOsm14ScEH3Kk/JGNBywBK4="},
@@ -33,39 +33,39 @@ defmodule ApplicationRunner.ButtonValidatorTest do
     })
   end
 
-  test "valid button with no listener", %{session_id: session_id} do
+  test "valid button with no listener", %{env_id: env_id} do
     json = %{
       "type" => "button",
       "text" => "test"
     }
 
     # Setup mock
-    mock_root_and_run(json, session_id)
+    mock_root_and_run(json, env_id)
     assert_success(%{"type" => "button", "text" => "test"})
   end
 
-  test "invalid button type", %{session_id: session_id} do
+  test "invalid button type", %{env_id: env_id} do
     json = %{
       "type" => "buttons",
       "text" => "test"
     }
 
     # Setup mock
-    mock_root_and_run(json, session_id)
+    mock_root_and_run(json, env_id)
     assert_error({:error, :invalid_ui, [{"Invalid component type", ""}]})
   end
 
-  test "invalid button with no value", %{session_id: session_id} do
+  test "invalid button with no value", %{env_id: env_id} do
     json = %{
       "type" => "button"
     }
 
     # Setup mock
-    mock_root_and_run(json, session_id)
+    mock_root_and_run(json, env_id)
     assert_error({:error, :invalid_ui, [{"Required property text was not present.", ""}]})
   end
 
-  test "invalid button with invalid action and props in listener", %{session_id: session_id} do
+  test "invalid button with invalid action and props in listener", %{env_id: env_id} do
     json = %{
       "type" => "button",
       "text" => "test",
@@ -76,7 +76,7 @@ defmodule ApplicationRunner.ButtonValidatorTest do
     }
 
     # Setup mock
-    mock_root_and_run(json, session_id)
+    mock_root_and_run(json, env_id)
 
     assert_error(
       {:error, :invalid_ui,
@@ -87,7 +87,7 @@ defmodule ApplicationRunner.ButtonValidatorTest do
     )
   end
 
-  test "invalid button with invalid listener key", %{session_id: session_id} do
+  test "invalid button with invalid listener key", %{env_id: env_id} do
     json = %{
       "type" => "button",
       "text" => "test",
@@ -98,7 +98,7 @@ defmodule ApplicationRunner.ButtonValidatorTest do
     }
 
     # Setup mock
-    mock_root_and_run(json, session_id)
+    mock_root_and_run(json, env_id)
 
     assert_error(
       {:error, :invalid_ui,
@@ -108,13 +108,13 @@ defmodule ApplicationRunner.ButtonValidatorTest do
     )
   end
 
-  test "valid button with empty text", %{session_id: session_id} do
+  test "valid button with empty text", %{env_id: env_id} do
     json = %{
       "type" => "button",
       "text" => ""
     }
 
-    mock_root_and_run(json, session_id)
+    mock_root_and_run(json, env_id)
     assert_success(^json)
   end
 end

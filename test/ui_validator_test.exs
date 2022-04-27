@@ -45,17 +45,17 @@ defmodule ApplicationRunner.UIValidatorTest do
 
   ApplicationRunner.JsonSchemata.load_raw_schema(@test_component_schema, "test")
 
-  test "valide basic UI", %{session_id: session_id} do
+  test "valide basic UI", %{env_id: env_id} do
     json = %{
       "type" => "text",
       "value" => "Txt test"
     }
 
-    mock_root_and_run(json, session_id)
+    mock_root_and_run(json, env_id)
     assert_success(^json)
   end
 
-  test "bug LENRA-130", %{session_id: session_id} do
+  test "bug LENRA-130", %{env_id: env_id} do
     json = %{
       "type" => "flex",
       "children" => [
@@ -93,7 +93,7 @@ defmodule ApplicationRunner.UIValidatorTest do
       ]
     }
 
-    mock_root_and_run(json, session_id)
+    mock_root_and_run(json, env_id)
 
     assert_error({
       :error,
@@ -109,7 +109,7 @@ defmodule ApplicationRunner.UIValidatorTest do
     })
   end
 
-  test "multiple type error", %{session_id: session_id} do
+  test "multiple type error", %{env_id: env_id} do
     json = %{
       "type" => "flex",
       "children" => [
@@ -121,7 +121,7 @@ defmodule ApplicationRunner.UIValidatorTest do
       ]
     }
 
-    mock_root_and_run(json, session_id)
+    mock_root_and_run(json, env_id)
 
     assert_error({
       :error,
