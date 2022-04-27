@@ -11,7 +11,7 @@ defmodule ApplicationRunner.ContainerValidatorTest do
     Test the "container.schema.json" schema
   """
 
-  test "valid container", %{session_id: session_id} do
+  test "valid container", %{env_id: env_id} do
     json = %{
       "type" => "container",
       "child" => %{
@@ -20,12 +20,12 @@ defmodule ApplicationRunner.ContainerValidatorTest do
       }
     }
 
-    mock_root_and_run(json, session_id)
+    mock_root_and_run(json, env_id)
 
     assert_success(^json)
   end
 
-  test "valid container with border", %{session_id: session_id} do
+  test "valid container with border", %{env_id: env_id} do
     json = %{
       "type" => "container",
       "child" => %{
@@ -52,12 +52,12 @@ defmodule ApplicationRunner.ContainerValidatorTest do
       }
     }
 
-    mock_root_and_run(json, session_id)
+    mock_root_and_run(json, env_id)
 
     assert_success(^json)
   end
 
-  test "valid container with borderRadius", %{session_id: session_id} do
+  test "valid container with borderRadius", %{env_id: env_id} do
     json = %{
       "type" => "container",
       "child" => %{
@@ -74,22 +74,22 @@ defmodule ApplicationRunner.ContainerValidatorTest do
       }
     }
 
-    mock_root_and_run(json, session_id)
+    mock_root_and_run(json, env_id)
 
     assert_success(^json)
   end
 
-  test "invalid container forgotten child", %{session_id: session_id} do
+  test "invalid container forgotten child", %{env_id: env_id} do
     json = %{
       "type" => "container"
     }
 
-    mock_root_and_run(json, session_id)
+    mock_root_and_run(json, env_id)
 
     assert_error({:error, :invalid_ui, [{"Required property child was not present.", ""}]})
   end
 
-  test "invalid container border", %{session_id: session_id} do
+  test "invalid container border", %{env_id: env_id} do
     json = %{
       "type" => "container",
       "child" => %{
@@ -116,7 +116,7 @@ defmodule ApplicationRunner.ContainerValidatorTest do
       }
     }
 
-    mock_root_and_run(json, session_id)
+    mock_root_and_run(json, env_id)
 
     assert_error(
       {:error, :invalid_ui,

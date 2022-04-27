@@ -7,7 +7,6 @@ defmodule ApplicationRunner.SessionManagerTest do
 
   alias ApplicationRunner.{
     MockGenServer,
-    SessionManager,
     SessionManagers,
     SessionSupervisor
   }

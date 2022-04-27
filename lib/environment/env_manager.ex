@@ -12,6 +12,9 @@ defmodule ApplicationRunner.EnvManager do
     EventHandler
   }
 
+  @on_env_start_action "onEnvStart"
+  @on_env_stop_action "onEnvStop"
+
   @spec get_manifest(number()) :: map()
   def get_manifest(env_id) do
     with {:ok, pid} <- EnvManagers.fetch_env_manager_pid(env_id) do
@@ -23,6 +26,11 @@ defmodule ApplicationRunner.EnvManager do
     with {:ok, pid} <- EnvManagers.fetch_env_manager_pid(env_id) do
       GenServer.call(pid, :wait_until_ready)
     end
+  end
+
+  @spec reload_all_ui(number()) :: :ok
+  def reload_all_ui(env_id) do
+    Swarm.publish({:sessions, env_id}, :data_changed)
   end
 
   def start_link(opts) do
@@ -55,7 +63,7 @@ defmodule ApplicationRunner.EnvManager do
       inactivity_timeout:
         Application.get_env(:application_runner, :env_inactivity_timeout, 1000 * 60 * 60),
       ready?: false,
-      waiting_pid: []
+      waiting_from: []
     }
 
     with {:ok, manifest} <- AdapterHandler.get_manifest(env_state),
@@ -78,14 +86,14 @@ defmodule ApplicationRunner.EnvManager do
     {:reply, Map.get(env_state, :manifest), env_state, env_state.inactivity_timeout}
   end
 
-  def handle_call(:wait_until_ready, {pid, _}, env_state) do
+  def handle_call(:wait_until_ready, from, env_state) do
     ready? = Map.get(env_state, :ready?)
 
     if ready? do
       {:reply, :ok, env_state, env_state.inactivity_timeout}
     else
-      waiting_pid = Map.get(env_state, :waiting_pid, [])
-      env_state = Map.put(env_state, :waiting_pid, [pid, waiting_pid])
+      waiting_from = Map.get(env_state, :waiting_from, [])
+      env_state = Map.put(env_state, :waiting_from, [from | waiting_from])
       {:noreply, env_state, env_state.inactivity_timeout}
     end
   end
@@ -112,14 +120,14 @@ defmodule ApplicationRunner.EnvManager do
     {:noreply, env_state}
   end
 
-  def handle_info({:event_finished, "onEnvStart", result}, env_state) do
-    waiting_pid = Map.get(env_state, :waiting_pid, [])
-    Enum.each(waiting_pid, fn pid -> GenServer.reply(pid, result) end)
+  def handle_info({:event_finished, @on_env_start_action, result}, env_state) do
+    waiting_from = Map.get(env_state, :waiting_from, [])
+    Enum.each(waiting_from, fn from -> GenServer.reply(from, result) end)
 
     env_state =
       env_state
       |> Map.put(:ready?, true)
-      |> Map.put(:waiting_pid, [])
+      |> Map.put(:waiting_from, [])
 
     {:noreply, env_state}
   end
@@ -136,10 +144,10 @@ defmodule ApplicationRunner.EnvManager do
   end
 
   defp send_on_env_start_event(env_state),
-    do: do_send_event(env_state, "onEnvStart", %{}, %{})
+    do: do_send_event(env_state, @on_env_start_action, %{}, %{})
 
   defp send_on_env_stop_event(env_state),
-    do: do_send_event(env_state, "onEnvStop", %{}, %{})
+    do: do_send_event(env_state, @on_env_stop_action, %{}, %{})
 
   defp stop(%EnvState{} = env_state, from) do
     # Stop all the session node for the given app and stop the app.

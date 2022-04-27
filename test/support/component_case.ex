@@ -40,9 +40,9 @@ defmodule ApplicationRunner.ComponentCase do
         %{session_state: session_state, session_pid: pid, session_id: session_id, env_id: env_id}
       end
 
-      def mock_root_and_run(json, session_id) do
+      def mock_root_and_run(json, env_id) do
         ApplicationRunnerAdapter.set_mock(%{widgets: %{"root" => fn _, _ -> json end}})
-        SessionManager.reload_ui(session_id)
+        EnvManager.reload_all_ui(env_id)
       end
 
       defmacro assert_success(expected) do

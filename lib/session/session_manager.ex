@@ -20,16 +20,21 @@ defmodule ApplicationRunner.SessionManager do
     WidgetContext
   }
 
+  @on_user_first_join_action "onUserFirstJoin"
+  @on_user_quit_action "onUserQuit"
+  @on_session_start_action "onSessionStart"
+  @on_session_stop_action "onSessionStop"
+
+  @optional_handler_actions [
+    @on_user_first_join_action,
+    @on_user_quit_action,
+    @on_session_start_action,
+    @on_session_stop_action
+  ]
+
   @spec send_client_event(pid(), String.t(), map()) :: :ok
   def send_client_event(session_manager_pid, code, event) do
     GenServer.cast(session_manager_pid, {:send_client_event, code, event})
-  end
-
-  @spec reload_ui(number()) :: :ok | {:error, :session_not_started}
-  def reload_ui(session_id) do
-    with {:ok, pid} <- SessionManagers.fetch_session_manager_pid(session_id) do
-      GenServer.cast(pid, :data_changed)
-    end
   end
 
   @spec start_link(keyword) :: :ignore | {:error, any} | {:ok, pid}
@@ -97,13 +102,42 @@ defmodule ApplicationRunner.SessionManager do
     {:noreply, session_state}
   end
 
-  def handle_info({:event_finished, _action, result}, session_state) do
+  def handle_info({:event_finished, action, result}, session_state) do
+    if action == @on_session_start_action do
+      EnvManager.reload_all_ui(session_state.env_id)
+    end
+
     case result do
-      :ok -> :ok
-      err -> send_error(session_state, err)
+      :ok ->
+        EnvManager.reload_all_ui(session_state.env_id)
+        :ok
+
+      :error404 when action in @optional_handler_actions ->
+        :ok
+
+      :error404 when action not in @optional_handler_actions ->
+        send_error(session_state, {:error, :listener_not_found})
+
+      err ->
+        send_error(session_state, err)
     end
 
     {:noreply, session_state}
+  end
+
+  def handle_info(:data_changed, %SessionState{} = session_state) do
+    with %{"rootWidget" => root_widget} <- EnvManager.get_manifest(session_state.env_id),
+         :ok <- WidgetCache.clear_cache(session_state),
+         {:ok, ui} <- get_and_build_ui(session_state, root_widget) do
+      transformed_ui = transform_ui(ui)
+      res = UiCache.diff_and_save(session_state, transformed_ui)
+      AdapterHandler.on_ui_changed(session_state, res)
+    else
+      error ->
+        send_error(session_state, error)
+    end
+
+    {:noreply, session_state, session_state.inactivity_timeout}
   end
 
   @impl true
@@ -130,21 +164,6 @@ defmodule ApplicationRunner.SessionManager do
          {:ok, action} <- Map.fetch(listener, "action"),
          props <- Map.get(listener, "props", %{}) do
       do_send_event(session_state, action, props, event)
-    end
-
-    {:noreply, session_state, session_state.inactivity_timeout}
-  end
-
-  def handle_cast(:data_changed, %SessionState{} = session_state) do
-    with %{"rootWidget" => root_widget} <- EnvManager.get_manifest(session_state.env_id),
-         :ok <- WidgetCache.clear_cache(session_state),
-         {:ok, ui} <- get_and_build_ui(session_state, root_widget) do
-      transformed_ui = transform_ui(ui)
-      res = UiCache.diff_and_save(session_state, transformed_ui)
-      AdapterHandler.on_ui_changed(session_state, res)
-    else
-      error ->
-        send_error(session_state, error)
     end
 
     {:noreply, session_state, session_state.inactivity_timeout}
@@ -185,16 +204,16 @@ defmodule ApplicationRunner.SessionManager do
   end
 
   defp send_on_user_first_join_event(session_state),
-    do: do_send_event(session_state, "onUserFirstJoin", %{}, %{})
+    do: do_send_event(session_state, @on_user_first_join_action, %{}, %{})
 
   defp send_on_user_quit_event(session_state),
-    do: do_send_event(session_state, "onUserQuit", %{}, %{})
+    do: do_send_event(session_state, @on_user_quit_action, %{}, %{})
 
   defp send_on_session_start_event(session_state),
-    do: do_send_event(session_state, "onSessionStart", %{}, %{})
+    do: do_send_event(session_state, @on_session_start_action, %{}, %{})
 
   defp send_on_session_stop_event(session_state),
-    do: do_send_event(session_state, "onSessionStop", %{}, %{})
+    do: do_send_event(session_state, @on_session_stop_action, %{}, %{})
 
   defp do_send_event(session_state, action, props, event) do
     event_handler_pid =

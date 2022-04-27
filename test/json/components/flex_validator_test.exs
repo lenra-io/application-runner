@@ -5,7 +5,7 @@ defmodule ApplicationRunner.FlexValidatorTest do
     Test the "flex.schema.json" schema
   """
 
-  test "valid flex", %{session_id: session_id} do
+  test "valid flex", %{env_id: env_id} do
     json = %{
       "type" => "flex",
       "children" => [
@@ -16,34 +16,34 @@ defmodule ApplicationRunner.FlexValidatorTest do
       ]
     }
 
-    mock_root_and_run(json, session_id)
+    mock_root_and_run(json, env_id)
 
     assert_success(^json)
   end
 
-  test "valid empty flex", %{session_id: session_id} do
+  test "valid empty flex", %{env_id: env_id} do
     json = %{
       "type" => "flex",
       "children" => []
     }
 
-    mock_root_and_run(json, session_id)
+    mock_root_and_run(json, env_id)
 
     assert_success(^json)
   end
 
-  test "invalid flex type", %{session_id: session_id} do
+  test "invalid flex type", %{env_id: env_id} do
     json = %{
       "type" => "flexes",
       "children" => []
     }
 
-    mock_root_and_run(json, session_id)
+    mock_root_and_run(json, env_id)
 
     assert_error({:error, :invalid_ui, [{"Invalid component type", ""}]})
   end
 
-  test "invalide component inside the flex", %{session_id: session_id} do
+  test "invalide component inside the flex", %{env_id: env_id} do
     json = %{
       "type" => "flex",
       "children" => [
@@ -57,17 +57,17 @@ defmodule ApplicationRunner.FlexValidatorTest do
       ]
     }
 
-    mock_root_and_run(json, session_id)
+    mock_root_and_run(json, env_id)
 
     assert_error({:error, :invalid_ui, [{"Invalid component type", "/children/1"}]})
   end
 
-  test "invalid flex with no children property", %{session_id: session_id} do
+  test "invalid flex with no children property", %{env_id: env_id} do
     json = %{
       "type" => "flex"
     }
 
-    mock_root_and_run(json, session_id)
+    mock_root_and_run(json, env_id)
 
     assert_error({:error, :invalid_ui, [{"Required property children was not present.", ""}]})
   end
