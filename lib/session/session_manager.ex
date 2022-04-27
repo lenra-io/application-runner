@@ -109,7 +109,6 @@ defmodule ApplicationRunner.SessionManager do
         :ok
 
       :error404 when action in @optional_handler_actions ->
-        EnvManager.reload_all_ui(session_state.env_id)
         :ok
 
       :error404 when action not in @optional_handler_actions ->
