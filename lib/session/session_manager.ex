@@ -103,6 +103,10 @@ defmodule ApplicationRunner.SessionManager do
   end
 
   def handle_info({:event_finished, action, result}, session_state) do
+    if action == @on_session_start_action do
+      EnvManager.reload_all_ui(session_state.env_id)
+    end
+
     case result do
       :ok ->
         EnvManager.reload_all_ui(session_state.env_id)
