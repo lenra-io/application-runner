@@ -20,7 +20,7 @@ defmodule ApplicationRunner.AdapterBehavior do
   @type widget_name() :: String.t()
 
   @callback get_manifest(EnvState.t()) :: {:ok, manifest()} | {:error, reason()}
-  @callback get_widget(EnvState.t(), widget_name(), data(), props()) ::
+  @callback get_widget(SessionState.t(), widget_name(), data(), props()) ::
               {:ok, widget()} | {:error, reason()}
   @callback run_listener(SessionState.t() | EnvState.t(), action(), props(), event()) ::
               :ok | {:error, reason()} | :error404
