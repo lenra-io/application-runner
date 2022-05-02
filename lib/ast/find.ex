@@ -1,13 +1,13 @@
 defmodule ApplicationRunner.AST.Find do
   @moduledoc """
     This struct represent the $find part of a query.
-    in `%{"$find" => %{"_datastore" => "userData"}}`, `%{"_datastore" => "userData"}` is the Find part.
+    in `%{"$find" => %{"_datastore" => "_users"}}`, `%{"_datastore" => "_users"}` is the Find part.
 
     The above example is parsed into
     `%AST.Find{
       clause: %AST.Eq{
         right: %AST.DataKey{key: "_datastore"},
-        left: %AST.StringValue{value: "userData"}
+        left: %AST.StringValue{value: "_users"}
       }
     }`
 
