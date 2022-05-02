@@ -20,13 +20,13 @@ defmodule ApplicationRunner.AST.ParserTest do
   test "Simple equal clause in the find" do
     assert AST.Parser.from_json(%{
              "$find" => %{
-               "_datastore" => "userData"
+               "_datastore" => "_users"
              }
            }) == %AST.Query{
              find: %AST.Find{
                clause: %AST.Eq{
                  left: %AST.DataKey{key_path: ["_datastore"]},
-                 right: %AST.StringValue{value: "userData"}
+                 right: %AST.StringValue{value: "_users"}
                }
              },
              select: %AST.Select{clause: nil}
@@ -36,7 +36,7 @@ defmodule ApplicationRunner.AST.ParserTest do
   test "Multiple equal clauses in the find" do
     assert AST.Parser.from_json(%{
              "$find" => %{
-               "_datastore" => "userData",
+               "_datastore" => "_users",
                "name" => "Jean Neige"
              }
            }) == %AST.Query{
@@ -45,7 +45,7 @@ defmodule ApplicationRunner.AST.ParserTest do
                  clauses: [
                    %AST.Eq{
                      left: %AST.DataKey{key_path: ["_datastore"]},
-                     right: %AST.StringValue{value: "userData"}
+                     right: %AST.StringValue{value: "_users"}
                    },
                    %AST.Eq{
                      left: %AST.DataKey{key_path: ["name"]},
@@ -62,7 +62,7 @@ defmodule ApplicationRunner.AST.ParserTest do
     assert AST.Parser.from_json(%{
              "$find" => %{
                "$and" => [
-                 %{"_datastore" => %{"$eq" => "userData"}},
+                 %{"_datastore" => %{"$eq" => "_users"}},
                  %{"name" => %{"$eq" => "Jean Neige"}}
                ]
              }
@@ -72,7 +72,7 @@ defmodule ApplicationRunner.AST.ParserTest do
                  clauses: [
                    %AST.Eq{
                      left: %AST.DataKey{key_path: ["_datastore"]},
-                     right: %AST.StringValue{value: "userData"}
+                     right: %AST.StringValue{value: "_users"}
                    },
                    %AST.Eq{
                      left: %AST.DataKey{key_path: ["name"]},
@@ -89,14 +89,14 @@ defmodule ApplicationRunner.AST.ParserTest do
     assert AST.Parser.from_json(%{
              "$find" => %{
                "$and" => [
-                 %{"_datastore" => %{"$eq" => "userData"}}
+                 %{"_datastore" => %{"$eq" => "_users"}}
                ]
              }
            }) == %AST.Query{
              find: %AST.Find{
                clause: %AST.Eq{
                  left: %AST.DataKey{key_path: ["_datastore"]},
-                 right: %AST.StringValue{value: "userData"}
+                 right: %AST.StringValue{value: "_users"}
                }
              },
              select: %AST.Select{clause: nil}

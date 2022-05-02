@@ -19,12 +19,12 @@ defmodule ApplicationRunner.ATS.EctoParserTest do
     {:ok, %{id: user_id}} = FakeLenraUser.new() |> Repo.insert()
     {:ok, %{id: env_id}} = FakeLenraEnvironment.new() |> Repo.insert()
 
-    DatastoreServices.create(env_id, %{"name" => "userData"}) |> Repo.transaction()
+    DatastoreServices.create(env_id, %{"name" => "_users"}) |> Repo.transaction()
     DatastoreServices.create(env_id, %{"name" => "todoList"}) |> Repo.transaction()
     DatastoreServices.create(env_id, %{"name" => "todos"}) |> Repo.transaction()
     # 1
     {:ok, %{inserted_data: %{id: user_data_id}}} =
-      DataServices.create(env_id, %{"_datastore" => "userData", "score" => 42})
+      DataServices.create(env_id, %{"_datastore" => "_users", "score" => 42})
       |> Repo.transaction()
 
     UserDataServices.create(%{user_id: user_id, data_id: user_data_id}) |> Repo.transaction()
@@ -123,7 +123,7 @@ defmodule ApplicationRunner.ATS.EctoParserTest do
     assert Enum.empty?(res)
   end
 
-  test "Select where datastore userData", %{
+  test "Select where datastore _users", %{
     user_id: user_id,
     user_data_id: user_data_id,
     todolist1_id: todolist1_id,
@@ -131,14 +131,14 @@ defmodule ApplicationRunner.ATS.EctoParserTest do
     env_id: env_id
   } do
     res =
-      %{"$find" => %{"_datastore" => "userData"}}
+      %{"$find" => %{"_datastore" => "_users"}}
       |> Parser.from_json()
       |> EctoParser.to_ecto(env_id, user_data_id)
       |> Repo.one()
 
     assert %{
              "_data" => %{"score" => 42},
-             "_datastore" => "userData",
+             "_datastore" => "_users",
              "_id" => ^user_data_id,
              "_refBy" => [],
              "_refs" => [^todolist1_id, ^todolist2_id],
@@ -190,7 +190,7 @@ defmodule ApplicationRunner.ATS.EctoParserTest do
 
     assert %{
              "_data" => %{"score" => 42},
-             "_datastore" => "userData",
+             "_datastore" => "_users",
              "_user" => %{"email" => "test@lenra.io"}
            } = res
   end
@@ -207,7 +207,7 @@ defmodule ApplicationRunner.ATS.EctoParserTest do
 
     assert %{
              "_data" => %{"score" => 42},
-             "_datastore" => "userData",
+             "_datastore" => "_users",
              "_user" => %{"email" => "test@lenra.io"},
              "_id" => ^user_data_id,
              "_refBy" => []
@@ -226,7 +226,7 @@ defmodule ApplicationRunner.ATS.EctoParserTest do
 
     assert %{
              "_data" => %{"score" => 42},
-             "_datastore" => "userData",
+             "_datastore" => "_users",
              "_user" => %{"email" => "test@lenra.io"},
              "_id" => ^user_data_id,
              "_refBy" => []
