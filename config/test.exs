@@ -1,8 +1,8 @@
 import Config
 
 config :application_runner,
-  additional_env_modules: fn _ -> [ApplicationRunner.MockGenServer] end,
-  additional_session_modules: fn _ -> [ApplicationRunner.MockGenServer] end,
+  additional_env_modules: {ApplicationRunner.ModuleInjector, :add_env_modules},
+  additional_session_modules: {ApplicationRunner.ModuleInjector, :add_session_modules},
   ecto_repos: [ApplicationRunner.Repo]
 
 config :application_runner, ApplicationRunner.Repo,
