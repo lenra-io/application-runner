@@ -9,40 +9,32 @@ defmodule ApplicationRunner.SessionManager do
   alias ApplicationRunner.{
     AdapterHandler,
     EnvManager,
+    EventHandler,
+    ListenersCache,
     SessionManagers,
     SessionState,
     SessionSupervisor,
-    UiCache
+    UiCache,
+    UiContext,
+    WidgetCache,
+    WidgetContext
   }
 
-  @doc """
-    return the app-level module.
-    This can be used to get module declared in the `SessionSupervisor` (like the cache module for example)
-  """
-  @spec fetch_module_pid!(SessionState.t(), atom()) :: pid()
-  def fetch_module_pid!(
-        %SessionState{session_supervisor_pid: session_supervisor_pid},
-        module_name
-      ) do
-    Supervisor.which_children(session_supervisor_pid)
-    |> Enum.find({:error, :no_such_module}, fn
-      {name, _, _, _} -> module_name == name
-    end)
-    |> case do
-      {_, pid, _, _} ->
-        pid
+  @on_user_first_join_action "onUserFirstJoin"
+  @on_user_quit_action "onUserQuit"
+  @on_session_start_action "onSessionStart"
+  @on_session_stop_action "onSessionStop"
 
-      {:error, :no_such_module} ->
-        raise "No such Module in SessionSupervisor. This should not happen."
-    end
-  end
+  @optional_handler_actions [
+    @on_user_first_join_action,
+    @on_user_quit_action,
+    @on_session_start_action,
+    @on_session_stop_action
+  ]
 
-  def run_listener(session_manager_pid, code, event) do
-    GenServer.cast(session_manager_pid, {:run_listener, code, event})
-  end
-
-  def init_data(session_manager_pid) do
-    GenServer.cast(session_manager_pid, :init_data)
+  @spec send_client_event(pid(), String.t(), map()) :: :ok
+  def send_client_event(session_manager_pid, code, event) do
+    GenServer.cast(session_manager_pid, {:send_client_event, code, event})
   end
 
   @spec start_link(keyword) :: :ignore | {:error, any} | {:ok, pid}
@@ -69,6 +61,9 @@ defmodule ApplicationRunner.SessionManager do
     # The SessionManager should be restarted by the SessionManagers then it will restart the supervisor.
     Process.link(session_supervisor_pid)
 
+    event_handler_pid = SessionSupervisor.fetch_module_pid!(session_supervisor_pid, EventHandler)
+    EventHandler.subscribe(event_handler_pid)
+
     session_state = %SessionState{
       session_id: session_id,
       env_id: env_id,
@@ -78,20 +73,62 @@ defmodule ApplicationRunner.SessionManager do
       assigns: assigns
     }
 
-    {:ok, session_state, session_state.inactivity_timeout}
+    first_time_user = AdapterHandler.first_time_user?(session_state)
+
+    with :ok <- EnvManager.wait_until_ready(env_id),
+         :ok <- create_user_data_if_needed(session_state, first_time_user),
+         :ok <- send_on_session_start_event(session_state) do
+      {:ok, session_state, session_state.inactivity_timeout}
+    else
+      {:error, reason} = err ->
+        send_error(session_state, err)
+        {:stop, reason}
+    end
+  end
+
+  defp create_user_data_if_needed(session_state, true) do
+    AdapterHandler.create_user_data(session_state)
+    send_on_user_first_join_event(session_state)
+  end
+
+  defp create_user_data_if_needed(_session_state, false) do
+    :ok
   end
 
   @impl true
-  def handle_info(:timeout, state) do
-    SessionManagers.terminate_session(self())
-    {:noreply, state}
+
+  def handle_info(:timeout, session_state) do
+    stop(session_state, nil)
+    {:noreply, session_state}
   end
 
-  @impl true
+  def handle_info({:event_finished, action, result}, session_state) do
+    if action == @on_session_start_action do
+      EnvManager.reload_all_ui(session_state.env_id)
+    end
+
+    case result do
+      :ok ->
+        EnvManager.reload_all_ui(session_state.env_id)
+        :ok
+
+      :error404 when action in @optional_handler_actions ->
+        :ok
+
+      :error404 when action not in @optional_handler_actions ->
+        send_error(session_state, {:error, :listener_not_found})
+
+      err ->
+        send_error(session_state, err)
+    end
+
+    {:noreply, session_state}
+  end
+
   def handle_info(:data_changed, %SessionState{} = session_state) do
     with %{"rootWidget" => root_widget} <- EnvManager.get_manifest(session_state.env_id),
-         {:ok, data} <- AdapterHandler.get_data(session_state),
-         {:ok, ui} <- EnvManager.get_and_build_ui(session_state, root_widget, data) do
+         :ok <- WidgetCache.clear_cache(session_state),
+         {:ok, ui} <- get_and_build_ui(session_state, root_widget) do
       transformed_ui = transform_ui(ui)
       res = UiCache.diff_and_save(session_state, transformed_ui)
       AdapterHandler.on_ui_changed(session_state, res)
@@ -104,11 +141,16 @@ defmodule ApplicationRunner.SessionManager do
   end
 
   @impl true
-  def handle_call(:get_session_supervisor_pid, _from, session_state) do
+  def handle_call(:fetch_session_supervisor_pid!, _from, session_state) do
     case Map.fetch!(session_state, :session_supervisor_pid) do
       nil -> raise "No SessionSupervisor. This should not happen."
       res -> {:reply, res, session_state, session_state.inactivity_timeout}
     end
+  end
+
+  def handle_call(:stop, from, session_state) do
+    stop(session_state, from)
+    {:noreply, session_state}
   end
 
   @doc """
@@ -117,42 +159,77 @@ defmodule ApplicationRunner.SessionManager do
     To prevent this we simply ask the child to call `DynamicSupervisor.terminate_child/2`to ensure that the correct SessionManagers is called.
   """
   @impl true
-  def handle_cast(:stop, state) do
-    SessionManagers.terminate_session(self())
-    {:noreply, state}
-  end
-
-  @impl true
-  def handle_cast({:run_listener, code, event}, session_state) do
-    with {:ok, data} <- AdapterHandler.get_data(session_state),
-         {:ok, new_data} <-
-           EnvManager.run_listener(session_state, code, data, event),
-         :ok <- AdapterHandler.save_data(session_state, new_data) do
-      EnvManager.notify_data_changed(session_state)
-    else
-      error ->
-        send_error(session_state, error)
+  def handle_cast({:send_client_event, code, event}, session_state) do
+    with {:ok, listener} <- ListenersCache.fetch_listener(session_state, code),
+         {:ok, action} <- Map.fetch(listener, "action"),
+         props <- Map.get(listener, "props", %{}) do
+      do_send_event(session_state, action, props, event)
     end
 
     {:noreply, session_state, session_state.inactivity_timeout}
   end
 
-  @impl true
-  def handle_cast(:init_data, session_state) do
-    with {:ok, data} <- AdapterHandler.get_data(session_state),
-         {:ok, new_data} <- EnvManager.init_data(session_state, data),
-         :ok <- AdapterHandler.save_data(session_state, new_data) do
-      EnvManager.notify_data_changed(session_state)
-    else
-      error ->
-        send_error(session_state, error)
-    end
+  @spec get_and_build_ui(SessionState.t(), String.t()) ::
+          {:ok, map()} | {:error, any()}
+  def get_and_build_ui(session_state, root_widget) do
+    props = %{}
+    query = nil
+    data = []
+    id = WidgetCache.generate_widget_id(root_widget, query, props)
 
-    {:noreply, session_state, session_state.inactivity_timeout}
+    WidgetCache.get_and_build_widget(
+      session_state,
+      %UiContext{
+        widgets_map: %{},
+        listeners_map: %{}
+      },
+      %WidgetContext{
+        id: id,
+        name: root_widget,
+        prefix_path: "",
+        data: data,
+        props: props
+      }
+    )
+    |> case do
+      {:ok, ui_context} ->
+        {:ok, %{"rootWidget" => id, "widgets" => ui_context.widgets_map}}
+
+      {:error, reason} when is_atom(reason) ->
+        {:error, reason}
+
+      {:error, ui_error_list} when is_list(ui_error_list) ->
+        {:error, :invalid_ui, ui_error_list}
+    end
+  end
+
+  defp send_on_user_first_join_event(session_state),
+    do: do_send_event(session_state, @on_user_first_join_action, %{}, %{})
+
+  defp send_on_user_quit_event(session_state),
+    do: do_send_event(session_state, @on_user_quit_action, %{}, %{})
+
+  defp send_on_session_start_event(session_state),
+    do: do_send_event(session_state, @on_session_start_action, %{}, %{})
+
+  defp send_on_session_stop_event(session_state),
+    do: do_send_event(session_state, @on_session_stop_action, %{}, %{})
+
+  defp do_send_event(session_state, action, props, event) do
+    event_handler_pid =
+      SessionSupervisor.fetch_module_pid!(session_state.session_supervisor_pid, EventHandler)
+
+    EventHandler.send_event(event_handler_pid, session_state, action, props, event)
   end
 
   defp send_error(session_state, error) do
     AdapterHandler.on_ui_changed(session_state, {:error, error})
+  end
+
+  defp stop(session_state, from) do
+    send_on_session_stop_event(session_state)
+    if not is_nil(from), do: GenServer.reply(from, :ok)
+    SessionManagers.terminate_session(self())
   end
 
   defp transform_ui(%{"rootWidget" => root_widget, "widgets" => widgets}) do

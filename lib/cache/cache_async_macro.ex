@@ -24,6 +24,10 @@ defmodule ApplicationRunner.CacheAsyncMacro do
         GenServer.call(pid, {:call_function, module, function_name, args})
       end
 
+      def clear(pid) do
+        GenServer.cast(pid, :clear)
+      end
+
       def init(_) do
         {:ok, cache_pid} = CacheMap.start_link(nil)
         Process.link(cache_pid)
@@ -55,6 +59,11 @@ defmodule ApplicationRunner.CacheAsyncMacro do
         |> Enum.each(fn pid -> GenServer.reply(pid, res) end)
 
         {:noreply, put_in(state.values[key], [])}
+      end
+
+      def handle_cast(:clear, state) do
+        CacheMap.clear(state.cache_pid)
+        {:noreply, state}
       end
 
       def handle_continue({:call_function, module, function_name, args}, state) do

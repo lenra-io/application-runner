@@ -5,18 +5,18 @@ defmodule ApplicationRunner.ImageValidatorTest do
     Test the "image.schema.json" schema
   """
 
-  test "Valid image", %{session_state: session_state} do
+  test "Valid image", %{env_id: env_id} do
     json = %{
       "type" => "image",
       "src" => "download.jpeg"
     }
 
-    res = mock_root_and_run(json, session_state)
+    mock_root_and_run(json, env_id)
 
-    assert_success(^json, res)
+    assert_success(^json)
   end
 
-  test "Valid image with width and height properties set", %{session_state: session_state} do
+  test "Valid image with width and height properties set", %{env_id: env_id} do
     json = %{
       "type" => "image",
       "src" => "download.jpeg",
@@ -24,31 +24,31 @@ defmodule ApplicationRunner.ImageValidatorTest do
       "height" => 120.0
     }
 
-    res = mock_root_and_run(json, session_state)
+    mock_root_and_run(json, env_id)
 
-    assert_success(^json, res)
+    assert_success(^json)
   end
 
-  test "Invalid type for image", %{session_state: session_state} do
+  test "Invalid type for image", %{env_id: env_id} do
     json = %{
       "type" => "images",
       "src" => "download.jpeg"
     }
 
-    res = mock_root_and_run(json, session_state)
-    assert_error({:error, :invalid_ui, [{"Invalid component type", ""}]}, res)
+    mock_root_and_run(json, env_id)
+    assert_error({:error, :invalid_ui, [{"Invalid component type", ""}]})
   end
 
-  test "Invalid image with no path", %{session_state: session_state} do
+  test "Invalid image with no path", %{env_id: env_id} do
     json = %{
       "type" => "image"
     }
 
-    res = mock_root_and_run(json, session_state)
-    assert_error({:error, :invalid_ui, [{"Required property src was not present.", ""}]}, res)
+    mock_root_and_run(json, env_id)
+    assert_error({:error, :invalid_ui, [{"Required property src was not present.", ""}]})
   end
 
-  test "Invalid image wrong types on width and height", %{session_state: session_state} do
+  test "Invalid image wrong types on width and height", %{env_id: env_id} do
     json = %{
       "type" => "image",
       "src" => "download.jpeg",
@@ -56,15 +56,14 @@ defmodule ApplicationRunner.ImageValidatorTest do
       "height" => "wrong"
     }
 
-    res = mock_root_and_run(json, session_state)
+    mock_root_and_run(json, env_id)
 
     assert_error(
       {:error, :invalid_ui,
        [
          {"Type mismatch. Expected Number but got String.", "/height"},
          {"Type mismatch. Expected Number but got String.", "/width"}
-       ]},
-      res
+       ]}
     )
   end
 end

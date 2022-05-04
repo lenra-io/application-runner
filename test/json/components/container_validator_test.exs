@@ -3,7 +3,6 @@ defmodule ApplicationRunner.ContainerValidatorTest do
 
   alias ApplicationRunner.{
     ApplicationRunnerAdapter,
-    EnvManager,
     EnvManagers,
     SessionManagers
   }
@@ -12,7 +11,7 @@ defmodule ApplicationRunner.ContainerValidatorTest do
     Test the "container.schema.json" schema
   """
 
-  test "valid container", %{session_state: session_state} do
+  test "valid container", %{env_id: env_id} do
     json = %{
       "type" => "container",
       "child" => %{
@@ -21,12 +20,12 @@ defmodule ApplicationRunner.ContainerValidatorTest do
       }
     }
 
-    res = mock_root_and_run(json, session_state)
+    mock_root_and_run(json, env_id)
 
-    assert_success(^json, res)
+    assert_success(^json)
   end
 
-  test "valid container with border", %{session_state: session_state} do
+  test "valid container with border", %{env_id: env_id} do
     json = %{
       "type" => "container",
       "child" => %{
@@ -53,12 +52,12 @@ defmodule ApplicationRunner.ContainerValidatorTest do
       }
     }
 
-    res = mock_root_and_run(json, session_state)
+    mock_root_and_run(json, env_id)
 
-    assert_success(^json, res)
+    assert_success(^json)
   end
 
-  test "valid container with borderRadius", %{session_state: session_state} do
+  test "valid container with borderRadius", %{env_id: env_id} do
     json = %{
       "type" => "container",
       "child" => %{
@@ -75,22 +74,22 @@ defmodule ApplicationRunner.ContainerValidatorTest do
       }
     }
 
-    res = mock_root_and_run(json, session_state)
+    mock_root_and_run(json, env_id)
 
-    assert_success(^json, res)
+    assert_success(^json)
   end
 
-  test "invalid container forgotten child", %{session_state: session_state} do
+  test "invalid container forgotten child", %{env_id: env_id} do
     json = %{
       "type" => "container"
     }
 
-    res = mock_root_and_run(json, session_state)
+    mock_root_and_run(json, env_id)
 
-    assert_error({:error, :invalid_ui, [{"Required property child was not present.", ""}]}, res)
+    assert_error({:error, :invalid_ui, [{"Required property child was not present.", ""}]})
   end
 
-  test "invalid container border", %{session_state: session_state} do
+  test "invalid container border", %{env_id: env_id} do
     json = %{
       "type" => "container",
       "child" => %{
@@ -117,7 +116,7 @@ defmodule ApplicationRunner.ContainerValidatorTest do
       }
     }
 
-    res = mock_root_and_run(json, session_state)
+    mock_root_and_run(json, env_id)
 
     assert_error(
       {:error, :invalid_ui,
@@ -126,8 +125,7 @@ defmodule ApplicationRunner.ContainerValidatorTest do
          {"Type mismatch. Expected Number but got String.", "/border/left/width"},
          {"Type mismatch. Expected Number but got String.", "/border/right/width"},
          {"Type mismatch. Expected Number but got String.", "/border/top/width"}
-       ]},
-      res
+       ]}
     )
   end
 end

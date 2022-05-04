@@ -5,58 +5,57 @@ defmodule ApplicationRunner.TextValidatorTest do
     Test the "text.schema.json" schema
   """
 
-  test "valide text component", %{session_state: session_state} do
+  test "valide text component", %{env_id: env_id} do
     json = %{
       "type" => "text",
       "value" => "Txt test"
     }
 
-    res = mock_root_and_run(json, session_state)
+    mock_root_and_run(json, env_id)
 
-    assert_success(^json, res)
+    assert_success(^json)
   end
 
-  test "valide text empty value", %{session_state: session_state} do
+  test "valide text empty value", %{env_id: env_id} do
     json = %{
       "type" => "text",
       "value" => ""
     }
 
-    res = mock_root_and_run(json, session_state)
+    mock_root_and_run(json, env_id)
 
-    assert_success(^json, res)
+    assert_success(^json)
   end
 
-  test "invalide text type", %{session_state: session_state} do
+  test "invalide text type", %{env_id: env_id} do
     json = %{
       "type" => "texts",
       "value" => ""
     }
 
-    res = mock_root_and_run(json, session_state)
-    assert_error({:error, :invalid_ui, [{"Invalid component type", ""}]}, res)
+    mock_root_and_run(json, env_id)
+    assert_error({:error, :invalid_ui, [{"Invalid component type", ""}]})
   end
 
-  test "invalid text no value", %{session_state: session_state} do
+  test "invalid text no value", %{env_id: env_id} do
     json = %{
       "type" => "text"
     }
 
-    res = mock_root_and_run(json, session_state)
-    assert_error({:error, :invalid_ui, [{"Required property value was not present.", ""}]}, res)
+    mock_root_and_run(json, env_id)
+    assert_error({:error, :invalid_ui, [{"Required property value was not present.", ""}]})
   end
 
-  test "invalid text no string value type", %{session_state: session_state} do
+  test "invalid text no string value type", %{env_id: env_id} do
     json = %{
       "type" => "text",
       "value" => 42
     }
 
-    res = mock_root_and_run(json, session_state)
+    mock_root_and_run(json, env_id)
 
     assert_error(
-      {:error, :invalid_ui, [{"Type mismatch. Expected String but got Integer.", "/value"}]},
-      res
+      {:error, :invalid_ui, [{"Type mismatch. Expected String but got Integer.", "/value"}]}
     )
   end
 end

@@ -45,17 +45,17 @@ defmodule ApplicationRunner.UIValidatorTest do
 
   ApplicationRunner.JsonSchemata.load_raw_schema(@test_component_schema, "test")
 
-  test "valide basic UI", %{session_state: session_state} do
+  test "valide basic UI", %{env_id: env_id} do
     json = %{
       "type" => "text",
       "value" => "Txt test"
     }
 
-    res = mock_root_and_run(json, session_state)
-    assert_success(^json, res)
+    mock_root_and_run(json, env_id)
+    assert_success(^json)
   end
 
-  test "bug LENRA-130", %{session_state: session_state} do
+  test "bug LENRA-130", %{env_id: env_id} do
     json = %{
       "type" => "flex",
       "children" => [
@@ -93,29 +93,23 @@ defmodule ApplicationRunner.UIValidatorTest do
       ]
     }
 
-    res = mock_root_and_run(json, session_state)
+    mock_root_and_run(json, env_id)
 
-    assert_error(
-      {
-        :error,
-        :invalid_ui,
-        [
-          {"Schema does not allow additional properties.",
-           "/children/0/children/0/onChanged/name"},
-          {"Required property action was not present.", "/children/0/children/0/onChanged"},
-          {"Schema does not allow additional properties.",
-           "/children/0/children/1/onPressed/name"},
-          {"Required property action was not present.", "/children/0/children/1/onPressed"},
-          {"Schema does not allow additional properties.",
-           "/children/1/children/0/onPressed/name"},
-          {"Required property action was not present.", "/children/1/children/0/onPressed"}
-        ]
-      },
-      res
-    )
+    assert_error({
+      :error,
+      :invalid_ui,
+      [
+        {"Schema does not allow additional properties.", "/children/0/children/0/onChanged/name"},
+        {"Required property action was not present.", "/children/0/children/0/onChanged"},
+        {"Schema does not allow additional properties.", "/children/0/children/1/onPressed/name"},
+        {"Required property action was not present.", "/children/0/children/1/onPressed"},
+        {"Schema does not allow additional properties.", "/children/1/children/0/onPressed/name"},
+        {"Required property action was not present.", "/children/1/children/0/onPressed"}
+      ]
+    })
   end
 
-  test "multiple type error", %{session_state: session_state} do
+  test "multiple type error", %{env_id: env_id} do
     json = %{
       "type" => "flex",
       "children" => [
@@ -127,18 +121,15 @@ defmodule ApplicationRunner.UIValidatorTest do
       ]
     }
 
-    res = mock_root_and_run(json, session_state)
+    mock_root_and_run(json, env_id)
 
-    assert_error(
-      {
-        :error,
-        :invalid_ui,
-        [
-          {"Type mismatch. Expected Component but got Object.", "/children/0"},
-          {"Type mismatch. Expected Component but got Object.", "/children/1"}
-        ]
-      },
-      res
-    )
+    assert_error({
+      :error,
+      :invalid_ui,
+      [
+        {"Type mismatch. Expected Component but got Object.", "/children/0"},
+        {"Type mismatch. Expected Component but got Object.", "/children/1"}
+      ]
+    })
   end
 end

@@ -8,3 +8,7 @@ end
 ApplicationRunner.ApplicationRunnerAdapter.start_link([])
 
 ExUnit.start()
+
+ApplicationRunner.Repo.start_link()
+Mix.Tasks.Ecto.Migrate.run([])
+Ecto.Adapters.SQL.Sandbox.mode(ApplicationRunner.Repo, :manual)

@@ -9,15 +9,19 @@ defmodule ApplicationRunner.AdapterHandler do
   defdelegate get_manifest(env_state),
     to: Application.compile_env!(:application_runner, :adapter)
 
-  defdelegate get_widget(env_state, widget, data, props),
+  defdelegate get_widget(session_state, widget, data, props),
     to: Application.compile_env!(:application_runner, :adapter)
 
-  defdelegate run_listener(env_state, action, data, props, event),
+  defdelegate run_listener(env_or_session_state, action, props, event),
     to: Application.compile_env!(:application_runner, :adapter)
 
-  defdelegate get_data(session_state), to: Application.compile_env!(:application_runner, :adapter)
+  defdelegate exec_query(session_state, query),
+    to: Application.compile_env!(:application_runner, :adapter)
 
-  defdelegate save_data(session_state, data),
+  defdelegate create_user_data(session_state),
+    to: Application.compile_env!(:application_runner, :adapter)
+
+  defdelegate first_time_user?(session_state),
     to: Application.compile_env!(:application_runner, :adapter)
 
   defdelegate on_ui_changed(session_state, ui_update),
