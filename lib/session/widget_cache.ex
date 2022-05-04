@@ -123,19 +123,31 @@ defmodule ApplicationRunner.WidgetCache do
     name = Map.get(component, "name")
     props = Map.get(component, "props")
 
-    query = component |> Map.get("query") |> AST.Parser.from_json()
-
-    data = AdapterHandler.exec_query(session_state, query)
+    query =
+      component |> IO.inspect() |> Map.get("query") |> IO.inspect() |> AST.Parser.from_json()
 
     id = generate_widget_id(name, query, props)
 
-    new_widget_context = %WidgetContext{
-      id: id,
-      name: name,
-      data: data,
-      props: props,
-      prefix_path: widget_context.prefix_path
-    }
+    new_widget_context =
+      case query do
+        nil ->
+          %WidgetContext{
+            id: id,
+            name: name,
+            data: %{},
+            props: props,
+            prefix_path: widget_context.prefix_path
+          }
+
+        query ->
+          %WidgetContext{
+            id: id,
+            name: name,
+            data: AdapterHandler.exec_query(session_state, query),
+            props: props,
+            prefix_path: widget_context.prefix_path
+          }
+      end
 
     case get_and_build_widget(session_state, ui_context, new_widget_context) do
       {:ok, new_app_context} ->
