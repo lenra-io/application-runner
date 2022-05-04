@@ -125,7 +125,12 @@ defmodule ApplicationRunner.WidgetCache do
 
     query = component |> Map.get("query") |> AST.Parser.from_json()
 
-    data = AdapterHandler.exec_query(session_state, query)
+    data =
+      if is_nil(query) do
+        []
+      else
+        AdapterHandler.exec_query(session_state, query)
+      end
 
     id = generate_widget_id(name, query, props)
 
