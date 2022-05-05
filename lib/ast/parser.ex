@@ -7,6 +7,7 @@ defmodule ApplicationRunner.AST.Parser do
     And,
     ArrayValue,
     DataKey,
+    ElemMatch,
     Eq,
     Find,
     MeRef,
@@ -84,6 +85,18 @@ defmodule ApplicationRunner.AST.Parser do
   defp parse_fun({"$eq", val}, %{left: _} = ctx) do
     {left, ctx} = Map.pop(ctx, :left)
     %Eq{left: left, right: parse_expr(val, ctx)}
+  end
+
+  # Eq function
+  defp parse_fun({"$elemMatch", val}, %{left: _} = ctx) do
+    {left, _ctx} = Map.pop(ctx, :left)
+
+    val =
+      val
+      |> Tuple.to_list()
+      |> Enum.map(&parse_expr(&1, ctx))
+
+    %ElemMatch{field: left, matchs: val}
   end
 
   defp from_k(key, _ctx) when is_bitstring(key) do

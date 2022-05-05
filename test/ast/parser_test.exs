@@ -58,6 +58,42 @@ defmodule ApplicationRunner.AST.ParserTest do
            }
   end
 
+  test "Explicit ElemMatch and And" do
+    assert AST.Parser.from_json(%{
+             "$find" => %{
+               "$and" => [
+                 %{"_datastore" => %{"$elemMatch" => {"_users", "todos"}}},
+                 %{"name" => %{"$eq" => "Jean Neige"}}
+               ]
+             }
+           }) == %AST.Query{
+             find: %AST.Find{
+               clause: %AST.And{
+                 clauses: [
+                   %AST.ElemMatch{
+                     field: %AST.DataKey{key_path: ["_datastore"]},
+                     matchs: [
+                       %ApplicationRunner.AST.Eq{
+                         left: %ApplicationRunner.AST.DataKey{key_path: ["_datastore"]},
+                         right: %ApplicationRunner.AST.StringValue{value: "_users"}
+                       },
+                       %ApplicationRunner.AST.Eq{
+                         left: %ApplicationRunner.AST.DataKey{key_path: ["_datastore"]},
+                         right: %ApplicationRunner.AST.StringValue{value: "todos"}
+                       }
+                     ]
+                   },
+                   %AST.Eq{
+                     left: %AST.DataKey{key_path: ["name"]},
+                     right: %AST.StringValue{value: "Jean Neige"}
+                   }
+                 ]
+               }
+             },
+             select: %AST.Select{clause: nil}
+           }
+  end
+
   test "Explicit Equal and And" do
     assert AST.Parser.from_json(%{
              "$find" => %{

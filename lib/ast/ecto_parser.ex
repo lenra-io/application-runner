@@ -8,6 +8,7 @@ defmodule ApplicationRunner.AST.EctoParser do
     And,
     ArrayValue,
     DataKey,
+    ElemMatch,
     Eq,
     Find,
     MeRef,
@@ -52,6 +53,14 @@ defmodule ApplicationRunner.AST.EctoParser do
     parsed_left = parse_expr(left, ctx)
     parsed_right = parse_expr(right, ctx)
     dynamic([d], ^parsed_left == ^parsed_right)
+  end
+
+  defp parse_expr(%ElemMatch{field: _field, matchs: matchs}, ctx) do
+    matchs
+    |> Enum.map(&parse_expr(&1, ctx))
+    |> Enum.reduce(fn acc, expr ->
+      dynamic([d], ^acc or ^expr)
+    end)
   end
 
   defp parse_expr(%DataKey{key_path: key_path}, _ctx) do

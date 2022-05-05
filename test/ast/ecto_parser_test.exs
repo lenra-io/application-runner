@@ -176,6 +176,47 @@ defmodule ApplicationRunner.ATS.EctoParserTest do
            } = res
   end
 
+  test "Select with datastore elemMatch", %{
+    env_id: env_id,
+    user_data_id: user_data_id,
+    todolist1_id: todolist1_id,
+    todolist2_id: todolist2_id,
+    todo1_id: todo1_id,
+    todo2_id: todo2_id,
+    todo3_id: todo3_id
+  } do
+    # null value in data should stay
+    # Empty _refs/_refBy should return empty array
+
+    res =
+      %{
+        "$find" => %{
+          "$and" => [
+            %{"_datastore" => %{"$elemMatch" => {"todoList", "WrongDataStore"}}}
+          ]
+        }
+      }
+      |> Parser.from_json()
+      |> EctoParser.to_ecto(env_id, user_data_id)
+      |> Repo.all()
+
+    assert %{
+             "_data" => %{"name" => "favorites"},
+             "_datastore" => "todoList",
+             "_id" => todolist1_id,
+             "_refBy" => [user_data_id],
+             "_refs" => [todo1_id, todo2_id]
+           } in res
+
+    assert %{
+             "_data" => %{"name" => "not fav"},
+             "_datastore" => "todoList",
+             "_id" => todolist2_id,
+             "_refBy" => [user_data_id],
+             "_refs" => [todo3_id]
+           } in res
+  end
+
   test "Select with where on list of number", %{
     todolist1_id: todolist1_id,
     todolist2_id: todolist2_id,
