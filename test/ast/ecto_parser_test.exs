@@ -235,9 +235,7 @@ defmodule ApplicationRunner.ATS.EctoParserTest do
 
   test "Select with contains", %{
     user_data_id: user_data_id,
-    env_id: env_id,
-    todo1_id: todo1_id,
-    todo2_id: todo2_id
+    env_id: env_id
   } do
     res =
       %{
@@ -263,9 +261,7 @@ defmodule ApplicationRunner.ATS.EctoParserTest do
 
   test "Select with contains dot", %{
     user_data_id: user_data_id,
-    env_id: env_id,
-    todo1_id: todo1_id,
-    todo2_id: todo2_id
+    env_id: env_id
   } do
     res =
       %{
