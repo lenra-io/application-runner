@@ -46,7 +46,21 @@ defmodule ApplicationRunner.AST.Parser do
 
   # A simple k => v clause
   defp parse_expr({k, v}, ctx) do
-    ctx = Map.merge(ctx, %{left: from_k(k, ctx)})
+    {left, _ctx} = Map.pop(ctx, :left)
+
+    ctx =
+      case left do
+        nil ->
+          Map.merge(ctx, %{left: from_k(k, ctx)})
+
+        left ->
+          Map.merge(ctx, %{
+            left: %DataKey{
+              key_path: Enum.concat(left.key_path, [k])
+            }
+          })
+      end
+
     parse_expr(v, ctx)
   end
 
