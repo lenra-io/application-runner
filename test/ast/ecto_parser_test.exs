@@ -255,7 +255,6 @@ defmodule ApplicationRunner.ATS.EctoParserTest do
       |> Parser.from_json()
       |> EctoParser.to_ecto(env_id, user_data_id)
       |> Repo.all()
-      |> IO.inspect()
 
     assert length(res) == 2
   end
