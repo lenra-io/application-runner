@@ -232,4 +232,32 @@ defmodule ApplicationRunner.ATS.EctoParserTest do
              "_refBy" => []
            } = res
   end
+
+  test "Select with contains", %{
+    user_data_id: user_data_id,
+    env_id: env_id,
+    todo1_id: todo1_id,
+    todo2_id: todo2_id
+  } do
+    res =
+      %{
+        "$find" => %{
+          "$and" => [
+            %{"_datastore" => "todos"},
+            %{
+              "_data.title" => %{
+                "$contains" => ["Faire la vaisselle", "Faire la cuisine", "Faire la sieste"]
+              }
+            }
+          ]
+        }
+      }
+      |> Parser.from_json()
+      |> EctoParser.to_ecto(env_id, user_data_id)
+      |> IO.inspect()
+      |> Repo.all()
+      |> IO.inspect()
+
+    assert length(res) == 2
+  end
 end

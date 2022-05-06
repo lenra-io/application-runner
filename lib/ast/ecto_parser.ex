@@ -7,6 +7,7 @@ defmodule ApplicationRunner.AST.EctoParser do
   alias ApplicationRunner.AST.{
     And,
     ArrayValue,
+    Contains,
     DataKey,
     Eq,
     Find,
@@ -52,6 +53,17 @@ defmodule ApplicationRunner.AST.EctoParser do
     parsed_left = parse_expr(left, ctx)
     parsed_right = parse_expr(right, ctx)
     dynamic([d], ^parsed_left == ^parsed_right)
+  end
+
+  defp parse_expr(%Contains{field: field, clauses: clauses}, ctx) when is_list(clauses) do
+    parsed_field = parse_expr(field, ctx)
+
+    clauses
+    |> Enum.map(&dynamic([d], ^parsed_field == ^parse_expr(&1, ctx)))
+    |> Enum.reduce(fn expr, acc ->
+      dynamic([d], ^acc or ^expr)
+    end)
+    |> IO.inspect()
   end
 
   defp parse_expr(%DataKey{key_path: key_path}, _ctx) do

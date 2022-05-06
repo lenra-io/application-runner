@@ -6,6 +6,7 @@ defmodule ApplicationRunner.AST.Parser do
   alias ApplicationRunner.AST.{
     And,
     ArrayValue,
+    Contains,
     DataKey,
     Eq,
     Find,
@@ -84,6 +85,12 @@ defmodule ApplicationRunner.AST.Parser do
   defp parse_fun({"$eq", val}, %{left: _} = ctx) do
     {left, ctx} = Map.pop(ctx, :left)
     %Eq{left: left, right: parse_expr(val, ctx)}
+  end
+
+  # contains function
+  defp parse_fun({"$contains", clauses}, %{left: _} = ctx) when is_list(clauses) do
+    {left, ctx} = Map.pop(ctx, :left)
+    %Contains{field: left, clauses: Enum.map(clauses, &parse_expr(&1, ctx))}
   end
 
   defp from_k(key, _ctx) when is_bitstring(key) do
