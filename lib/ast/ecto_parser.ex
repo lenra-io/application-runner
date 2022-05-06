@@ -63,7 +63,6 @@ defmodule ApplicationRunner.AST.EctoParser do
     |> Enum.reduce(fn expr, acc ->
       dynamic([d], ^acc or ^expr)
     end)
-    |> IO.inspect()
   end
 
   defp parse_expr(%DataKey{key_path: key_path}, _ctx) do
