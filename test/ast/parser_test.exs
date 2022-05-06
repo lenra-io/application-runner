@@ -131,6 +131,36 @@ defmodule ApplicationRunner.AST.ParserTest do
            }
   end
 
+  test "find with contains" do
+    assert AST.Parser.from_json(%{
+             "$find" => %{
+               "$and" => [
+                 %{"_datastore" => "_users"},
+                 %{"name" => %{"$contains" => ["Jean Neige", "Jean Noël"]}}
+               ]
+             }
+           }) == %AST.Query{
+             find: %AST.Find{
+               clause: %AST.And{
+                 clauses: [
+                   %AST.Eq{
+                     left: %AST.DataKey{key_path: ["_datastore"]},
+                     right: %AST.StringValue{value: "_users"}
+                   },
+                   %ApplicationRunner.AST.Contains{
+                     clauses: [
+                       %ApplicationRunner.AST.StringValue{value: "Jean Neige"},
+                       %ApplicationRunner.AST.StringValue{value: "Jean Noël"}
+                     ],
+                     field: %ApplicationRunner.AST.DataKey{key_path: ["name"]}
+                   }
+                 ]
+               }
+             },
+             select: %AST.Select{clause: nil}
+           }
+  end
+
   test "Find with list of number" do
     assert AST.Parser.from_json(%{
              "$find" => %{"_refs" => [1, 2, 3]}
