@@ -254,7 +254,6 @@ defmodule ApplicationRunner.ATS.EctoParserTest do
       }
       |> Parser.from_json()
       |> EctoParser.to_ecto(env_id, user_data_id)
-      |> IO.inspect()
       |> Repo.all()
       |> IO.inspect()
 
