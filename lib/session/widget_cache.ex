@@ -380,17 +380,20 @@ defmodule ApplicationRunner.WidgetCache do
        ) do
     children
     |> Enum.with_index()
+    |> Parallel.map(fn {child, index} ->
+      children_path = "#{prefix_path}/#{index}"
+
+      build_component(
+        session_state,
+        child,
+        ui_context,
+        Map.put(widget_context, :prefix_path, children_path)
+      )
+    end)
     |> Enum.reduce(
       {[], ui_context, []},
-      fn {child, index}, {built_components, ui_context_acc, errors} ->
-        children_path = "#{prefix_path}/#{index}"
-
-        case build_component(
-               session_state,
-               child,
-               ui_context,
-               Map.put(widget_context, :prefix_path, children_path)
-             ) do
+      fn builded_child, {built_components, ui_context_acc, errors} ->
+        case builded_child do
           {:ok, built_component, new_ui_context} ->
             {built_components ++ [built_component],
              merge_ui_context(ui_context_acc, new_ui_context), errors}
