@@ -32,10 +32,11 @@ defmodule ApplicationRunner.EventHandler do
 
   @impl true
   def handle_cast({:send_event, state, action, props, event}, pids) do
-    res = AdapterHandler.run_listener(state, action, props, event)
+    current = self()
 
-    Enum.each(pids, fn pid ->
-      send(pid, {:event_finished, action, res})
+    spawn(fn ->
+      res = AdapterHandler.run_listener(state, action, props, event)
+      send(current, {:run_listener_result, res, action})
     end)
 
     {:noreply, pids}
@@ -44,5 +45,14 @@ defmodule ApplicationRunner.EventHandler do
   @impl true
   def handle_call(:subscribe, {pid, _}, pids) do
     {:reply, :ok, [pid | pids]}
+  end
+
+  @impl true
+  def handle_info({:run_listener_result, res, action}, pids) do
+    Enum.each(pids, fn pid ->
+      send(pid, {:event_finished, action, res})
+    end)
+
+    {:noreply, pids}
   end
 end
