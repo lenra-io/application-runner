@@ -37,8 +37,6 @@ defmodule ApplicationRunner.CacheAsyncMacro do
       end
 
       def handle_call({:cache_function, module, function_name, args, key}, from, state) do
-        Logger.debug("Cache function #{module}.#{function_name}: Calling function.")
-
         from_list = Map.get(state.from_map, key, [])
 
         case CacheMap.get(state.cache_pid, key) do
