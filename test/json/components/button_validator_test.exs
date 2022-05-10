@@ -27,7 +27,7 @@ defmodule ApplicationRunner.ButtonValidatorTest do
     mock_root_and_run(json, env_id)
 
     assert_success(%{
-      "onPressed" => %{"code" => "QaEIonDgErbXwK1vTqyhIOsm14ScEH3Kk/JGNBywBK4="},
+      "onPressed" => %{"code" => "AVQ9hvdXAVMuHFWLbpjUIMb8U0STJdrvGwj0kVtHdIA="},
       "text" => "",
       "type" => "button"
     })

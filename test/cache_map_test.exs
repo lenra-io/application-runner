@@ -27,15 +27,6 @@ defmodule ApplicationRunner.CacheMapTest do
 
   doctest ApplicationRunner.CacheMap
 
-  # test "Can create cache_map" do
-  #   cache = :cache
-  #   {:ok, _} = Cachex.start_link(cache)
-
-  #   {:ok, _} = Cachex.put(cache, "foo", "bar")
-  #   assert Cachex.get!(cache, "foo") == "bar"
-
-  # end
-
   alias ApplicationRunner.MyCacheAsync
 
   test "Can create cache_async" do
@@ -43,15 +34,15 @@ defmodule ApplicationRunner.CacheMapTest do
 
     tasks = [
       Task.async(fn ->
-        res = MyCacheAsync.call_function(cache_pid, TestModule, :foo, [])
+        res = MyCacheAsync.cache_function(cache_pid, TestModule, :foo, [], "foo")
         {res, System.system_time()}
       end),
       Task.async(fn ->
-        res = MyCacheAsync.call_function(cache_pid, TestModule, :bar, [])
+        res = MyCacheAsync.cache_function(cache_pid, TestModule, :bar, [], "bar")
         {res, System.system_time()}
       end),
       Task.async(fn ->
-        res = MyCacheAsync.call_function(cache_pid, TestModule, :foo, [])
+        res = MyCacheAsync.cache_function(cache_pid, TestModule, :foo, [], "foo")
         {res, System.system_time()}
       end)
     ]
@@ -77,7 +68,7 @@ defmodule ApplicationRunner.CacheMapTest do
       Process.sleep(10)
 
       Task.async(fn ->
-        res = MyCacheAsync.call_function(cache_pid, TestModule, :baz, [])
+        res = MyCacheAsync.cache_function(cache_pid, TestModule, :baz, [], "baz")
         res
       end)
     end)
