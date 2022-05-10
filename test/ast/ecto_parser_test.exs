@@ -233,7 +233,7 @@ defmodule ApplicationRunner.ATS.EctoParserTest do
            } = res
   end
 
-  test "Select with contains", %{
+  test "Select with in", %{
     user_data_id: user_data_id,
     env_id: env_id
   } do
@@ -245,7 +245,7 @@ defmodule ApplicationRunner.ATS.EctoParserTest do
             %{
               "_data" => %{
                 "title" => %{
-                  "$contains" => ["Faire la vaisselle", "Faire la cuisine", "Faire la sieste"]
+                  "$in" => ["Faire la vaisselle", "Faire la cuisine", "Faire la sieste"]
                 }
               }
             }
@@ -259,7 +259,7 @@ defmodule ApplicationRunner.ATS.EctoParserTest do
     assert length(res) == 2
   end
 
-  test "Select with contains dot", %{
+  test "Select with in dot", %{
     user_data_id: user_data_id,
     env_id: env_id
   } do
@@ -270,7 +270,7 @@ defmodule ApplicationRunner.ATS.EctoParserTest do
             %{"_datastore" => "todos"},
             %{
               "_data.title" => %{
-                "$contains" => ["Faire la vaisselle", "Faire la cuisine", "Faire la sieste"]
+                "$in" => ["Faire la vaisselle", "Faire la cuisine", "Faire la sieste"]
               }
             }
           ]
@@ -281,5 +281,72 @@ defmodule ApplicationRunner.ATS.EctoParserTest do
       |> Repo.all()
 
     assert length(res) == 2
+  end
+
+  test "Select with contains", %{
+    user_data_id: user_data_id,
+    env_id: env_id,
+    todolist1_id: todolist1_id,
+    todo1_id: todo1_id,
+    todo2_id: todo2_id
+  } do
+    res =
+      %{
+        "$find" => %{
+          "$and" => [
+            %{"_datastore" => "todos"},
+            %{
+              "_refBy" => %{
+                "$contains" => todolist1_id
+              }
+            }
+          ]
+        }
+      }
+      |> Parser.from_json()
+      |> EctoParser.to_ecto(env_id, user_data_id)
+      |> Repo.all()
+
+    [todo1 | [todo2 | _res]] = res
+    # Get Todo1 & todo2
+    ids = [todo1_id, todo2_id]
+    assert length(res) == 2
+    assert todo2["_id"] in ids
+    assert todo1["_id"] in ids
+  end
+
+  test "Select with contains array", %{
+    user_data_id: user_data_id,
+    env_id: env_id,
+    todolist1_id: todolist1_id,
+    todolist2_id: todolist2_id,
+    todo1_id: todo1_id,
+    todo2_id: todo2_id,
+    todo3_id: todo3_id
+  } do
+    res =
+      %{
+        "$find" => %{
+          "$and" => [
+            %{"_datastore" => "todos"},
+            %{
+              "_refBy" => %{
+                "$contains" => [todolist1_id, todolist2_id]
+              }
+            }
+          ]
+        }
+      }
+      |> Parser.from_json()
+      |> EctoParser.to_ecto(env_id, user_data_id)
+      |> Repo.all()
+
+    [todo1 | [todo2 | [todo3 | _res]]] = res
+    # Get Todo1 & todo2 & todo3
+    ids = [todo1_id, todo2_id, todo3_id]
+    assert length(res) == 3
+    assert todo3["_id"] in ids
+    assert todo2["_id"] in ids
+    assert todo1["_id"] in ids
   end
 end

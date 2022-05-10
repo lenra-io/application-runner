@@ -1,4 +1,4 @@
-defmodule ApplicationRunner.AST.Contains do
+defmodule ApplicationRunner.AST.In do
   @moduledoc """
   This struct represent a $and function.
   in `%{"$and" => [...]}` the `"$and" => [...]` is the and function.
@@ -7,6 +7,6 @@ defmodule ApplicationRunner.AST.Contains do
   The above examples are parsed into
   `%AST.And{clauses: [...]}`
   """
-  @enforce_keys [:field, :value]
-  defstruct [:field, :value]
+  @enforce_keys [:field, :values]
+  defstruct [:field, :values]
 end

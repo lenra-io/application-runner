@@ -10,6 +10,7 @@ defmodule ApplicationRunner.AST.EctoParser do
     Contains,
     DataKey,
     Eq,
+    In,
     Find,
     MeRef,
     NumberValue,
@@ -55,14 +56,36 @@ defmodule ApplicationRunner.AST.EctoParser do
     dynamic([d], ^parsed_left == ^parsed_right)
   end
 
-  defp parse_expr(%Contains{field: field, clauses: clauses}, ctx) when is_list(clauses) do
+  defp parse_expr(%Contains{field: field, value: %ArrayValue{} = values}, ctx) do
     parsed_field = parse_expr(field, ctx)
 
-    clauses
-    |> Enum.map(&dynamic([d], ^parsed_field == ^parse_expr(&1, ctx)))
+    values
+    |> parse_expr(ctx)
+    |> Enum.map(&dynamic([d], fragment("? @> ?", ^parsed_field, ^&1)))
     |> Enum.reduce(fn expr, acc ->
       dynamic([d], ^acc or ^expr)
     end)
+  end
+
+  defp parse_expr(%Contains{field: field, value: value}, ctx) do
+    parsed_value = parse_expr(value, ctx)
+
+    parsed_field = parse_expr(field, ctx)
+
+    dynamic(
+      [d],
+      fragment("? @> ?", ^parsed_field, ^parsed_value)
+    )
+  end
+
+  defp parse_expr(%In{field: field, values: values}, ctx) do
+    parsed_field = parse_expr(field, ctx)
+
+    parsed_values =
+      values
+      |> Enum.map(&parse_expr(&1, ctx))
+
+    dynamic([d], ^parsed_field in ^parsed_values)
   end
 
   defp parse_expr(%DataKey{key_path: key_path}, _ctx) do

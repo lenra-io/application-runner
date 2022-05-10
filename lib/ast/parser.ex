@@ -10,6 +10,7 @@ defmodule ApplicationRunner.AST.Parser do
     DataKey,
     Eq,
     Find,
+    In,
     MeRef,
     NumberValue,
     Query,
@@ -101,10 +102,16 @@ defmodule ApplicationRunner.AST.Parser do
     %Eq{left: left, right: parse_expr(val, ctx)}
   end
 
-  # contains function
-  defp parse_fun({"$contains", clauses}, %{left: _} = ctx) when is_list(clauses) do
+  # Eq function
+  defp parse_fun({"$contains", val}, %{left: _} = ctx) do
     {left, ctx} = Map.pop(ctx, :left)
-    %Contains{field: left, clauses: Enum.map(clauses, &parse_expr(&1, ctx))}
+    %Contains{field: left, value: parse_expr(val, ctx)}
+  end
+
+  # in function
+  defp parse_fun({"$in", clauses}, %{left: _} = ctx) when is_list(clauses) do
+    {left, ctx} = Map.pop(ctx, :left)
+    %In{field: left, values: Enum.map(clauses, &parse_expr(&1, ctx))}
   end
 
   defp from_k(key, _ctx) when is_bitstring(key) do
