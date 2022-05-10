@@ -36,11 +36,19 @@ defmodule ApplicationRunner.WidgetCache do
   """
   @spec get_widget(SessionState.t(), WidgetContext.t()) :: {:ok, map()} | {:error, any()}
   def get_widget(%SessionState{} = session_state, %WidgetContext{} = current_widget) do
-    AdapterHandler.get_widget(
-      session_state,
-      current_widget.name,
-      current_widget.data,
-      current_widget.props
+    pid = SessionSupervisor.fetch_module_pid!(session_state.session_supervisor_pid, __MODULE__)
+
+    cache_function(
+      pid,
+      AdapterHandler,
+      :get_widget,
+      [
+        session_state,
+        current_widget.name,
+        current_widget.data,
+        current_widget.props
+      ],
+      current_widget.id
     )
   end
 
@@ -51,29 +59,6 @@ defmodule ApplicationRunner.WidgetCache do
   @spec get_and_build_widget(SessionState.t(), UiContext.t(), WidgetContext.t()) ::
           {:ok, UiContext.t()} | {:error, any()}
   def get_and_build_widget(
-        %SessionState{} = session_state,
-        %UiContext{} = ui_context,
-        %WidgetContext{} = current_widget
-      ) do
-    pid = SessionSupervisor.fetch_module_pid!(session_state.session_supervisor_pid, __MODULE__)
-
-    call_function(pid, __MODULE__, :get_and_build_widget_cached, [
-      session_state,
-      ui_context,
-      current_widget
-    ])
-  end
-
-  @doc """
-    Get the widget corresponding to the `WidgetContext` then build it.
-    The build phase will transform the listeners and get_and_build all child widgets.
-  """
-  @spec get_and_build_widget_cached(
-          ApplicationRunner.SessionState.t(),
-          ApplicationRunner.UiContext.t(),
-          ApplicationRunner.WidgetContext.t()
-        ) :: {:error, build_errors()} | {:ok, map()}
-  def get_and_build_widget_cached(
         %SessionState{} = session_state,
         %UiContext{} = ui_context,
         %WidgetContext{} = current_widget
@@ -132,7 +117,7 @@ defmodule ApplicationRunner.WidgetCache do
         AdapterHandler.exec_query(session_state, query)
       end
 
-    id = generate_widget_id(name, query, props)
+    id = generate_widget_id(name, data, props)
 
     new_widget_context = %WidgetContext{
       id: id,
@@ -433,7 +418,7 @@ defmodule ApplicationRunner.WidgetCache do
     case listener do
       %{"action" => action_code} ->
         props = Map.get(listener, "props", %{})
-        listener_key = ListenersCache.generate_listeners_key(action_code, props)
+        listener_key = Crypto.hash({action_code, props})
         ListenersCache.save_listener(session_state, listener_key, listener)
         {:ok, listener |> Map.drop(["action", "props"]) |> Map.put("code", listener_key)}
 
@@ -442,8 +427,7 @@ defmodule ApplicationRunner.WidgetCache do
     end
   end
 
-  def generate_widget_id(name, query, props) do
-    :crypto.hash(:sha256, :erlang.term_to_binary({name, query, props}))
-    |> Base.encode64()
+  def generate_widget_id(name, data, props) do
+    Crypto.hash({name, data, props})
   end
 end

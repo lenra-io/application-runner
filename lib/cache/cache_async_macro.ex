@@ -15,13 +15,14 @@ defmodule ApplicationRunner.CacheAsyncMacro do
       use GenServer
 
       alias ApplicationRunner.CacheMap
+      require Logger
 
       def start_link(_) do
         GenServer.start_link(__MODULE__, [], [])
       end
 
-      def call_function(pid, module, function_name, args) do
-        GenServer.call(pid, {:call_function, module, function_name, args})
+      def cache_function(pid, module, function_name, args, key) do
+        GenServer.call(pid, {:cache_function, module, function_name, args, key})
       end
 
       def clear(pid) do
@@ -31,34 +32,48 @@ defmodule ApplicationRunner.CacheAsyncMacro do
       def init(_) do
         {:ok, cache_pid} = CacheMap.start_link(nil)
         Process.link(cache_pid)
-        state = %{cache_pid: cache_pid, values: %{}}
+        state = %{cache_pid: cache_pid, from_map: %{}}
         {:ok, state}
       end
 
-      def handle_call({:call_function, module, function_name, args}, from, state) do
-        key = {module, function_name, args}
-        from_list = Map.get(state.values, key, [])
+      def handle_call({:cache_function, module, function_name, args, key}, from, state) do
+        from_list = Map.get(state.from_map, key, [])
 
         case CacheMap.get(state.cache_pid, key) do
           nil ->
+            Logger.debug(
+              "Cache function #{module}.#{function_name}: #{key} does not exists, Calling function."
+            )
+
             CacheMap.put(state.cache_pid, key, {:pending, nil})
 
-            {:noreply, put_in(state.values[key], [from | from_list]),
-             {:continue, {:call_function, module, function_name, args}}}
+            {
+              :noreply,
+              put_in(state.from_map[key], [from | from_list]),
+              {:continue, {:cache_function, module, function_name, args, key}}
+            }
 
           {:pending, nil} ->
-            {:noreply, put_in(state.values[key], [from | from_list])}
+            Logger.debug(
+              "Cache function #{module}.#{function_name}: #{key} already calling. Pending..."
+            )
+
+            {:noreply, put_in(state.from_map[key], [from | from_list])}
 
           {:done, value} ->
+            Logger.debug(
+              "Cache function #{module}.#{function_name}: #{key} already exists, getting data from cache."
+            )
+
             {:reply, value, state}
         end
       end
 
-      def handle_cast({:call_function_done, key, res}, state) do
-        Map.get(state.values, key, [])
+      def handle_cast({:cache_function_done, key, res}, state) do
+        Map.get(state.from_map, key, [])
         |> Enum.each(fn pid -> GenServer.reply(pid, res) end)
 
-        {:noreply, put_in(state.values[key], [])}
+        {:noreply, put_in(state.from_map[key], [])}
       end
 
       def handle_cast(:clear, state) do
@@ -66,15 +81,14 @@ defmodule ApplicationRunner.CacheAsyncMacro do
         {:noreply, state}
       end
 
-      def handle_continue({:call_function, module, function_name, args}, state) do
-        key = {module, function_name, args}
+      def handle_continue({:cache_function, module, function_name, args, key}, state) do
         pid = self()
 
         spawn(fn ->
           res = apply(module, function_name, args)
           CacheMap.put(state.cache_pid, key, {:done, res})
 
-          GenServer.cast(pid, {:call_function_done, key, res})
+          GenServer.cast(pid, {:cache_function_done, key, res})
         end)
 
         {:noreply, state}

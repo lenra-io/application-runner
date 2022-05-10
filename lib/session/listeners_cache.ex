@@ -27,12 +27,4 @@ defmodule ApplicationRunner.ListenersCache do
       res -> {:ok, res}
     end
   end
-
-  @spec generate_listeners_key(String.t(), map()) :: String.t()
-  def generate_listeners_key(action_code, props) do
-    binary = :erlang.term_to_binary(action_code) <> :erlang.term_to_binary(props)
-
-    :crypto.hash(:sha256, binary)
-    |> Base.encode64()
-  end
 end
