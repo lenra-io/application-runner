@@ -126,8 +126,9 @@ defmodule ApplicationRunner.SessionManager do
   end
 
   def handle_info(:data_changed, %SessionState{} = session_state) do
+    Logger.error("DATA CHANGED #{session_state.session_id}")
+
     with %{"rootWidget" => root_widget} <- EnvManager.get_manifest(session_state.env_id),
-         :ok <- WidgetCache.clear_cache(session_state),
          {:ok, ui} <- get_and_build_ui(session_state, root_widget) do
       transformed_ui = transform_ui(ui)
       res = UiCache.diff_and_save(session_state, transformed_ui)
