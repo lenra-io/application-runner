@@ -56,17 +56,6 @@ defmodule ApplicationRunner.AST.EctoParser do
     dynamic([d], ^parsed_left == ^parsed_right)
   end
 
-  defp parse_expr(%Contains{field: field, value: %ArrayValue{} = values}, ctx) do
-    parsed_field = parse_expr(field, ctx)
-
-    values
-    |> parse_expr(ctx)
-    |> Enum.map(&dynamic([d], fragment("? @> ?", ^parsed_field, ^&1)))
-    |> Enum.reduce(fn expr, acc ->
-      dynamic([d], ^acc or ^expr)
-    end)
-  end
-
   defp parse_expr(%Contains{field: field, value: value}, ctx) do
     parsed_value = parse_expr(value, ctx)
 
