@@ -50,6 +50,13 @@ defmodule ApplicationRunner.SessionManager do
     end
   end
 
+  @spec reload_ui(number()) :: :ok
+  def reload_ui(session_id) do
+    with {:ok, pid} <- SessionManagers.fetch_session_manager_pid(session_id) do
+      send(pid, :data_changed)
+    end
+  end
+
   @impl true
   def init(opts) do
     session_id = Keyword.fetch!(opts, :session_id)
@@ -103,22 +110,26 @@ defmodule ApplicationRunner.SessionManager do
   end
 
   def handle_info({:event_finished, action, result}, session_state) do
-    if action == @on_session_start_action do
-      EnvManager.reload_all_ui(session_state.env_id)
-    end
-
-    case result do
-      :ok ->
+    case {action, result} do
+      {@on_session_start_action, :ok} ->
         EnvManager.reload_all_ui(session_state.env_id)
         :ok
 
-      :error404 when action in @optional_handler_actions ->
+      {@on_session_start_action, _} ->
+        reload_ui(session_state.session_id)
         :ok
 
-      :error404 when action not in @optional_handler_actions ->
+      {_, :ok} ->
+        EnvManager.reload_all_ui(session_state.env_id)
+        :ok
+
+      {a, :error404} when a in @optional_handler_actions ->
+        :ok
+
+      {a, :error404} when a not in @optional_handler_actions ->
         send_error(session_state, {:error, :listener_not_found})
 
-      err ->
+      {_, err} ->
         send_error(session_state, err)
     end
 
