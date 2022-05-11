@@ -85,8 +85,16 @@ defmodule ApplicationRunner.CacheAsyncMacro do
         pid = self()
 
         spawn(fn ->
-          res = apply(module, function_name, args)
-          CacheMap.put(state.cache_pid, key, {:done, res})
+          res =
+            case apply(module, function_name, args) do
+              {:ok, _} = res ->
+                CacheMap.put(state.cache_pid, key, {:done, res})
+                res
+
+              res ->
+                CacheMap.put(state.cache_pid, key, nil)
+                res
+            end
 
           GenServer.cast(pid, {:cache_function_done, key, res})
         end)

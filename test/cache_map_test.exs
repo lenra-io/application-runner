@@ -1,16 +1,24 @@
 defmodule TestModule do
   def foo do
     Process.sleep(50)
-    :ok
+    {:ok, :ok}
   end
 
   def bar do
-    42
+    {:ok, 42}
   end
 
   def baz do
-    Process.sleep(1000)
-    :ok
+    Process.sleep(100)
+    {:ok, :ok}
+  end
+
+  def rand_error do
+    {:error, make_ref()}
+  end
+
+  def rand_success do
+    {:ok, make_ref()}
   end
 end
 
@@ -49,9 +57,9 @@ defmodule ApplicationRunner.CacheMapTest do
 
     [{r1, t1}, {r2, t2}, {r3, t3}] = Task.await_many(tasks)
 
-    assert r1 == :ok
-    assert r2 == 42
-    assert r3 == :ok
+    assert r1 == {:ok, :ok}
+    assert r2 == {:ok, 42}
+    assert r3 == {:ok, :ok}
 
     assert t2 < t1
     offset = System.convert_time_unit(1, :millisecond, :native)
@@ -68,13 +76,27 @@ defmodule ApplicationRunner.CacheMapTest do
       Process.sleep(10)
 
       Task.async(fn ->
-        res = MyCacheAsync.cache_function(cache_pid, TestModule, :baz, [], "baz")
-        res
+        MyCacheAsync.cache_function(cache_pid, TestModule, :baz, [], "baz")
       end)
     end)
     |> Task.await_many()
     |> Enum.map(fn r ->
-      assert r == :ok
+      assert r == {:ok, :ok}
     end)
+  end
+
+  test "Error should not cache" do
+    {:ok, cache_pid} = GenServer.start_link(MyCacheAsync, nil)
+    res1 = MyCacheAsync.cache_function(cache_pid, TestModule, :rand_error, [], "rand_error")
+    res2 = MyCacheAsync.cache_function(cache_pid, TestModule, :rand_error, [], "rand_error")
+    assert res1 != res2
+  end
+
+  test "Success should cache" do
+    {:ok, cache_pid} = GenServer.start_link(MyCacheAsync, nil)
+
+    res1 = MyCacheAsync.cache_function(cache_pid, TestModule, :rand_success, [], "rand_success")
+    res2 = MyCacheAsync.cache_function(cache_pid, TestModule, :rand_success, [], "rand_success")
+    assert res1 == res2
   end
 end
