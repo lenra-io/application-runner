@@ -105,6 +105,7 @@ defmodule ApplicationRunner.ATS.EctoParserTest do
     todo1_id: todo1_id,
     todo2_id: todo2_id,
     todo3_id: todo3_id,
+    todo4_id: todo4_id,
     env_id: env_id
   } do
     res =
@@ -118,7 +119,15 @@ defmodule ApplicationRunner.ATS.EctoParserTest do
     assert res
            |> Enum.map(fn e -> e["_id"] end)
            |> MapSet.new() ==
-             MapSet.new([user_data_id, todolist1_id, todolist2_id, todo1_id, todo2_id, todo3_id])
+             MapSet.new([
+               user_data_id,
+               todolist1_id,
+               todolist2_id,
+               todo1_id,
+               todo2_id,
+               todo3_id,
+               todo4_id
+             ])
   end
 
   test "Select all wrong env_id", %{
