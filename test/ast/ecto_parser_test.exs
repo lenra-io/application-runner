@@ -74,6 +74,16 @@ defmodule ApplicationRunner.ATS.EctoParserTest do
       })
       |> Repo.transaction()
 
+    # 6
+    {:ok, %{inserted_data: %{id: todo4_id}}} =
+      DataServices.create(env_id, %{
+        "_datastore" => "todos",
+        "title" => ["Faire le ménage"],
+        "nullField" => nil,
+        "_refBy" => [todolist2_id]
+      })
+      |> Repo.transaction()
+
     {:ok,
      %{
        env_id: env_id,
@@ -83,7 +93,8 @@ defmodule ApplicationRunner.ATS.EctoParserTest do
        todolist2_id: todolist2_id,
        todo1_id: todo1_id,
        todo2_id: todo2_id,
-       todo3_id: todo3_id
+       todo3_id: todo3_id,
+       todo4_id: todo4_id
      }}
   end
 
@@ -94,6 +105,7 @@ defmodule ApplicationRunner.ATS.EctoParserTest do
     todo1_id: todo1_id,
     todo2_id: todo2_id,
     todo3_id: todo3_id,
+    todo4_id: todo4_id,
     env_id: env_id
   } do
     res =
@@ -102,12 +114,20 @@ defmodule ApplicationRunner.ATS.EctoParserTest do
       |> EctoParser.to_ecto(env_id, user_data_id)
       |> Repo.all()
 
-    assert Enum.count(res) == 6
+    assert Enum.count(res) == 7
 
     assert res
            |> Enum.map(fn e -> e["_id"] end)
            |> MapSet.new() ==
-             MapSet.new([user_data_id, todolist1_id, todolist2_id, todo1_id, todo2_id, todo3_id])
+             MapSet.new([
+               user_data_id,
+               todolist1_id,
+               todolist2_id,
+               todo1_id,
+               todo2_id,
+               todo3_id,
+               todo4_id
+             ])
   end
 
   test "Select all wrong env_id", %{
@@ -137,7 +157,7 @@ defmodule ApplicationRunner.ATS.EctoParserTest do
       |> Repo.one()
 
     assert %{
-             "_data" => %{"score" => 42},
+             "score" => 42,
              "_datastore" => "_users",
              "_id" => ^user_data_id,
              "_refBy" => [],
@@ -153,7 +173,7 @@ defmodule ApplicationRunner.ATS.EctoParserTest do
       |> EctoParser.to_ecto(env_id, user_data_id)
       |> Repo.all()
 
-    assert Enum.count(res) == 3
+    assert Enum.count(res) == 4
   end
 
   test "Select with multi where", %{
@@ -171,7 +191,8 @@ defmodule ApplicationRunner.ATS.EctoParserTest do
       |> Repo.one()
 
     assert %{
-             "_data" => %{"title" => "Faire le ménage", "nullField" => nil},
+             "title" => "Faire le ménage",
+             "nullField" => nil,
              "_refs" => []
            } = res
   end
@@ -189,7 +210,7 @@ defmodule ApplicationRunner.ATS.EctoParserTest do
       |> Repo.one()
 
     assert %{
-             "_data" => %{"score" => 42},
+             "score" => 42,
              "_datastore" => "_users",
              "_user" => %{"email" => "test@lenra.io"}
            } = res
@@ -206,7 +227,7 @@ defmodule ApplicationRunner.ATS.EctoParserTest do
       |> Repo.one()
 
     assert %{
-             "_data" => %{"score" => 42},
+             "score" => 42,
              "_datastore" => "_users",
              "_user" => %{"email" => "test@lenra.io"},
              "_id" => ^user_data_id,
@@ -225,7 +246,7 @@ defmodule ApplicationRunner.ATS.EctoParserTest do
       |> Repo.one()
 
     assert %{
-             "_data" => %{"score" => 42},
+             "score" => 42,
              "_datastore" => "_users",
              "_user" => %{"email" => "test@lenra.io"},
              "_id" => ^user_data_id,
@@ -233,7 +254,7 @@ defmodule ApplicationRunner.ATS.EctoParserTest do
            } = res
   end
 
-  test "Select with contains", %{
+  test "Select with in dot", %{
     user_data_id: user_data_id,
     env_id: env_id
   } do
@@ -243,10 +264,8 @@ defmodule ApplicationRunner.ATS.EctoParserTest do
           "$and" => [
             %{"_datastore" => "todos"},
             %{
-              "_data" => %{
-                "title" => %{
-                  "$contains" => ["Faire la vaisselle", "Faire la cuisine", "Faire la sieste"]
-                }
+              "title" => %{
+                "$in" => ["Faire la vaisselle", "Faire la cuisine", "Faire la sieste"]
               }
             }
           ]
@@ -259,9 +278,12 @@ defmodule ApplicationRunner.ATS.EctoParserTest do
     assert length(res) == 2
   end
 
-  test "Select with contains dot", %{
+  test "Select with contains", %{
     user_data_id: user_data_id,
-    env_id: env_id
+    env_id: env_id,
+    todolist1_id: todolist1_id,
+    todo1_id: todo1_id,
+    todo2_id: todo2_id
   } do
     res =
       %{
@@ -269,8 +291,8 @@ defmodule ApplicationRunner.ATS.EctoParserTest do
           "$and" => [
             %{"_datastore" => "todos"},
             %{
-              "_data.title" => %{
-                "$contains" => ["Faire la vaisselle", "Faire la cuisine", "Faire la sieste"]
+              "_refBy" => %{
+                "$contains" => todolist1_id
               }
             }
           ]
@@ -280,6 +302,43 @@ defmodule ApplicationRunner.ATS.EctoParserTest do
       |> EctoParser.to_ecto(env_id, user_data_id)
       |> Repo.all()
 
+    [todo1 | [todo2 | _res]] = res
+    # Get Todo1 & todo2
+    ids = [todo1_id, todo2_id]
     assert length(res) == 2
+    assert todo2["_id"] in ids
+    assert todo1["_id"] in ids
+  end
+
+  test "Select with contains array", %{
+    user_data_id: user_data_id,
+    env_id: env_id,
+    todolist1_id: todolist1_id,
+    todolist2_id: todolist2_id,
+    todo4_id: todo4_id
+  } do
+    res =
+      %{
+        "$find" => %{
+          "$and" => [
+            %{
+              "_datastore" => "todos"
+            },
+            %{
+              "title" => %{
+                "$contains" => ["Faire le ménage"]
+              }
+            }
+          ]
+        }
+      }
+      |> Parser.from_json()
+      |> EctoParser.to_ecto(env_id, user_data_id)
+      |> Repo.all()
+
+    [todo1 | _res] = res
+    # Get Todo4
+    assert length(res) == 1
+    assert todo1["_id"] == todo4_id
   end
 end

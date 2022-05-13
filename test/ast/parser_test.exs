@@ -131,12 +131,12 @@ defmodule ApplicationRunner.AST.ParserTest do
            }
   end
 
-  test "find with contains" do
+  test "find with in" do
     assert AST.Parser.from_json(%{
              "$find" => %{
                "$and" => [
                  %{"_datastore" => "_users"},
-                 %{"name" => %{"$contains" => ["Jean Neige", "Jean Noël"]}}
+                 %{"name" => %{"$in" => ["Jean Neige", "Jean Noël"]}}
                ]
              }
            }) == %AST.Query{
@@ -147,8 +147,8 @@ defmodule ApplicationRunner.AST.ParserTest do
                      left: %AST.DataKey{key_path: ["_datastore"]},
                      right: %AST.StringValue{value: "_users"}
                    },
-                   %ApplicationRunner.AST.Contains{
-                     clauses: [
+                   %ApplicationRunner.AST.In{
+                     values: [
                        %ApplicationRunner.AST.StringValue{value: "Jean Neige"},
                        %ApplicationRunner.AST.StringValue{value: "Jean Noël"}
                      ],
