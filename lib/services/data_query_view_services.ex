@@ -2,7 +2,7 @@ defmodule ApplicationRunner.DataQueryViewServices do
   @moduledoc false
   import Ecto.Query, only: [from: 2]
 
-  alias ApplicationRunner.DataQueryView
+  alias QueryParser.DataQueryView
 
   def get_one(env_id, datastore_name, data_id) do
     from(

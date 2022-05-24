@@ -4,7 +4,19 @@ defmodule ApplicationRunner.DataServices do
   """
 
   alias ApplicationRunner.{Data, DataReferences, Datastore}
+  alias QueryParser.AST.{EctoParser, Parser, Query}
   import Ecto.Query, only: [from: 2]
+
+  # Remove this function during refactor
+  def ecto_parser(%Query{} = query, env_id, user_data_id) do
+    query
+    |> EctoParser.to_ecto(env_id, user_data_id)
+  end
+
+  def json_parser(query) do
+    query
+    |> Parser.from_json()
+  end
 
   ##########
   # CREATE #

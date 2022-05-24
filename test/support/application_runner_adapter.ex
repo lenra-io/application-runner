@@ -7,7 +7,6 @@ defmodule ApplicationRunner.ApplicationRunnerAdapter do
   import Ecto.Query
 
   alias ApplicationRunner.{
-    AST,
     Data,
     Datastore,
     EnvState,
@@ -16,6 +15,8 @@ defmodule ApplicationRunner.ApplicationRunnerAdapter do
     UserData,
     UserDataServices
   }
+
+  alias QueryParser.AST
 
   use GenServer
 

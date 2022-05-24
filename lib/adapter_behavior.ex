@@ -3,10 +3,11 @@ defmodule ApplicationRunner.AdapterBehavior do
   ApplicationRunner's AdapterBehavior
   """
   alias ApplicationRunner.{
-    AST,
     EnvState,
     SessionState
   }
+
+  alias QueryParser.AST
 
   @type widget() :: map()
   @type manifest() :: map()
