@@ -49,7 +49,8 @@ defmodule ApplicationRunner.Widget.Cache do
         session_state,
         current_widget.name,
         current_widget.data,
-        current_widget.props
+        current_widget.props,
+        current_widget.context
       ],
       current_widget.id
     )
@@ -113,6 +114,15 @@ defmodule ApplicationRunner.Widget.Cache do
 
     query = component |> Map.get("query") |> AST.Parser.from_json()
 
+    context_bool = component |> Map.get("context", false)
+
+    context =
+      if context_bool do
+        session_state.context
+      else
+        %{}
+      end
+
     data =
       if is_nil(query) do
         []
@@ -120,13 +130,14 @@ defmodule ApplicationRunner.Widget.Cache do
         JsonStorage.exec_query(query, session_state.env_id, session_state.user_id)
       end
 
-    id = generate_widget_id(name, data, props)
+    id = generate_widget_id(name, data, props, context)
 
     new_widget_context = %Widget.Context{
       id: id,
       name: name,
       data: data,
       props: props,
+      context: context,
       prefix_path: widget_context.prefix_path
     }
 
@@ -436,7 +447,7 @@ defmodule ApplicationRunner.Widget.Cache do
     end
   end
 
-  def generate_widget_id(name, data, props) do
-    Crypto.hash({name, data, props})
+  def generate_widget_id(name, data, props, context) do
+    Crypto.hash({name, data, props, context})
   end
 end
