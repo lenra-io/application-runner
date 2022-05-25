@@ -40,7 +40,14 @@ defmodule ApplicationRunner.MixProject do
       {:json_diff, "~> 0.1"},
       {:swarm, "~> 3.0"},
       {:ecto_sql, "~> 3.4"},
-      {:postgrex, "~> 0.15.8", only: [:test], runtime: false}
+      {:postgrex, "~> 0.15.8", only: [:test], runtime: false},
+      private_git(
+        name: :query_parser,
+        host: "github.com",
+        project: "lenra-io/query-parser.git",
+        tag: "v1.0.0-beta.1",
+        credentials: "shiipou:#{System.get_env("GH_PERSONNAL_TOKEN")}"
+      )
     ]
   end
 
@@ -55,5 +62,21 @@ defmodule ApplicationRunner.MixProject do
       "ecto.setup": ["ecto.create", "ecto.migrate"],
       "ecto.reset": ["ecto.drop", "ecto.setup"]
     ]
+  end
+
+  defp private_git(opts) do
+    name = Keyword.fetch!(opts, :name)
+    host = Keyword.fetch!(opts, :host)
+    project = Keyword.fetch!(opts, :project)
+    tag = Keyword.fetch!(opts, :tag)
+    credentials = Keyword.get(opts, :credentials)
+
+    case System.get_env("CI") do
+      "true" ->
+        {name, git: "https://#{credentials}@#{host}/#{project}", tag: tag, submodules: true}
+
+      _ ->
+        {name, git: "git@#{host}:#{project}", tag: tag, submodules: true}
+    end
   end
 end

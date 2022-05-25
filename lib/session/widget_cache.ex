@@ -10,7 +10,6 @@ defmodule ApplicationRunner.WidgetCache do
 
   alias ApplicationRunner.{
     AdapterHandler,
-    AST,
     JsonSchemata,
     ListenersCache,
     SessionState,
@@ -18,6 +17,8 @@ defmodule ApplicationRunner.WidgetCache do
     UiContext,
     WidgetContext
   }
+
+  alias QueryParser.AST
 
   @type widget_ui :: map()
   @type component :: map()

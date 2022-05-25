@@ -30,6 +30,7 @@ jobs:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: postgres
+      GH_PERSONNAL_TOKEN: ${{secrets.GH_PERSONNAL_TOKEN}}
     services:
       postgres:
         # Docker Hub image
