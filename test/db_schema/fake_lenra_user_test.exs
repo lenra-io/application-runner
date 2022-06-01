@@ -4,9 +4,9 @@ defmodule ApplicationRunner.FakeLenraUserTest do
   use ApplicationRunner.RepoCase
 
   alias ApplicationRunner.{
-    User,
     FakeLenraUser,
-    Repo
+    Repo,
+    User
   }
 
   test "changeset shoould be valid" do
