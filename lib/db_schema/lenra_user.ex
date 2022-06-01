@@ -1,14 +1,12 @@
 defmodule ApplicationRunner.User do
   @moduledoc """
-    The user schema.
+    The embedded user schema.
   """
 
   use Ecto.Schema
   import Ecto.Changeset
 
-  alias ApplicationRunner.{
-    UserData
-  }
+  alias ApplicationRunner.UserData
 
   embedded_schema do
     has_many(:user_datas, UserData, foreign_key: :user_id)
