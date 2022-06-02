@@ -6,14 +6,12 @@ defmodule ApplicationRunner.Datastore do
   use Ecto.Schema
   import Ecto.Changeset
 
-  alias ApplicationRunner.{Data, Datastore}
-
-  @environment_schema Application.compile_env!(:application_runner, :lenra_environment_schema)
+  alias ApplicationRunner.{Data, Datastore, Environment}
 
   @derive {Jason.Encoder, only: [:id, :environment_id, :name]}
   schema "datastores" do
     has_many(:data, Data)
-    belongs_to(:environment, @environment_schema)
+    belongs_to(:environment, Environment)
     field(:name, :string)
     timestamps()
   end
