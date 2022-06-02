@@ -1,6 +1,6 @@
 defmodule ApplicationRunner.User do
   @moduledoc """
-    The embedded user schema.
+    The user schema.
   """
 
   use Ecto.Schema

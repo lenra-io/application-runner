@@ -1,6 +1,6 @@
 defmodule ApplicationRunner.Environment do
   @moduledoc """
-    The embedded environement schema.
+    The environment schema.
   """
 
   use Ecto.Schema
