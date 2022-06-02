@@ -11,8 +11,9 @@ config :application_runner,
   session_inactivity_timeout: 1000 * 60 * 10,
   # 60 min
   env_inactivity_timeout: 1000 * 60 * 60,
-  lenra_environment_schema: ApplicationRunner.FakeLenraEnvironment,
-  lenra_user_schema: ApplicationRunner.FakeLenraUser
+  lenra_environment_table: "environments",
+  lenra_user_table: "users",
+  repo: ApplicationRunner.Repo
 
 config :application_runner, ApplicationRunner.Repo,
   database: "file::memory:?cache=shared",

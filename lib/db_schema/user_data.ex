@@ -6,13 +6,11 @@ defmodule ApplicationRunner.UserData do
   use Ecto.Schema
   import Ecto.Changeset
 
-  alias ApplicationRunner.{Data, UserData}
-
-  @environment_schema Application.compile_env!(:application_runner, :lenra_user_schema)
+  alias ApplicationRunner.{Data, User, UserData}
 
   @derive {Jason.Encoder, only: [:id, :user_id, :data_id]}
   schema "user_datas" do
-    belongs_to(:user, @environment_schema)
+    belongs_to(:user, User)
     belongs_to(:data, Data)
 
     timestamps()
