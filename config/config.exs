@@ -19,6 +19,11 @@ config :application_runner, ApplicationRunner.Repo,
   database: "file::memory:?cache=shared",
   log: false
 
+# Configure Guardian
+config :application_runner, ApplicationRunner.Guardian.AppGuardian,
+  issuer: "application_runner",
+  secret_key: "5oIBVh2Hauo3LT4knNFu29lX9DYu74SWZfjZzYn+gfr0aryxuYIdpjm8xd0qGGqK"
+
 config :swarm,
   debug: false
 
