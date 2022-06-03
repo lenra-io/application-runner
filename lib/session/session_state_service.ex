@@ -3,8 +3,7 @@ defmodule ApplicationRunner.Session.SessionStateServices do
     Lenra.Sessionstate handle all operation for session state.
   """
 
-  alias ApplicationRunner.SessionSupervisor
-  alias Lenra.AppGuardian
+  alias ApplicationRunner.{Guardian.AppGuardian, SessionSupervisor, Services.TokenAgent}
 
   def create_token(session_id, user_id, env_id) do
     with {:ok, token, _claims} <-
@@ -18,7 +17,8 @@ defmodule ApplicationRunner.Session.SessionStateServices do
   end
 
   def fetch_token(session_id) do
-    with agent <- SessionSupervisor.fetch_module_pid!(session_id, Lenra.TokenAgent) do
+    with agent <-
+           SessionSupervisor.fetch_module_pid!(session_id, TokenAgent) do
       Agent.get(agent, fn state -> state end)
     end
   end
