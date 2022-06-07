@@ -12,6 +12,10 @@ defmodule ApplicationRunner.RepoCase do
       import Ecto
       import Ecto.Query
       import ApplicationRunner.RepoCase
+      import Phoenix.ConnTest
+      import Plug.Conn
+
+      alias ApplicationRunner.Router.Helpers, as: Routes
 
       # and any other stuff
     end

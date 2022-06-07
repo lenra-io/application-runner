@@ -12,6 +12,8 @@ defmodule ApplicationRunner.UserDataServices do
     UserData
   }
 
+  @repo Application.compile_env!(:application_runner, :repo)
+
   def create(params), do: Ecto.Multi.new() |> create(params)
 
   def create(multi, params) do
@@ -19,6 +21,7 @@ defmodule ApplicationRunner.UserDataServices do
     |> Ecto.Multi.insert(:inserted_user_data, fn _params ->
       UserData.new(params)
     end)
+    |> @repo.transaction()
   end
 
   def create_with_data(env_id, user_id) do
@@ -27,6 +30,7 @@ defmodule ApplicationRunner.UserDataServices do
     |> Ecto.Multi.insert(:inserted_user_data, fn %{inserted_data: data} ->
       UserData.new(%{user_id: user_id, data_id: data.id})
     end)
+    |> @repo.transaction()
   end
 
   def current_user_data_query(env_id, user_id) do

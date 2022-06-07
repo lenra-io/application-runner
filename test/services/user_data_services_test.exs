@@ -24,11 +24,9 @@ defmodule ApplicationRunner.UserDataServicesTest do
 
       {:ok, %{inserted_data: inserted_data}} =
         DataServices.create(env_id, %{"_datastore" => "users", "name" => "toto"})
-        |> Repo.transaction()
 
       {:ok, %{inserted_user_data: inserted_user_data}} =
         UserDataServices.create(%{user_id: user_id, data_id: inserted_data.id})
-        |> Repo.transaction()
 
       user_data = Repo.get(UserData, inserted_user_data.id)
 
@@ -41,19 +39,15 @@ defmodule ApplicationRunner.UserDataServicesTest do
 
       {:ok, %{inserted_data: inserted_data}} =
         DataServices.create(env_id, %{"_datastore" => "users", "name" => "toto"})
-        |> Repo.transaction()
 
       assert {:error, :inserted_user_data, %{errors: [user_id: {"does not exist", _constraint}]},
               _changes_so_far} =
                UserDataServices.create(%{user_id: -1, data_id: inserted_data.id})
-               |> Repo.transaction()
     end
 
     test "should return an error if data_id is invalid", %{env_id: _env_id, user_id: user_id} do
       assert {:error, :inserted_user_data, %{errors: [data_id: {"does not exist", _cosntraint}]},
-              _change_so_far} =
-               UserDataServices.create(%{user_id: user_id, data_id: -1})
-               |> Repo.transaction()
+              _change_so_far} = UserDataServices.create(%{user_id: user_id, data_id: -1})
     end
 
     test "should create 2 user_data if the same user_id is used and data_ids are not the same", %{
@@ -64,19 +58,15 @@ defmodule ApplicationRunner.UserDataServicesTest do
 
       {:ok, %{inserted_data: inserted_data}} =
         DataServices.create(env_id, %{"_datastore" => "users", "name" => "toto"})
-        |> Repo.transaction()
 
       {:ok, %{inserted_data: inserted_data_two}} =
         DataServices.create(env_id, %{"_datastore" => "users", "name" => "toto"})
-        |> Repo.transaction()
 
       {:ok, %{inserted_user_data: _inserted_user_data}} =
         UserDataServices.create(%{user_id: user_id, data_id: inserted_data.id})
-        |> Repo.transaction()
 
       assert {:ok, %{inserted_user_data: _inserted_userdata}} =
                UserDataServices.create(%{user_id: user_id, data_id: inserted_data_two.id})
-               |> Repo.transaction()
     end
 
     test "should create 2 user_data if different user_ids are used and data_ids are the same", %{
@@ -87,17 +77,14 @@ defmodule ApplicationRunner.UserDataServicesTest do
 
       {:ok, %{inserted_data: inserted_data}} =
         DataServices.create(env_id, %{"_datastore" => "users", "name" => "toto"})
-        |> Repo.transaction()
 
       {:ok, user_two} = Repo.insert(FakeLenraUser.new())
 
       {:ok, %{inserted_user_data: _inserted_user_data}} =
         UserDataServices.create(%{user_id: user_id, data_id: inserted_data.id})
-        |> Repo.transaction()
 
       assert {:ok, %{inserted_user_data: _inserted_user_data}} =
                UserDataServices.create(%{user_id: user_two.id, data_id: inserted_data.id})
-               |> Repo.transaction()
     end
 
     test "should return an error if the same insert is done twice", %{
@@ -108,11 +95,9 @@ defmodule ApplicationRunner.UserDataServicesTest do
 
       {:ok, %{inserted_data: inserted_data}} =
         DataServices.create(env_id, %{"_datastore" => "users", "name" => "toto"})
-        |> Repo.transaction()
 
       {:ok, %{inserted_user_data: _inserted_user_data}} =
         UserDataServices.create(%{user_id: user_id, data_id: inserted_data.id})
-        |> Repo.transaction()
 
       assert {:error, :inserted_user_data,
               %{
@@ -122,7 +107,6 @@ defmodule ApplicationRunner.UserDataServicesTest do
               },
               _change_so_far} =
                UserDataServices.create(%{user_id: user_id, data_id: inserted_data.id})
-               |> Repo.transaction()
     end
   end
 end

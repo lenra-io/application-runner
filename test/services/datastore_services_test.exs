@@ -14,7 +14,6 @@ defmodule ApplicationRunner.DatastoreServiceTest do
     test "should create datastore if params valid", %{env_id: env_id} do
       {:ok, %{inserted_datastore: inserted_datastore}} =
         DatastoreServices.create(env_id, %{"name" => "users"})
-        |> Repo.transaction()
 
       datastore = Repo.get(Datastore, inserted_datastore.id)
 
@@ -25,13 +24,10 @@ defmodule ApplicationRunner.DatastoreServiceTest do
     test "should return error if datastore same name and same env_id", %{env_id: env_id} do
       assert {:ok, %{inserted_datastore: _inserted_datastore}} =
                DatastoreServices.create(env_id, %{"name" => "users"})
-               |> Repo.transaction()
 
       assert {:error, :inserted_datastore,
               %{errors: [name: {"has already been taken", _constraint}]},
-              _changes_so_far} =
-               DatastoreServices.create(env_id, %{"name" => "users"})
-               |> Repo.transaction()
+              _changes_so_far} = DatastoreServices.create(env_id, %{"name" => "users"})
     end
 
     test "should create datastore if datastore same name but different env_id", %{env_id: env_id} do
@@ -39,11 +35,9 @@ defmodule ApplicationRunner.DatastoreServiceTest do
 
       assert {:ok, %{inserted_datastore: _inserted_datastore}} =
                DatastoreServices.create(env_id, %{"name" => "users"})
-               |> Repo.transaction()
 
       assert {:ok, %{inserted_datastore: _inserted_datastore}} =
                DatastoreServices.create(environment.id, %{"name" => "users"})
-               |> Repo.transaction()
     end
 
     test "should create datastore if different name but same env_id", %{env_id: env_id} do
@@ -51,11 +45,9 @@ defmodule ApplicationRunner.DatastoreServiceTest do
 
       assert {:ok, %{inserted_datastore: _inserted_datastore}} =
                DatastoreServices.create(env_id, %{"name" => "users"})
-               |> Repo.transaction()
 
       assert {:ok, %{inserted_datastore: _inserted_datastore}} =
                DatastoreServices.create(environment.id, %{"name" => "test"})
-               |> Repo.transaction()
     end
 
     test "should return error if json invalid", %{env_id: env_id} do
@@ -65,7 +57,6 @@ defmodule ApplicationRunner.DatastoreServiceTest do
                DatastoreServices.create(env_id, %{
                  "datastore" => "users"
                })
-               |> Repo.transaction()
     end
   end
 
@@ -73,12 +64,10 @@ defmodule ApplicationRunner.DatastoreServiceTest do
     test "should delete datastore if params valid", %{env_id: env_id} do
       {:ok, %{inserted_datastore: inserted_datastore}} =
         DatastoreServices.create(env_id, %{"name" => "users"})
-        |> Repo.transaction()
 
       datastore = Repo.get(Datastore, inserted_datastore.id)
 
       DatastoreServices.delete(datastore.id)
-      |> Repo.transaction()
 
       deleted_data = Repo.get(Datastore, inserted_datastore.id)
 
@@ -89,13 +78,11 @@ defmodule ApplicationRunner.DatastoreServiceTest do
     test "should return error id invalid", %{env_id: _env_id} do
       assert {:error, :datastore, :datastore_not_found, _changes_so_far} =
                DatastoreServices.delete(-1)
-               |> Repo.transaction()
     end
 
     test "should also delete data", %{env_id: env_id} do
       {:ok, %{inserted_datastore: inserted_datastore}} =
         DatastoreServices.create(env_id, %{"name" => "users"})
-        |> Repo.transaction()
 
       datastore = Repo.get(Datastore, inserted_datastore.id)
 
@@ -115,7 +102,6 @@ defmodule ApplicationRunner.DatastoreServiceTest do
       assert length(datas) == 3
 
       DatastoreServices.delete(datastore.id)
-      |> Repo.transaction()
 
       deleted_datastore = Repo.get(Datastore, inserted_datastore.id)
 
@@ -137,12 +123,10 @@ defmodule ApplicationRunner.DatastoreServiceTest do
     test "should update datastore if params valid", %{env_id: env_id} do
       {:ok, %{inserted_datastore: inserted_datastore}} =
         DatastoreServices.create(env_id, %{"name" => "users"})
-        |> Repo.transaction()
 
       datastore = Repo.get(Datastore, inserted_datastore.id)
 
       DatastoreServices.update(datastore.id, %{"name" => "test"})
-      |> Repo.transaction()
 
       updated_data = Repo.get(Datastore, inserted_datastore.id)
 
@@ -152,7 +136,6 @@ defmodule ApplicationRunner.DatastoreServiceTest do
     test "should return error id invalid", %{env_id: _env_id} do
       assert {:error, :datastore, :datastore_not_found, _changes_so_far} =
                DatastoreServices.update(-1, %{"name" => "test"})
-               |> Repo.transaction()
     end
   end
 end

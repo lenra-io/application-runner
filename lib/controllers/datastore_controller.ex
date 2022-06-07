@@ -1,8 +1,7 @@
 defmodule ApplicationRunner.DatastoreController do
   use ApplicationRunner, :controller
 
-  alias Lenra.AppGuardian.Plug
-  alias Lenra.DatastoreServices
+  alias ApplicationRunner.{DatastoreServices, Guardian.AppGuardian.Plug}
 
   def create(conn, params) do
     with session_assings <- Plug.current_resource(conn),

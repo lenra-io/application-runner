@@ -5,11 +5,14 @@ defmodule ApplicationRunner.DatastoreServices do
 
   alias ApplicationRunner.Datastore
 
+  @repo Application.compile_env!(:application_runner, :repo)
+
   def create(environment_id, params), do: Ecto.Multi.new() |> create(environment_id, params)
 
   def create(multi, environment_id, params) do
     multi
     |> Ecto.Multi.insert(:inserted_datastore, Datastore.new(environment_id, params))
+    |> @repo.transaction()
   end
 
   def update(datastore_id, params), do: Ecto.Multi.new() |> update(datastore_id, params)
@@ -31,6 +34,7 @@ defmodule ApplicationRunner.DatastoreServices do
     |> Ecto.Multi.run(:updated_datastore, fn repo, %{datastore: %Datastore{} = datastore} ->
       repo.update(Datastore.update(datastore, params))
     end)
+    |> @repo.transaction()
   end
 
   def delete(datastore_id), do: Ecto.Multi.new() |> delete(datastore_id)
@@ -52,5 +56,6 @@ defmodule ApplicationRunner.DatastoreServices do
     |> Ecto.Multi.run(:deleted_datastore, fn repo, %{datastore: %Datastore{} = datastore} ->
       repo.delete(datastore)
     end)
+    |> @repo.transaction()
   end
 end

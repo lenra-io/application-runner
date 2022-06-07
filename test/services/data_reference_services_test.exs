@@ -31,7 +31,6 @@ defmodule ApplicationRunner.DataReferenceServicesTest do
           refs_id: inserted_point.id,
           ref_by_id: inserted_user.id
         })
-        |> Repo.transaction()
 
       %{refs: [ref | _tail]} =
         inserted_user
@@ -54,7 +53,6 @@ defmodule ApplicationRunner.DataReferenceServicesTest do
                  refs_id: -1,
                  ref_by_id: -1
                })
-               |> Repo.transaction()
     end
 
     test "should return refBy error when id invalid", %{env_id: env_id} do
@@ -68,7 +66,6 @@ defmodule ApplicationRunner.DataReferenceServicesTest do
                  refs_id: inserted_user.id,
                  ref_by_id: -1
                })
-               |> Repo.transaction()
     end
 
     test "add same reference twice should return an error", %{env_id: env_id} do
@@ -85,7 +82,6 @@ defmodule ApplicationRunner.DataReferenceServicesTest do
           refs_id: inserted_user.id,
           ref_by_id: inserted_point.id
         })
-        |> Repo.transaction()
 
       assert {:error, :inserted_reference, %{errors: [refs_id: {"has already been taken", _}]},
               _changes_so_far} =
@@ -93,7 +89,6 @@ defmodule ApplicationRunner.DataReferenceServicesTest do
                  refs_id: inserted_user.id,
                  ref_by_id: inserted_point.id
                })
-               |> Repo.transaction()
     end
 
     test "should return error if data not same env_id", %{env_id: env_id} do
@@ -114,7 +109,6 @@ defmodule ApplicationRunner.DataReferenceServicesTest do
                  refs_id: inserted_user.id,
                  ref_by_id: inserted_point.id
                })
-               |> Repo.transaction()
     end
   end
 
@@ -133,11 +127,9 @@ defmodule ApplicationRunner.DataReferenceServicesTest do
           refs_id: inserted_point.id,
           ref_by_id: inserted_user.id
         })
-        |> Repo.transaction()
 
       {:ok, _deleted_ref} =
         DataReferencesServices.delete(%{refs_id: inserted_point.id, ref_by_id: inserted_user.id})
-        |> Repo.transaction()
 
       assert nil == Repo.get(DataReferences, inserted_reference.id)
     end
@@ -154,7 +146,6 @@ defmodule ApplicationRunner.DataReferenceServicesTest do
                  refs_id: -1,
                  ref_by_id: inserted_user.id
                })
-               |> Repo.transaction()
     end
 
     test "should return error if refBy not found", %{env_id: env_id} do
@@ -169,7 +160,6 @@ defmodule ApplicationRunner.DataReferenceServicesTest do
           refs_id: inserted_user.id,
           ref_by_id: -1
         })
-        |> Repo.transaction()
     end
 
     test "should return error if json key invalid ", %{env_id: env_id} do
@@ -184,7 +174,6 @@ defmodule ApplicationRunner.DataReferenceServicesTest do
                  refs_id: inserted_user.id,
                  refsBy_id: -1
                })
-               |> Repo.transaction()
     end
   end
 end
