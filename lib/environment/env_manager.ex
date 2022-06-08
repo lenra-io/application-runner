@@ -136,18 +136,28 @@ defmodule ApplicationRunner.EnvManager do
     {:noreply, env_state}
   end
 
-  defp do_send_event(env_state, action, props, event) do
+  defp do_send_event(env_state, listener_call) do
     event_handler_pid =
       EnvSupervisor.fetch_module_pid!(env_state.env_supervisor_pid, EventHandler)
 
-    EventHandler.send_event(event_handler_pid, env_state, action, props, event)
+    EventHandler.send_event(event_handler_pid, env_state, listener_call)
   end
 
   defp send_on_env_start_event(env_state),
-    do: do_send_event(env_state, @on_env_start_action, %{}, %{})
+    do:
+      do_send_event(env_state, %{
+        "action" => @on_env_start_action,
+        "props" => %{},
+        "event" => %{}
+      })
 
   defp send_on_env_stop_event(env_state),
-    do: do_send_event(env_state, @on_env_stop_action, %{}, %{})
+    do:
+      do_send_event(env_state, %{
+        "action" => @on_env_stop_action,
+        "props" => %{},
+        "event" => %{}
+      })
 
   defp stop(%EnvState{} = env_state, from) do
     # Stop all the session node for the given app and stop the app.

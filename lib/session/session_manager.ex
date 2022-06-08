@@ -10,14 +10,15 @@ defmodule ApplicationRunner.SessionManager do
     AdapterHandler,
     EnvManager,
     EventHandler,
-    ListenersCache,
     SessionManagers,
     SessionState,
     SessionSupervisor,
     UiCache,
     UiContext,
     WidgetCache,
-    WidgetContext
+    WidgetContext,
+    LenraView,
+    JsonView
   }
 
   @on_user_first_join_action "onUserFirstJoin"
@@ -32,9 +33,9 @@ defmodule ApplicationRunner.SessionManager do
     @on_session_stop_action
   ]
 
-  @spec send_client_event(pid(), String.t(), map()) :: :ok
-  def send_client_event(session_manager_pid, code, event) do
-    GenServer.cast(session_manager_pid, {:send_client_event, code, event})
+  @spec listener_call(pid(), map()) :: :ok
+  def listener_call(session_manager_pid, listener_call) do
+    GenServer.cast(session_manager_pid, {:listener_call, listener_call})
   end
 
   @spec start_link(keyword) :: :ignore | {:error, any} | {:ok, pid}
@@ -137,10 +138,9 @@ defmodule ApplicationRunner.SessionManager do
   end
 
   def handle_info(:data_changed, %SessionState{} = session_state) do
-    with %{"rootWidget" => root_widget} <- EnvManager.get_manifest(session_state.env_id),
-         {:ok, ui} <- get_and_build_ui(session_state, root_widget) do
-      transformed_ui = transform_ui(ui)
-      res = UiCache.diff_and_save(session_state, transformed_ui)
+    with manifest <- EnvManager.get_manifest(session_state.env_id),
+         {:ok, ui} <- call_ui_view(session_state, manifest) do
+      res = UiCache.diff_and_save(session_state, ui)
       AdapterHandler.on_ui_changed(session_state, res)
     else
       error ->
@@ -148,6 +148,14 @@ defmodule ApplicationRunner.SessionManager do
     end
 
     {:noreply, session_state, session_state.inactivity_timeout}
+  end
+
+  defp call_ui_view(session_state, %{"rootWidget" => rootWidget, "view" => "json"}) do
+    JsonView.get_and_build_ui(session_state, rootWidget)
+  end
+
+  defp call_ui_view(session_state, %{"rootWidget" => rootWidget}) do
+    LenraView.get_and_build_ui(session_state, rootWidget)
   end
 
   @impl true
@@ -169,67 +177,49 @@ defmodule ApplicationRunner.SessionManager do
     To prevent this we simply ask the child to call `DynamicSupervisor.terminate_child/2`to ensure that the correct SessionManagers is called.
   """
   @impl true
-  def handle_cast({:send_client_event, code, event}, session_state) do
-    with {:ok, listener} <- ListenersCache.fetch_listener(session_state, code),
-         {:ok, action} <- Map.fetch(listener, "action"),
-         props <- Map.get(listener, "props", %{}) do
-      do_send_event(session_state, action, props, event)
-    end
+  def handle_cast({:listener_call, listener_call}, session_state) do
+    do_send_event(session_state, listener_call)
 
     {:noreply, session_state, session_state.inactivity_timeout}
   end
 
-  @spec get_and_build_ui(SessionState.t(), String.t()) ::
-          {:ok, map()} | {:error, any()}
-  def get_and_build_ui(session_state, root_widget) do
-    props = %{}
-    query = nil
-    data = []
-    id = WidgetCache.generate_widget_id(root_widget, query, props)
-
-    WidgetCache.get_and_build_widget(
-      session_state,
-      %UiContext{
-        widgets_map: %{},
-        listeners_map: %{}
-      },
-      %WidgetContext{
-        id: id,
-        name: root_widget,
-        prefix_path: "",
-        data: data,
-        props: props
-      }
-    )
-    |> case do
-      {:ok, ui_context} ->
-        {:ok, %{"rootWidget" => id, "widgets" => ui_context.widgets_map}}
-
-      {:error, reason} when is_atom(reason) ->
-        {:error, reason}
-
-      {:error, ui_error_list} when is_list(ui_error_list) ->
-        {:error, :invalid_ui, ui_error_list}
-    end
-  end
-
   defp send_on_user_first_join_event(session_state),
-    do: do_send_event(session_state, @on_user_first_join_action, %{}, %{})
+    do:
+      do_send_event(session_state, %{
+        "action" => @on_user_first_join_action,
+        "props" => %{},
+        "event" => %{}
+      })
 
   defp send_on_user_quit_event(session_state),
-    do: do_send_event(session_state, @on_user_quit_action, %{}, %{})
+    do:
+      do_send_event(session_state, %{
+        "action" => @on_user_quit_action,
+        "props" => %{},
+        "event" => %{}
+      })
 
   defp send_on_session_start_event(session_state),
-    do: do_send_event(session_state, @on_session_start_action, %{}, %{})
+    do:
+      do_send_event(session_state, %{
+        "action" => @on_session_start_action,
+        "props" => %{},
+        "event" => %{}
+      })
 
   defp send_on_session_stop_event(session_state),
-    do: do_send_event(session_state, @on_session_stop_action, %{}, %{})
+    do:
+      do_send_event(session_state, %{
+        "action" => @on_session_stop_action,
+        "props" => %{},
+        "event" => %{}
+      })
 
-  defp do_send_event(session_state, action, props, event) do
+  defp do_send_event(session_state, listener_call) do
     event_handler_pid =
       SessionSupervisor.fetch_module_pid!(session_state.session_supervisor_pid, EventHandler)
 
-    EventHandler.send_event(event_handler_pid, session_state, action, props, event)
+    EventHandler.send_event(event_handler_pid, session_state, listener_call)
   end
 
   defp send_error(session_state, error) do
@@ -240,28 +230,5 @@ defmodule ApplicationRunner.SessionManager do
     send_on_session_stop_event(session_state)
     if not is_nil(from), do: GenServer.reply(from, :ok)
     SessionManagers.terminate_session(self())
-  end
-
-  defp transform_ui(%{"rootWidget" => root_widget, "widgets" => widgets}) do
-    transform(%{"root" => Map.fetch!(widgets, root_widget)}, widgets)
-  end
-
-  defp transform(%{"type" => "widget", "id" => id}, widgets) do
-    transform(Map.fetch!(widgets, id), widgets)
-  end
-
-  defp transform(widget, widgets) when is_map(widget) do
-    Enum.map(widget, fn
-      {k, v} -> {k, transform(v, widgets)}
-    end)
-    |> Map.new()
-  end
-
-  defp transform(widget, widgets) when is_list(widget) do
-    Enum.map(widget, &transform(&1, widgets))
-  end
-
-  defp transform(widget, _widgets) do
-    widget
   end
 end

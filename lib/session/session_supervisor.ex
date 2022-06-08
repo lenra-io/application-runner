@@ -44,7 +44,6 @@ defmodule ApplicationRunner.SessionSupervisor do
     children =
       [
         ApplicationRunner.UiCache,
-        ApplicationRunner.ListenersCache,
         ApplicationRunner.WidgetCache,
         ApplicationRunner.EventHandler
       ] ++ get_additionnal_modules(opts)

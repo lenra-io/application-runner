@@ -6,11 +6,13 @@ defmodule ApplicationRunner.EventHandler do
 
   alias ApplicationRunner.AdapterHandler
 
+  require Logger
+
   #########
   ## API ##
   #########
-  def send_event(handler_pid, state, action, props, event) do
-    GenServer.cast(handler_pid, {:send_event, state, action, props, event})
+  def send_event(handler_pid, state, listener_call) do
+    GenServer.cast(handler_pid, {:send_event, state, listener_call})
   end
 
   def subscribe(handler_pid) do
@@ -31,8 +33,13 @@ defmodule ApplicationRunner.EventHandler do
   end
 
   @impl true
-  def handle_cast({:send_event, state, action, props, event}, pids) do
+  def handle_cast({:send_event, state, listener_call}, pids) do
+    Logger.debug("Sending event #{inspect(listener_call)}")
+
     current = self()
+    action = Map.get(listener_call, "action", "")
+    props = Map.get(listener_call, "props", %{})
+    event = Map.get(listener_call, "event", %{})
 
     spawn(fn ->
       res = AdapterHandler.run_listener(state, action, props, event)
@@ -49,6 +56,8 @@ defmodule ApplicationRunner.EventHandler do
 
   @impl true
   def handle_info({:run_listener_result, res, action}, pids) do
+    Logger.debug("Result event #{action} : #{inspect(res)}")
+
     Enum.each(pids, fn pid ->
       send(pid, {:event_finished, action, res})
     end)

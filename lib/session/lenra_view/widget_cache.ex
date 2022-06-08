@@ -1,7 +1,7 @@
 defmodule ApplicationRunner.WidgetCache do
   @moduledoc """
     This module handles the recursive widget building.
-    It is called by the SessionManager and calls ListenerCache to cache the listeners.
+    It is called by the SessionManager.
 
     This module caches every call to the get_and_build_widget.
     This means that every widget with the same name/data/props is get/build only once.
@@ -11,7 +11,6 @@ defmodule ApplicationRunner.WidgetCache do
   alias ApplicationRunner.{
     AdapterHandler,
     JsonSchemata,
-    ListenersCache,
     SessionState,
     SessionSupervisor,
     UiContext,
@@ -19,6 +18,8 @@ defmodule ApplicationRunner.WidgetCache do
   }
 
   alias QueryParser.AST
+
+  require Logger
 
   @type widget_ui :: map()
   @type component :: map()
@@ -38,6 +39,8 @@ defmodule ApplicationRunner.WidgetCache do
   @spec get_widget(SessionState.t(), WidgetContext.t()) :: {:ok, map()} | {:error, any()}
   def get_widget(%SessionState{} = session_state, %WidgetContext{} = current_widget) do
     pid = SessionSupervisor.fetch_module_pid!(session_state.session_supervisor_pid, __MODULE__)
+
+    Logger.debug("get widget #{inspect(current_widget)}")
 
     cache_function(
       pid,
@@ -162,24 +165,16 @@ defmodule ApplicationRunner.WidgetCache do
              widget_context
            ),
          {:ok, child_map, merged_child_ui_context} <-
-           build_child_list(session_state, component, child_keys, ui_context, widget_context),
-         {:ok, listeners_map} <-
-           build_listeners(session_state, component, listeners_keys) do
+           build_child_list(session_state, component, child_keys, ui_context, widget_context) do
       new_context = %UiContext{
         widgets_map:
-          Map.merge(merged_child_ui_context.widgets_map, merged_children_ui_context.widgets_map),
-        listeners_map:
-          Map.merge(
-            merged_child_ui_context.listeners_map,
-            merged_children_ui_context.listeners_map
-          )
+          Map.merge(merged_child_ui_context.widgets_map, merged_children_ui_context.widgets_map)
       }
 
       {:ok,
        component
        |> Map.merge(children_map)
-       |> Map.merge(child_map)
-       |> Map.merge(listeners_map), new_context}
+       |> Map.merge(child_map), new_context}
     end
   end
 
@@ -401,31 +396,6 @@ defmodule ApplicationRunner.WidgetCache do
       :widgets_map,
       Map.merge(ui_context1.widgets_map, ui_context2.widgets_map)
     )
-  end
-
-  @spec build_listeners(SessionState.t(), component(), list(String.t())) ::
-          {:ok, map()} | {:error, list()}
-  defp build_listeners(session_state, component, listeners) do
-    Enum.reduce(listeners, {:ok, %{}}, fn listener, {:ok, acc} ->
-      case build_listener(session_state, Map.get(component, listener)) do
-        {:ok, %{"code" => _} = built_listener} -> {:ok, Map.put(acc, listener, built_listener)}
-        {:ok, %{}} -> {:ok, acc}
-      end
-    end)
-  end
-
-  @spec build_listener(SessionState.t(), map()) :: {:ok, map()}
-  defp build_listener(session_state, listener) do
-    case listener do
-      %{"action" => action_code} ->
-        props = Map.get(listener, "props", %{})
-        listener_key = Crypto.hash({action_code, props})
-        ListenersCache.save_listener(session_state, listener_key, listener)
-        {:ok, listener |> Map.drop(["action", "props"]) |> Map.put("code", listener_key)}
-
-      _ ->
-        {:ok, %{}}
-    end
   end
 
   def generate_widget_id(name, data, props) do
