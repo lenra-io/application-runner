@@ -6,12 +6,15 @@ defmodule ApplicationRunner.OpenfaasServices do
   alias ApplicationRunner.{
     AdapterHandler,
     EnvState,
-    EnvironmentStateServices,
+    Environment,
+    Environment.EnvironmentStateServices,
     SessionState,
-    SessionStateServices
+    Session.SessionStateServices
   }
 
   require Logger
+
+  @url Application.compile_env!(:application_runner, :url)
 
   defp get_http_context do
     base_url = Application.fetch_env!(:lenra, :faas_url)
@@ -72,7 +75,7 @@ defmodule ApplicationRunner.OpenfaasServices do
         action: action,
         props: props,
         event: event,
-        api: %{url: LenraWeb.Endpoint.url(), token: token}
+        api: %{url: @url, token: token}
       })
 
     Logger.debug("Call to Openfaas : #{function_name}")
@@ -201,24 +204,24 @@ defmodule ApplicationRunner.OpenfaasServices do
   end
 
   # Unused function
-  def delete_app_openfaas(service_name, build_number) do
-    {base_url, headers} = get_http_context()
+  # def delete_app_openfaas(service_name, build_number) do
+  #   {base_url, headers} = get_http_context()
 
-    Logger.debug("Remove Openfaas application")
+  #   Logger.debug("Remove Openfaas application")
 
-    url = "#{base_url}/system/functions"
+  #   url = "#{base_url}/system/functions"
 
-    Finch.build(
-      :delete,
-      url,
-      headers,
-      Jason.encode!(%{
-        "functionName" => AdapterHandler.get_function_name(service_name, build_number)
-      })
-    )
-    |> Finch.request(FaasHttp, receive_timeout: 1000)
-    |> response(:delete_app)
-  end
+  #   Finch.build(
+  #     :delete,
+  #     url,
+  #     headers,
+  #     Jason.encode!(%{
+  #       "functionName" => AdapterHandler.get_function_name(service_name, build_number)
+  #     })
+  #   )
+  #   |> Finch.request(FaasHttp, receive_timeout: 1000)
+  #   |> response(:delete_app)
+  # end
 
   defp response({:ok, %Finch.Response{status: 200, body: body}}, key)
        when key in [:manifest, :widget] do

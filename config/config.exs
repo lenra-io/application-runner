@@ -13,7 +13,8 @@ config :application_runner,
   env_inactivity_timeout: 1000 * 60 * 60,
   lenra_environment_table: "environments",
   lenra_user_table: "users",
-  repo: ApplicationRunner.Repo
+  repo: ApplicationRunner.Repo,
+  url: "localhost:4000"
 
 config :application_runner, ApplicationRunner.Repo,
   database: "file::memory:?cache=shared",

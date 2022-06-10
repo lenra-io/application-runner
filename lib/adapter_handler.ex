@@ -6,7 +6,7 @@ defmodule ApplicationRunner.AdapterHandler do
   require Logger
 
   @behaviour ApplicationRunner.AdapterBehavior
-  defdelegate get_env_and_fucntion_name(env_id),
+  defdelegate get_env_and_function_name(env_id),
     to: Application.compile_env!(:application_runner, :adapter)
 
   defdelegate on_ui_changed(session_state, ui_update),

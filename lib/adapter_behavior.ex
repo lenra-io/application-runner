@@ -2,12 +2,6 @@ defmodule ApplicationRunner.AdapterBehavior do
   @moduledoc """
   ApplicationRunner's AdapterBehavior
   """
-  alias ApplicationRunner.{
-    EnvState,
-    SessionState
-  }
-
-  alias QueryParser.AST
 
   @type widget() :: map()
   @type manifest() :: map()
@@ -20,7 +14,7 @@ defmodule ApplicationRunner.AdapterBehavior do
   @type action() :: String.t()
   @type widget_name() :: String.t()
 
-  @callback get_env_and_fucntion_name(Integer.t()) :: {:ok, map()} | {:error, reason()}
+  @callback get_env_and_function_name(number()) :: {:ok, map()} | {:error, reason()}
 
   @callback on_ui_changed(
               SessionState.t(),
