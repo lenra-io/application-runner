@@ -2,9 +2,10 @@ defmodule ApplicationRunner.EnvState do
   @moduledoc """
     The Action struct.
   """
-  @enforce_keys [:env_id, :assigns, :env_supervisor_pid]
+  @enforce_keys [:env, :function_name, :assigns, :env_supervisor_pid]
   defstruct [
-    :env_id,
+    :env,
+    :function_name,
     :manifest,
     :env_supervisor_pid,
     :inactivity_timeout,
@@ -14,7 +15,8 @@ defmodule ApplicationRunner.EnvState do
   ]
 
   @type t :: %ApplicationRunner.EnvState{
-          env_id: integer(),
+          env: term(),
+          function_name: term(),
           manifest: map(),
           env_supervisor_pid: pid(),
           inactivity_timeout: number(),

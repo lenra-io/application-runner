@@ -11,6 +11,7 @@ defmodule ApplicationRunner.SessionManager do
     EnvManager,
     EventHandler,
     ListenersCache,
+    UserDataServices,
     SessionManagers,
     SessionState,
     SessionSupervisor,
@@ -60,7 +61,9 @@ defmodule ApplicationRunner.SessionManager do
   @impl true
   def init(opts) do
     session_id = Keyword.fetch!(opts, :session_id)
-    env_id = Keyword.fetch!(opts, :env_id)
+    env = Keyword.fetch!(opts, :env)
+    user = Keyword.fetch!(opts, :user)
+    function_name = Keyword.fetch!(opts, :function_name)
     assigns = Keyword.fetch!(opts, :assigns)
 
     {:ok, session_supervisor_pid} = SessionSupervisor.start_link(opts)
@@ -73,7 +76,9 @@ defmodule ApplicationRunner.SessionManager do
 
     session_state = %SessionState{
       session_id: session_id,
-      env_id: env_id,
+      user: user,
+      env: env,
+      function_name: function_name,
       session_supervisor_pid: session_supervisor_pid,
       inactivity_timeout:
         Application.get_env(:application_runner, :session_inactivity_timeout, 1000 * 60 * 10),
@@ -82,7 +87,7 @@ defmodule ApplicationRunner.SessionManager do
 
     first_time_user = AdapterHandler.first_time_user?(session_state)
 
-    with :ok <- EnvManager.wait_until_ready(env_id),
+    with :ok <- EnvManager.wait_until_ready(env.id),
          :ok <- create_user_data_if_needed(session_state, first_time_user),
          :ok <- send_on_session_start_event(session_state) do
       {:ok, session_state, session_state.inactivity_timeout}
@@ -94,7 +99,7 @@ defmodule ApplicationRunner.SessionManager do
   end
 
   defp create_user_data_if_needed(session_state, true) do
-    AdapterHandler.create_user_data(session_state)
+    UserDataServices.create_user_data(session_state)
     send_on_user_first_join_event(session_state)
   end
 

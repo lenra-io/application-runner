@@ -9,7 +9,7 @@ defmodule ApplicationRunner.WidgetCache do
   use ApplicationRunner.CacheAsyncMacro
 
   alias ApplicationRunner.{
-    AdapterHandler,
+    OpenfaasServices,
     JsonSchemata,
     ListenersCache,
     SessionState,
@@ -41,7 +41,7 @@ defmodule ApplicationRunner.WidgetCache do
 
     cache_function(
       pid,
-      AdapterHandler,
+      OpenfaasServices,
       :get_widget,
       [
         session_state,

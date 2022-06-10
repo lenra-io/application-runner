@@ -22,7 +22,7 @@ defmodule ApplicationRunner.DataController do
     end
   end
 
-  def get_me(conn, params) do
+  def get_me(conn, _params) do
     with session_assings <- Plug.current_resource(conn),
          result <- DataServices.get_me(session_assings.environment.id, session_assings.user.id) do
       conn

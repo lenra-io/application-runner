@@ -49,7 +49,8 @@ defmodule ApplicationRunner.MixProject do
         credentials: "shiipou:#{System.get_env("GH_PERSONNAL_TOKEN")}"
       ),
       {:guardian, "~> 2.1.1"},
-      {:phoenix, "~> 1.5.9"}
+      {:phoenix, "~> 1.5.9"},
+      {:finch, "~> 0.3"}
     ]
   end
 

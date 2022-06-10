@@ -20,14 +20,8 @@ defmodule ApplicationRunner.AdapterBehavior do
   @type action() :: String.t()
   @type widget_name() :: String.t()
 
-  @callback get_manifest(EnvState.t()) :: {:ok, manifest()} | {:error, reason()}
-  @callback get_widget(SessionState.t(), widget_name(), data(), props()) ::
-              {:ok, widget()} | {:error, reason()}
-  @callback run_listener(SessionState.t() | EnvState.t(), action(), props(), event()) ::
-              :ok | {:error, reason()} | :error404
-  @callback exec_query(SessionState.t(), AST.Query.t()) :: data()
-  @callback create_user_data(SessionState.t()) :: :ok | {:error, reason()}
-  @callback first_time_user?(SessionState.t()) :: boolean()
+  @callback get_env_and_fucntion_name(Integer.t()) :: {:ok, map()} | {:error, reason()}
+
   @callback on_ui_changed(
               SessionState.t(),
               {:ui, ui()} | {:patches, patches()} | {:error, tuple() | String.t()}
