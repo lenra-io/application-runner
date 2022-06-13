@@ -226,7 +226,5 @@ defmodule ApplicationRunner.SessionManagersTest do
                  assigns: %{}
                }
              )
-
-  end
   end
 end
