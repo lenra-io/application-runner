@@ -49,7 +49,8 @@ defmodule ApplicationRunner.Widget.Cache do
         session_state,
         current_widget.name,
         current_widget.data,
-        current_widget.props
+        current_widget.props,
+        current_widget.context
       ],
       current_widget.id
     )
@@ -117,7 +118,7 @@ defmodule ApplicationRunner.Widget.Cache do
 
     context =
       if context_bool do
-        session_state.assigns |> Map.get("context")
+        session_state.assigns |> Map.get(:context, %{})
       else
         %{}
       end
