@@ -31,7 +31,7 @@ defmodule ApplicationRunner.OpenfaasServices do
     Returns `{:error, reason}` if the HTTP Post fail
   """
 
-  def run_listeners(
+  def run_listener(
         %EnvState{function_name: function_name, env: %{id: env_id}},
         action,
         props,
@@ -42,7 +42,7 @@ defmodule ApplicationRunner.OpenfaasServices do
     run_listener(function_name, action, props, event, token)
   end
 
-  def run_listeners(
+  def run_listener(
         %SessionState{function_name: function_name, session_id: session_id},
         action,
         props,
@@ -127,7 +127,7 @@ defmodule ApplicationRunner.OpenfaasServices do
   #     when is_nil(environment.deployed_build),
   #     do: {:error, :environement_not_build}
 
-  @spec fetch_manifest(Environment.t()) :: {:ok, map()} | {:error, any()}
+  @spec fetch_manifest(EnvState.t()) :: {:ok, map()} | {:error, any()} | :error404
   def fetch_manifest(%EnvState{function_name: function_name}) do
     {base_url, base_headers} = get_http_context()
 
@@ -237,18 +237,18 @@ defmodule ApplicationRunner.OpenfaasServices do
     {:ok, status_code}
   end
 
-  defp response({:ok, %Finch.Response{status: status_code}}, :delete_app)
-       when status_code in [200, 202] do
-    {:ok, status_code}
-  end
+  # defp response({:ok, %Finch.Response{status: status_code}}, :delete_app)
+  #      when status_code in [200, 202] do
+  #   {:ok, status_code}
+  # end
 
-  defp response({:ok, %Finch.Response{body: body}}, :delete_app) do
-    Logger.error(
-      "Openfaas could not delete the application. It should not happen. \n\t\t reason: #{body}"
-    )
+  # defp response({:ok, %Finch.Response{body: body}}, :delete_app) do
+  #   Logger.error(
+  #     "Openfaas could not delete the application. It should not happen. \n\t\t reason: #{body}"
+  #   )
 
-    {:error, :openfaas_delete_error}
-  end
+  #   {:error, :openfaas_delete_error}
+  # end
 
   defp response({:error, %Mint.TransportError{reason: reason}}, _action) do
     Logger.error("Openfaas could not be reached. It should not happen. \n\t\t reason: #{reason}")

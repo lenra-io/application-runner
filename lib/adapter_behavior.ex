@@ -3,6 +3,8 @@ defmodule ApplicationRunner.AdapterBehavior do
   ApplicationRunner's AdapterBehavior
   """
 
+  alias ApplicationRunner.SessionState
+
   @type widget() :: map()
   @type manifest() :: map()
   @type data() :: list(map()) | map()
@@ -16,8 +18,7 @@ defmodule ApplicationRunner.AdapterBehavior do
 
   @callback get_env_and_function_name(number()) :: {:ok, map()} | {:error, reason()}
 
-  @callback on_ui_changed(
-              SessionState.t(),
-              {:ui, ui()} | {:patches, patches()} | {:error, tuple() | String.t()}
-            ) :: :ok
+  # @callback(allow_user_for_app(user, application),
+  #   to: Application.compile_env!(:application_runner, :adapter)
+  # )
 end

@@ -9,7 +9,8 @@ defmodule ApplicationRunner.UserDataServices do
     Data,
     DataServices,
     Datastore,
-    UserData
+    UserData,
+    SessionState
   }
 
   @repo Application.compile_env!(:application_runner, :repo)
@@ -24,13 +25,19 @@ defmodule ApplicationRunner.UserDataServices do
     |> @repo.transaction()
   end
 
-  def create_with_data(env_id, user_id) do
+  def create_with_data(%SessionState{env: %{id: env_id}, user: %{id: user_id}}) do
     Ecto.Multi.new()
     |> DataServices.create(env_id, %{"_datastore" => "_users"})
     |> Ecto.Multi.insert(:inserted_user_data, fn %{inserted_data: data} ->
       UserData.new(%{user_id: user_id, data_id: data.id})
     end)
     |> @repo.transaction()
+  end
+
+  def has_user_data?(%SessionState{env: %{id: env_id}, user: %{id: user_id}}) do
+    env_id
+    |> current_user_data_query(user_id)
+    |> @repo.exists?()
   end
 
   def current_user_data_query(env_id, user_id) do

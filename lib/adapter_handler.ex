@@ -9,6 +9,6 @@ defmodule ApplicationRunner.AdapterHandler do
   defdelegate get_env_and_function_name(env_id),
     to: Application.compile_env!(:application_runner, :adapter)
 
-  defdelegate on_ui_changed(session_state, ui_update),
-    to: Application.compile_env!(:application_runner, :adapter)
+  # defdelegate allow_user_for_app(user, application),
+  #   to: Application.compile_env!(:application_runner, :adapter)
 end

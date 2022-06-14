@@ -17,7 +17,7 @@ defmodule ApplicationRunner.EnvState do
   @type t :: %ApplicationRunner.EnvState{
           env: term(),
           function_name: term(),
-          manifest: map(),
+          manifest: map() | nil,
           env_supervisor_pid: pid(),
           inactivity_timeout: number(),
           assigns: term(),

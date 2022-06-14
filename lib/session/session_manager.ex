@@ -85,7 +85,7 @@ defmodule ApplicationRunner.SessionManager do
       assigns: assigns
     }
 
-    first_time_user = AdapterHandler.first_time_user?(session_state)
+    first_time_user = UserDataServices.has_user_data?(session_state)
 
     with :ok <- EnvManager.wait_until_ready(env.id),
          :ok <- create_user_data_if_needed(session_state, first_time_user),
@@ -99,7 +99,7 @@ defmodule ApplicationRunner.SessionManager do
   end
 
   defp create_user_data_if_needed(session_state, true) do
-    UserDataServices.create_user_data(session_state)
+    UserDataServices.create_with_data(session_state)
     send_on_user_first_join_event(session_state)
   end
 
@@ -142,17 +142,28 @@ defmodule ApplicationRunner.SessionManager do
   end
 
   def handle_info(:data_changed, %SessionState{} = session_state) do
-    with %{"rootWidget" => root_widget} <- EnvManager.get_manifest(session_state.env_id),
+    with %{"rootWidget" => root_widget} <- EnvManager.get_manifest(session_state.env.id),
          {:ok, ui} <- get_and_build_ui(session_state, root_widget) do
       transformed_ui = transform_ui(ui)
       res = UiCache.diff_and_save(session_state, transformed_ui)
-      AdapterHandler.on_ui_changed(session_state, res)
+      send_res(session_state, res)
     else
       error ->
         send_error(session_state, error)
     end
 
     {:noreply, session_state, session_state.inactivity_timeout}
+  end
+
+  defp send_res(
+         %SessionState{
+           assigns: %{
+             socket_pid: socket_pid
+           }
+         },
+         {atom, ui_or_patches}
+       ) do
+    send(socket_pid, {:send, atom, ui_or_patches})
   end
 
   @impl true
@@ -237,8 +248,15 @@ defmodule ApplicationRunner.SessionManager do
     EventHandler.send_event(event_handler_pid, session_state, action, props, event)
   end
 
-  defp send_error(session_state, error) do
-    AdapterHandler.on_ui_changed(session_state, {:error, error})
+  defp send_error(
+         %SessionState{
+           assigns: %{
+             socket_pid: socket_pid
+           }
+         },
+         error
+       ) do
+    send(socket_pid, {:send, :error, error})
   end
 
   defp stop(session_state, from) do

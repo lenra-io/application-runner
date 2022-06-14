@@ -74,6 +74,9 @@ defmodule ApplicationRunner.EnvManager do
     else
       {:error, reason} ->
         {:stop, reason}
+
+      err ->
+        {:stop, err}
     end
   end
 

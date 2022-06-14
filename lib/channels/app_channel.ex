@@ -29,9 +29,9 @@ defmodule ApplicationRunner.AppChannel do
          #  LenraApplicationServices.fetch_by(service_name: app_name),
          #  %LenraApplication{} = application <-
          #    Repo.preload(app, main_env: [environment: [:deployed_build]]),
-         %{environment: environment, function_name: function_name} <-
-           AdapterHandler.get_env_and_fucntion_name(app_name),
-         :ok <- AdapterHandler.allow_user_for_app() do
+         %{function_name: function_name} <-
+           AdapterHandler.get_env_and_function_name(app_name) do
+      #  :ok <- AdapterHandler.allow_user_for_app(user, application)
       #  {:ok, app} <-
       #    :ok <- Bouncer.allow(LenraWeb.AppChannel.Policy, :join_app, user, application)
 
@@ -41,8 +41,6 @@ defmodule ApplicationRunner.AppChannel do
 
       # Assign the session_id to the socket for future usage
       socket = assign(socket, session_id: session_id)
-
-      function_name = AdapterHandler.get_function_name(environment.id)
 
       # prepare the assigns to the session/environment
       session_state = %SessionState{
