@@ -18,8 +18,8 @@ defmodule ApplicationRunner.ApplicationRunnerAdapter do
   def manifest_const, do: @manifest
 
   @impl true
-  def get_widget(_session_state, name, data, props) do
-    GenServer.call(__MODULE__, {:get_widget, name, data, props})
+  def get_widget(_session_state, name, data, props, context) do
+    GenServer.call(__MODULE__, {:get_widget, name, data, props, context})
   end
 
   def set_mock(mock) do
@@ -133,10 +133,10 @@ defmodule ApplicationRunner.ApplicationRunnerAdapter do
   end
 
   @impl true
-  def handle_call({:get_widget, name, data, props}, _from, %{widgets: widgets} = mock) do
+  def handle_call({:get_widget, name, data, props, context}, _from, %{widgets: widgets} = mock) do
     case Map.get(widgets, name) do
       nil ->
-        {:reply, {:error, :widget_not_found}, mock}
+        {:reply, {:error, :widget_not_found}, mock, context}
 
       widget ->
         widget = widget.(data, props)
