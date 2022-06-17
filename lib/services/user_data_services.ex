@@ -9,8 +9,8 @@ defmodule ApplicationRunner.UserDataServices do
     Data,
     DataServices,
     Datastore,
-    UserData,
-    SessionState
+    SessionState,
+    UserData
   }
 
   @repo Application.compile_env!(:application_runner, :repo)

@@ -39,7 +39,12 @@ defmodule ApplicationRunner.EnvSupervisor do
   @impl true
 
   def init(opts) do
-    children = [ApplicationRunner.EventHandler] ++ get_additionnal_modules(opts)
+    children =
+      [
+        ApplicationRunner.EventHandler,
+        {ApplicationRunner.Environment.TokenAgent, Keyword.get(opts, :env_state)}
+      ] ++
+        get_additionnal_modules(opts)
 
     Supervisor.init(children, strategy: :one_for_one)
   end

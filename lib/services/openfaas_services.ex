@@ -4,12 +4,11 @@ defmodule ApplicationRunner.OpenfaasServices do
   """
 
   alias ApplicationRunner.{
-    AdapterHandler,
-    EnvState,
     Environment,
     Environment.EnvironmentStateServices,
-    SessionState,
-    Session.SessionStateServices
+    EnvState,
+    Session.SessionStateServices,
+    SessionState
   }
 
   require Logger
@@ -17,8 +16,8 @@ defmodule ApplicationRunner.OpenfaasServices do
   @url Application.compile_env!(:application_runner, :url)
 
   defp get_http_context do
-    base_url = Application.fetch_env!(:lenra, :faas_url)
-    auth = Application.fetch_env!(:lenra, :faas_auth)
+    base_url = Application.fetch_env!(:application_runner, :faas_url)
+    auth = Application.fetch_env!(:application_runner, :faas_auth)
 
     headers = [{"Authorization", auth}]
     {base_url, headers}
@@ -32,7 +31,7 @@ defmodule ApplicationRunner.OpenfaasServices do
   """
 
   def run_listener(
-        %EnvState{function_name: function_name, env: %{id: env_id}},
+        %EnvState{function_name: function_name, env_id: env_id},
         action,
         props,
         event

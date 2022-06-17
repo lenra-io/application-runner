@@ -5,9 +5,9 @@ defmodule ApplicationRunner.Environment.EnvironmentStateServices do
 
   alias ApplicationRunner.{EnvSupervisor, Guardian.AppGuardian, Services.TokenAgent}
 
-  def create_token(user_id, env_id) do
+  def create_token(env_id) do
     with {:ok, token, _claims} <-
-           AppGuardian.encode_and_sign(env_id, %{type: "env", user_id: user_id, env_id: env_id}) do
+           AppGuardian.encode_and_sign(env_id, %{type: "env", env_id: env_id}) do
       {:ok, token}
     end
   end

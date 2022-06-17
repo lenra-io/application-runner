@@ -7,16 +7,15 @@ defmodule ApplicationRunner.SessionManager do
   require Logger
 
   alias ApplicationRunner.{
-    AdapterHandler,
     EnvManager,
     EventHandler,
     ListenersCache,
-    UserDataServices,
     SessionManagers,
     SessionState,
     SessionSupervisor,
     UiCache,
     UiContext,
+    UserDataServices,
     WidgetCache,
     WidgetContext
   }
@@ -60,6 +59,7 @@ defmodule ApplicationRunner.SessionManager do
 
   @impl true
   def init(opts) do
+    IO.inspect(opts)
     session_id = Keyword.fetch!(opts, :session_id)
     env = Keyword.fetch!(opts, :env)
     user = Keyword.fetch!(opts, :user)

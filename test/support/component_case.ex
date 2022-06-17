@@ -8,15 +8,20 @@ defmodule ApplicationRunner.ComponentCase do
   """
   defmacro __using__(_opts) do
     quote do
-      use ExUnit.Case, async: false
+      use ApplicationRunner.RepoCase, async: false
 
       alias ApplicationRunner.{
         ApplicationRunnerAdapter,
+        Environment,
         EnvManager,
         EnvManagers,
+        FaasStub,
         SessionManager,
-        SessionManagers
+        SessionManagers,
+        Repo
       }
+
+      @manifest %{"rootWidget" => "root"}
 
       setup context do
         start_supervised(EnvManagers)
@@ -29,7 +34,17 @@ defmodule ApplicationRunner.ComponentCase do
           ApplicationRunnerAdapter.set_mock(context[:mock])
         end
 
-        {:ok, pid} = SessionManagers.start_session(session_id, env_id, %{test_pid: self()}, %{})
+        faas = FaasStub.create_faas_stub()
+        Bypass.stub(faas, "POST", "/function/test_function", &handle_request(&1))
+
+        {:ok, env} = Repo.insert(Environment.new())
+
+        {:ok, pid} =
+          SessionManagers.start_session(session_id, env_id, %{test_pid: self()}, %{
+            env_id: env.id,
+            function_name: "test_function",
+            assigns: %{}
+          })
 
         session_state = :sys.get_state(pid)
 
@@ -38,6 +53,10 @@ defmodule ApplicationRunner.ComponentCase do
         end)
 
         %{session_state: session_state, session_pid: pid, session_id: session_id, env_id: env_id}
+      end
+
+      defp handle_request(conn) do
+        Plug.Conn.resp(conn, 200, Jason.encode!(%{"manifest" => @manifest}))
       end
 
       def mock_root_and_run(json, env_id) do

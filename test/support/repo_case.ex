@@ -21,7 +21,11 @@ defmodule ApplicationRunner.RepoCase do
     end
   end
 
-  setup _tags do
+  setup tags do
     :ok = Sandbox.checkout(ApplicationRunner.Repo)
+
+    unless tags[:async] do
+      Sandbox.mode(ApplicationRunner.Repo, {:shared, self()})
+    end
   end
 end

@@ -6,7 +6,6 @@ config :ex_component_schema,
        {ApplicationRunner.JsonSchemata, :read_schema}
 
 config :application_runner,
-  adapter: ApplicationRunner.ApplicationRunnerAdapter,
   # 10 min
   session_inactivity_timeout: 1000 * 60 * 10,
   # 60 min
@@ -14,7 +13,11 @@ config :application_runner,
   lenra_environment_table: "environments",
   lenra_user_table: "users",
   repo: ApplicationRunner.Repo,
-  url: "localhost:4000"
+  url: "localhost:4000",
+  faas_url: "http://localhost:1234",
+  faas_auth: "Basic YWRtaW46M2kwREc4NTdLWlVaODQ3R0pheW5qMXAwbQ==",
+  faas_registry: "registry.gitlab.com/lenra/platform/lenra-ci",
+  gitlab_api_url: "http://localhost:4567"
 
 config :application_runner, ApplicationRunner.Repo,
   database: "file::memory:?cache=shared",

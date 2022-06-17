@@ -10,9 +10,9 @@ defmodule ApplicationRunner.WidgetCache do
 
   alias ApplicationRunner.{
     DataServices,
-    OpenfaasServices,
     JsonSchemata,
     ListenersCache,
+    OpenfaasServices,
     SessionState,
     SessionSupervisor,
     UiContext,
