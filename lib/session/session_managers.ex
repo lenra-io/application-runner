@@ -25,7 +25,7 @@ defmodule ApplicationRunner.Session.Managers do
 
   The session should be started with the same session_id if the client socket is disconnected for a short period of time.
   """
-  @spec start_session(term(), term(), term(), term()) ::
+  @spec start_session(term(), term(), term(), term(), term()) ::
           {:error, any} | {:ok, pid()}
   def start_session(session_id, env_id, session_state, env_state) do
     with {:ok, _pid} <- Environments.ensure_env_started(env_id, env_state) do

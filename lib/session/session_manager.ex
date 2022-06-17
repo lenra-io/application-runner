@@ -86,7 +86,8 @@ defmodule ApplicationRunner.Session.Manager do
       session_supervisor_pid: session_supervisor_pid,
       inactivity_timeout:
         Application.get_env(:application_runner, :session_inactivity_timeout, 1000 * 60 * 10),
-      assigns: assigns
+      assigns: assigns,
+      context: context
     }
 
     first_time_user = JsonStorage.has_user_data?(env_id, user_id)
