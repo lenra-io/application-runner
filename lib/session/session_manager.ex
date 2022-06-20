@@ -59,12 +59,12 @@ defmodule ApplicationRunner.SessionManager do
 
   @impl true
   def init(opts) do
-    IO.inspect(opts)
     session_id = Keyword.fetch!(opts, :session_id)
-    env = Keyword.fetch!(opts, :env)
-    user = Keyword.fetch!(opts, :user)
-    function_name = Keyword.fetch!(opts, :function_name)
-    assigns = Keyword.fetch!(opts, :assigns)
+    env_id = Keyword.fetch!(opts, :env_id)
+    session_state = Keyword.fetch!(opts, :session_state)
+    user_id = Map.fetch!(session_state, :user_id)
+    function_name = Map.fetch!(session_state, :function_name)
+    assigns = Map.fetch!(session_state, :assigns)
 
     {:ok, session_supervisor_pid} = SessionSupervisor.start_link(opts)
     # Link the process to kill the manager if the supervisor is killed.
@@ -76,8 +76,8 @@ defmodule ApplicationRunner.SessionManager do
 
     session_state = %SessionState{
       session_id: session_id,
-      user: user,
-      env: env,
+      user_id: user_id,
+      env_id: env_id,
       function_name: function_name,
       session_supervisor_pid: session_supervisor_pid,
       inactivity_timeout:
@@ -87,7 +87,7 @@ defmodule ApplicationRunner.SessionManager do
 
     first_time_user = UserDataServices.has_user_data?(session_state)
 
-    with :ok <- EnvManager.wait_until_ready(env.id),
+    with :ok <- EnvManager.wait_until_ready(env_id),
          :ok <- create_user_data_if_needed(session_state, first_time_user),
          :ok <- send_on_session_start_event(session_state) do
       {:ok, session_state, session_state.inactivity_timeout}
@@ -142,7 +142,7 @@ defmodule ApplicationRunner.SessionManager do
   end
 
   def handle_info(:data_changed, %SessionState{} = session_state) do
-    with %{"rootWidget" => root_widget} <- EnvManager.get_manifest(session_state.env.id),
+    with %{"rootWidget" => root_widget} <- EnvManager.get_manifest(session_state.env_id),
          {:ok, ui} <- get_and_build_ui(session_state, root_widget) do
       transformed_ui = transform_ui(ui)
       res = UiCache.diff_and_save(session_state, transformed_ui)

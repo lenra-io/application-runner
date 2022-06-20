@@ -43,7 +43,7 @@ defmodule ApplicationRunner.WidgetCache do
     cache_function(
       pid,
       OpenfaasServices,
-      :get_widget,
+      :fetch_widget,
       [
         session_state,
         current_widget.name,

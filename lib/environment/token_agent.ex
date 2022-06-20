@@ -6,13 +6,13 @@ defmodule ApplicationRunner.Environment.TokenAgent do
 
   alias ApplicationRunner.Environment.EnvironmentStateServices
 
-  def start_link(%{env_id: env_id}) do
-    with {:ok, token} <- EnvironmentStateServices.create_token(env_id) do
+  def start_link(opts) do
+    with env_id when not is_nil(env_id) <- Keyword.get(opts, :env_id),
+         {:ok, token} <- EnvironmentStateServices.create_token(env_id) do
       Agent.start_link(fn -> token end, name: {:global, env_id})
+    else
+      nil -> raise "EnvironmentState doesn't contains necessary information #{inspect(opts)}"
+      err -> err
     end
-  end
-
-  def start_link(state) do
-    raise "EnvironmentState doesn't contains necessary information #{inspect(state)}"
   end
 end

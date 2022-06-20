@@ -12,6 +12,14 @@ defmodule ApplicationRunner.ApplicationRunnerAdapter do
 
   def start_link(_), do: GenServer.start_link(__MODULE__, [], name: __MODULE__)
 
+  def get_widget(_session_state, name, data, props) do
+    GenServer.call(__MODULE__, {:get_widget, name, data, props})
+  end
+
+  def set_mock(mock) do
+    GenServer.call(__MODULE__, {:set_mock, mock})
+  end
+
   @impl true
   def handle_call({:set_mock, mock}, _from, _) do
     {:reply, :ok, mock}

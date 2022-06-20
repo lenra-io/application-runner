@@ -36,7 +36,7 @@ defmodule ApplicationRunner.AppChannel do
           # prepare the assigns to the session/environment
           session_state = %SessionState{
             user_id: user.id,
-            env: environment,
+            env_id: environment,
             function_name: function_name,
             assigns: %{
               socket_pid: self()

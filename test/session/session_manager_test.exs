@@ -1,28 +1,125 @@
 defmodule ApplicationRunner.SessionManagerTest do
-  use ApplicationRunner.ComponentCase
+  use ApplicationRunner.RepoCase, async: false
 
   @moduledoc """
     Test the `ApplicationRunner.SessionManagerTest` module
   """
 
   alias ApplicationRunner.{
+    Environment,
+    EnvManager,
+    EventHandler,
     MockGenServer,
     SessionManagers,
-    SessionSupervisor
+    SessionSupervisor,
+    Repo,
+    User
   }
 
-  test "SessionManager supervisor should exist and have the MockGenServer." do
-    assert {:ok, pid} = SessionManagers.start_session(make_ref(), make_ref(), %{user: %{}}, %{})
+  @manifest %{"rootWidget" => "root"}
+  @ui %{"root" => %{"children" => [], "type" => "flex"}}
+
+  setup do
+    {:ok, env} = Repo.insert(Environment.new())
+    {:ok, user} = Repo.insert(User.new("test@test.te"))
+
+    bypass = Bypass.open()
+    Bypass.stub(bypass, "POST", "/function/test_function", &handle_request(&1))
+
+    Application.put_env(:application_runner, :faas_url, "http://localhost:#{bypass.port}")
+
+    {:ok, %{user_id: user.id, env_id: env.id}}
+  end
+
+  defp handle_request(conn) do
+    {:ok, body, conn} = Plug.Conn.read_body(conn)
+
+    body_decoded =
+      if String.length(body) != 0 do
+        Jason.decode!(body)
+      else
+        ""
+      end
+
+    case body_decoded do
+      # Manifest no body
+      "" ->
+        Plug.Conn.resp(conn, 200, Jason.encode!(%{"manifest" => @manifest}))
+
+      # Listeners "action" in body
+      %{"action" => _action} ->
+        Plug.Conn.resp(conn, 200, "")
+
+      # Widget data key
+      %{"data" => data, "props" => props, "widget" => widget} ->
+        Plug.Conn.resp(
+          conn,
+          200,
+          Jason.encode!(my_widget(data, props, widget))
+        )
+    end
+  end
+
+  test "SessionManager supervisor should exist and have the MockGenServer.", %{
+    user_id: user_id,
+    env_id: env_id
+  } do
+    assert {:ok, pid} =
+             SessionManagers.start_session(
+               Ecto.UUID.generate(),
+               env_id,
+               %{
+                 user_id: user_id,
+                 function_name: "test_function",
+                 assigns: %{socket_pid: self()}
+               },
+               %{
+                 function_name: "test_function",
+                 assigns: %{}
+               }
+             )
 
     assert _pid =
              SessionSupervisor.fetch_module_pid!(
                :sys.get_state(pid).session_supervisor_pid,
                MockGenServer
              )
+
+    assert handler_pid =
+             SessionSupervisor.fetch_module_pid!(
+               :sys.get_state(pid).session_supervisor_pid,
+               EventHandler
+             )
+
+    # Wait for OnSessionStart
+    assert :ok = EventHandler.subscribe(handler_pid)
+
+    assert_receive({:event_finished, _action, _res})
+
+    # Wait for Widget
+    assert :ok = EventHandler.subscribe(handler_pid)
+
+    assert_receive({:send, :ui, @ui})
   end
 
-  test "SessionManager supervisor should not have the NotExistGenServer" do
-    assert {:ok, pid} = SessionManagers.start_session(make_ref(), make_ref(), %{user: %{}}, %{})
+  test "SessionManager supervisor should not have the NotExistGenServer", %{
+    user_id: user_id,
+    env_id: env_id
+  } do
+    assert {:ok, pid} =
+             SessionManagers.start_session(
+               Ecto.UUID.generate(),
+               env_id,
+               %{
+                 user_id: user_id,
+                 function_name: "test_function",
+                 assigns: %{socket_pid: self()}
+               },
+               %{
+                 function_name: "test_function",
+                 assigns: %{}
+               }
+             )
 
     assert_raise(
       RuntimeError,
@@ -34,17 +131,29 @@ defmodule ApplicationRunner.SessionManagerTest do
         )
       end
     )
+
+    assert handler_pid =
+             SessionSupervisor.fetch_module_pid!(
+               :sys.get_state(pid).session_supervisor_pid,
+               EventHandler
+             )
+
+    # Wait for OnSessionStart
+    assert :ok = EventHandler.subscribe(handler_pid)
+
+    assert_receive({:event_finished, _action, _res})
+
+    # Wait for Widget
+    assert :ok = EventHandler.subscribe(handler_pid)
+
+    assert_receive({:send, :ui, @ui})
   end
 
-  def my_widget(_, _) do
+  def my_widget(_, _, _) do
     %{
       "type" => "flex",
       "children" => []
     }
-  end
-
-  def init_data(_, _) do
-    %{}
   end
 
   describe "SessionManager.send_special_event/2" do

@@ -50,7 +50,7 @@ defmodule ApplicationRunner.MixProject do
       ),
       {:guardian, "~> 2.1.1"},
       {:phoenix, "~> 1.5.9"},
-      {:finch, "~> 0.3"},
+      {:finch, "~> 0.12"},
       {:bypass, "~> 2.0", only: :test}
     ]
   end

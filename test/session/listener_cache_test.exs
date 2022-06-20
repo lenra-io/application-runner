@@ -1,17 +1,41 @@
 defmodule ApplicationRunner.ListenerCacheTest do
-  use ExUnit.Case, async: false
+  use ApplicationRunner.RepoCase, async: false
 
   alias ApplicationRunner.{
+    Environment,
     EnvManagers,
     ListenersCache,
-    SessionManagers
+    Repo,
+    SessionManagers,
+    User
   }
 
   setup do
     start_supervised(EnvManagers)
     start_supervised(SessionManagers)
 
-    {:ok, pid} = SessionManagers.start_session(make_ref(), make_ref(), %{}, %{})
+    {:ok, env} = Repo.insert(Environment.new())
+    {:ok, user} = Repo.insert(User.new("test@test.te"))
+
+    bypass = Bypass.open()
+    Bypass.stub(bypass, "POST", "/function/test_function", &Plug.Conn.resp(&1, 200, "{}"))
+
+    Application.put_env(:application_runner, :faas_url, "http://localhost:#{bypass.port}")
+
+    {:ok, pid} =
+      SessionManagers.start_session(
+        Ecto.UUID.generate(),
+        env.id,
+        %{
+          user_id: user.id,
+          function_name: "test_function",
+          assigns: %{socket_pid: self()}
+        },
+        %{
+          function_name: "test_function",
+          assigns: %{}
+        }
+      )
 
     {:ok, %{session_state: :sys.get_state(pid)}}
   end

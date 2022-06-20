@@ -42,7 +42,7 @@ defmodule ApplicationRunner.EnvSupervisor do
     children =
       [
         ApplicationRunner.EventHandler,
-        {ApplicationRunner.Environment.TokenAgent, Keyword.get(opts, :env_state)}
+        {ApplicationRunner.Environment.TokenAgent, opts}
       ] ++
         get_additionnal_modules(opts)
 

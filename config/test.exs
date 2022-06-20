@@ -14,3 +14,5 @@ config :application_runner, ApplicationRunner.Repo,
 
 config :swarm,
   sync_nodes_timeout: 0
+
+config :bypass, enable_debug_log: true
