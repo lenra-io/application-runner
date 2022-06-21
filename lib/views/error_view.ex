@@ -2,8 +2,6 @@ defmodule ApplicationRunner.ErrorView do
   use ApplicationRunner, :view
   require Logger
 
-  # If you want to customize a particular status code
-  # for a certain format, you may uncomment below.
   def render("500.json", _assigns) do
     %{"errors" => [%{code: 500, message: "Internal Server Error"}], "success" => false}
   end

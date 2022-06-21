@@ -33,7 +33,9 @@ defmodule ApplicationRunner.EnvManagerTest do
     Plug.Conn.resp(conn, 200, Jason.encode!(%{"manifest" => %{"rootWidget" => "root"}}))
   end
 
-  test "Can EnvManager supervisor should exist and have the MockGenServer.", %{env_id: env_id} do
+  test "EnvManager supervisor should be started and have MockGenServer in childs.", %{
+    env_id: env_id
+  } do
     assert {:ok, pid} =
              EnvManagers.start_env(env_id, %{
                env_id: env_id,
@@ -48,7 +50,9 @@ defmodule ApplicationRunner.EnvManagerTest do
     assert :ok = EnvManager.wait_until_ready(env_id)
   end
 
-  test "Can EnvManager supervisor should not have the NotExistGenServer", %{env_id: env_id} do
+  test "EnvManager supervisor should be started and dont have MockGenServer in childs", %{
+    env_id: env_id
+  } do
     assert {:ok, pid} =
              EnvManagers.start_env(env_id, %{
                env_id: env_id,

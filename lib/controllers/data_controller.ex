@@ -4,9 +4,9 @@ defmodule ApplicationRunner.DataController do
   alias ApplicationRunner.{DataServices, Guardian.AppGuardian.Plug}
 
   def get(conn, params) do
-    with session_assings <- Plug.current_resource(conn),
+    with session_assigns <- Plug.current_resource(conn),
          result <-
-           DataServices.get(session_assings.environment.id, params["_datastore"], params["_id"]) do
+           DataServices.get(session_assigns.environment.id, params["_datastore"], params["_id"]) do
       conn
       |> assign_all(result.data)
       |> reply
@@ -14,8 +14,8 @@ defmodule ApplicationRunner.DataController do
   end
 
   def get_all(conn, params) do
-    with session_assings <- Plug.current_resource(conn),
-         result <- DataServices.get_all(session_assings.environment.id, params["_datastore"]) do
+    with session_assigns <- Plug.current_resource(conn),
+         result <- DataServices.get_all(session_assigns.environment.id, params["_datastore"]) do
       conn
       |> assign_all(Enum.map(result, fn r -> r.data end))
       |> reply
@@ -23,8 +23,8 @@ defmodule ApplicationRunner.DataController do
   end
 
   def get_me(conn, _params) do
-    with session_assings <- Plug.current_resource(conn),
-         result <- DataServices.get_me(session_assings.environment.id, session_assings.user.id) do
+    with session_assigns <- Plug.current_resource(conn),
+         result <- DataServices.get_me(session_assigns.environment.id, session_assigns.user.id) do
       conn
       |> assign_data(:user_data, result)
       |> reply
@@ -32,9 +32,9 @@ defmodule ApplicationRunner.DataController do
   end
 
   def create(conn, params) do
-    with session_assings <- Plug.current_resource(conn),
+    with session_assigns <- Plug.current_resource(conn),
          {:ok, %{inserted_data: data}} <-
-           DataServices.create(session_assings.environment.id, params) do
+           DataServices.create(session_assigns.environment.id, params) do
       conn
       |> assign_data(:inserted_data, data)
       |> reply
@@ -58,12 +58,12 @@ defmodule ApplicationRunner.DataController do
   end
 
   def query(conn, params) do
-    with session_assings <- Plug.current_resource(conn),
+    with session_assigns <- Plug.current_resource(conn),
          data <-
            DataServices.parse_and_exec_query(
              params["query"],
-             session_assings.environment.id,
-             session_assings.user.id
+             session_assigns.environment.id,
+             session_assigns.user.id
            ) do
       conn
       |> assign_all(data)

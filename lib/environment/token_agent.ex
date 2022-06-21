@@ -1,6 +1,6 @@
 defmodule ApplicationRunner.Environment.TokenAgent do
   @moduledoc """
-    Lenra.SessionAgent manage token for session api request
+    ApplicationRunner.Environment.TokenAgent manages token for session api request
   """
   use Agent
 
@@ -11,7 +11,7 @@ defmodule ApplicationRunner.Environment.TokenAgent do
          {:ok, token} <- EnvironmentStateServices.create_token(env_id) do
       Agent.start_link(fn -> token end, name: {:global, env_id})
     else
-      nil -> raise "EnvironmentState doesn't contains necessary information #{inspect(opts)}"
+      nil -> raise "EnvironmentState doesn't contain necessary information #{inspect(opts)}"
       err -> err
     end
   end

@@ -3,7 +3,6 @@ defmodule ApplicationRunner.ErrorHelpers do
   Conveniences for translating and building error messages.
   """
 
-  # TODO: clean this error message
   @errors [
     unknow_error: %{code: 0, message: "Unknown error"},
     password_not_equals: %{code: 1, message: "Password must be equals."},

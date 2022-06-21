@@ -1,6 +1,6 @@
 defmodule ApplicationRunner.Session.TokenAgent do
   @moduledoc """
-    Lenra.SessionAgent manage token for session api request
+    ApplicationRunner.Session.TokenAgent manages token for session api request
   """
   use Agent
 
@@ -14,7 +14,7 @@ defmodule ApplicationRunner.Session.TokenAgent do
          {:ok, token} <- SessionStateServices.create_token(session_id, user_id, env_id) do
       Agent.start_link(fn -> token end, name: {:global, session_id})
     else
-      nil -> raise "SessionState doesn't contains necessary information #{inspect(opts)}"
+      nil -> raise "SessionState doesn't contain necessary information #{inspect(opts)}"
       err -> err
     end
   end

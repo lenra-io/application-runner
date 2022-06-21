@@ -1,6 +1,6 @@
 defmodule ApplicationRunner.OpenfaasServices do
   @moduledoc """
-    The service that manage calls to an Openfaas action with `run_action/3`
+    The service that manages calls to an Openfaas action with `run_action/3`
   """
 
   alias ApplicationRunner.{
