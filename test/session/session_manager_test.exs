@@ -7,12 +7,11 @@ defmodule ApplicationRunner.SessionManagerTest do
 
   alias ApplicationRunner.{
     Environment,
-    EnvManager,
     EventHandler,
     MockGenServer,
+    Repo,
     SessionManagers,
     SessionSupervisor,
-    Repo,
     User
   }
 
@@ -159,7 +158,7 @@ defmodule ApplicationRunner.SessionManagerTest do
   describe "SessionManager.send_special_event/2" do
     @tag mock: %{
            widgets: %{
-             "root" => &__MODULE__.my_widget/2
+             "root" => &__MODULE__.my_widget/3
            }
          }
     test "Special listeners are optionnal. Nothing happen if not set." do

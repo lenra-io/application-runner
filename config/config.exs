@@ -1,5 +1,7 @@
 import Config
 
+config :phoenix, :json_library, Jason
+
 # Configure JSON validator
 config :ex_component_schema,
        :remote_schema_resolver,

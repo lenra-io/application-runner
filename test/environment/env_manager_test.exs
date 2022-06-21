@@ -6,12 +6,10 @@ defmodule ApplicationRunner.EnvManagerTest do
   """
 
   alias ApplicationRunner.{
-    ApplicationRunnerAdapter,
     Environment,
     EnvManager,
     EnvManagers,
     EnvSupervisor,
-    FaasStub,
     MockGenServer,
     Repo
   }
@@ -98,6 +96,8 @@ defmodule ApplicationRunner.EnvManagerTest do
     assert :ok = EnvManager.wait_until_ready(env_id)
 
     Process.exit(env_supervisor_pid, :kill)
+    # Wait a little for process stoped
+    Process.sleep(100)
     assert not Process.alive?(env_supervisor_pid)
     assert not Process.alive?(pid)
   end

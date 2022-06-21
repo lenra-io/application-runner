@@ -16,9 +16,9 @@ defmodule ApplicationRunner.ComponentCase do
         EnvManager,
         EnvManagers,
         FaasStub,
+        Repo,
         SessionManager,
         SessionManagers,
-        Repo,
         User
       }
 

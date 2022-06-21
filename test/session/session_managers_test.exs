@@ -9,13 +9,14 @@ defmodule ApplicationRunner.SessionManagersTest do
     Environment,
     EnvManagers,
     EventHandler,
+    Repo,
     SessionManagers,
     SessionSupervisor,
-    Repo,
     User
   }
 
   @manifest %{"rootWidget" => "root"}
+  @ui %{"root" => %{"children" => [], "type" => "flex"}}
 
   setup do
     start_supervised(EnvManagers)
@@ -27,7 +28,7 @@ defmodule ApplicationRunner.SessionManagersTest do
       bypass,
       "POST",
       "/function/test_function",
-      &Plug.Conn.resp(&1, 200, Jason.encode!(%{"manifest" => @manifest}))
+      &handle_request(&1)
     )
 
     Application.put_env(:application_runner, :faas_url, "http://localhost:#{bypass.port}")
@@ -35,6 +36,35 @@ defmodule ApplicationRunner.SessionManagersTest do
     {:ok, env} = Repo.insert(Environment.new())
     {:ok, user} = Repo.insert(User.new("test@test.te"))
     {:ok, %{user_id: user.id, env_id: env.id}}
+  end
+
+  defp handle_request(conn) do
+    {:ok, body, conn} = Plug.Conn.read_body(conn)
+
+    body_decoded =
+      if String.length(body) != 0 do
+        Jason.decode!(body)
+      else
+        ""
+      end
+
+    case body_decoded do
+      # Manifest no body
+      "" ->
+        Plug.Conn.resp(conn, 200, Jason.encode!(%{"manifest" => @manifest}))
+
+      # Listeners "action" in body
+      %{"action" => _action} ->
+        Plug.Conn.resp(conn, 200, "")
+
+      # Widget data key
+      %{"data" => _data, "props" => _props, "widget" => _widget} ->
+        Plug.Conn.resp(
+          conn,
+          200,
+          Jason.encode!(%{"children" => [], "type" => "flex"})
+        )
+    end
   end
 
   test "Can start one Session", %{user_id: user_id, env_id: env_id} do
@@ -67,7 +97,7 @@ defmodule ApplicationRunner.SessionManagersTest do
     # Wait for Widget
     assert :ok = EventHandler.subscribe(handler_pid)
 
-    assert_receive({:send, _ui, nil})
+    assert_receive({:send, :ui, @ui})
   end
 
   test "Can start multiple Sessions", %{user_id: user_id, env_id: env_id} do
@@ -103,7 +133,7 @@ defmodule ApplicationRunner.SessionManagersTest do
       # Wait for Widget
       assert :ok = EventHandler.subscribe(handler_pid)
 
-      assert_receive({:send, _ui, nil})
+      assert_receive({:send, :ui, @ui})
     end)
   end
 
@@ -142,7 +172,7 @@ defmodule ApplicationRunner.SessionManagersTest do
     # Wait for Widget
     assert :ok = EventHandler.subscribe(handler_pid)
 
-    assert_receive({:send, _ui, nil})
+    assert_receive({:send, :ui, @ui})
   end
 
   test "Cannot start same session twice", %{user_id: user_id, env_id: env_id} do
@@ -177,7 +207,7 @@ defmodule ApplicationRunner.SessionManagersTest do
     # Wait for Widget
     assert :ok = EventHandler.subscribe(handler_pid)
 
-    assert_receive({:send, _ui, nil})
+    assert_receive({:send, :ui, @ui})
 
     assert {:error, {:already_started, ^pid}} =
              SessionManagers.start_session(

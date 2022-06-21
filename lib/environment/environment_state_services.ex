@@ -3,7 +3,7 @@ defmodule ApplicationRunner.Environment.EnvironmentStateServices do
     Lenra.Sessionstate handle all operation for session state.
   """
 
-  alias ApplicationRunner.{EnvSupervisor, Guardian.AppGuardian, Environment.TokenAgent}
+  alias ApplicationRunner.{Environment.TokenAgent, EnvSupervisor, Guardian.AppGuardian}
 
   def create_token(env_id) do
     with {:ok, token, _claims} <-
