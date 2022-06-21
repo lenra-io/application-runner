@@ -13,10 +13,9 @@ defmodule ApplicationRunner.Application do
       ApplicationRunner.EnvManagers,
       ApplicationRunner.SessionManagers,
       {Finch,
-       name: FaasHttp,
+       name: AppHttp,
        pools: %{
-         Application.fetch_env!(:application_runner, :faas_url) => [size: 32, count: 8],
-         Application.fetch_env!(:application_runner, :gitlab_api_url) => [size: 10, count: 3]
+         Application.fetch_env!(:application_runner, :faas_url) => [size: 32, count: 8]
        }}
     ]
 

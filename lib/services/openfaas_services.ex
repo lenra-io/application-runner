@@ -82,7 +82,7 @@ defmodule ApplicationRunner.OpenfaasServices do
     Logger.debug("Run app #{function_name} with action #{action}")
 
     Finch.build(:post, url, headers, body)
-    |> Finch.request(FaasHttp, receive_timeout: 5000)
+    |> Finch.request(AppHttp, receive_timeout: 5000)
     |> response(:listener)
     |> case do
       :ok ->
@@ -108,7 +108,7 @@ defmodule ApplicationRunner.OpenfaasServices do
     body = Jason.encode!(%{widget: widget_name, data: data, props: props})
 
     Finch.build(:post, url, headers, body)
-    |> Finch.request(FaasHttp, receive_timeout: 1000)
+    |> Finch.request(AppHttp, receive_timeout: 1000)
     |> response(:widget)
     |> case do
       {:ok, %{"widget" => widget}} ->
@@ -134,7 +134,7 @@ defmodule ApplicationRunner.OpenfaasServices do
     headers = [{"Content-Type", "application/json"} | base_headers]
 
     Finch.build(:post, url, headers)
-    |> Finch.request(FaasHttp, receive_timeout: 1000)
+    |> Finch.request(AppHttp, receive_timeout: 1000)
     |> response(:manifest)
     |> case do
       {:ok, %{"manifest" => manifest}} ->
@@ -165,7 +165,7 @@ defmodule ApplicationRunner.OpenfaasServices do
     body = Jason.encode!(params)
 
     Finch.build(:post, url, headers, body)
-    |> Finch.stream(FaasHttp, [], fn
+    |> Finch.stream(AppHttp, [], fn
       chunk, acc -> acc ++ [chunk]
     end)
   end
@@ -198,7 +198,7 @@ defmodule ApplicationRunner.OpenfaasServices do
       headers,
       body
     )
-    |> Finch.request(FaasHttp, receive_timeout: 1000)
+    |> Finch.request(AppHttp, receive_timeout: 1000)
     |> response(:deploy_app)
   end
 
@@ -218,7 +218,7 @@ defmodule ApplicationRunner.OpenfaasServices do
   #       "functionName" => AdapterHandler.get_function_name(service_name, build_number)
   #     })
   #   )
-  #   |> Finch.request(FaasHttp, receive_timeout: 1000)
+  #   |> Finch.request(AppHttp, receive_timeout: 1000)
   #   |> response(:delete_app)
   # end
 

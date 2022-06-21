@@ -18,7 +18,7 @@ defmodule ApplicationRunner.ListenerCacheTest do
   setup do
     start_supervised(EnvManagers)
     start_supervised(SessionManagers)
-    start_supervised({Finch, name: FaasHttp})
+    start_supervised({Finch, name: AppHttp})
 
     {:ok, env} = Repo.insert(Environment.new())
     {:ok, user} = Repo.insert(User.new("test@test.te"))

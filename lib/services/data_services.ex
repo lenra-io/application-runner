@@ -88,6 +88,16 @@ defmodule ApplicationRunner.DataServices do
     |> @repo.transaction()
   end
 
+  def create_multi(multi, environment_id, params) do
+    {data, metadata} = process_params(params)
+
+    multi
+    |> get_datastore(environment_id, metadata)
+    |> insert_data(data)
+    |> handle_refs(metadata)
+    |> handle_ref_by(metadata)
+  end
+
   defp get_datastore(multi, environment_id, %{"_datastore" => datastore})
        when is_bitstring(datastore) do
     Ecto.Multi.run(multi, :datastore, fn repo, _params ->

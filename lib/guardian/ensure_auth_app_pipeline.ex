@@ -5,7 +5,7 @@ defmodule ApplicationRunner.Guardian.EnsureAuthenticatedAppPipeline do
   use Guardian.Plug.Pipeline,
     otp_app: :application_runner,
     error_handler: ApplicationRunner.Guardian.ErrorHandler,
-    module: ApplicationRunner.AppGuardian
+    module: ApplicationRunner.Guardian.AppGuardian
 
   plug(Guardian.Plug.VerifyHeader, claims: %{"typ" => "access"})
   plug(Guardian.Plug.EnsureAuthenticated, claims: %{"typ" => "access"})

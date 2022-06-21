@@ -31,15 +31,6 @@ defmodule ApplicationRunner do
     end
   end
 
-  def router do
-    quote do
-      use Phoenix.Router
-
-      import Plug.Conn
-      import Phoenix.Controller
-    end
-  end
-
   def view do
     quote do
       use Phoenix.View,

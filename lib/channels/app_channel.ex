@@ -3,7 +3,7 @@ defmodule ApplicationRunner.AppChannel do
     `ApplicationRunner.AppChannel` handle the app channel to run app and listeners and push to the user the resulted UI or Patch
   """
 
-  defmacro __using__(opts) do
+  defmacro __using__(_opts) do
     quote do
       use Phoenix.Channel
 
@@ -28,15 +28,15 @@ defmodule ApplicationRunner.AppChannel do
         with {:ok, _uuid} <- Ecto.UUID.cast(app_name),
              %{function_name: function_name} <-
                get_function_name(app_name),
-             :ok <- allow(user, app_name),
-             :ok <-
-               Bouncer.allow(unquote(Keyword.get(opts, :allow)), :join_app, user, application) do
+             :ok <- allow(user.id, app_name) do
           socket = assign(socket, session_id: session_id)
+
+          env_id = get_env(app_name)
 
           # prepare the assigns to the session/environment
           session_state = %SessionState{
             user_id: user.id,
-            env_id: environment,
+            env_id: env_id,
             function_name: function_name,
             assigns: %{
               socket_pid: self()
@@ -45,11 +45,12 @@ defmodule ApplicationRunner.AppChannel do
           }
 
           env_state = %{
-            env: environment,
-            function_name: function_name
+            env_id: env_id,
+            function_name: function_name,
+            assigns: %{}
           }
 
-          case start_session(session_id, environment.id, session_state, env_state) do
+          case start_session(session_id, env_id, session_state, env_state) do
             {:ok, session_pid} ->
               {:ok, assign(socket, session_pid: session_pid)}
 
@@ -64,7 +65,7 @@ defmodule ApplicationRunner.AppChannel do
           {:error, :forbidden} ->
             {:error, %{reason: ErrorHelpers.translate_error(:no_app_authorization)}}
 
-          _err ->
+          err ->
             {:error, %{reason: ErrorHelpers.translate_error(:no_app_found)}}
         end
       end
@@ -73,9 +74,19 @@ defmodule ApplicationRunner.AppChannel do
         {:error, %{reason: ErrorHelpers.translate_error(:no_app_found)}}
       end
 
+      # Override this function to allow user or not according to the server/devtools needs
+      defp allow(user_id, app_name) do
+        false
+      end
+
       # Override this function to return the function name according to the server/devtools needs
       defp get_function_name(app_name) do
         String.downcase("dev-#{app_name}-1")
+      end
+
+      # Override this function to return the function name according to the server/devtools needs
+      defp get_env(app_name) do
+        1
       end
 
       defp start_session(session_id, env_id, session_state, env_state) do
@@ -153,6 +164,8 @@ defmodule ApplicationRunner.AppChannel do
 
         {:noreply, socket}
       end
+
+      defoverridable allow: 2, get_function_name: 1, get_env: 1
     end
   end
 end

@@ -116,7 +116,7 @@ defmodule ApplicationRunner.WidgetCache do
       if is_nil(query) do
         []
       else
-        DataServices.exec_query(query, session_state.env.id, session_state.user.id)
+        DataServices.exec_query(query, session_state.env_id, session_state.user_id)
       end
 
     id = generate_widget_id(name, data, props)

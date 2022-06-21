@@ -10,7 +10,7 @@ defmodule ApplicationRunner.EnvManagersTest do
   setup do
     start_supervised(EnvManagers)
 
-    start_supervised({Finch, name: FaasHttp})
+    start_supervised({Finch, name: AppHttp})
 
     bypass = Bypass.open()
     Bypass.stub(bypass, "POST", "/function/test_function", &handle_request(&1))

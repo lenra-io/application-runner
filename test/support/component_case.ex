@@ -28,7 +28,7 @@ defmodule ApplicationRunner.ComponentCase do
         start_supervised(EnvManagers)
         start_supervised(SessionManagers)
         start_supervised(ApplicationRunnerAdapter)
-        start_supervised({Finch, name: FaasHttp})
+        start_supervised({Finch, name: AppHttp})
         start_supervised(ApplicationRunner.JsonSchemata)
 
         session_id = Ecto.UUID.generate()
