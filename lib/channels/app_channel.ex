@@ -154,23 +154,26 @@ defmodule ApplicationRunner.AppChannel do
 
       defoverridable allow: 2, get_function_name: 1, get_env: 1
     end
+  end
 
-    defp start_session(session_id, env_id, session_state, env_state) do
-      case SessionManagers.start_session(session_id, env_id, session_state, env_state) do
-        {:ok, session_pid} -> {:ok, session_pid}
-        {:error, message} -> {:error, message}
-      end
+  alias ApplicationRunner.{SessionManager, SessionManagers}
+  require Logger
+
+  def start_session(session_id, env_id, session_state, env_state) do
+    case SessionManagers.start_session(session_id, env_id, session_state, env_state) do
+      {:ok, session_pid} -> {:ok, session_pid}
+      {:error, message} -> {:error, message}
     end
+  end
 
-    defp handle_run(socket, code, event \\ %{}) do
-      %{
-        session_pid: session_pid
-      } = socket.assigns
+  def handle_run(socket, code, event \\ %{}) do
+    %{
+      session_pid: session_pid
+    } = socket.assigns
 
-      Logger.debug("Handle run #{code}")
-      SessionManager.send_client_event(session_pid, code, event)
+    Logger.debug("Handle run #{code}")
+    SessionManager.send_client_event(session_pid, code, event)
 
-      {:noreply, socket}
-    end
+    {:noreply, socket}
   end
 end

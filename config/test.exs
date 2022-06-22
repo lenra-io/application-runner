@@ -4,7 +4,6 @@ config :application_runner,
   additional_env_modules: {ApplicationRunner.ModuleInjector, :add_env_modules},
   additional_session_modules: {ApplicationRunner.ModuleInjector, :add_session_modules},
   ecto_repos: [ApplicationRunner.Repo],
-  url: "localhost:4000",
   faas_url: "http://localhost:1234",
   faas_auth: "Basic YWRtaW46M2kwREc4NTdLWlVaODQ3R0pheW5qMXAwbQ==",
   faas_registry: "registry.gitlab.com/lenra/platform/lenra-ci"
