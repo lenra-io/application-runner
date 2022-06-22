@@ -1,5 +1,5 @@
 defmodule ApplicationRunner.Router do
-  defmacro app_routes() do
+  defmacro app_routes do
     quote do
       alias ApplicationRunner.Guardian.EnsureAuthenticatedAppPipeline
 
