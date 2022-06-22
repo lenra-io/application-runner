@@ -50,7 +50,12 @@ defmodule ApplicationRunner.AppChannel do
             assigns: %{}
           }
 
-          case start_session(session_id, env_id, session_state, env_state) do
+          case ApplicationRunner.AppChannel.start_session(
+                 session_id,
+                 env_id,
+                 session_state,
+                 env_state
+               ) do
             {:ok, session_pid} ->
               {:ok, assign(socket, session_pid: session_pid)}
 
@@ -87,13 +92,6 @@ defmodule ApplicationRunner.AppChannel do
       # Override this function to return the function name according to the server/devtools needs
       defp get_env(app_name) do
         1
-      end
-
-      defp start_session(session_id, env_id, session_state, env_state) do
-        case SessionManagers.start_session(session_id, env_id, session_state, env_state) do
-          {:ok, session_pid} -> {:ok, session_pid}
-          {:error, message} -> {:error, message}
-        end
       end
 
       ########
@@ -147,25 +145,32 @@ defmodule ApplicationRunner.AppChannel do
       ######
 
       def handle_in("run", %{"code" => code, "event" => event}, socket) do
-        handle_run(socket, code, event)
+        ApplicationRunner.AppChannel.handle_run(socket, code, event)
       end
 
       def handle_in("run", %{"code" => code}, socket) do
-        handle_run(socket, code)
-      end
-
-      defp handle_run(socket, code, event \\ %{}) do
-        %{
-          session_pid: session_pid
-        } = socket.assigns
-
-        Logger.debug("Handle run #{code}")
-        SessionManager.send_client_event(session_pid, code, event)
-
-        {:noreply, socket}
+        ApplicationRunner.AppChannel.handle_run(socket, code)
       end
 
       defoverridable allow: 2, get_function_name: 1, get_env: 1
+    end
+
+    defp start_session(session_id, env_id, session_state, env_state) do
+      case SessionManagers.start_session(session_id, env_id, session_state, env_state) do
+        {:ok, session_pid} -> {:ok, session_pid}
+        {:error, message} -> {:error, message}
+      end
+    end
+
+    defp handle_run(socket, code, event \\ %{}) do
+      %{
+        session_pid: session_pid
+      } = socket.assigns
+
+      Logger.debug("Handle run #{code}")
+      SessionManager.send_client_event(session_pid, code, event)
+
+      {:noreply, socket}
     end
   end
 end
