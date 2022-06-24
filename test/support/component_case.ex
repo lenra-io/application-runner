@@ -65,10 +65,10 @@ defmodule ApplicationRunner.ComponentCase do
         session_state = :sys.get_state(pid)
 
         assert handler_pid =
-          SessionSupervisor.fetch_module_pid!(
-            session_state.session_supervisor_pid,
-            EventHandler
-          )
+                 SessionSupervisor.fetch_module_pid!(
+                   session_state.session_supervisor_pid,
+                   EventHandler
+                 )
 
         on_exit(fn ->
           EnvManagers.stop_env(env.id)

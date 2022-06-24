@@ -124,14 +124,14 @@ defmodule ApplicationRunner.SessionManagersTest do
                  EventHandler
                )
 
-    # Wait for OnSessionStart
-    assert :ok = EventHandler.subscribe(handler_pid)
+      # Wait for OnSessionStart
+      assert :ok = EventHandler.subscribe(handler_pid)
 
-    assert_receive({:event_finished, _action, _res})
+      assert_receive({:event_finished, _action, _res})
 
-    assert_receive({:event_finished, _action, _res})
+      assert_receive({:event_finished, _action, _res})
 
-    assert_receive({:send, :ui, @ui})
+      assert_receive({:send, :ui, @ui})
     end)
   end
 
@@ -196,14 +196,14 @@ defmodule ApplicationRunner.SessionManagersTest do
                EventHandler
              )
 
-       # Wait for OnSessionStart
-       assert :ok = EventHandler.subscribe(handler_pid)
+    # Wait for OnSessionStart
+    assert :ok = EventHandler.subscribe(handler_pid)
 
-       assert_receive({:event_finished, _action, _res})
+    assert_receive({:event_finished, _action, _res})
 
-       assert_receive({:event_finished, _action, _res})
+    assert_receive({:event_finished, _action, _res})
 
-       assert_receive({:send, :ui, @ui})
+    assert_receive({:send, :ui, @ui})
 
     assert {:error, {:already_started, ^pid}} =
              SessionManagers.start_session(
