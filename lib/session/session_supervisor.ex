@@ -47,8 +47,18 @@ defmodule ApplicationRunner.SessionSupervisor do
       ApplicationRunner.WidgetCache,
       ApplicationRunner.EventHandler,
       {ApplicationRunner.Session.TokenAgent, opts}
-    ]
+    ] ++ get_additionnal_modules(opts)
 
     Supervisor.init(children, strategy: :one_for_one)
+  end
+
+  defp get_additionnal_modules(opts) do
+    case Application.get_env(:application_runner, :additional_session_modules, :none) do
+      {module_name, function_name} ->
+        apply(module_name, function_name, [opts])
+
+      :none ->
+        []
+    end
   end
 end

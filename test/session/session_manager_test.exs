@@ -7,6 +7,7 @@ defmodule ApplicationRunner.SessionManagerTest do
 
   alias ApplicationRunner.{
     Environment,
+    EnvManagers,
     EventHandler,
     MockGenServer,
     Repo,
@@ -19,6 +20,9 @@ defmodule ApplicationRunner.SessionManagerTest do
   @ui %{"root" => %{"children" => [], "type" => "flex"}}
 
   setup do
+    start_supervised(EnvManagers)
+    start_supervised(SessionManagers)
+
     {:ok, env} = Repo.insert(Environment.new())
     {:ok, user} = Repo.insert(User.new("test@test.te"))
 
@@ -95,8 +99,7 @@ defmodule ApplicationRunner.SessionManagerTest do
 
     assert_receive({:event_finished, _action, _res})
 
-    # Wait for Widget
-    assert :ok = EventHandler.subscribe(handler_pid)
+    assert_receive({:event_finished, _action, _res})
 
     assert_receive({:send, :ui, @ui})
   end

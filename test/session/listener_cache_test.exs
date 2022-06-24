@@ -60,8 +60,7 @@ defmodule ApplicationRunner.ListenerCacheTest do
 
     assert_receive({:event_finished, _action, _res})
 
-    # Wait for Widget
-    assert :ok = EventHandler.subscribe(handler_pid)
+    assert_receive({:event_finished, _action, _res})
 
     assert_receive({:send, :ui, @ui})
 
