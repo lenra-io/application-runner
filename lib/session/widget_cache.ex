@@ -9,9 +9,10 @@ defmodule ApplicationRunner.WidgetCache do
   use ApplicationRunner.CacheAsyncMacro
 
   alias ApplicationRunner.{
-    AdapterHandler,
+    DataServices,
     JsonSchemata,
     ListenersCache,
+    OpenfaasServices,
     SessionState,
     SessionSupervisor,
     UiContext,
@@ -41,8 +42,8 @@ defmodule ApplicationRunner.WidgetCache do
 
     cache_function(
       pid,
-      AdapterHandler,
-      :get_widget,
+      OpenfaasServices,
+      :fetch_widget,
       [
         session_state,
         current_widget.name,
@@ -115,7 +116,7 @@ defmodule ApplicationRunner.WidgetCache do
       if is_nil(query) do
         []
       else
-        AdapterHandler.exec_query(session_state, query)
+        DataServices.exec_query(query, session_state.env_id, session_state.user_id)
       end
 
     id = generate_widget_id(name, data, props)

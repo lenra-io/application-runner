@@ -11,7 +11,12 @@ defmodule ApplicationRunner.Application do
       # Start the json validator server for the UI
       ApplicationRunner.JsonSchemata,
       ApplicationRunner.EnvManagers,
-      ApplicationRunner.SessionManagers
+      ApplicationRunner.SessionManagers,
+      {Finch,
+       name: AppHttp,
+       pools: %{
+         Application.fetch_env!(:application_runner, :faas_url) => [size: 32, count: 8]
+       }}
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html

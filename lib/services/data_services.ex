@@ -3,19 +3,70 @@ defmodule ApplicationRunner.DataServices do
     The service that manages actions on data.
   """
 
-  alias ApplicationRunner.{Data, DataReferences, Datastore}
-  alias QueryParser.AST.{EctoParser, Parser, Query}
+  alias ApplicationRunner.{Data, DataQueryViewServices, DataReferences, Datastore}
+  alias QueryParser.AST.{EctoParser, Parser}
   import Ecto.Query, only: [from: 2]
 
-  # Remove this function during refactor
-  def ecto_parser(%Query{} = query, env_id, user_data_id) do
-    query
-    |> EctoParser.to_ecto(env_id, user_data_id)
+  @repo Application.compile_env!(:application_runner, :repo)
+
+  def exec_query(_env_id, _user_id, nil) do
+    []
   end
 
-  def json_parser(query) do
+  def exec_query(query, env_id, user_id) do
+    user_data =
+      env_id
+      |> ApplicationRunner.UserDataServices.current_user_data_query(user_id)
+      |> @repo.one()
+
+    query
+    |> EctoParser.to_ecto(env_id, user_data.id)
+    |> @repo.all()
+  end
+
+  def parse_and_exec_query(query, env_id, user_id) do
     query
     |> Parser.from_json()
+    |> exec_query(env_id, user_id)
+  end
+
+  ##########
+  # get #
+  ##########
+
+  def get(env_id, ds_name, data_id) do
+    env_id
+    |> DataQueryViewServices.get_one(ds_name, data_id)
+    |> @repo.one()
+  end
+
+  def get_all(env_id, ds_name) do
+    env_id
+    |> DataQueryViewServices.get_all(ds_name)
+    |> @repo.all()
+  end
+
+  def get_me(env_id, user_id) do
+    data_id = get_user_data_id(env_id, user_id)
+
+    env_id
+    |> DataQueryViewServices.get_one("_users", data_id)
+    |> @repo.one()
+  end
+
+  defp get_user_data_id(env_id, user_id) do
+    select =
+      from(d in Data,
+        join: ud in UserData,
+        on: ud.data_id == d.id,
+        join: ds in Datastore,
+        on: d.datastore_id == ds.id,
+        where: ud.user_id == ^user_id and ds.environment_id == ^env_id,
+        select: d.id
+      )
+
+    select
+    |> @repo.one()
   end
 
   ##########
@@ -27,6 +78,17 @@ defmodule ApplicationRunner.DataServices do
   end
 
   def create(multi, environment_id, params) do
+    {data, metadata} = process_params(params)
+
+    multi
+    |> get_datastore(environment_id, metadata)
+    |> insert_data(data)
+    |> handle_refs(metadata)
+    |> handle_ref_by(metadata)
+    |> @repo.transaction()
+  end
+
+  def create_multi(multi, environment_id, params) do
     {data, metadata} = process_params(params)
 
     multi
@@ -118,6 +180,7 @@ defmodule ApplicationRunner.DataServices do
     |> update_refs(metadata)
     |> update_ref_by(metadata)
     |> update_data(new_data)
+    |> @repo.transaction()
   end
 
   defp update_data(multi, new_data) do
@@ -216,6 +279,7 @@ defmodule ApplicationRunner.DataServices do
     |> Ecto.Multi.delete(:deleted_data, fn %{data: %Data{} = data} ->
       data
     end)
+    |> @repo.transaction()
   end
 
   defp process_params(params) do

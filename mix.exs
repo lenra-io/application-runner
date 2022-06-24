@@ -48,7 +48,10 @@ defmodule ApplicationRunner.MixProject do
         tag: "v1.0.0-beta.1",
         credentials: "shiipou:#{System.get_env("GH_PERSONNAL_TOKEN")}"
       ),
-      {:guardian, "~> 2.1.1"}
+      {:guardian, "~> 2.1.1"},
+      {:phoenix, "~> 1.5.9"},
+      {:finch, "~> 0.12"},
+      {:bypass, "~> 2.0", only: :test}
     ]
   end
 

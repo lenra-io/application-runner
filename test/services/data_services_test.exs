@@ -16,7 +16,6 @@ defmodule ApplicationRunner.DataServicesTest do
 
       {:ok, %{inserted_data: inserted_data}} =
         DataServices.create(env_id, %{"_datastore" => "users", "name" => "toto"})
-        |> Repo.transaction()
 
       data = Repo.get(Data, inserted_data.id)
 
@@ -32,7 +31,6 @@ defmodule ApplicationRunner.DataServicesTest do
                  "datastore" => "users",
                  "test" => %{"name" => "toto"}
                })
-               |> Repo.transaction()
     end
 
     test "should return error if env_id invalid", %{env_id: env_id} do
@@ -43,7 +41,6 @@ defmodule ApplicationRunner.DataServicesTest do
                  "_datastore" => "users",
                  "name" => "toto"
                })
-               |> Repo.transaction()
     end
 
     test "should return error if datastore name invalid", %{env_id: env_id} do
@@ -52,7 +49,6 @@ defmodule ApplicationRunner.DataServicesTest do
                  "_datastore" => "test",
                  "name" => "toto"
                })
-               |> Repo.transaction()
     end
 
     test "should create reference if refs id is valid", %{env_id: env_id} do
@@ -64,7 +60,6 @@ defmodule ApplicationRunner.DataServicesTest do
           "_datastore" => "points",
           "score" => "10"
         })
-        |> Repo.transaction()
 
       {:ok, %{inserted_data: inserted_data}} =
         DataServices.create(env_id, %{
@@ -72,7 +67,6 @@ defmodule ApplicationRunner.DataServicesTest do
           "name" => "toto",
           "_refs" => [inserted_point.id]
         })
-        |> Repo.transaction()
 
       assert !is_nil(
                Repo.get_by(DataReferences, refs_id: inserted_point.id, ref_by_id: inserted_data.id)
@@ -88,14 +82,12 @@ defmodule ApplicationRunner.DataServicesTest do
           "_datastore" => "points",
           "score" => "10"
         })
-        |> Repo.transaction()
 
       {:ok, %{inserted_data: inserted_point_bis}} =
         DataServices.create(env_id, %{
           "_datastore" => "points",
           "score" => "12"
         })
-        |> Repo.transaction()
 
       {:ok, %{inserted_data: inserted_data}} =
         DataServices.create(env_id, %{
@@ -103,7 +95,6 @@ defmodule ApplicationRunner.DataServicesTest do
           "name" => "toto",
           "_refs" => [inserted_point.id, inserted_point_bis.id]
         })
-        |> Repo.transaction()
 
       assert !is_nil(
                Repo.get_by(DataReferences, refs_id: inserted_point.id, ref_by_id: inserted_data.id)
@@ -123,7 +114,6 @@ defmodule ApplicationRunner.DataServicesTest do
 
       {:ok, %{inserted_data: inserted_user}} =
         DataServices.create(env_id, %{"_datastore" => "users", "name" => "toto"})
-        |> Repo.transaction()
 
       {:ok, %{inserted_data: inserted_data}} =
         DataServices.create(env_id, %{
@@ -131,7 +121,6 @@ defmodule ApplicationRunner.DataServicesTest do
           "score" => "10",
           "_refBy" => [inserted_user.id]
         })
-        |> Repo.transaction()
 
       assert !is_nil(
                Repo.get_by(DataReferences, refs_id: inserted_data.id, ref_by_id: inserted_user.id)
@@ -145,14 +134,12 @@ defmodule ApplicationRunner.DataServicesTest do
 
       {:ok, %{inserted_data: inserted_team}} =
         DataServices.create(env_id, %{"_datastore" => "team", "name" => "test"})
-        |> Repo.transaction()
 
       {:ok, %{inserted_data: inserted_point}} =
         DataServices.create(env_id, %{
           "_datastore" => "points",
           "scrore" => "10"
         })
-        |> Repo.transaction()
 
       {:ok, %{inserted_data: inserted_user}} =
         DataServices.create(env_id, %{
@@ -161,7 +148,6 @@ defmodule ApplicationRunner.DataServicesTest do
           "_refs" => [inserted_point.id],
           "_refBy" => [inserted_team.id]
         })
-        |> Repo.transaction()
 
       assert !is_nil(
                Repo.get_by(DataReferences, refs_id: inserted_user.id, ref_by_id: inserted_team.id)
@@ -183,7 +169,6 @@ defmodule ApplicationRunner.DataServicesTest do
                  "name" => "toto",
                  "_refs" => [-1]
                })
-               |> Repo.transaction()
     end
 
     test "should return error if ref_by_id invalid", %{env_id: env_id} do
@@ -198,7 +183,6 @@ defmodule ApplicationRunner.DataServicesTest do
                  "score" => "10",
                  "_refBy" => [-1]
                })
-               |> Repo.transaction()
     end
   end
 
@@ -208,12 +192,10 @@ defmodule ApplicationRunner.DataServicesTest do
 
       {:ok, %{inserted_data: inserted_data}} =
         DataServices.create(env_id, %{"_datastore" => "users", "name" => "toto"})
-        |> Repo.transaction()
 
       data = Repo.get(Data, inserted_data.id)
 
       DataServices.delete(data.id)
-      |> Repo.transaction()
 
       deleted_data = Repo.get(Data, inserted_data.id)
 
@@ -221,9 +203,7 @@ defmodule ApplicationRunner.DataServicesTest do
     end
 
     test "should return error id invalid", %{env_id: _env_id} do
-      assert {:error, :data, :data_not_found, _changes_so_far} =
-               DataServices.delete(-1)
-               |> Repo.transaction()
+      assert {:error, :data, :data_not_found, _changes_so_far} = DataServices.delete(-1)
     end
 
     test "should also remove refence but not referenced data", %{env_id: env_id} do
@@ -232,7 +212,6 @@ defmodule ApplicationRunner.DataServicesTest do
 
       {:ok, %{inserted_data: inserted_user}} =
         DataServices.create(env_id, %{"_datastore" => "users", "name" => "toto"})
-        |> Repo.transaction()
 
       {:ok, %{inserted_data: inserted_point}} =
         DataServices.create(env_id, %{
@@ -240,14 +219,12 @@ defmodule ApplicationRunner.DataServicesTest do
           "name" => "toto",
           "_refBy" => [inserted_user.id]
         })
-        |> Repo.transaction()
 
       data = Repo.get(Data, inserted_user.id)
 
       assert false == is_nil(Repo.get_by(DataReferences, refs_id: inserted_point.id))
 
       DataServices.delete(data.id)
-      |> Repo.transaction()
 
       deleted_data = Repo.get(Data, inserted_user.id)
 
@@ -267,12 +244,10 @@ defmodule ApplicationRunner.DataServicesTest do
 
       {:ok, %{inserted_data: inserted_data}} =
         DataServices.create(env_id, %{"_datastore" => "users", "name" => "toto"})
-        |> Repo.transaction()
 
       data = Repo.get(Data, inserted_data.id)
 
       DataServices.update(%{"_id" => data.id, "name" => "test"})
-      |> Repo.transaction()
 
       updated_data = Repo.get(Data, inserted_data.id)
 
@@ -282,7 +257,6 @@ defmodule ApplicationRunner.DataServicesTest do
     test "should return error id invalid", %{env_id: _env_id} do
       assert {:error, :data, :data_not_found, _changes_so_far} =
                DataServices.update(%{"_id" => -1})
-               |> Repo.transaction()
     end
 
     test "should also update refs on update", %{env_id: env_id} do
@@ -294,14 +268,12 @@ defmodule ApplicationRunner.DataServicesTest do
           "_datastore" => "points",
           "score" => "10"
         })
-        |> Repo.transaction()
 
       {:ok, %{inserted_data: inserted_point_bis}} =
         DataServices.create(env_id, %{
           "_datastore" => "points",
           "score" => "12"
         })
-        |> Repo.transaction()
 
       {:ok, %{inserted_data: inserted_data}} =
         DataServices.create(env_id, %{
@@ -309,14 +281,12 @@ defmodule ApplicationRunner.DataServicesTest do
           "name" => "toto",
           "_refs" => [inserted_point.id]
         })
-        |> Repo.transaction()
 
       {:ok, %{data: updated_data}} =
         DataServices.update(%{
           "_id" => inserted_data.id,
           "_refs" => [inserted_point_bis.id]
         })
-        |> Repo.transaction()
 
       data = Repo.get(Data, updated_data.id) |> Repo.preload(:refs)
 
@@ -335,14 +305,12 @@ defmodule ApplicationRunner.DataServicesTest do
           "_datastore" => "users",
           "name" => "toto"
         })
-        |> Repo.transaction()
 
       {:ok, %{inserted_data: inserted_data_bis}} =
         DataServices.create(env_id, %{
           "_datastore" => "users",
           "name" => "test"
         })
-        |> Repo.transaction()
 
       {:ok, %{inserted_data: inserted_point}} =
         DataServices.create(env_id, %{
@@ -350,14 +318,12 @@ defmodule ApplicationRunner.DataServicesTest do
           "score" => "10",
           "_refBy" => [inserted_data.id]
         })
-        |> Repo.transaction()
 
       {:ok, %{data: updated_data}} =
         DataServices.update(%{
           "_id" => inserted_point.id,
           "_refBy" => [inserted_data_bis.id]
         })
-        |> Repo.transaction()
 
       data = Repo.get(Data, updated_data.id) |> Repo.preload(:ref_by)
 
@@ -377,28 +343,24 @@ defmodule ApplicationRunner.DataServicesTest do
           "_datastore" => "team",
           "name" => "team1"
         })
-        |> Repo.transaction()
 
       {:ok, %{inserted_data: inserted_team_bis}} =
         DataServices.create(env_id, %{
           "_datastore" => "team",
           "name" => "team2"
         })
-        |> Repo.transaction()
 
       {:ok, %{inserted_data: inserted_point}} =
         DataServices.create(env_id, %{
           "_datastore" => "points",
           "name" => "10"
         })
-        |> Repo.transaction()
 
       {:ok, %{inserted_data: inserted_point_bis}} =
         DataServices.create(env_id, %{
           "_datastore" => "points",
           "name" => "12"
         })
-        |> Repo.transaction()
 
       {:ok, %{inserted_data: inserted_user}} =
         DataServices.create(env_id, %{
@@ -407,7 +369,6 @@ defmodule ApplicationRunner.DataServicesTest do
           "_refs" => [inserted_point.id],
           "_refBy" => [inserted_team.id]
         })
-        |> Repo.transaction()
 
       {:ok, %{data: updated_data}} =
         DataServices.update(%{
@@ -415,7 +376,6 @@ defmodule ApplicationRunner.DataServicesTest do
           "_refs" => [inserted_point_bis.id],
           "_refBy" => [inserted_team_bis.id]
         })
-        |> Repo.transaction()
 
       data = Repo.get(Data, updated_data.id) |> Repo.preload(:ref_by) |> Repo.preload(:refs)
 
@@ -439,7 +399,6 @@ defmodule ApplicationRunner.DataServicesTest do
           "_datastore" => "points",
           "name" => "10"
         })
-        |> Repo.transaction()
 
       {:ok, %{inserted_data: inserted_user}} =
         DataServices.create(env_id, %{
@@ -447,14 +406,12 @@ defmodule ApplicationRunner.DataServicesTest do
           "name" => "toto",
           "_refs" => [inserted_point.id]
         })
-        |> Repo.transaction()
 
       {:error, :refs, :references_not_found, _change_so_far} =
         DataServices.update(%{
           "_id" => inserted_user.id,
           "_refs" => [-1]
         })
-        |> Repo.transaction()
     end
 
     test "should return error if update with invalid ref_by id", %{env_id: env_id} do
@@ -466,7 +423,6 @@ defmodule ApplicationRunner.DataServicesTest do
           "_datastore" => "team",
           "name" => "team1"
         })
-        |> Repo.transaction()
 
       {:ok, %{inserted_data: inserted_user}} =
         DataServices.create(env_id, %{
@@ -474,14 +430,12 @@ defmodule ApplicationRunner.DataServicesTest do
           "name" => "toto",
           "_refBy" => [inserted_team.id]
         })
-        |> Repo.transaction()
 
       {:error, :ref_by, :references_not_found, _change_so_far} =
         DataServices.update(%{
           "_id" => inserted_user.id,
           "_refBy" => [-1]
         })
-        |> Repo.transaction()
     end
 
     test "should not update data if env_id not the same", %{env_id: env_id} do
@@ -499,14 +453,12 @@ defmodule ApplicationRunner.DataServicesTest do
           "_datastore" => "team",
           "name" => "team1"
         })
-        |> Repo.transaction()
 
       {:ok, %{inserted_data: inserted_team_bis}} =
         DataServices.create(environment.id, %{
           "_datastore" => "team2",
           "name" => "team2"
         })
-        |> Repo.transaction()
 
       {:ok, %{inserted_data: inserted_user}} =
         DataServices.create(env_id, %{
@@ -514,14 +466,12 @@ defmodule ApplicationRunner.DataServicesTest do
           "name" => "toto",
           "_refBy" => [inserted_team.id]
         })
-        |> Repo.transaction()
 
       {:error, :ref_by, :references_not_found, _change_so_far} =
         DataServices.update(%{
           "_id" => inserted_user.id,
           "_refBy" => [inserted_team_bis.id]
         })
-        |> Repo.transaction()
     end
   end
 end

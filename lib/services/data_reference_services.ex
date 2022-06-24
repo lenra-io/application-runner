@@ -4,6 +4,8 @@ defmodule ApplicationRunner.DataReferencesServices do
 
   alias ApplicationRunner.{Data, DataReferences, Datastore}
 
+  @repo Application.compile_env!(:application_runner, :repo)
+
   def create(params), do: Ecto.Multi.new() |> create(params)
 
   def create(multi, params) do
@@ -12,6 +14,7 @@ defmodule ApplicationRunner.DataReferencesServices do
     |> Ecto.Multi.insert(:inserted_reference, fn _ ->
       DataReferences.new(params)
     end)
+    |> @repo.transaction()
   end
 
   defp check_env(multi, %{refs_id: refs, ref_by_id: refBy}) do
@@ -65,10 +68,12 @@ defmodule ApplicationRunner.DataReferencesServices do
     |> Ecto.Multi.delete(:deleted_reference, fn %{reference: %DataReferences{} = reference} ->
       reference
     end)
+    |> @repo.transaction()
   end
 
   def delete(multi, _params) do
     multi
     |> Ecto.Multi.error(:reference, :json_format_invalid)
+    |> @repo.transaction()
   end
 end

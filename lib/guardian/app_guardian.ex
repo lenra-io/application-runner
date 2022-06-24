@@ -25,6 +25,12 @@ defmodule ApplicationRunner.Guardian.AppGuardian do
     end
   end
 
+  def resource_from_claims(%{"env_id" => env_id}) do
+    with env <- @repo.get(Environment, env_id) do
+      {:ok, %{environment: env}}
+    end
+  end
+
   def on_verify(claims, token, _options) do
     if get_app_token(claims) ==
          token do

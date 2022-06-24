@@ -40,10 +40,10 @@ defmodule ApplicationRunner.EnvManagers do
   """
   @spec start_env(number(), term()) ::
           {:error, {:already_started, pid()}} | {:ok, pid()} | {:error, atom | bitstring}
-  def start_env(env_id, assigns) do
+  def start_env(env_id, env_state) do
     DynamicSupervisor.start_child(
       EnvManagers,
-      {ApplicationRunner.EnvManager, [env_id: env_id, assigns: assigns]}
+      {ApplicationRunner.EnvManager, [env_id: env_id, env_state: env_state]}
     )
   end
 
@@ -51,8 +51,8 @@ defmodule ApplicationRunner.EnvManagers do
     Ensure that the app env process is started. Start the app env if not.
   """
   @spec ensure_env_started(number(), term()) :: {:ok, pid} | {:error, atom | bitstring}
-  def ensure_env_started(env_id, assigns) do
-    case EnvManagers.start_env(env_id, assigns) do
+  def ensure_env_started(env_id, env_state) do
+    case EnvManagers.start_env(env_id, env_state) do
       {:ok, pid} -> {:ok, pid}
       {:error, message} when is_atom(message) or is_bitstring(message) -> {:error, message}
       {:error, {:already_started, pid}} -> {:ok, pid}

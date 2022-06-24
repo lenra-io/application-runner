@@ -5,11 +5,11 @@ defmodule ApplicationRunner.EnvManager do
   use GenServer
 
   alias ApplicationRunner.{
-    AdapterHandler,
     EnvManagers,
     EnvState,
     EnvSupervisor,
-    EventHandler
+    EventHandler,
+    OpenfaasServices
   }
 
   @on_env_start_action "onEnvStart"
@@ -45,8 +45,10 @@ defmodule ApplicationRunner.EnvManager do
 
   @impl true
   def init(opts) do
+    state = Keyword.fetch!(opts, :env_state)
     env_id = Keyword.fetch!(opts, :env_id)
-    assigns = Keyword.fetch!(opts, :assigns)
+    function_name = Map.fetch!(state, :function_name)
+    assigns = Map.fetch!(state, :assigns)
 
     {:ok, env_supervisor_pid} = EnvSupervisor.start_link(opts)
     # Link the process to kill the manager if the supervisor is killed.
@@ -58,6 +60,7 @@ defmodule ApplicationRunner.EnvManager do
 
     env_state = %EnvState{
       env_id: env_id,
+      function_name: function_name,
       assigns: assigns,
       env_supervisor_pid: env_supervisor_pid,
       inactivity_timeout:
@@ -66,12 +69,15 @@ defmodule ApplicationRunner.EnvManager do
       waiting_from: []
     }
 
-    with {:ok, manifest} <- AdapterHandler.get_manifest(env_state),
+    with {:ok, manifest} <- OpenfaasServices.fetch_manifest(env_state),
          env_state <- Map.put(env_state, :manifest, manifest) do
       {:ok, env_state, {:continue, :after_init}}
     else
       {:error, reason} ->
         {:stop, reason}
+
+      err ->
+        {:stop, err}
     end
   end
 

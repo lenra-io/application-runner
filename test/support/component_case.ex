@@ -8,36 +8,104 @@ defmodule ApplicationRunner.ComponentCase do
   """
   defmacro __using__(_opts) do
     quote do
-      use ExUnit.Case, async: false
+      use ApplicationRunner.RepoCase, async: false
 
       alias ApplicationRunner.{
         ApplicationRunnerAdapter,
+        Environment,
         EnvManager,
         EnvManagers,
+        EventHandler,
+        FaasStub,
+        Repo,
         SessionManager,
-        SessionManagers
+        SessionManagers,
+        SessionSupervisor,
+        User
       }
+
+      @manifest %{"rootWidget" => "root"}
 
       setup context do
         start_supervised(EnvManagers)
         start_supervised(SessionManagers)
         start_supervised(ApplicationRunnerAdapter)
-        session_id = make_ref()
-        env_id = make_ref()
+        start_supervised({Finch, name: AppHttp})
+        start_supervised(ApplicationRunner.JsonSchemata)
+
+        session_id = Ecto.UUID.generate()
 
         if context[:mock] != nil do
           ApplicationRunnerAdapter.set_mock(context[:mock])
         end
 
-        {:ok, pid} = SessionManagers.start_session(session_id, env_id, %{test_pid: self()}, %{})
+        bypass = Bypass.open()
+        Bypass.stub(bypass, "POST", "/function/test_function", &handle_request(&1))
+
+        Application.put_env(:application_runner, :faas_url, "http://localhost:#{bypass.port}")
+
+        {:ok, env} = Repo.insert(Environment.new())
+        {:ok, user} = Repo.insert(User.new("test@test.te"))
+
+        {:ok, pid} =
+          SessionManagers.start_session(
+            Ecto.UUID.generate(),
+            env.id,
+            %{
+              user_id: user.id,
+              function_name: "test_function",
+              assigns: %{socket_pid: self()}
+            },
+            %{
+              function_name: "test_function",
+              assigns: %{}
+            }
+          )
 
         session_state = :sys.get_state(pid)
 
+        assert handler_pid =
+                 SessionSupervisor.fetch_module_pid!(
+                   session_state.session_supervisor_pid,
+                   EventHandler
+                 )
+
         on_exit(fn ->
-          EnvManagers.stop_env(env_id)
+          EnvManagers.stop_env(env.id)
         end)
 
-        %{session_state: session_state, session_pid: pid, session_id: session_id, env_id: env_id}
+        %{session_state: session_state, session_pid: pid, session_id: session_id, env_id: env.id}
+      end
+
+      defp handle_request(conn) do
+        {:ok, body, conn} = Plug.Conn.read_body(conn)
+
+        body_decoded =
+          if String.length(body) != 0 do
+            Jason.decode!(body)
+          else
+            ""
+          end
+
+        case body_decoded do
+          # Manifest no body
+          "" ->
+            Plug.Conn.resp(conn, 200, Jason.encode!(%{"manifest" => @manifest}))
+
+          # Listeners "action" in body
+          %{"action" => _action} ->
+            Plug.Conn.resp(conn, 200, "")
+
+          # Widget data key
+          %{"data" => data, "props" => props, "widget" => widget} ->
+            {:ok, widget} = ApplicationRunnerAdapter.get_widget(%{}, widget, data, props)
+
+            Plug.Conn.resp(
+              conn,
+              200,
+              Jason.encode!(widget)
+            )
+        end
       end
 
       def mock_root_and_run(json, env_id) do
@@ -47,14 +115,14 @@ defmodule ApplicationRunner.ComponentCase do
 
       defmacro assert_success(expected) do
         quote do
-          assert_receive {:ui, %{"root" => res}}
+          assert_receive {:send, :ui, %{"root" => res}}
           assert unquote(expected) = res
         end
       end
 
       defmacro assert_error(expected) do
         quote do
-          assert_receive {:error, res}
+          assert_receive {:send, :error, res}
           assert res = unquote(expected)
         end
       end
