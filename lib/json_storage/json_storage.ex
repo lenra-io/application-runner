@@ -1,7 +1,7 @@
 defmodule ApplicationRunner.JsonStorage do
   @moduledoc """
     ApplicationRunner.JsonStorage handle all data logic.
-    We can found delegate function to associate Services.
+    We can find delegate function to associate Services.
   """
 
   alias ApplicationRunner.JsonStorage.Services
