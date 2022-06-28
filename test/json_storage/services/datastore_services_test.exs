@@ -3,7 +3,7 @@ defmodule ApplicationRunner.DatastoreServiceTest do
 
   use ApplicationRunner.RepoCase
 
-  alias ApplicationRunner.{JsonStorage, FakeLenraEnvironment}
+  alias ApplicationRunner.{FakeLenraEnvironment, JsonStorage}
 
   alias ApplicationRunner.JsonStorage.{Data, Datastore}
 
