@@ -23,8 +23,10 @@ defmodule ApplicationRunner.UiCache do
         {:reply, {:ui, ui}, ui}
 
       _ ->
-        patches = JSONDiff.diff(old_ui, ui)
-        {:reply, {:patches, patches}, ui}
+        case JSONDiff.diff(old_ui, ui) do
+          [] -> {:reply, :no_diff, ui}
+          patches -> {:reply, {:patches, patches}, ui}
+        end
     end
   end
 

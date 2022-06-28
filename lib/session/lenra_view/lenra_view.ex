@@ -4,13 +4,15 @@ defmodule ApplicationRunner.LenraView do
     WidgetContext,
     WidgetCache,
     AdapterHandler,
-    DataServices
+    DataServices,
+    SessionState
   }
 
-  @spec get_and_build_ui(SessionState.t(), map()) ::
+  @spec get_and_build_ui(SessionState.t(), map(), map()) ::
           {:ok, map()} | {:error, any()}
-  def get_and_build_ui(session_state, root_widget) do
-    props = Map.get(root_widget, "props")
+  def get_and_build_ui(session_state, root_widget, path_params) do
+    props = Map.get(root_widget, "props", %{})
+    props = Map.put(props, "pathParams", path_params)
     name = Map.get(root_widget, "name")
     query = root_widget |> Map.get("query") |> DataServices.json_parser()
 
@@ -18,7 +20,7 @@ defmodule ApplicationRunner.LenraView do
       if is_nil(query) do
         []
       else
-        AdapterHandler.exec_query(session_state, query)
+        AdapterHandler.exec_query(session_state, query, path_params)
       end
 
     id = WidgetCache.generate_widget_id(name, data, props)
@@ -26,7 +28,8 @@ defmodule ApplicationRunner.LenraView do
     WidgetCache.get_and_build_widget(
       session_state,
       %UiContext{
-        widgets_map: %{}
+        widgets_map: %{},
+        listeners_map: %{}
       },
       %WidgetContext{
         id: id,

@@ -10,15 +10,14 @@ defmodule ApplicationRunner.SessionManager do
     AdapterHandler,
     EnvManager,
     EventHandler,
+    ListenersCache,
     SessionManagers,
     SessionState,
     SessionSupervisor,
     UiCache,
-    UiContext,
-    WidgetCache,
-    WidgetContext,
     LenraView,
-    JsonView
+    JsonView,
+    Utils
   }
 
   @on_user_first_join_action "onUserFirstJoin"
@@ -63,6 +62,7 @@ defmodule ApplicationRunner.SessionManager do
     session_id = Keyword.fetch!(opts, :session_id)
     env_id = Keyword.fetch!(opts, :env_id)
     assigns = Keyword.fetch!(opts, :assigns)
+    root_widget_name = Keyword.fetch!(opts, :root_widget_name)
 
     {:ok, session_supervisor_pid} = SessionSupervisor.start_link(opts)
     # Link the process to kill the manager if the supervisor is killed.
@@ -78,7 +78,8 @@ defmodule ApplicationRunner.SessionManager do
       session_supervisor_pid: session_supervisor_pid,
       inactivity_timeout:
         Application.get_env(:application_runner, :session_inactivity_timeout, 1000 * 60 * 10),
-      assigns: assigns
+      assigns: assigns,
+      root_widget_name: root_widget_name
     }
 
     first_time_user = AdapterHandler.first_time_user?(session_state)
@@ -138,10 +139,14 @@ defmodule ApplicationRunner.SessionManager do
   end
 
   def handle_info(:data_changed, %SessionState{} = session_state) do
-    with manifest <- EnvManager.get_manifest(session_state.env_id),
-         {:ok, ui} <- call_ui_view(session_state, manifest) do
-      res = UiCache.diff_and_save(session_state, ui)
-      AdapterHandler.on_ui_changed(session_state, res)
+    with %{"widgets" => widgets} <- EnvManager.get_manifest(session_state.env_id),
+         {:ok, widget, path_params} <-
+           fetch_root_widget_and_params(widgets, session_state.root_widget_name),
+         {:ok, ui} <- call_ui_view(session_state, widget, path_params) do
+      case UiCache.diff_and_save(session_state, ui) do
+        :no_diff -> nil
+        changes -> AdapterHandler.on_ui_changed(session_state, changes)
+      end
     else
       error ->
         send_error(session_state, error)
@@ -150,12 +155,21 @@ defmodule ApplicationRunner.SessionManager do
     {:noreply, session_state, session_state.inactivity_timeout}
   end
 
-  defp call_ui_view(session_state, %{"rootWidget" => rootWidget, "view" => "json"}) do
-    JsonView.get_and_build_ui(session_state, rootWidget)
+  defp call_ui_view(session_state, %{"view" => "json"} = widget, path_params) do
+    JsonView.get_and_build_ui(session_state, widget, path_params)
   end
 
-  defp call_ui_view(session_state, %{"rootWidget" => rootWidget}) do
-    LenraView.get_and_build_ui(session_state, rootWidget)
+  defp call_ui_view(session_state, %{"view" => "lenra"} = widget, path_params) do
+    LenraView.get_and_build_ui(session_state, widget, path_params)
+  end
+
+  defp fetch_root_widget_and_params(widgets, root_widget_name) do
+    Enum.reduce_while(widgets, {:error, "No widget matching name"}, fn {route, widget}, res ->
+      case Utils.Routes.match_route(route, root_widget_name) do
+        {:ok, path_params} -> {:halt, {:ok, widget, path_params}}
+        {:error, _} -> {:cont, res}
+      end
+    end)
   end
 
   @impl true
@@ -177,8 +191,12 @@ defmodule ApplicationRunner.SessionManager do
     To prevent this we simply ask the child to call `DynamicSupervisor.terminate_child/2`to ensure that the correct SessionManagers is called.
   """
   @impl true
-  def handle_cast({:listener_call, listener_call}, session_state) do
-    do_send_event(session_state, listener_call)
+  def handle_cast({:listener_call, code}, session_state) do
+    with {:ok, listener} <- ListenersCache.fetch_listener(session_state, code),
+         {:ok, action} <- Map.fetch(listener, "action"),
+         props <- Map.get(listener, "props", %{}) do
+      do_send_event(session_state, %{"props" => props, "action" => action})
+    end
 
     {:noreply, session_state, session_state.inactivity_timeout}
   end

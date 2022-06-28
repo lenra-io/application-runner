@@ -45,7 +45,8 @@ defmodule ApplicationRunner.SessionSupervisor do
       [
         ApplicationRunner.UiCache,
         ApplicationRunner.WidgetCache,
-        ApplicationRunner.EventHandler
+        ApplicationRunner.EventHandler,
+        ApplicationRunner.ListenersCache
       ] ++ get_additionnal_modules(opts)
 
     Supervisor.init(children, strategy: :one_for_one)

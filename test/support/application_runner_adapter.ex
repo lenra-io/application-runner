@@ -80,12 +80,14 @@ defmodule ApplicationRunner.ApplicationRunnerAdapter do
   @impl true
   def exec_query(
         %SessionState{assigns: %{environment: environment, user: user}},
-        query
+        query,
+        path_params
       ) do
     user_data_id = get_user_data_id(environment, user)
+    references_map = Map.merge(%{"me" => user_data_id}, path_params)
 
     query
-    |> AST.EctoParser.to_ecto(environment.id, user_data_id)
+    |> AST.EctoParser.to_ecto(environment.id, references_map)
     |> Repo.all()
   end
 

@@ -15,7 +15,7 @@ defmodule ApplicationRunner.AdapterHandler do
   defdelegate run_listener(env_or_session_state, action, props, event),
     to: Application.compile_env!(:application_runner, :adapter)
 
-  defdelegate exec_query(session_state, query),
+  defdelegate exec_query(session_state, query, path_params),
     to: Application.compile_env!(:application_runner, :adapter)
 
   defdelegate create_user_data(session_state),

@@ -14,7 +14,8 @@ defmodule ApplicationRunner.WidgetCache do
     SessionState,
     SessionSupervisor,
     UiContext,
-    WidgetContext
+    WidgetContext,
+    ListenersCache
   }
 
   alias QueryParser.AST
@@ -118,7 +119,7 @@ defmodule ApplicationRunner.WidgetCache do
       if is_nil(query) do
         []
       else
-        AdapterHandler.exec_query(session_state, query)
+        AdapterHandler.exec_query(session_state, query, %{})
       end
 
     id = generate_widget_id(name, data, props)
@@ -165,16 +166,24 @@ defmodule ApplicationRunner.WidgetCache do
              widget_context
            ),
          {:ok, child_map, merged_child_ui_context} <-
-           build_child_list(session_state, component, child_keys, ui_context, widget_context) do
+           build_child_list(session_state, component, child_keys, ui_context, widget_context),
+         {:ok, listeners_map} <-
+           build_listeners(session_state, component, listeners_keys) do
       new_context = %UiContext{
         widgets_map:
-          Map.merge(merged_child_ui_context.widgets_map, merged_children_ui_context.widgets_map)
+          Map.merge(merged_child_ui_context.widgets_map, merged_children_ui_context.widgets_map),
+        listeners_map:
+          Map.merge(
+            merged_child_ui_context.listeners_map,
+            merged_children_ui_context.listeners_map
+          )
       }
 
       {:ok,
        component
        |> Map.merge(children_map)
-       |> Map.merge(child_map), new_context}
+       |> Map.merge(child_map)
+       |> Map.merge(listeners_map), new_context}
     end
   end
 
@@ -396,6 +405,17 @@ defmodule ApplicationRunner.WidgetCache do
       :widgets_map,
       Map.merge(ui_context1.widgets_map, ui_context2.widgets_map)
     )
+  end
+
+  @spec build_listeners(SessionState.t(), component(), list(String.t())) ::
+          {:ok, map()} | {:error, list()}
+  defp build_listeners(session_state, component, listeners) do
+    Enum.reduce(listeners, {:ok, %{}}, fn listener, {:ok, acc} ->
+      case ListenersCache.build_listener(session_state, Map.get(component, listener)) do
+        %{"code" => _} = built_listener -> {:ok, Map.put(acc, listener, built_listener)}
+        %{} -> {:ok, acc}
+      end
+    end)
   end
 
   def generate_widget_id(name, data, props) do

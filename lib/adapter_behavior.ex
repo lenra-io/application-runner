@@ -25,7 +25,7 @@ defmodule ApplicationRunner.AdapterBehavior do
               {:ok, widget()} | {:error, reason()}
   @callback run_listener(SessionState.t() | EnvState.t(), action(), props(), event()) ::
               :ok | {:error, reason()} | :error404
-  @callback exec_query(SessionState.t(), AST.Query.t()) :: data()
+  @callback exec_query(SessionState.t(), AST.Query.t(), map()) :: data()
   @callback create_user_data(SessionState.t()) :: :ok | {:error, reason()}
   @callback first_time_user?(SessionState.t()) :: boolean()
   @callback on_ui_changed(

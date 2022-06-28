@@ -41,13 +41,14 @@ defmodule ApplicationRunner.MixProject do
       {:swarm, "~> 3.0"},
       {:ecto_sql, "~> 3.4"},
       {:postgrex, "~> 0.15.8", only: [:test], runtime: false},
-      private_git(
-        name: :query_parser,
-        host: "github.com",
-        project: "lenra-io/query-parser.git",
-        tag: "v1.0.0-beta.1",
-        credentials: "shiipou:#{System.get_env("GH_PERSONNAL_TOKEN")}"
-      ),
+      {:query_parser, path: "../query-parser"},
+      # private_git(
+      #   name: :query_parser,
+      #   host: "github.com",
+      #   project: "lenra-io/query-parser.git",
+      #   tag: "v1.0.0-beta.1",
+      #   credentials: "shiipou:#{System.get_env("GH_PERSONNAL_TOKEN")}"
+      # ),
       {:guardian, "~> 2.1.1"}
     ]
   end
