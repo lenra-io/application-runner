@@ -12,7 +12,7 @@ defmodule ApplicationRunner.Router do
 
         post("/datastores", DatastoreController, :create)
         delete("/datastores/:_datastore", DatastoreController, :delete)
-        get("/datastores/user/data/@me", DataController, :get_me)
+        get("/datastores/user/data/@me", DataController, :get_current_user_data)
         get("/datastores/:_datastore/data/:_id", DataController, :get)
         get("/datastores/:_datastore/data", DataController, :get_all)
         post("/datastores/:_datastore/data", DataController, :create)

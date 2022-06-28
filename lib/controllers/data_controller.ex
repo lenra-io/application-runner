@@ -26,9 +26,13 @@ defmodule ApplicationRunner.DataController do
     end
   end
 
-  def get_me(conn, _params) do
+  def get_current_user_data(conn, _params) do
     with session_assigns <- Plug.current_resource(conn),
-         result <- JsonStorage.get_me(session_assigns.environment.id, session_assigns.user.id) do
+         result <-
+           JsonStorage.get_current_user_data(
+             session_assigns.environment.id,
+             session_assigns.user.id
+           ) do
       conn
       |> assign_data(:user_data, result)
       |> reply

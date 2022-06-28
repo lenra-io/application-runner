@@ -22,7 +22,9 @@ defmodule ApplicationRunner.JsonStorage do
 
   defdelegate get_all_data(query, env_id), to: Services.Data, as: :get_all
 
-  defdelegate get_me(env_id, user_id), to: Services.Data, as: :get_me
+  defdelegate get_current_user_data(env_id, user_id),
+    to: Services.Data,
+    as: :get_current_user_data
 
   defdelegate update_data(params), to: Services.Data, as: :update
 

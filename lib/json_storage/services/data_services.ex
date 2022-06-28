@@ -52,7 +52,7 @@ defmodule ApplicationRunner.JsonStorage.Services.Data do
     |> @repo.all()
   end
 
-  def get_me(env_id, user_id) do
+  def get_current_user_data(env_id, user_id) do
     data_id = get_user_data_id(env_id, user_id)
 
     env_id
