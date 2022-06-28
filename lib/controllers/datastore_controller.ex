@@ -14,9 +14,8 @@ defmodule ApplicationRunner.DatastoreController do
   end
 
   def delete(conn, params) do
-    with session_assigns <- Plug.current_resource(conn),
-         {:ok, %{deleted_datastore: datastore}} <-
-           JsonStorage.delete_datastore(params["_datastore"], session_assigns.environment.id) do
+    with {:ok, %{deleted_datastore: datastore}} <-
+           JsonStorage.delete_datastore(params["_id"]) do
       conn
       |> assign_data(:deleted_datastore, datastore)
       |> reply
