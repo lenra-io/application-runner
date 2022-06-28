@@ -64,7 +64,7 @@ defmodule ApplicationRunner.DataController do
   def query(conn, params) do
     with session_assigns <- Plug.current_resource(conn),
          data <-
-           DataServices.parse_and_exec_query(
+           JsonStorage.parse_and_exec_query(
              params,
              session_assigns.environment.id,
              session_assigns.user.id
