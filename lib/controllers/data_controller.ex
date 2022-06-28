@@ -1,12 +1,16 @@
 defmodule ApplicationRunner.DataController do
   use ApplicationRunner, :controller
 
-  alias ApplicationRunner.{DataServices, Guardian.AppGuardian.Plug}
+  alias ApplicationRunner.{Guardian.AppGuardian.Plug, JsonStorage}
 
   def get(conn, params) do
     with session_assigns <- Plug.current_resource(conn),
          result <-
-           DataServices.get(session_assigns.environment.id, params["_datastore"], params["_id"]) do
+           JsonStorage.get_data(
+             session_assigns.environment.id,
+             params["_datastore"],
+             params["_id"]
+           ) do
       conn
       |> assign_all(result.data)
       |> reply
@@ -15,7 +19,7 @@ defmodule ApplicationRunner.DataController do
 
   def get_all(conn, params) do
     with session_assigns <- Plug.current_resource(conn),
-         result <- DataServices.get_all(session_assigns.environment.id, params["_datastore"]) do
+         result <- JsonStorage.get_all_data(session_assigns.environment.id, params["_datastore"]) do
       conn
       |> assign_all(Enum.map(result, fn r -> r.data end))
       |> reply
@@ -24,7 +28,7 @@ defmodule ApplicationRunner.DataController do
 
   def get_me(conn, _params) do
     with session_assigns <- Plug.current_resource(conn),
-         result <- DataServices.get_me(session_assigns.environment.id, session_assigns.user.id) do
+         result <- JsonStorage.get_me(session_assigns.environment.id, session_assigns.user.id) do
       conn
       |> assign_data(:user_data, result)
       |> reply
@@ -34,7 +38,7 @@ defmodule ApplicationRunner.DataController do
   def create(conn, params) do
     with session_assigns <- Plug.current_resource(conn),
          {:ok, %{inserted_data: data}} <-
-           DataServices.create(session_assigns.environment.id, params) do
+           JsonStorage.create_data(session_assigns.environment.id, params) do
       conn
       |> assign_data(:inserted_data, data)
       |> reply
@@ -42,7 +46,7 @@ defmodule ApplicationRunner.DataController do
   end
 
   def update(conn, params) do
-    with {:ok, %{updated_data: data}} <- DataServices.update(params) do
+    with {:ok, %{updated_data: data}} <- JsonStorage.update_data(params) do
       conn
       |> assign_data(:updated_data, data)
       |> reply
@@ -50,7 +54,7 @@ defmodule ApplicationRunner.DataController do
   end
 
   def delete(conn, params) do
-    with {:ok, %{deleted_data: data}} <- DataServices.delete(params["_id"]) do
+    with {:ok, %{deleted_data: data}} <- JsonStorage.delete_data(params["_id"]) do
       conn
       |> assign_data(:deleted_data, data)
       |> reply
@@ -60,7 +64,7 @@ defmodule ApplicationRunner.DataController do
   def query(conn, params) do
     with session_assigns <- Plug.current_resource(conn),
          data <-
-           DataServices.parse_and_exec_query(
+           JsonStorage.parse_and_exec_query(
              params["query"],
              session_assigns.environment.id,
              session_assigns.user.id

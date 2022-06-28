@@ -9,13 +9,13 @@ defmodule ApplicationRunner.SessionManager do
   alias ApplicationRunner.{
     EnvManager,
     EventHandler,
+    JsonStorage,
     ListenersCache,
     SessionManagers,
     SessionState,
     SessionSupervisor,
     UiCache,
     UiContext,
-    UserDataServices,
     WidgetCache,
     WidgetContext
   }
@@ -85,7 +85,7 @@ defmodule ApplicationRunner.SessionManager do
       assigns: assigns
     }
 
-    first_time_user = UserDataServices.has_user_data?(session_state)
+    first_time_user = JsonStorage.has_user_data?(session_state)
 
     with :ok <- EnvManager.wait_until_ready(env_id),
          :ok <- create_user_data_if_needed(session_state, first_time_user),
@@ -99,7 +99,7 @@ defmodule ApplicationRunner.SessionManager do
   end
 
   defp create_user_data_if_needed(session_state, false) do
-    UserDataServices.create_with_data(session_state)
+    JsonStorage.create_user_data_with_data(session_state)
     send_on_user_first_join_event(session_state)
   end
 

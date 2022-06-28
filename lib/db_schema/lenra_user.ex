@@ -6,7 +6,9 @@ defmodule ApplicationRunner.User do
   use Ecto.Schema
   import Ecto.Changeset
 
-  alias ApplicationRunner.{User, UserData}
+  alias ApplicationRunner.User
+
+  alias ApplicationRunner.JsonStorage.UserData
 
   @table_name Application.compile_env!(:application_runner, :lenra_user_table)
   schema @table_name do

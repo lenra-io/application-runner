@@ -1,4 +1,4 @@
-defmodule ApplicationRunner.Datastore do
+defmodule ApplicationRunner.JsonStorage.Datastore do
   @moduledoc """
     The datastore schema.
   """
@@ -6,7 +6,7 @@ defmodule ApplicationRunner.Datastore do
   use Ecto.Schema
   import Ecto.Changeset
 
-  alias ApplicationRunner.{Data, Datastore, Environment}
+  alias ApplicationRunner.JsonStorage.{Data, Datastore, Environment}
 
   @derive {Jason.Encoder, only: [:id, :environment_id, :name]}
   schema "datastores" do

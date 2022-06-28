@@ -1,9 +1,9 @@
-defmodule ApplicationRunner.DatastoreServices do
+defmodule ApplicationRunner.JsonStorage.Services.Datastore do
   @moduledoc """
     The datastore service.
   """
 
-  alias ApplicationRunner.Datastore
+  alias ApplicationRunner.JsonStorage.Datastore
 
   @repo Application.compile_env!(:application_runner, :repo)
 

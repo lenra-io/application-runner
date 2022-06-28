@@ -1,17 +1,18 @@
-defmodule ApplicationRunner.UserDataServices do
+defmodule ApplicationRunner.JsonStorage.Services.UserData do
   @moduledoc """
     The service that manages actions on data.
   """
 
   import Ecto.Query, only: [from: 2]
 
-  alias ApplicationRunner.{
+  alias ApplicationRunner.JsonStorage.{
     Data,
-    DataServices,
     Datastore,
-    SessionState,
+    Services,
     UserData
   }
+
+  alias ApplicationRunner.SessionState
 
   @repo Application.compile_env!(:application_runner, :repo)
 
@@ -27,7 +28,7 @@ defmodule ApplicationRunner.UserDataServices do
 
   def create_with_data(%SessionState{env_id: env_id, user_id: user_id}) do
     Ecto.Multi.new()
-    |> DataServices.create_multi(env_id, %{"_datastore" => "_users"})
+    |> Services.Data.create_multi(env_id, %{"_datastore" => "_users"})
     |> Ecto.Multi.insert(:inserted_user_data, fn %{inserted_data: data} ->
       UserData.new(%{user_id: user_id, data_id: data.id})
     end)

@@ -1,4 +1,4 @@
-defmodule ApplicationRunner.DataQueryViewServices do
+defmodule ApplicationRunner.JsonStorage.Services.DataQueryView do
   @moduledoc false
   import Ecto.Query, only: [from: 2]
 

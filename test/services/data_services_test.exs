@@ -3,7 +3,9 @@ defmodule ApplicationRunner.DataServicesTest do
 
   use ApplicationRunner.RepoCase
 
-  alias ApplicationRunner.{Data, DataReferences, DataServices, Datastore, FakeLenraEnvironment}
+  alias ApplicationRunner.{JsonStorage, FakeLenraEnvironment}
+
+  alias ApplicationRunner.JsonStorage.{Data, DataReferences, Datastore}
 
   setup do
     {:ok, environment} = Repo.insert(FakeLenraEnvironment.new())
@@ -15,7 +17,7 @@ defmodule ApplicationRunner.DataServicesTest do
       {:ok, inserted_datastore} = Repo.insert(Datastore.new(env_id, %{"name" => "users"}))
 
       {:ok, %{inserted_data: inserted_data}} =
-        DataServices.create(env_id, %{"_datastore" => "users", "name" => "toto"})
+        JsonStorage.create_data(env_id, %{"_datastore" => "users", "name" => "toto"})
 
       data = Repo.get(Data, inserted_data.id)
 
@@ -27,7 +29,7 @@ defmodule ApplicationRunner.DataServicesTest do
       Repo.insert(Datastore.new(env_id, %{"name" => "users"}))
 
       assert {:error, :data, :json_format_invalid, _changes_so_far} =
-               DataServices.create(env_id, %{
+               JsonStorage.create_data(env_id, %{
                  "datastore" => "users",
                  "test" => %{"name" => "toto"}
                })
@@ -37,7 +39,7 @@ defmodule ApplicationRunner.DataServicesTest do
       Repo.insert(Datastore.new(env_id, %{"name" => "users"}))
 
       assert {:error, :datastore, :datastore_not_found, _changes_so_far} =
-               DataServices.create(-1, %{
+               JsonStorage.create_data(-1, %{
                  "_datastore" => "users",
                  "name" => "toto"
                })
@@ -45,7 +47,7 @@ defmodule ApplicationRunner.DataServicesTest do
 
     test "should return error if datastore name invalid", %{env_id: env_id} do
       assert {:error, :datastore, :datastore_not_found, _changes_so_far} =
-               DataServices.create(env_id, %{
+               JsonStorage.create_data(env_id, %{
                  "_datastore" => "test",
                  "name" => "toto"
                })
@@ -56,13 +58,13 @@ defmodule ApplicationRunner.DataServicesTest do
       {:ok, _inserted_datastore} = Repo.insert(Datastore.new(env_id, %{"name" => "points"}))
 
       {:ok, %{inserted_data: inserted_point}} =
-        DataServices.create(env_id, %{
+        JsonStorage.create_data(env_id, %{
           "_datastore" => "points",
           "score" => "10"
         })
 
       {:ok, %{inserted_data: inserted_data}} =
-        DataServices.create(env_id, %{
+        JsonStorage.create_data(env_id, %{
           "_datastore" => "users",
           "name" => "toto",
           "_refs" => [inserted_point.id]
@@ -78,19 +80,19 @@ defmodule ApplicationRunner.DataServicesTest do
       {:ok, _inserted_datastore} = Repo.insert(Datastore.new(env_id, %{"name" => "points"}))
 
       {:ok, %{inserted_data: inserted_point}} =
-        DataServices.create(env_id, %{
+        JsonStorage.create_data(env_id, %{
           "_datastore" => "points",
           "score" => "10"
         })
 
       {:ok, %{inserted_data: inserted_point_bis}} =
-        DataServices.create(env_id, %{
+        JsonStorage.create_data(env_id, %{
           "_datastore" => "points",
           "score" => "12"
         })
 
       {:ok, %{inserted_data: inserted_data}} =
-        DataServices.create(env_id, %{
+        JsonStorage.create_data(env_id, %{
           "_datastore" => "users",
           "name" => "toto",
           "_refs" => [inserted_point.id, inserted_point_bis.id]
@@ -113,10 +115,10 @@ defmodule ApplicationRunner.DataServicesTest do
       {:ok, _inserted_datastore} = Repo.insert(Datastore.new(env_id, %{"name" => "points"}))
 
       {:ok, %{inserted_data: inserted_user}} =
-        DataServices.create(env_id, %{"_datastore" => "users", "name" => "toto"})
+        JsonStorage.create_data(env_id, %{"_datastore" => "users", "name" => "toto"})
 
       {:ok, %{inserted_data: inserted_data}} =
-        DataServices.create(env_id, %{
+        JsonStorage.create_data(env_id, %{
           "_datastore" => "points",
           "score" => "10",
           "_refBy" => [inserted_user.id]
@@ -133,16 +135,16 @@ defmodule ApplicationRunner.DataServicesTest do
       {:ok, _inserted_datastore} = Repo.insert(Datastore.new(env_id, %{"name" => "points"}))
 
       {:ok, %{inserted_data: inserted_team}} =
-        DataServices.create(env_id, %{"_datastore" => "team", "name" => "test"})
+        JsonStorage.create_data(env_id, %{"_datastore" => "team", "name" => "test"})
 
       {:ok, %{inserted_data: inserted_point}} =
-        DataServices.create(env_id, %{
+        JsonStorage.create_data(env_id, %{
           "_datastore" => "points",
           "scrore" => "10"
         })
 
       {:ok, %{inserted_data: inserted_user}} =
-        DataServices.create(env_id, %{
+        JsonStorage.create_data(env_id, %{
           "_datastore" => "users",
           "name" => "toto",
           "_refs" => [inserted_point.id],
@@ -164,7 +166,7 @@ defmodule ApplicationRunner.DataServicesTest do
 
       assert {:error, "inserted_refs_-1", %{errors: [refs_id: {"does not exist", _constraint}]},
               _change_so_far} =
-               DataServices.create(env_id, %{
+               JsonStorage.create_data(env_id, %{
                  "_datastore" => "users",
                  "name" => "toto",
                  "_refs" => [-1]
@@ -178,7 +180,7 @@ defmodule ApplicationRunner.DataServicesTest do
       assert {:error, "inserted_refBy_-1",
               %{errors: [ref_by_id: {"does not exist", _constraint}]},
               _change_so_far} =
-               DataServices.create(env_id, %{
+               JsonStorage.create_data(env_id, %{
                  "_datastore" => "points",
                  "score" => "10",
                  "_refBy" => [-1]
@@ -191,11 +193,11 @@ defmodule ApplicationRunner.DataServicesTest do
       Repo.insert(Datastore.new(env_id, %{"name" => "users"}))
 
       {:ok, %{inserted_data: inserted_data}} =
-        DataServices.create(env_id, %{"_datastore" => "users", "name" => "toto"})
+        JsonStorage.create_data(env_id, %{"_datastore" => "users", "name" => "toto"})
 
       data = Repo.get(Data, inserted_data.id)
 
-      DataServices.delete(data.id)
+      JsonStorage.delete_data(data.id)
 
       deleted_data = Repo.get(Data, inserted_data.id)
 
@@ -203,7 +205,7 @@ defmodule ApplicationRunner.DataServicesTest do
     end
 
     test "should return error id invalid", %{env_id: _env_id} do
-      assert {:error, :data, :data_not_found, _changes_so_far} = DataServices.delete(-1)
+      assert {:error, :data, :data_not_found, _changes_so_far} = JsonStorage.delete_data(-1)
     end
 
     test "should also remove refence but not referenced data", %{env_id: env_id} do
@@ -211,10 +213,10 @@ defmodule ApplicationRunner.DataServicesTest do
       Repo.insert(Datastore.new(env_id, %{"name" => "points"}))
 
       {:ok, %{inserted_data: inserted_user}} =
-        DataServices.create(env_id, %{"_datastore" => "users", "name" => "toto"})
+        JsonStorage.create_data(env_id, %{"_datastore" => "users", "name" => "toto"})
 
       {:ok, %{inserted_data: inserted_point}} =
-        DataServices.create(env_id, %{
+        JsonStorage.create_data(env_id, %{
           "_datastore" => "users",
           "name" => "toto",
           "_refBy" => [inserted_user.id]
@@ -224,7 +226,7 @@ defmodule ApplicationRunner.DataServicesTest do
 
       assert false == is_nil(Repo.get_by(DataReferences, refs_id: inserted_point.id))
 
-      DataServices.delete(data.id)
+      JsonStorage.delete_data(data.id)
 
       deleted_data = Repo.get(Data, inserted_user.id)
 
@@ -243,11 +245,11 @@ defmodule ApplicationRunner.DataServicesTest do
       Repo.insert(Datastore.new(env_id, %{"name" => "users"}))
 
       {:ok, %{inserted_data: inserted_data}} =
-        DataServices.create(env_id, %{"_datastore" => "users", "name" => "toto"})
+        JsonStorage.create_data(env_id, %{"_datastore" => "users", "name" => "toto"})
 
       data = Repo.get(Data, inserted_data.id)
 
-      DataServices.update(%{"_id" => data.id, "name" => "test"})
+      JsonStorage.update_data(%{"_id" => data.id, "name" => "test"})
 
       updated_data = Repo.get(Data, inserted_data.id)
 
@@ -256,7 +258,7 @@ defmodule ApplicationRunner.DataServicesTest do
 
     test "should return error id invalid", %{env_id: _env_id} do
       assert {:error, :data, :data_not_found, _changes_so_far} =
-               DataServices.update(%{"_id" => -1})
+               JsonStorage.update_data(%{"_id" => -1})
     end
 
     test "should also update refs on update", %{env_id: env_id} do
@@ -264,26 +266,26 @@ defmodule ApplicationRunner.DataServicesTest do
       {:ok, _inserted_datastore} = Repo.insert(Datastore.new(env_id, %{"name" => "points"}))
 
       {:ok, %{inserted_data: inserted_point}} =
-        DataServices.create(env_id, %{
+        JsonStorage.create_data(env_id, %{
           "_datastore" => "points",
           "score" => "10"
         })
 
       {:ok, %{inserted_data: inserted_point_bis}} =
-        DataServices.create(env_id, %{
+        JsonStorage.create_data(env_id, %{
           "_datastore" => "points",
           "score" => "12"
         })
 
       {:ok, %{inserted_data: inserted_data}} =
-        DataServices.create(env_id, %{
+        JsonStorage.create_data(env_id, %{
           "_datastore" => "users",
           "name" => "toto",
           "_refs" => [inserted_point.id]
         })
 
       {:ok, %{data: updated_data}} =
-        DataServices.update(%{
+        JsonStorage.update_data(%{
           "_id" => inserted_data.id,
           "_refs" => [inserted_point_bis.id]
         })
@@ -301,26 +303,26 @@ defmodule ApplicationRunner.DataServicesTest do
       {:ok, _inserted_datastore} = Repo.insert(Datastore.new(env_id, %{"name" => "points"}))
 
       {:ok, %{inserted_data: inserted_data}} =
-        DataServices.create(env_id, %{
+        JsonStorage.create_data(env_id, %{
           "_datastore" => "users",
           "name" => "toto"
         })
 
       {:ok, %{inserted_data: inserted_data_bis}} =
-        DataServices.create(env_id, %{
+        JsonStorage.create_data(env_id, %{
           "_datastore" => "users",
           "name" => "test"
         })
 
       {:ok, %{inserted_data: inserted_point}} =
-        DataServices.create(env_id, %{
+        JsonStorage.create_data(env_id, %{
           "_datastore" => "points",
           "score" => "10",
           "_refBy" => [inserted_data.id]
         })
 
       {:ok, %{data: updated_data}} =
-        DataServices.update(%{
+        JsonStorage.update_data(%{
           "_id" => inserted_point.id,
           "_refBy" => [inserted_data_bis.id]
         })
@@ -339,31 +341,31 @@ defmodule ApplicationRunner.DataServicesTest do
       {:ok, _inserted_datastore} = Repo.insert(Datastore.new(env_id, %{"name" => "points"}))
 
       {:ok, %{inserted_data: inserted_team}} =
-        DataServices.create(env_id, %{
+        JsonStorage.create_data(env_id, %{
           "_datastore" => "team",
           "name" => "team1"
         })
 
       {:ok, %{inserted_data: inserted_team_bis}} =
-        DataServices.create(env_id, %{
+        JsonStorage.create_data(env_id, %{
           "_datastore" => "team",
           "name" => "team2"
         })
 
       {:ok, %{inserted_data: inserted_point}} =
-        DataServices.create(env_id, %{
+        JsonStorage.create_data(env_id, %{
           "_datastore" => "points",
           "name" => "10"
         })
 
       {:ok, %{inserted_data: inserted_point_bis}} =
-        DataServices.create(env_id, %{
+        JsonStorage.create_data(env_id, %{
           "_datastore" => "points",
           "name" => "12"
         })
 
       {:ok, %{inserted_data: inserted_user}} =
-        DataServices.create(env_id, %{
+        JsonStorage.create_data(env_id, %{
           "_datastore" => "users",
           "name" => "toto",
           "_refs" => [inserted_point.id],
@@ -371,7 +373,7 @@ defmodule ApplicationRunner.DataServicesTest do
         })
 
       {:ok, %{data: updated_data}} =
-        DataServices.update(%{
+        JsonStorage.update_data(%{
           "_id" => inserted_user.id,
           "_refs" => [inserted_point_bis.id],
           "_refBy" => [inserted_team_bis.id]
@@ -395,20 +397,20 @@ defmodule ApplicationRunner.DataServicesTest do
       {:ok, _inserted_datastore} = Repo.insert(Datastore.new(env_id, %{"name" => "points"}))
 
       {:ok, %{inserted_data: inserted_point}} =
-        DataServices.create(env_id, %{
+        JsonStorage.create_data(env_id, %{
           "_datastore" => "points",
           "name" => "10"
         })
 
       {:ok, %{inserted_data: inserted_user}} =
-        DataServices.create(env_id, %{
+        JsonStorage.create_data(env_id, %{
           "_datastore" => "users",
           "name" => "toto",
           "_refs" => [inserted_point.id]
         })
 
       {:error, :refs, :references_not_found, _change_so_far} =
-        DataServices.update(%{
+        JsonStorage.update_data(%{
           "_id" => inserted_user.id,
           "_refs" => [-1]
         })
@@ -419,20 +421,20 @@ defmodule ApplicationRunner.DataServicesTest do
       {:ok, _inserted_datastore} = Repo.insert(Datastore.new(env_id, %{"name" => "users"}))
 
       {:ok, %{inserted_data: inserted_team}} =
-        DataServices.create(env_id, %{
+        JsonStorage.create_data(env_id, %{
           "_datastore" => "team",
           "name" => "team1"
         })
 
       {:ok, %{inserted_data: inserted_user}} =
-        DataServices.create(env_id, %{
+        JsonStorage.create_data(env_id, %{
           "_datastore" => "users",
           "name" => "toto",
           "_refBy" => [inserted_team.id]
         })
 
       {:error, :ref_by, :references_not_found, _change_so_far} =
-        DataServices.update(%{
+        JsonStorage.update_data(%{
           "_id" => inserted_user.id,
           "_refBy" => [-1]
         })
@@ -449,26 +451,26 @@ defmodule ApplicationRunner.DataServicesTest do
       {:ok, _inserted_datastore} = Repo.insert(Datastore.new(env_id, %{"name" => "users"}))
 
       {:ok, %{inserted_data: inserted_team}} =
-        DataServices.create(env_id, %{
+        JsonStorage.create_data(env_id, %{
           "_datastore" => "team",
           "name" => "team1"
         })
 
       {:ok, %{inserted_data: inserted_team_bis}} =
-        DataServices.create(environment.id, %{
+        JsonStorage.create_data(environment.id, %{
           "_datastore" => "team2",
           "name" => "team2"
         })
 
       {:ok, %{inserted_data: inserted_user}} =
-        DataServices.create(env_id, %{
+        JsonStorage.create_data(env_id, %{
           "_datastore" => "users",
           "name" => "toto",
           "_refBy" => [inserted_team.id]
         })
 
       {:error, :ref_by, :references_not_found, _change_so_far} =
-        DataServices.update(%{
+        JsonStorage.update_data(%{
           "_id" => inserted_user.id,
           "_refBy" => [inserted_team_bis.id]
         })

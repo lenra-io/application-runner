@@ -1,9 +1,15 @@
-defmodule ApplicationRunner.DataServices do
+defmodule ApplicationRunner.JsonStorage.Services.Data do
   @moduledoc """
     The service that manages actions on data.
   """
 
-  alias ApplicationRunner.{Data, DataQueryViewServices, DataReferences, Datastore}
+  alias ApplicationRunner.JsonStorage.{
+    Data,
+    DataReferences,
+    Datastore,
+    Services
+  }
+
   alias QueryParser.AST.{EctoParser, Parser}
   import Ecto.Query, only: [from: 2]
 
@@ -16,7 +22,7 @@ defmodule ApplicationRunner.DataServices do
   def exec_query(query, env_id, user_id) do
     user_data =
       env_id
-      |> ApplicationRunner.UserDataServices.current_user_data_query(user_id)
+      |> Services.UserData.current_user_data_query(user_id)
       |> @repo.one()
 
     query
@@ -36,13 +42,13 @@ defmodule ApplicationRunner.DataServices do
 
   def get(env_id, ds_name, data_id) do
     env_id
-    |> DataQueryViewServices.get_one(ds_name, data_id)
+    |> Services.DataQueryView.get_one(ds_name, data_id)
     |> @repo.one()
   end
 
   def get_all(env_id, ds_name) do
     env_id
-    |> DataQueryViewServices.get_all(ds_name)
+    |> Services.DataQueryView.get_all(ds_name)
     |> @repo.all()
   end
 
@@ -50,7 +56,7 @@ defmodule ApplicationRunner.DataServices do
     data_id = get_user_data_id(env_id, user_id)
 
     env_id
-    |> DataQueryViewServices.get_one("_users", data_id)
+    |> Services.DataQueryView.get_one("_users", data_id)
     |> @repo.one()
   end
 
@@ -263,7 +269,7 @@ defmodule ApplicationRunner.DataServices do
     end)
   end
 
-  def delete(op), do: Ecto.Multi.new() |> delete(op)
+  def delete(params), do: Ecto.Multi.new() |> delete(params)
 
   def delete(multi, data_id) do
     multi
