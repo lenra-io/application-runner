@@ -1,8 +1,8 @@
-defmodule ApplicationRunner.DataReferencesServices do
+defmodule ApplicationRunner.JsonStorage.Services.DataReferences do
   @moduledoc false
   import Ecto.Query, only: [from: 2]
 
-  alias ApplicationRunner.{Data, DataReferences, Datastore}
+  alias ApplicationRunner.JsonStorage.{Data, DataReferences, Datastore}
 
   @repo Application.compile_env!(:application_runner, :repo)
 

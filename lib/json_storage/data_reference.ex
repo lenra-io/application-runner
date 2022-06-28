@@ -1,4 +1,4 @@
-defmodule ApplicationRunner.DataReferences do
+defmodule ApplicationRunner.JsonStorage.DataReferences do
   @moduledoc """
     The references schema.
   """
@@ -6,7 +6,7 @@ defmodule ApplicationRunner.DataReferences do
   use Ecto.Schema
   import Ecto.Changeset
 
-  alias ApplicationRunner.{Data, DataReferences}
+  alias ApplicationRunner.JsonStorage.{Data, DataReferences}
 
   @derive {Jason.Encoder, only: [:id, :refs_id, :ref_by_id]}
   schema "data_references" do

@@ -6,10 +6,9 @@ defmodule ApplicationRunner.FakeLenraUser do
   use Ecto.Schema
   import Ecto.Changeset
 
-  alias ApplicationRunner.{
-    FakeLenraUser,
-    UserData
-  }
+  alias ApplicationRunner.FakeLenraUser
+
+  alias ApplicationRunner.JsonStorage.UserData
 
   schema "users" do
     has_many(:user_datas, UserData, foreign_key: :user_id)
