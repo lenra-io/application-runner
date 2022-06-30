@@ -9,10 +9,19 @@ defmodule ApplicationRunner.EventHandler do
   #########
   ## API ##
   #########
+
+  @doc """
+    Send async call to application,
+    the call will run listenrs with the given `action` `props` `event`
+  """
   def send_event(handler_pid, state, action, props, event) do
     GenServer.cast(handler_pid, {:send_event, state, action, props, event})
   end
 
+  @doc """
+    Wait for the asynchronous call,
+    this synchronous call will succeed after the asynchronous calls.
+  """
   def subscribe(handler_pid) do
     GenServer.call(handler_pid, :subscribe)
   end
