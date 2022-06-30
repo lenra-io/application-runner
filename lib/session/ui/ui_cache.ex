@@ -1,4 +1,4 @@
-defmodule ApplicationRunner.UiCache do
+defmodule ApplicationRunner.Ui.Cache do
   @moduledoc """
     This is the UI Cache module.
     This cache is started by the SessionSupervisor. It contain the current state of the UI.
@@ -7,7 +7,7 @@ defmodule ApplicationRunner.UiCache do
   """
   use GenServer
 
-  alias ApplicationRunner.{SessionState, SessionSupervisor}
+  alias ApplicationRunner.Session.{State, Supervisor}
 
   def start_link(_) do
     GenServer.start_link(__MODULE__, :ok, [])
@@ -28,8 +28,8 @@ defmodule ApplicationRunner.UiCache do
     end
   end
 
-  def diff_and_save(%SessionState{} = session_state, ui) do
-    pid = SessionSupervisor.fetch_module_pid!(session_state.session_supervisor_pid, __MODULE__)
+  def diff_and_save(%State{} = session_state, ui) do
+    pid = Supervisor.fetch_module_pid!(session_state.session_supervisor_pid, __MODULE__)
     GenServer.call(pid, {:diff_and_save, ui})
   end
 end

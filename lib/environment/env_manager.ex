@@ -5,11 +5,11 @@ defmodule ApplicationRunner.EnvManager do
   use GenServer
 
   alias ApplicationRunner.{
+    ApplicationServices,
     EnvManagers,
     EnvState,
     EnvSupervisor,
-    EventHandler,
-    OpenfaasServices
+    EventHandler
   }
 
   @on_env_start_action "onEnvStart"
@@ -69,7 +69,7 @@ defmodule ApplicationRunner.EnvManager do
       waiting_from: []
     }
 
-    with {:ok, manifest} <- OpenfaasServices.fetch_manifest(env_state),
+    with {:ok, manifest} <- ApplicationServices.fetch_manifest(env_state),
          env_state <- Map.put(env_state, :manifest, manifest) do
       {:ok, env_state, {:continue, :after_init}}
     else

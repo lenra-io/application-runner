@@ -1,4 +1,4 @@
-defmodule ApplicationRunner.OpenfaasServices do
+defmodule ApplicationRunner.ApplicationServices do
   @moduledoc """
     The service that manages calls to an Openfaas action with `run_action/3`
   """
@@ -7,8 +7,7 @@ defmodule ApplicationRunner.OpenfaasServices do
     Environment,
     Environment.EnvironmentStateServices,
     EnvState,
-    Session.SessionStateServices,
-    SessionState
+    Session
   }
 
   require Logger
@@ -42,12 +41,12 @@ defmodule ApplicationRunner.OpenfaasServices do
   end
 
   def run_listener(
-        %SessionState{function_name: function_name, session_id: session_id},
+        %Session.State{function_name: function_name, session_id: session_id},
         action,
         props,
         event
       ) do
-    token = SessionStateServices.fetch_token(session_id)
+    token = Session.fetch_token(session_id)
 
     run_listener(function_name, action, props, event, token)
   end
@@ -93,10 +92,10 @@ defmodule ApplicationRunner.OpenfaasServices do
     end
   end
 
-  @spec fetch_widget(SessionState.t(), String.t(), map(), map()) ::
+  @spec fetch_widget(Session.State.t(), String.t(), map(), map()) ::
           {:ok, map()} | {:error, any()}
   def fetch_widget(
-        %SessionState{function_name: function_name},
+        %Session.State{function_name: function_name},
         widget_name,
         data,
         props

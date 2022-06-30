@@ -23,17 +23,17 @@ defmodule TestModule do
 end
 
 defmodule ApplicationRunner.MyCacheAsync do
-  use ApplicationRunner.CacheAsyncMacro
+  use ApplicationRunner.Cache.AsyncMacro
 end
 
-defmodule ApplicationRunner.CacheMapTest do
+defmodule ApplicationRunner.CacheTest do
   use ExUnit.Case, async: false
 
   @moduledoc """
-    Test the `ApplicationRunner.CacheMapTest` module
+    Test the `ApplicationRunner.CacheTest` module
   """
 
-  doctest ApplicationRunner.CacheMap
+  doctest ApplicationRunner.Cache
 
   alias ApplicationRunner.MyCacheAsync
 

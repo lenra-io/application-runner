@@ -4,23 +4,23 @@ defmodule ApplicationRunner.ListenersCache do
     It save the listener props/action using a hash the value (sha256) as key.
     Then we can retrieve the listener (action/props) by giving the key.
   """
-  use ApplicationRunner.CacheMapMacro
+  use ApplicationRunner.Cache.Macro
 
-  alias ApplicationRunner.{
-    SessionState,
-    SessionSupervisor
+  alias ApplicationRunner.Session.{
+    State,
+    Supervisor
   }
 
-  @spec save_listener(SessionState.t(), String.t(), map()) :: :ok
-  def save_listener(%SessionState{} = session_state, code, listener) do
-    pid = SessionSupervisor.fetch_module_pid!(session_state.session_supervisor_pid, __MODULE__)
+  @spec save_listener(State.t(), String.t(), map()) :: :ok
+  def save_listener(%State{} = session_state, code, listener) do
+    pid = Supervisor.fetch_module_pid!(session_state.session_supervisor_pid, __MODULE__)
     put(pid, code, listener)
     :ok
   end
 
-  @spec fetch_listener(SessionState.t(), String.t()) :: {:ok, map()} | {:error, atom()}
-  def fetch_listener(%SessionState{} = session_state, code) do
-    pid = SessionSupervisor.fetch_module_pid!(session_state.session_supervisor_pid, __MODULE__)
+  @spec fetch_listener(State.t(), String.t()) :: {:ok, map()} | {:error, atom()}
+  def fetch_listener(%State{} = session_state, code) do
+    pid = Supervisor.fetch_module_pid!(session_state.session_supervisor_pid, __MODULE__)
 
     case get(pid, code) do
       nil -> {:error, :no_listener_with_code}

@@ -1,4 +1,4 @@
-defmodule ApplicationRunner.SessionState do
+defmodule ApplicationRunner.Session.State do
   @moduledoc """
     The Action struct.
   """
@@ -13,7 +13,7 @@ defmodule ApplicationRunner.SessionState do
     :assigns
   ]
 
-  @type t :: %ApplicationRunner.SessionState{
+  @type t :: %__MODULE__{
           session_id: integer(),
           env_id: term(),
           user_id: term(),

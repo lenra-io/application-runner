@@ -10,8 +10,7 @@ defmodule ApplicationRunner.SessionManagersTest do
     EnvManagers,
     EventHandler,
     Repo,
-    SessionManagers,
-    SessionSupervisor,
+    Session,
     User
   }
 
@@ -20,7 +19,7 @@ defmodule ApplicationRunner.SessionManagersTest do
 
   setup do
     start_supervised(EnvManagers)
-    start_supervised(SessionManagers)
+    start_supervised(Session.Managers)
 
     bypass = Bypass.open()
 
@@ -69,7 +68,7 @@ defmodule ApplicationRunner.SessionManagersTest do
 
   test "Can start one Session", %{user_id: user_id, env_id: env_id} do
     assert {:ok, pid} =
-             SessionManagers.start_session(
+             Session.start_session(
                Ecto.UUID.generate(),
                env_id,
                %{
@@ -84,7 +83,7 @@ defmodule ApplicationRunner.SessionManagersTest do
              )
 
     assert handler_pid =
-             SessionSupervisor.fetch_module_pid!(
+             Session.Supervisor.fetch_module_pid!(
                :sys.get_state(pid).session_supervisor_pid,
                EventHandler
              )
@@ -104,7 +103,7 @@ defmodule ApplicationRunner.SessionManagersTest do
     |> Enum.to_list()
     |> Enum.each(fn _ ->
       assert {:ok, pid} =
-               SessionManagers.start_session(
+               Session.start_session(
                  Ecto.UUID.generate(),
                  env_id,
                  %{
@@ -119,7 +118,7 @@ defmodule ApplicationRunner.SessionManagersTest do
                )
 
       assert handler_pid =
-               SessionSupervisor.fetch_module_pid!(
+               Session.Supervisor.fetch_module_pid!(
                  :sys.get_state(pid).session_supervisor_pid,
                  EventHandler
                )
@@ -137,10 +136,10 @@ defmodule ApplicationRunner.SessionManagersTest do
 
   test "Can start one session and get it after", %{user_id: user_id, env_id: env_id} do
     session_id = Ecto.UUID.generate()
-    assert {:error, :session_not_started} = SessionManagers.fetch_session_manager_pid(session_id)
+    assert {:error, :session_not_started} = Session.Managers.fetch_session_manager_pid(session_id)
 
     assert {:ok, pid} =
-             SessionManagers.start_session(
+             Session.start_session(
                session_id,
                env_id,
                %{
@@ -154,10 +153,10 @@ defmodule ApplicationRunner.SessionManagersTest do
                }
              )
 
-    assert {:ok, ^pid} = SessionManagers.fetch_session_manager_pid(session_id)
+    assert {:ok, ^pid} = Session.Managers.fetch_session_manager_pid(session_id)
 
     assert handler_pid =
-             SessionSupervisor.fetch_module_pid!(
+             Session.Supervisor.fetch_module_pid!(
                :sys.get_state(pid).session_supervisor_pid,
                EventHandler
              )
@@ -176,7 +175,7 @@ defmodule ApplicationRunner.SessionManagersTest do
     session_id = Ecto.UUID.generate()
 
     assert {:ok, pid} =
-             SessionManagers.start_session(
+             Session.start_session(
                session_id,
                env_id,
                %{
@@ -191,7 +190,7 @@ defmodule ApplicationRunner.SessionManagersTest do
              )
 
     assert handler_pid =
-             SessionSupervisor.fetch_module_pid!(
+             Session.Supervisor.fetch_module_pid!(
                :sys.get_state(pid).session_supervisor_pid,
                EventHandler
              )
@@ -206,7 +205,7 @@ defmodule ApplicationRunner.SessionManagersTest do
     assert_receive({:send, :ui, @ui})
 
     assert {:error, {:already_started, ^pid}} =
-             SessionManagers.start_session(
+             Session.start_session(
                session_id,
                env_id,
                %{

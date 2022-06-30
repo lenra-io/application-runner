@@ -1,7 +1,7 @@
-defmodule ApplicationRunner.CacheMap do
+defmodule ApplicationRunner.Cache do
   @moduledoc """
-    This is a simple use of the CacheMapMacro.
+    This is a simple use of the Cache.Macro.
     This is used by the CacheAsyncMacro.
   """
-  use ApplicationRunner.CacheMapMacro
+  use ApplicationRunner.Cache.Macro
 end

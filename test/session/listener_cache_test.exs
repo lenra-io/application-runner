@@ -7,8 +7,7 @@ defmodule ApplicationRunner.ListenerCacheTest do
     EventHandler,
     ListenersCache,
     Repo,
-    SessionManagers,
-    SessionSupervisor,
+    Session,
     User
   }
 
@@ -17,7 +16,7 @@ defmodule ApplicationRunner.ListenerCacheTest do
 
   setup do
     start_supervised(EnvManagers)
-    start_supervised(SessionManagers)
+    start_supervised(Session.Managers)
     start_supervised({Finch, name: AppHttp})
 
     {:ok, env} = Repo.insert(Environment.new())
@@ -35,7 +34,7 @@ defmodule ApplicationRunner.ListenerCacheTest do
     Application.put_env(:application_runner, :faas_url, "http://localhost:#{bypass.port}")
 
     {:ok, pid} =
-      SessionManagers.start_session(
+      Session.Managers.start_session(
         Ecto.UUID.generate(),
         env.id,
         %{
@@ -50,7 +49,7 @@ defmodule ApplicationRunner.ListenerCacheTest do
       )
 
     assert handler_pid =
-             SessionSupervisor.fetch_module_pid!(
+             Session.Supervisor.fetch_module_pid!(
                :sys.get_state(pid).session_supervisor_pid,
                EventHandler
              )

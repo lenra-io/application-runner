@@ -1,4 +1,4 @@
-defmodule ApplicationRunner.CacheAsyncMacro do
+defmodule ApplicationRunner.Cache.AsyncMacro do
   @moduledoc """
     This is a using macro to create a function cache.
     Every function called with `call_function(pid, module, function_name, args)` is called only once for the same module/name/args.
@@ -7,14 +7,14 @@ defmodule ApplicationRunner.CacheAsyncMacro do
     - If the first call is done, the result is sent directly.
 
     ```
-      use ApplicationRunner.CacheMapMacro
+      use ApplicationRunner.Cache.Macro
     ```
   """
   defmacro __using__(_opts) do
     quote do
       use GenServer
 
-      alias ApplicationRunner.CacheMap
+      alias ApplicationRunner.Cache
       require Logger
 
       def start_link(_) do
@@ -30,7 +30,7 @@ defmodule ApplicationRunner.CacheAsyncMacro do
       end
 
       def init(_) do
-        {:ok, cache_pid} = CacheMap.start_link(nil)
+        {:ok, cache_pid} = Cache.start_link(nil)
         Process.link(cache_pid)
         state = %{cache_pid: cache_pid, from_map: %{}}
         {:ok, state}
@@ -39,13 +39,13 @@ defmodule ApplicationRunner.CacheAsyncMacro do
       def handle_call({:cache_function, module, function_name, args, key}, from, state) do
         from_list = Map.get(state.from_map, key, [])
 
-        case CacheMap.get(state.cache_pid, key) do
+        case Cache.get(state.cache_pid, key) do
           nil ->
             Logger.debug(
               "Cache function #{module}.#{function_name}: #{key} does not exists, Calling function."
             )
 
-            CacheMap.put(state.cache_pid, key, {:pending, nil})
+            Cache.put(state.cache_pid, key, {:pending, nil})
 
             {
               :noreply,
@@ -77,7 +77,7 @@ defmodule ApplicationRunner.CacheAsyncMacro do
       end
 
       def handle_cast(:clear, state) do
-        CacheMap.clear(state.cache_pid)
+        Cache.clear(state.cache_pid)
         {:noreply, state}
       end
 
@@ -88,11 +88,11 @@ defmodule ApplicationRunner.CacheAsyncMacro do
           res =
             case apply(module, function_name, args) do
               {:ok, _} = res ->
-                CacheMap.put(state.cache_pid, key, {:done, res})
+                Cache.put(state.cache_pid, key, {:done, res})
                 res
 
               res ->
-                CacheMap.put(state.cache_pid, key, nil)
+                Cache.put(state.cache_pid, key, nil)
                 res
             end
 

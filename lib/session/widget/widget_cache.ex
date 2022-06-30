@@ -1,4 +1,4 @@
-defmodule ApplicationRunner.WidgetCache do
+defmodule ApplicationRunner.Widget.Cache do
   @moduledoc """
     This module handles the recursive widget building.
     It is called by the SessionManager and calls ListenerCache to cache the listeners.
@@ -6,18 +6,19 @@ defmodule ApplicationRunner.WidgetCache do
     This module caches every call to the get_and_build_widget.
     This means that every widget with the same name/data/props is get/build only once.
   """
-  use ApplicationRunner.CacheAsyncMacro
+  use ApplicationRunner.Cache.AsyncMacro
 
   alias ApplicationRunner.{
+    ApplicationServices,
     JsonSchemata,
     JsonStorage,
     ListenersCache,
-    OpenfaasServices,
-    SessionState,
-    SessionSupervisor,
-    UiContext,
-    WidgetContext
+    Session,
+    Ui,
+    Widget
   }
+
+  alias ApplicationRunner.Session.Supervisor
 
   alias QueryParser.AST
 
@@ -26,9 +27,9 @@ defmodule ApplicationRunner.WidgetCache do
   @type error_tuple :: {String.t(), String.t()}
   @type build_errors :: list(error_tuple())
 
-  @spec clear_cache(SessionState.t()) :: :ok
-  def clear_cache(%SessionState{} = session_state) do
-    pid = SessionSupervisor.fetch_module_pid!(session_state.session_supervisor_pid, __MODULE__)
+  @spec clear_cache(Session.State.t()) :: :ok
+  def clear_cache(%Session.State{} = session_state) do
+    pid = Supervisor.fetch_module_pid!(session_state.session_supervisor_pid, __MODULE__)
 
     clear(pid)
   end
@@ -36,13 +37,13 @@ defmodule ApplicationRunner.WidgetCache do
   @doc """
     Call the Adapter to get the Widget corresponding to the given the `WidgetContext`
   """
-  @spec get_widget(SessionState.t(), WidgetContext.t()) :: {:ok, map()} | {:error, any()}
-  def get_widget(%SessionState{} = session_state, %WidgetContext{} = current_widget) do
-    pid = SessionSupervisor.fetch_module_pid!(session_state.session_supervisor_pid, __MODULE__)
+  @spec get_widget(Session.State.t(), Widget.Context.t()) :: {:ok, map()} | {:error, any()}
+  def get_widget(%Session.State{} = session_state, %Widget.Context{} = current_widget) do
+    pid = Supervisor.fetch_module_pid!(session_state.session_supervisor_pid, __MODULE__)
 
     cache_function(
       pid,
-      OpenfaasServices,
+      ApplicationServices,
       :fetch_widget,
       [
         session_state,
@@ -58,12 +59,12 @@ defmodule ApplicationRunner.WidgetCache do
     Call the `get_and_build_widget_cached/3` function and cache the result.
     All subsequent call of this function with the same arguments will return the same old cached result.
   """
-  @spec get_and_build_widget(SessionState.t(), UiContext.t(), WidgetContext.t()) ::
-          {:ok, UiContext.t()} | {:error, any()}
+  @spec get_and_build_widget(Session.State.t(), Ui.Context.t(), Widget.Context.t()) ::
+          {:ok, Ui.Context.t()} | {:error, any()}
   def get_and_build_widget(
-        %SessionState{} = session_state,
-        %UiContext{} = ui_context,
-        %WidgetContext{} = current_widget
+        %Session.State{} = session_state,
+        %Ui.Context{} = ui_context,
+        %Widget.Context{} = current_widget
       ) do
     with {:ok, widget} <- get_widget(session_state, current_widget),
          {:ok, component, new_app_context} <-
@@ -77,8 +78,8 @@ defmodule ApplicationRunner.WidgetCache do
     If the component type is "widget" this is considered a Widget and will be handled like one.
     Everything else will be handled as a simple component.
   """
-  @spec build_component(SessionState.t(), widget_ui(), UiContext.t(), WidgetContext.t()) ::
-          {:ok, component(), UiContext.t()} | {:error, build_errors()}
+  @spec build_component(Session.State.t(), widget_ui(), Ui.Context.t(), Widget.Context.t()) ::
+          {:ok, component(), Ui.Context.t()} | {:error, build_errors()}
   def build_component(
         session_state,
         %{"type" => comp_type} = component,
@@ -104,8 +105,8 @@ defmodule ApplicationRunner.WidgetCache do
     - Create a new WidgetContext corresponding to the Widget
     - Recursively get_and_build_widget.
   """
-  @spec handle_widget(SessionState.t(), widget_ui(), UiContext.t(), WidgetContext.t()) ::
-          {:ok, component(), UiContext.t()}
+  @spec handle_widget(Session.State.t(), widget_ui(), Ui.Context.t(), Widget.Context.t()) ::
+          {:ok, component(), Ui.Context.t()}
   def handle_widget(session_state, component, ui_context, widget_context) do
     name = Map.get(component, "name")
     props = Map.get(component, "props")
@@ -121,7 +122,7 @@ defmodule ApplicationRunner.WidgetCache do
 
     id = generate_widget_id(name, data, props)
 
-    new_widget_context = %WidgetContext{
+    new_widget_context = %Widget.Context{
       id: id,
       name: name,
       data: data,
@@ -145,10 +146,16 @@ defmodule ApplicationRunner.WidgetCache do
       - Build all listeners
       - Then merge all children/child context/widget with the current one.
   """
-  @spec handle_component(SessionState.t(), component(), UiContext.t(), WidgetContext.t(), map()) ::
-          {:ok, component(), UiContext.t()} | {:error, build_errors()}
+  @spec handle_component(
+          Session.State.t(),
+          component(),
+          Ui.Context.t(),
+          Widget.Context.t(),
+          map()
+        ) ::
+          {:ok, component(), Ui.Context.t()} | {:error, build_errors()}
   def handle_component(
-        %SessionState{} = session_state,
+        %Session.State{} = session_state,
         component,
         ui_context,
         widget_context,
@@ -166,7 +173,7 @@ defmodule ApplicationRunner.WidgetCache do
            build_child_list(session_state, component, child_keys, ui_context, widget_context),
          {:ok, listeners_map} <-
            build_listeners(session_state, component, listeners_keys) do
-      new_context = %UiContext{
+      new_context = %Ui.Context{
         widgets_map:
           Map.merge(merged_child_ui_context.widgets_map, merged_children_ui_context.widgets_map),
         listeners_map:
@@ -189,9 +196,9 @@ defmodule ApplicationRunner.WidgetCache do
     Returns the data needed for the component to build.
     If there is a validation error, return the `{:error, build_errors}` tuple.
   """
-  @spec validate_with_error(String.t(), component(), WidgetContext.t()) ::
+  @spec validate_with_error(String.t(), component(), Widget.Context.t()) ::
           {:error, list} | {:ok, map()}
-  def validate_with_error(schema_path, component, %WidgetContext{prefix_path: prefix_path}) do
+  def validate_with_error(schema_path, component, %Widget.Context{prefix_path: prefix_path}) do
     with {:ok, %{schema: schema} = schema_map} <- JsonSchemata.get_schema_map(schema_path),
          :ok <- ExComponentSchema.Validator.validate(schema, component) do
       {:ok, schema_map}
@@ -210,13 +217,13 @@ defmodule ApplicationRunner.WidgetCache do
     Return {:error, build_errors} in case of any failure in one child.
   """
   @spec build_child_list(
-          SessionState.t(),
+          Session.State.t(),
           component(),
           list(String.t()),
-          UiContext.t(),
-          WidgetContext.t()
+          Ui.Context.t(),
+          Widget.Context.t()
         ) ::
-          {:ok, map(), UiContext.t()} | {:error, build_errors()}
+          {:ok, map(), Ui.Context.t()} | {:error, build_errors()}
   def build_child_list(
         session_state,
         component,
@@ -235,7 +242,7 @@ defmodule ApplicationRunner.WidgetCache do
          component,
          child_list,
          ui_context,
-         %WidgetContext{prefix_path: prefix_path} = widget_context
+         %Widget.Context{prefix_path: prefix_path} = widget_context
        ) do
     Enum.reduce(
       child_list,
@@ -297,19 +304,19 @@ defmodule ApplicationRunner.WidgetCache do
     Return {:error, build_errors} in case of any failure in one children list.
   """
   @spec build_children_list(
-          SessionState.t(),
+          Session.State.t(),
           component(),
           list(),
-          UiContext.t(),
-          WidgetContext.t()
+          Ui.Context.t(),
+          Widget.Context.t()
         ) ::
-          {:ok, map(), UiContext.t()} | {:error, build_errors()}
+          {:ok, map(), Ui.Context.t()} | {:error, build_errors()}
   def build_children_list(
         session_state,
         component,
         children_keys,
-        %UiContext{} = ui_context,
-        %WidgetContext{prefix_path: prefix_path} = widget_context
+        %Ui.Context{} = ui_context,
+        %Widget.Context{prefix_path: prefix_path} = widget_context
       ) do
     Enum.reduce(children_keys, {%{}, ui_context, []}, fn children_key,
                                                          {children_map, app_context_acc, errors} =
@@ -347,8 +354,8 @@ defmodule ApplicationRunner.WidgetCache do
   @doc """
     This will build a child list (children).
   """
-  @spec build_children(SessionState.t(), map, String.t(), UiContext.t(), WidgetContext.t()) ::
-          {:error, list(error_tuple())} | {:ok, list(component()), UiContext.t()}
+  @spec build_children(Session.State.t(), map, String.t(), Ui.Context.t(), Widget.Context.t()) ::
+          {:error, list(error_tuple())} | {:ok, list(component()), Ui.Context.t()}
   def build_children(session_state, component, children_key, ui_context, widget_context) do
     case Map.get(component, children_key) do
       nil ->
@@ -363,7 +370,7 @@ defmodule ApplicationRunner.WidgetCache do
          session_state,
          children,
          ui_context,
-         %WidgetContext{prefix_path: prefix_path} = widget_context
+         %Widget.Context{prefix_path: prefix_path} = widget_context
        ) do
     children
     |> Enum.with_index()
@@ -404,7 +411,7 @@ defmodule ApplicationRunner.WidgetCache do
     )
   end
 
-  @spec build_listeners(SessionState.t(), component(), list(String.t())) ::
+  @spec build_listeners(Session.State.t(), component(), list(String.t())) ::
           {:ok, map()} | {:error, list()}
   defp build_listeners(session_state, component, listeners) do
     Enum.reduce(listeners, {:ok, %{}}, fn listener, {:ok, acc} ->
@@ -415,7 +422,7 @@ defmodule ApplicationRunner.WidgetCache do
     end)
   end
 
-  @spec build_listener(SessionState.t(), map()) :: {:ok, map()}
+  @spec build_listener(Session.State.t(), map()) :: {:ok, map()}
   defp build_listener(session_state, listener) do
     case listener do
       %{"action" => action_code} ->

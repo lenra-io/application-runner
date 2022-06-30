@@ -1,4 +1,4 @@
-defmodule ApplicationRunner.WidgetContext do
+defmodule ApplicationRunner.Widget.Context do
   @moduledoc """
     The Widget context struct from the developer application.
   """
@@ -11,7 +11,7 @@ defmodule ApplicationRunner.WidgetContext do
     :prefix_path
   ]
 
-  @type t :: %ApplicationRunner.WidgetContext{
+  @type t :: %__MODULE__{
           id: String.t(),
           name: String.t(),
           data: list(map()) | map() | nil,

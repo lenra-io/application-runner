@@ -4,7 +4,7 @@ defmodule ApplicationRunner.EventHandler do
   """
   use GenServer
 
-  alias ApplicationRunner.OpenfaasServices
+  alias ApplicationRunner.ApplicationServices
 
   #########
   ## API ##
@@ -35,7 +35,7 @@ defmodule ApplicationRunner.EventHandler do
     current = self()
 
     spawn(fn ->
-      res = OpenfaasServices.run_listener(state, action, props, event)
+      res = ApplicationServices.run_listener(state, action, props, event)
       send(current, {:run_listener_result, res, action})
     end)
 
