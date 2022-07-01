@@ -1,12 +1,10 @@
-defmodule ApplicationRunner.User do
+defmodule ApplicationRunner.Lenra.User do
   @moduledoc """
     The user schema.
   """
 
   use Ecto.Schema
   import Ecto.Changeset
-
-  alias ApplicationRunner.User
 
   alias ApplicationRunner.JsonStorage.UserData
 
@@ -32,7 +30,7 @@ defmodule ApplicationRunner.User do
       end
 
     changeset =
-      %User{}
+      %__MODULE__{}
       |> cast(user_map, [:id, :email, :inserted_at, :updated_at])
       |> validate_required([:id, :email, :inserted_at, :updated_at])
       |> unique_constraint(:email)
@@ -46,9 +44,9 @@ defmodule ApplicationRunner.User do
   end
 
   def new(email) do
-    %User{
+    %__MODULE__{
       email: email
     }
-    |> User.changeset()
+    |> __MODULE__.changeset()
   end
 end

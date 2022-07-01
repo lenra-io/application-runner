@@ -6,13 +6,17 @@ defmodule ApplicationRunner.SessionManagerTest do
   """
 
   alias ApplicationRunner.{
-    Environment,
-    EnvManagers,
     EventHandler,
     MockGenServer,
     Repo,
     SessionManagers,
-    SessionSupervisor,
+    SessionSupervisor
+  }
+
+  alias ApplicationRunner.Environment.Managers
+
+  alias ApplicationRunner.Lenra.{
+    Environment,
     User
   }
 
@@ -20,7 +24,7 @@ defmodule ApplicationRunner.SessionManagerTest do
   @ui %{"root" => %{"children" => [], "type" => "flex"}}
 
   setup do
-    start_supervised(EnvManagers)
+    start_supervised(Managers)
     start_supervised(SessionManagers)
 
     {:ok, env} = Repo.insert(Environment.new())

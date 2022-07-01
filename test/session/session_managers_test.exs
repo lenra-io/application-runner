@@ -6,12 +6,16 @@ defmodule ApplicationRunner.SessionManagersTest do
   """
 
   alias ApplicationRunner.{
-    Environment,
-    EnvManagers,
     EventHandler,
     Repo,
     SessionManagers,
-    SessionSupervisor,
+    SessionSupervisor
+  }
+
+  alias ApplicationRunner.Environment.Managers
+
+  alias ApplicationRunner.Lenra.{
+    Environment,
     User
   }
 
@@ -19,7 +23,7 @@ defmodule ApplicationRunner.SessionManagersTest do
   @ui %{"root" => %{"children" => [], "type" => "flex"}}
 
   setup do
-    start_supervised(EnvManagers)
+    start_supervised(Managers)
     start_supervised(SessionManagers)
 
     bypass = Bypass.open()

@@ -10,7 +10,7 @@ defmodule ApplicationRunner.Application do
     children = [
       # Start the json validator server for the UI
       ApplicationRunner.JsonSchemata,
-      ApplicationRunner.EnvManagers,
+      ApplicationRunner.Environment.Managers,
       ApplicationRunner.SessionManagers,
       {Finch,
        name: AppHttp,

@@ -1,4 +1,4 @@
-defmodule ApplicationRunner.EnvState do
+defmodule ApplicationRunner.Environment.State do
   @moduledoc """
     The Action struct.
   """
@@ -14,7 +14,7 @@ defmodule ApplicationRunner.EnvState do
     :waiting_from
   ]
 
-  @type t :: %ApplicationRunner.EnvState{
+  @type t :: %__MODULE__{
           env_id: term(),
           function_name: term(),
           manifest: map() | nil,

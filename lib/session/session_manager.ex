@@ -7,7 +7,7 @@ defmodule ApplicationRunner.SessionManager do
   require Logger
 
   alias ApplicationRunner.{
-    EnvManager,
+    Environment,
     EventHandler,
     JsonStorage,
     ListenersCache,
@@ -87,7 +87,7 @@ defmodule ApplicationRunner.SessionManager do
 
     first_time_user = JsonStorage.has_user_data?(env_id, user_id)
 
-    with :ok <- EnvManager.wait_until_ready(env_id),
+    with :ok <- Environment.wait_until_ready(env_id),
          :ok <- create_user_data_if_needed(session_state, first_time_user),
          :ok <- send_on_session_start_event(session_state) do
       {:ok, session_state, session_state.inactivity_timeout}
@@ -120,7 +120,7 @@ defmodule ApplicationRunner.SessionManager do
   def handle_info({:event_finished, action, result}, session_state) do
     case {action, result} do
       {@on_session_start_action, :ok} ->
-        EnvManager.reload_all_ui(session_state.env_id)
+        Environment.reload_all_ui(session_state.env_id)
         :ok
 
       {@on_session_start_action, _} ->
@@ -128,7 +128,7 @@ defmodule ApplicationRunner.SessionManager do
         :ok
 
       {_, :ok} ->
-        EnvManager.reload_all_ui(session_state.env_id)
+        Environment.reload_all_ui(session_state.env_id)
         :ok
 
       {a, :error404} when a in @optional_handler_actions ->
@@ -146,7 +146,7 @@ defmodule ApplicationRunner.SessionManager do
 
   def handle_info(:data_changed, %SessionState{} = session_state) do
     with %{"rootWidget" => root_widget} <-
-           EnvManager.get_manifest(session_state.env_id),
+           Environment.get_manifest(session_state.env_id),
          {:ok, ui} <- get_and_build_ui(session_state, root_widget) do
       transformed_ui = transform_ui(ui)
       res = UiCache.diff_and_save(session_state, transformed_ui)

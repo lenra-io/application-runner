@@ -1,10 +1,10 @@
-defmodule ApplicationRunner.EnvSupervisor do
+defmodule ApplicationRunner.Environment.Supervisor do
   @moduledoc """
     This module handles the children module of an AppManager.
   """
   use Supervisor
 
-  alias ApplicationRunner.EnvManagers
+  alias ApplicationRunner.Environment.Managers
 
   @doc """
     return the app-level module.
@@ -26,7 +26,7 @@ defmodule ApplicationRunner.EnvSupervisor do
   end
 
   def fetch_module_pid!(env_id, module_name) do
-    with {:ok, env_manager_pid} <- EnvManagers.fetch_env_manager_pid(env_id),
+    with {:ok, env_manager_pid} <- Managers.fetch_env_manager_pid(env_id),
          env_supervisor_pid <- GenServer.call(env_manager_pid, :fetch_env_supervisor_pid!) do
       fetch_module_pid!(env_supervisor_pid, module_name)
     end
@@ -42,7 +42,7 @@ defmodule ApplicationRunner.EnvSupervisor do
     children =
       [
         ApplicationRunner.EventHandler,
-        {ApplicationRunner.Environment.TokenAgent, opts}
+        {ApplicationRunner.Environment.Token.Agent, opts}
       ] ++ get_additionnal_modules(opts)
 
     Supervisor.init(children, strategy: :one_for_one)
