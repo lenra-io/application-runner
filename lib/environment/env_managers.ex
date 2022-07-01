@@ -1,11 +1,11 @@
-defmodule ApplicationRunner.EnvManagers do
+defmodule ApplicationRunner.Environment.Managers do
   @moduledoc """
     This module manages all the applications.
     It can start/stop an `EnvManager`, get the `EnvManager` process, send a message to all the `EnvManager`, etc..
   """
   use DynamicSupervisor
 
-  alias ApplicationRunner.EnvManagers
+  alias ApplicationRunner.Environment.Managers
 
   @doc false
   def start_link(opts) do
@@ -42,8 +42,8 @@ defmodule ApplicationRunner.EnvManagers do
           {:error, {:already_started, pid()}} | {:ok, pid()} | {:error, atom | bitstring}
   def start_env(env_id, env_state) do
     DynamicSupervisor.start_child(
-      EnvManagers,
-      {ApplicationRunner.EnvManager, [env_id: env_id, env_state: env_state]}
+      __MODULE__,
+      {ApplicationRunner.Environment.Manager, [env_id: env_id, env_state: env_state]}
     )
   end
 
@@ -52,7 +52,7 @@ defmodule ApplicationRunner.EnvManagers do
   """
   @spec ensure_env_started(number(), term()) :: {:ok, pid} | {:error, atom | bitstring}
   def ensure_env_started(env_id, env_state) do
-    case EnvManagers.start_env(env_id, env_state) do
+    case Managers.start_env(env_id, env_state) do
       {:ok, pid} -> {:ok, pid}
       {:error, message} when is_atom(message) or is_bitstring(message) -> {:error, message}
       {:error, {:already_started, pid}} -> {:ok, pid}
@@ -71,6 +71,6 @@ defmodule ApplicationRunner.EnvManagers do
   end
 
   def terminate_app(app_manager_pid) do
-    DynamicSupervisor.terminate_child(ApplicationRunner.EnvManagers, app_manager_pid)
+    DynamicSupervisor.terminate_child(__MODULE__, app_manager_pid)
   end
 end

@@ -5,7 +5,7 @@ defmodule ApplicationRunner.Session.Managers do
   """
   use DynamicSupervisor
 
-  alias ApplicationRunner.{EnvManagers, Session}
+  alias ApplicationRunner.{Environment, Session}
 
   def start_link(opts) do
     DynamicSupervisor.start_link(__MODULE__, opts, name: __MODULE__)
@@ -26,7 +26,7 @@ defmodule ApplicationRunner.Session.Managers do
   @spec start_session(term(), term(), term(), term()) ::
           {:error, any} | {:ok, pid()}
   def start_session(session_id, env_id, session_state, env_state) do
-    with {:ok, _pid} <- EnvManagers.ensure_env_started(env_id, env_state) do
+    with {:ok, _pid} <- Environment.ensure_env_started(env_id, env_state) do
       DynamicSupervisor.start_child(
         ApplicationRunner.Session.Managers,
         {Session.Manager, [env_id: env_id, session_id: session_id, session_state: session_state]}

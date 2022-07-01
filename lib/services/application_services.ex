@@ -5,7 +5,7 @@ defmodule ApplicationRunner.ApplicationServices do
 
   alias ApplicationRunner.{
     Environment,
-    Environment.EnvironmentStateServices,
+    Environment.Token,
     EnvState,
     Session
   }
@@ -30,12 +30,12 @@ defmodule ApplicationRunner.ApplicationServices do
   """
 
   def run_listener(
-        %EnvState{function_name: function_name, env_id: env_id},
+        %Environment.State{function_name: function_name, env_id: env_id},
         action,
         props,
         event
       ) do
-    token = EnvironmentStateServices.fetch_token(env_id)
+    token = Token.fetch_token(env_id)
 
     run_listener(function_name, action, props, event, token)
   end
@@ -125,8 +125,8 @@ defmodule ApplicationRunner.ApplicationServices do
   #     when is_nil(environment.deployed_build),
   #     do: {:error, :environement_not_build}
 
-  @spec fetch_manifest(EnvState.t()) :: {:ok, map()} | {:error, any()} | :error404
-  def fetch_manifest(%EnvState{function_name: function_name}) do
+  @spec fetch_manifest(Environment.State.t()) :: {:ok, map()} | {:error, any()} | :error404
+  def fetch_manifest(%Environment.State{function_name: function_name}) do
     {base_url, base_headers} = get_http_context()
 
     url = "#{base_url}/function/#{function_name}"

@@ -5,9 +5,10 @@ defmodule ApplicationRunner.FakeLenraUserTest do
 
   alias ApplicationRunner.{
     FakeLenraUser,
-    Repo,
-    User
+    Repo
   }
+
+  alias ApplicationRunner.Lenra.User
 
   test "get on embeded schema should return same user" do
     user =

@@ -1,4 +1,4 @@
-defmodule ApplicationRunner.Environment do
+defmodule ApplicationRunner.Lenra.Environment do
   @moduledoc """
     The environment schema.
   """
@@ -30,7 +30,7 @@ defmodule ApplicationRunner.Environment do
       end
 
     changeset =
-      %Environment{}
+      %__MODULE__{}
       |> cast(environment_map, [:id, :inserted_at, :updated_at])
       |> validate_required([:id, :inserted_at, :updated_at])
       |> unique_constraint(:id)
@@ -43,7 +43,7 @@ defmodule ApplicationRunner.Environment do
   end
 
   def new do
-    %Environment{}
-    |> Environment.changeset()
+    %__MODULE__{}
+    |> __MODULE__.changeset()
   end
 end

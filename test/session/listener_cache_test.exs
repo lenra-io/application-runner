@@ -2,12 +2,16 @@ defmodule ApplicationRunner.ListenerCacheTest do
   use ApplicationRunner.RepoCase, async: false
 
   alias ApplicationRunner.{
-    Environment,
-    EnvManagers,
     EventHandler,
     ListenersCache,
     Repo,
-    Session,
+    Session
+  }
+
+  alias ApplicationRunner.Environment.Managers
+
+  alias ApplicationRunner.Lenra.{
+    Environment,
     User
   }
 
@@ -15,7 +19,7 @@ defmodule ApplicationRunner.ListenerCacheTest do
   @ui %{"root" => %{"children" => [], "type" => "flex"}}
 
   setup do
-    start_supervised(EnvManagers)
+    start_supervised(Managers)
     start_supervised(Session.Managers)
     start_supervised({Finch, name: AppHttp})
 

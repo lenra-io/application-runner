@@ -4,7 +4,7 @@ defmodule ApplicationRunner.FakeLenraEnvironmentTest do
   use ApplicationRunner.RepoCase
 
   alias ApplicationRunner.{
-    Environment,
+    Lenra.Environment,
     FakeLenraEnvironment,
     Repo
   }

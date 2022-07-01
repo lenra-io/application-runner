@@ -7,9 +7,8 @@ defmodule ApplicationRunner.Guardian.AppGuardian do
 
   alias ApplicationRunner.{
     Environment,
-    Environment.EnvironmentStateServices,
     Session,
-    User
+    Lenra
   }
 
   @repo Application.compile_env(:application_runner, :repo)
@@ -19,14 +18,14 @@ defmodule ApplicationRunner.Guardian.AppGuardian do
   end
 
   def resource_from_claims(%{"user_id" => user_id, "env_id" => env_id}) do
-    with env <- @repo.get(Environment, env_id),
-         user <- @repo.get(User, user_id) do
+    with env <- @repo.get(Lenra.Environment, env_id),
+         user <- @repo.get(Lenra.User, user_id) do
       {:ok, %{environment: env, user: user}}
     end
   end
 
   def resource_from_claims(%{"env_id" => env_id}) do
-    with env <- @repo.get(Environment, env_id) do
+    with env <- @repo.get(Lenra.Environment, env_id) do
       {:ok, %{environment: env}}
     end
   end
@@ -46,7 +45,7 @@ defmodule ApplicationRunner.Guardian.AppGuardian do
         Session.fetch_token(claims["sub"])
 
       "env" ->
-        EnvironmentStateServices.fetch_token(String.to_integer(claims["sub"]))
+        Environment.Token.fetch_token(String.to_integer(claims["sub"]))
 
       _err ->
         :error
