@@ -24,7 +24,7 @@ defmodule ApplicationRunner.Session do
 
   @doc """
     Send an async call to the application,
-    The call will run listners for the given code `code` ans `event`
+    The call will run listeners for the given code `code` and `event`
 
     Returns :ok
   """
