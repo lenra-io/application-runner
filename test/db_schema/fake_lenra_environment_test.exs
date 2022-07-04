@@ -4,10 +4,11 @@ defmodule ApplicationRunner.FakeLenraEnvironmentTest do
   use ApplicationRunner.RepoCase
 
   alias ApplicationRunner.{
-    Lenra.Environment,
     FakeLenraEnvironment,
     Repo
   }
+
+  alias ApplicationRunner.Lenra.Environment
 
   test "get on embeded schema should return same user" do
     user =
