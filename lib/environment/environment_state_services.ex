@@ -6,8 +6,8 @@ defmodule ApplicationRunner.Environment.Token do
   alias ApplicationRunner.Guardian.AppGuardian
 
   alias ApplicationRunner.Environment.{
-    Token,
-    Supervisor
+    Supervisor,
+    Token
   }
 
   def create_token(env_id) do

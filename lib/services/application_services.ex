@@ -51,7 +51,7 @@ defmodule ApplicationRunner.ApplicationServices do
     run_listener(function_name, action, props, event, token)
   end
 
-  @spec run_listener(Environment.t(), String.t(), map(), map(), String.t()) ::
+  @spec run_listener(Environment.State.t(), String.t(), map(), map(), String.t()) ::
           {:ok, map()} | {:error, any()}
   defp run_listener(
          function_name,
