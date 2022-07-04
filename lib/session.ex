@@ -4,7 +4,7 @@ defmodule ApplicationRunner.Session do
   """
 
   @doc """
-    Fecth the current token for the given `session_id`.
+    Fetch the current token for the given `session_id`.
 
     Returns UUID.
   """
