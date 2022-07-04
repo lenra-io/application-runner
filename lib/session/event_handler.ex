@@ -12,7 +12,7 @@ defmodule ApplicationRunner.EventHandler do
 
   @doc """
     Send async call to application,
-    the call will run listenrs with the given `action` `props` `event`
+    the call will run listeners with the given `action` `props` `event`
   """
   def send_event(handler_pid, state, action, props, event) do
     GenServer.cast(handler_pid, {:send_event, state, action, props, event})
