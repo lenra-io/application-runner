@@ -24,12 +24,13 @@ defmodule ApplicationRunner.UserSocket do
       # See `Phoenix.Token` documentation for examples in
       # performing token verification on connect.
       @impl true
-      def connect(%{"token" => token}, socket, _connect_info) do
-        case resource_from_token(token) do
+      def connect(params, socket, _connect_info) do
+        case resource_from_params(params) do
           {:ok, user_id} ->
             {:ok, assign(socket, :user, @repo.get(User, user_id))}
 
           err ->
+            Logger.error(err)
             :error
         end
       end
@@ -39,7 +40,7 @@ defmodule ApplicationRunner.UserSocket do
       end
 
       # Override this function to return the ressource according to the server/devtools needs
-      defp resource_from_token(_token) do
+      defp resource_from_params(_params) do
         :error
       end
 
@@ -56,7 +57,7 @@ defmodule ApplicationRunner.UserSocket do
       @impl true
       def id(socket), do: "user_socket:#{socket.assigns.user.id}"
 
-      defoverridable resource_from_token: 1
+      defoverridable resource_from_params: 1
     end
   end
 end
