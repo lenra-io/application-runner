@@ -176,13 +176,13 @@ defmodule ApplicationRunner.JsonStorage.Services.Data do
   ##########
   # UPDATE #
   ##########
-  def update(params), do: Ecto.Multi.new() |> update(params)
+  def update(env_id, params), do: Ecto.Multi.new() |> update(env_id, params)
 
-  def update(multi, params) do
-    {new_data, metadata} = process_params(params)
+  def update(multi, env_id, params) do
+    {new_data, %{"_id" => data_id} = metadata} = process_params(params)
 
     multi
-    |> get_old_data(metadata)
+    |> get_old_data(env_id, data_id)
     |> update_refs(metadata)
     |> update_ref_by(metadata)
     |> update_data(new_data)
@@ -195,9 +195,18 @@ defmodule ApplicationRunner.JsonStorage.Services.Data do
     end)
   end
 
-  defp get_old_data(multi, %{"_id" => data_id}) do
+  defp get_old_data(multi, env_id, data_id) do
     Ecto.Multi.run(multi, :data, fn repo, _previous ->
-      case repo.get(Data, data_id) do
+      data =
+        from(d in Data,
+          join: ds in Datastore,
+          on: d.datastore_id == ds.id,
+          where: ds.environment_id == ^env_id and d.id == ^data_id,
+          select: d
+        )
+        |> repo.one()
+
+      case data do
         nil ->
           {:error, :data_not_found}
 
@@ -269,19 +278,11 @@ defmodule ApplicationRunner.JsonStorage.Services.Data do
     end)
   end
 
-  def delete(params), do: Ecto.Multi.new() |> delete(params)
+  def delete(env_id, params), do: Ecto.Multi.new() |> delete(env_id, params)
 
-  def delete(multi, data_id) do
+  def delete(multi, env_id, data_id) do
     multi
-    |> Ecto.Multi.run(:data, fn repo, _ ->
-      case repo.get(Data, data_id) do
-        nil ->
-          {:error, :data_not_found}
-
-        data ->
-          {:ok, data}
-      end
-    end)
+    |> get_old_data(env_id, data_id)
     |> Ecto.Multi.delete(:deleted_data, fn %{data: %Data{} = data} ->
       data
     end)
