@@ -39,8 +39,9 @@ defmodule ApplicationRunner.DataController do
     end
   end
 
-  def create(conn, params) do
-    params = reformat_params_with_underscore(params, ["_datastore", "_id"])
+  def create(conn, _params) do
+    params =
+      reformat_params_with_underscore(conn.body_params, conn.path_params, ["_datastore", "_id"])
 
     with session_assigns <- Plug.current_resource(conn),
          {:ok, %{inserted_data: data}} <-
@@ -51,8 +52,9 @@ defmodule ApplicationRunner.DataController do
     end
   end
 
-  def update(conn, params) do
-    params = reformat_params_with_underscore(params, ["_datastore", "_id"])
+  def update(conn, _params) do
+    params =
+      reformat_params_with_underscore(conn.body_params, conn.path_params, ["_datastore", "_id"])
 
     with session_assigns <- Plug.current_resource(conn),
          {:ok, %{updated_data: data}} <-
@@ -63,8 +65,9 @@ defmodule ApplicationRunner.DataController do
     end
   end
 
-  def delete(conn, params) do
-    params = reformat_params_with_underscore(params, ["_datastore", "_id"])
+  def delete(conn, _params) do
+    params =
+      reformat_params_with_underscore(conn.body_params, conn.path_params, ["_datastore", "_id"])
 
     with session_assigns <- Plug.current_resource(conn),
          {:ok, %{deleted_data: data}} <-
@@ -89,14 +92,26 @@ defmodule ApplicationRunner.DataController do
     end
   end
 
-  defp reformat_params_with_underscore(params, key_list) do
-    Enum.reduce(key_list, params, &reformat_param_with_underscore/2)
+  # On the phoenix controller the body and path params (variable in the route) create a "params" object.
+  # for most of the "Data" and "Datastore" routes, the params contains two sort of keys.
+  # - The "json data" keys that are the data that the dev wants to store
+  # - And the "Metadata" keys that are informations for us to create the data (_datastore, _id, _refs, _refBy..)
+  # The _datastore and _id metadata are "path params" that should be defined in the route.
+  # But we cannot put underscores "_" in the route without a lot of warning everywhere.
+  # To avoid these warnings, we set the variable without the "_" in the route and transform them in the
+  # Controller with this function.
+  #
+  # !!! Since "id" is a valid json_data the dev can provide, we must first transform only the path_params
+  # to add the underscores. Only then we can merge this transformed params to the body_params.
+  defp reformat_params_with_underscore(body_params, path_params, key_list) do
+    Enum.reduce(key_list, path_params, &reformat_param_with_underscore/2)
+    |> Map.merge(body_params)
   end
 
-  defp reformat_param_with_underscore("_" <> key = u_key, params) do
-    value = Map.get(params, key)
+  defp reformat_param_with_underscore("_" <> key = u_key, path_params) do
+    value = Map.get(path_params, key)
 
-    params
+    path_params
     |> Map.put(u_key, value)
     |> Map.delete(key)
   end
