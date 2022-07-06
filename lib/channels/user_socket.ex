@@ -3,6 +3,7 @@ defmodule ApplicationRunner.UserSocket do
     channel = Keyword.fetch!(opts, :channel)
 
     quote do
+      require Logger
       use Phoenix.Socket
 
       alias ApplicationRunner.User
