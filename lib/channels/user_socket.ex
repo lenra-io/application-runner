@@ -35,10 +35,6 @@ defmodule ApplicationRunner.UserSocket do
         end
       end
 
-      def connect(_params, _socket, _connect_info) do
-        :error
-      end
-
       # Override this function to return the ressource according to the server/devtools needs
       defp resource_from_params(_params) do
         :error
