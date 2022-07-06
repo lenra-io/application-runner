@@ -12,8 +12,6 @@ defmodule ApplicationRunner.JsonStorage.Services.UserData do
     UserData
   }
 
-  alias ApplicationRunner.SessionState
-
   @repo Application.compile_env!(:application_runner, :repo)
 
   def create(params), do: Ecto.Multi.new() |> create(params)
