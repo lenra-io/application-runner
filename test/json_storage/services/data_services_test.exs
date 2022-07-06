@@ -188,7 +188,7 @@ defmodule ApplicationRunner.DataServicesTest do
     end
   end
 
-  describe "DataServices.delete_1/1" do
+  describe "JsonStorage.delete_data/1" do
     test "should delete data if json valid", %{env_id: env_id} do
       Repo.insert(Datastore.new(env_id, %{"name" => "users"}))
 
@@ -197,15 +197,31 @@ defmodule ApplicationRunner.DataServicesTest do
 
       data = Repo.get(Data, inserted_data.id)
 
-      JsonStorage.delete_data(data.id)
+      JsonStorage.delete_data(env_id, data.id)
 
       deleted_data = Repo.get(Data, inserted_data.id)
 
       assert deleted_data == nil
     end
 
-    test "should return error id invalid", %{env_id: _env_id} do
-      assert {:error, :data, :data_not_found, _changes_so_far} = JsonStorage.delete_data(-1)
+    test "should NOT delete data if env_id is invalid", %{env_id: env_id} do
+      Repo.insert(Datastore.new(env_id, %{"name" => "users"}))
+
+      {:ok, %{inserted_data: inserted_data}} =
+        JsonStorage.create_data(env_id, %{"_datastore" => "users", "name" => "toto"})
+
+      data = Repo.get(Data, inserted_data.id)
+
+      {:error, _, :data_not_found, _} = JsonStorage.delete_data(env_id + 1, data.id)
+
+      deleted_data = Repo.get(Data, inserted_data.id)
+
+      assert deleted_data != nil
+    end
+
+    test "should return error id invalid", %{env_id: env_id} do
+      assert {:error, :data, :data_not_found, _changes_so_far} =
+               JsonStorage.delete_data(env_id, -1)
     end
 
     test "should also remove refence but not referenced data", %{env_id: env_id} do
@@ -226,7 +242,7 @@ defmodule ApplicationRunner.DataServicesTest do
 
       assert false == is_nil(Repo.get_by(DataReferences, refs_id: inserted_point.id))
 
-      JsonStorage.delete_data(data.id)
+      JsonStorage.delete_data(env_id, data.id)
 
       deleted_data = Repo.get(Data, inserted_user.id)
 
@@ -240,7 +256,7 @@ defmodule ApplicationRunner.DataServicesTest do
     end
   end
 
-  describe "DataServices.update_1/1" do
+  describe "JsonStorage.update__data/1" do
     test "should update data if json valid", %{env_id: env_id} do
       Repo.insert(Datastore.new(env_id, %{"name" => "users"}))
 
@@ -249,16 +265,32 @@ defmodule ApplicationRunner.DataServicesTest do
 
       data = Repo.get(Data, inserted_data.id)
 
-      JsonStorage.update_data(%{"_id" => data.id, "name" => "test"})
+      JsonStorage.update_data(env_id, %{"_id" => data.id, "name" => "test"})
 
       updated_data = Repo.get(Data, inserted_data.id)
 
       assert updated_data.data == %{"name" => "test"}
     end
 
-    test "should return error id invalid", %{env_id: _env_id} do
+    test "should NOT update data if env_id is not valid", %{env_id: env_id} do
+      Repo.insert(Datastore.new(env_id, %{"name" => "users"}))
+
+      {:ok, %{inserted_data: inserted_data}} =
+        JsonStorage.create_data(env_id, %{"_datastore" => "users", "name" => "toto"})
+
+      data = Repo.get(Data, inserted_data.id)
+
+      assert {:error, _, :data_not_found, _} =
+               JsonStorage.update_data(env_id + 1, %{"_id" => data.id, "name" => "test"})
+
+      updated_data = Repo.get(Data, inserted_data.id)
+
+      assert updated_data.data == %{"name" => "toto"}
+    end
+
+    test "should return error id invalid", %{env_id: env_id} do
       assert {:error, :data, :data_not_found, _changes_so_far} =
-               JsonStorage.update_data(%{"_id" => -1})
+               JsonStorage.update_data(env_id, %{"_id" => -1})
     end
 
     test "should also update refs on update", %{env_id: env_id} do
@@ -285,7 +317,7 @@ defmodule ApplicationRunner.DataServicesTest do
         })
 
       {:ok, %{data: updated_data}} =
-        JsonStorage.update_data(%{
+        JsonStorage.update_data(env_id, %{
           "_id" => inserted_data.id,
           "_refs" => [inserted_point_bis.id]
         })
@@ -322,7 +354,7 @@ defmodule ApplicationRunner.DataServicesTest do
         })
 
       {:ok, %{data: updated_data}} =
-        JsonStorage.update_data(%{
+        JsonStorage.update_data(env_id, %{
           "_id" => inserted_point.id,
           "_refBy" => [inserted_data_bis.id]
         })
@@ -373,7 +405,7 @@ defmodule ApplicationRunner.DataServicesTest do
         })
 
       {:ok, %{data: updated_data}} =
-        JsonStorage.update_data(%{
+        JsonStorage.update_data(env_id, %{
           "_id" => inserted_user.id,
           "_refs" => [inserted_point_bis.id],
           "_refBy" => [inserted_team_bis.id]
@@ -410,7 +442,7 @@ defmodule ApplicationRunner.DataServicesTest do
         })
 
       {:error, :refs, :references_not_found, _change_so_far} =
-        JsonStorage.update_data(%{
+        JsonStorage.update_data(env_id, %{
           "_id" => inserted_user.id,
           "_refs" => [-1]
         })
@@ -434,7 +466,7 @@ defmodule ApplicationRunner.DataServicesTest do
         })
 
       {:error, :ref_by, :references_not_found, _change_so_far} =
-        JsonStorage.update_data(%{
+        JsonStorage.update_data(env_id, %{
           "_id" => inserted_user.id,
           "_refBy" => [-1]
         })
@@ -470,7 +502,7 @@ defmodule ApplicationRunner.DataServicesTest do
         })
 
       {:error, :ref_by, :references_not_found, _change_so_far} =
-        JsonStorage.update_data(%{
+        JsonStorage.update_data(env_id, %{
           "_id" => inserted_user.id,
           "_refBy" => [inserted_team_bis.id]
         })

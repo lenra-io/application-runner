@@ -26,9 +26,9 @@ defmodule ApplicationRunner.JsonStorage do
     to: Services.Data,
     as: :get_current_user_data
 
-  defdelegate update_data(params), to: Services.Data, as: :update
+  defdelegate update_data(environment_id, params), to: Services.Data, as: :update
 
-  defdelegate delete_data(params), to: Services.Data, as: :delete
+  defdelegate delete_data(environment_id, params), to: Services.Data, as: :delete
 
   #############
   # DATASTORE #

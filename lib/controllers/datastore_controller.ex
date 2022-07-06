@@ -15,7 +15,7 @@ defmodule ApplicationRunner.DatastoreController do
 
   def delete(conn, params) do
     with {:ok, %{deleted_datastore: datastore}} <-
-           JsonStorage.delete_datastore(params["_id"]) do
+           JsonStorage.delete_datastore(params["datastore"]) do
       conn
       |> assign_data(:deleted_datastore, datastore)
       |> reply

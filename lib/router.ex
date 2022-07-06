@@ -11,13 +11,13 @@ defmodule ApplicationRunner.Router do
         pipe_through([:api, :ensure_auth_app])
 
         post("/datastores", DatastoreController, :create)
-        delete("/datastores/:_datastore", DatastoreController, :delete)
+        delete("/datastores/:datastore", DatastoreController, :delete)
         get("/datastores/user/data/@me", DataController, :get_current_user_data)
-        get("/datastores/:_datastore/data/:_id", DataController, :get)
-        get("/datastores/:_datastore/data", DataController, :get_all)
-        post("/datastores/:_datastore/data", DataController, :create)
-        delete("/datastores/:_datastore/data/:_id", DataController, :delete)
-        put("/datastores/:_datastore/data/:_id", DataController, :update)
+        get("/datastores/:datastore/data/:id", DataController, :get)
+        get("/datastores/:datastore/data", DataController, :get_all)
+        post("/datastores/:datastore/data", DataController, :create)
+        delete("/datastores/:datastore/data/:id", DataController, :delete)
+        put("/datastores/:datastore/data/:id", DataController, :update)
         post("/query", DataController, :query)
       end
     end
