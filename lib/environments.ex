@@ -1,4 +1,4 @@
-defmodule ApplicationRunner.Environment do
+defmodule ApplicationRunner.Environments do
   @moduledoc """
     ApplicationRunner.Environment manage Environment.
   """

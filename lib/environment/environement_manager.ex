@@ -9,23 +9,20 @@ defmodule ApplicationRunner.Environment.Manager do
     EventHandler
   }
 
-  alias ApplicationRunner.Environment.{
-    Managers,
-    Supervisor
-  }
+  alias ApplicationRunner.Environment
 
   @on_env_start_action "onEnvStart"
   @on_env_stop_action "onEnvStop"
 
   @spec get_manifest(number()) :: map()
   def get_manifest(env_id) do
-    with {:ok, pid} <- Managers.fetch_env_manager_pid(env_id) do
+    with {:ok, pid} <- Environment.Managers.fetch_env_manager_pid(env_id) do
       GenServer.call(pid, :get_manifest)
     end
   end
 
   def wait_until_ready(env_id) do
-    with {:ok, pid} <- Managers.fetch_env_manager_pid(env_id) do
+    with {:ok, pid} <- Environment.Managers.fetch_env_manager_pid(env_id) do
       GenServer.call(pid, :wait_until_ready)
     end
   end
@@ -52,12 +49,12 @@ defmodule ApplicationRunner.Environment.Manager do
     function_name = Map.fetch!(state, :function_name)
     assigns = Map.fetch!(state, :assigns)
 
-    {:ok, env_supervisor_pid} = Supervisor.start_link(opts)
+    {:ok, env_supervisor_pid} = Environment.Supervisor.start_link(opts)
     # Link the process to kill the manager if the supervisor is killed.
     # The EnvManager should be restarted by the EnvManagers then it will restart the supervisor.
     Process.link(env_supervisor_pid)
 
-    event_handler_pid = Supervisor.fetch_module_pid!(env_supervisor_pid, EventHandler)
+    event_handler_pid = Environment.Supervisor.fetch_module_pid!(env_supervisor_pid, EventHandler)
     EventHandler.subscribe(event_handler_pid)
 
     env_state = %Environment.State{
@@ -145,7 +142,8 @@ defmodule ApplicationRunner.Environment.Manager do
   end
 
   defp do_send_event(env_state, action, props, event) do
-    event_handler_pid = Supervisor.fetch_module_pid!(env_state.env_supervisor_pid, EventHandler)
+    event_handler_pid =
+      Environment.Supervisor.fetch_module_pid!(env_state.env_supervisor_pid, EventHandler)
 
     EventHandler.send_event(event_handler_pid, env_state, action, props, event)
   end
@@ -161,6 +159,6 @@ defmodule ApplicationRunner.Environment.Manager do
     Swarm.multi_call({:sessions, env_state.env_id}, :stop)
     send_on_env_stop_event(env_state)
     if not is_nil(from), do: GenServer.reply(from, :ok)
-    Managers.terminate_app(self())
+    Environment.Managers.terminate_app(self())
   end
 end
