@@ -1,10 +1,10 @@
-defmodule ApplicationRunner.Environment.Supervisor do
+defmodule ApplicationRunner.Environments.Supervisor do
   @moduledoc """
     This module handles the children module of an AppManager.
   """
   use Supervisor
 
-  alias ApplicationRunner.Environment.Managers
+  alias ApplicationRunner.Environments.Managers
 
   @doc """
     return the app-level module.
@@ -42,7 +42,7 @@ defmodule ApplicationRunner.Environment.Supervisor do
     children =
       [
         ApplicationRunner.EventHandler,
-        {ApplicationRunner.Environment.Token.Agent, opts}
+        {ApplicationRunner.Environments.Token.Agent, opts}
       ] ++ get_additionnal_modules(opts)
 
     Supervisor.init(children, strategy: :one_for_one)

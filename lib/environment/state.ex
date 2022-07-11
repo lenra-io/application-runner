@@ -1,4 +1,4 @@
-defmodule ApplicationRunner.Environment.State do
+defmodule ApplicationRunner.Environments.State do
   @moduledoc """
     The Action struct.
   """

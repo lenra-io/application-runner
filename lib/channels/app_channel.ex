@@ -8,8 +8,6 @@ defmodule ApplicationRunner.AppChannel do
       use Phoenix.Channel
 
       alias ApplicationRunner.{
-        Environment,
-        EnvState,
         ErrorHelpers,
         Session
       }

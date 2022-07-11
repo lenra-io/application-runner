@@ -1,12 +1,13 @@
-defmodule ApplicationRunner.Lenra.Environment do
+defmodule ApplicationRunner.Contract.Environment do
   @moduledoc """
-    The environment schema.
+    The Environment "contract" schema.
+    This give ApplicationRunner an interface to match with the "real" environment for both the Devtool and the Lenra server
   """
 
   use Ecto.Schema
   import Ecto.Changeset
 
-  alias ApplicationRunner.{Datastore, Environment}
+  alias ApplicationRunner.JsonStorage.Datastore
 
   @type t :: %__MODULE__{}
 
@@ -42,8 +43,8 @@ defmodule ApplicationRunner.Lenra.Environment do
     end
   end
 
-  def new do
+  def new(params \\ %{}) do
     %__MODULE__{}
-    |> __MODULE__.changeset()
+    |> __MODULE__.changeset(params)
   end
 end

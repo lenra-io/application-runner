@@ -1,19 +1,16 @@
-defmodule ApplicationRunner.FakeLenraUserTest do
+defmodule ApplicationRunner.Contract.UserTest do
   @moduledoc false
 
   use ApplicationRunner.RepoCase
 
-  alias ApplicationRunner.{
-    FakeLenraUser,
-    Repo
-  }
+  alias ApplicationRunner.Repo
 
-  alias ApplicationRunner.Lenra.User
+  alias ApplicationRunner.Contract.User
 
   test "get on embeded schema should return same user" do
     user =
       %{email: "test@test.te"}
-      |> FakeLenraUser.new()
+      |> User.new()
       |> Repo.insert!()
 
     embed_user = Repo.get!(User, user.id)
@@ -25,7 +22,7 @@ defmodule ApplicationRunner.FakeLenraUserTest do
   test "embed schema with valid user should return user" do
     user =
       %{email: "test@test.te"}
-      |> FakeLenraUser.new()
+      |> User.new()
       |> Repo.insert!()
       |> User.embed()
 

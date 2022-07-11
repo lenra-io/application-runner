@@ -6,7 +6,7 @@ defmodule ApplicationRunner.UserSocket do
       require Logger
       use Phoenix.Socket
 
-      alias ApplicationRunner.User
+      alias ApplicationRunner.Contract.User
 
       @repo Application.compile_env(:application_runner, :repo)
 

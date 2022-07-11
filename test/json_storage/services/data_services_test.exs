@@ -3,12 +3,13 @@ defmodule ApplicationRunner.DataServicesTest do
 
   use ApplicationRunner.RepoCase
 
-  alias ApplicationRunner.{FakeLenraEnvironment, JsonStorage}
-
+  alias ApplicationRunner.JsonStorage
   alias ApplicationRunner.JsonStorage.{Data, DataReferences, Datastore}
 
+  alias ApplicationRunner.Contract.Environment
+
   setup do
-    {:ok, environment} = Repo.insert(FakeLenraEnvironment.new())
+    {:ok, environment} = Repo.insert(Environment.new())
     {:ok, env_id: environment.id}
   end
 
@@ -473,7 +474,7 @@ defmodule ApplicationRunner.DataServicesTest do
     end
 
     test "should not update data if env_id not the same", %{env_id: env_id} do
-      {:ok, environment} = Repo.insert(FakeLenraEnvironment.new())
+      {:ok, environment} = Repo.insert(Environment.new())
 
       {:ok, _inserted_datastore} = Repo.insert(Datastore.new(env_id, %{"name" => "team"}))
 

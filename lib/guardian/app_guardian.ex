@@ -6,7 +6,7 @@ defmodule ApplicationRunner.Guardian.AppGuardian do
   use Guardian, otp_app: :application_runner
 
   alias ApplicationRunner.{
-    Environment,
+    Environments,
     Session,
     Lenra
   }
@@ -18,14 +18,14 @@ defmodule ApplicationRunner.Guardian.AppGuardian do
   end
 
   def resource_from_claims(%{"user_id" => user_id, "env_id" => env_id}) do
-    with env <- @repo.get(Lenra.Environment, env_id),
-         user <- @repo.get(Lenra.User, user_id) do
+    with env <- @repo.get(Contract.Environment, env_id),
+         user <- @repo.get(Contract.User, user_id) do
       {:ok, %{environment: env, user: user}}
     end
   end
 
   def resource_from_claims(%{"env_id" => env_id}) do
-    with env <- @repo.get(Lenra.Environment, env_id) do
+    with env <- @repo.get(Contract.Environment, env_id) do
       {:ok, %{environment: env}}
     end
   end
@@ -45,7 +45,7 @@ defmodule ApplicationRunner.Guardian.AppGuardian do
         Session.fetch_token(claims["sub"])
 
       "env" ->
-        Environment.Token.fetch_token(String.to_integer(claims["sub"]))
+        Environments.Token.fetch_token(String.to_integer(claims["sub"]))
 
       _err ->
         :error

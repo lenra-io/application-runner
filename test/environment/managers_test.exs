@@ -1,4 +1,4 @@
-defmodule ApplicationRunner.EnvManagersTest do
+defmodule ApplicationRunner.Environments.ManagersTest do
   use ApplicationRunner.RepoCase, async: false
 
   @moduledoc """
@@ -7,9 +7,9 @@ defmodule ApplicationRunner.EnvManagersTest do
 
   alias ApplicationRunner.Repo
 
-  alias ApplicationRunner.Lenra.Environment
+  alias ApplicationRunner.Contract.Environment
 
-  alias ApplicationRunner.Environment.{Manager, Managers}
+  alias ApplicationRunner.Environments.{Manager, Managers}
 
   setup do
     start_supervised(Managers)

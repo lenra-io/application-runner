@@ -1,6 +1,6 @@
 defmodule ApplicationRunner.Guardian.ErrorHandler do
   @moduledoc """
-    Lenra.Guardian.ErrorHandler handles the Guardian Errors
+    ApplicationRunner.Guardian.ErrorHandler handles the Guardian Errors
   """
 
   @behaviour Guardian.Plug.ErrorHandler
@@ -10,7 +10,7 @@ defmodule ApplicationRunner.Guardian.ErrorHandler do
     [translated_error] = ApplicationRunner.ErrorHelpers.translate_error(:did_not_accept_cgu)
 
     conn
-    |> Phoenix.Controller.put_view(LenraWeb.ErrorView)
+    |> Phoenix.Controller.put_view(ApplicationRunner.ErrorView)
     |> Plug.Conn.put_status(403)
     |> Phoenix.Controller.render("403.json", error: translated_error)
   end
@@ -33,7 +33,7 @@ defmodule ApplicationRunner.Guardian.ErrorHandler do
       end
 
     conn
-    |> Phoenix.Controller.put_view(LenraWeb.ErrorView)
+    |> Phoenix.Controller.put_view(ApplicationRunner.ErrorView)
     |> Plug.Conn.put_status(401)
     |> Phoenix.Controller.render("401.json", message: message)
   end

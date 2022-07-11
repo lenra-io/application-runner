@@ -1,6 +1,7 @@
-defmodule ApplicationRunner.Lenra.User do
+defmodule ApplicationRunner.Contract.User do
   @moduledoc """
-    The user schema.
+    The user "contract" schema.
+        This give ApplicationRunner an interface to match with the "real" user for both the Devtool and the Lenra server
   """
 
   use Ecto.Schema
@@ -43,10 +44,8 @@ defmodule ApplicationRunner.Lenra.User do
     end
   end
 
-  def new(email) do
-    %__MODULE__{
-      email: email
-    }
-    |> __MODULE__.changeset()
+  def new(params) do
+    %__MODULE__{}
+    |> __MODULE__.changeset(params)
   end
 end

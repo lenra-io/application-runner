@@ -12,15 +12,15 @@ defmodule ApplicationRunner.ComponentCase do
 
       alias ApplicationRunner.{
         ApplicationRunnerAdapter,
-        Environment,
-        EnvManager,
-        EnvManagers,
+        Environments,
         EventHandler,
         FaasStub,
         Repo,
         Session,
         User
       }
+
+      alias ApplicationRunner.Environments.{Manager, Managers}
 
       @manifest %{"rootWidget" => "root"}
 
