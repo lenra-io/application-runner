@@ -1,11 +1,11 @@
-defmodule ApplicationRunner.Environment.Managers do
+defmodule ApplicationRunner.Environments.Managers do
   @moduledoc """
     This module manages all the applications.
     It can start/stop an `EnvManager`, get the `EnvManager` process, send a message to all the `EnvManager`, etc..
   """
   use DynamicSupervisor
 
-  alias ApplicationRunner.Environment.Managers
+  alias ApplicationRunner.Environments.Managers
 
   @doc false
   def start_link(opts) do
@@ -43,7 +43,7 @@ defmodule ApplicationRunner.Environment.Managers do
   def start_env(env_id, env_state) do
     DynamicSupervisor.start_child(
       __MODULE__,
-      {ApplicationRunner.Environment.Manager, [env_id: env_id, env_state: env_state]}
+      {ApplicationRunner.Environments.Manager, [env_id: env_id, env_state: env_state]}
     )
   end
 

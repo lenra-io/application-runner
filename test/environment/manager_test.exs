@@ -1,4 +1,4 @@
-defmodule ApplicationRunner.EnvManagerTest do
+defmodule ApplicationRunner.Environments.ManagerTest do
   use ApplicationRunner.RepoCase, async: false
 
   @moduledoc """
@@ -10,13 +10,13 @@ defmodule ApplicationRunner.EnvManagerTest do
     Repo
   }
 
-  alias ApplicationRunner.Environment.{
+  alias ApplicationRunner.Environments.{
     Manager,
     Managers,
     Supervisor
   }
 
-  alias ApplicationRunner.Lenra.Environment
+  alias ApplicationRunner.Contract.Environment
 
   @manifest %{"rootWidget" => "root"}
 

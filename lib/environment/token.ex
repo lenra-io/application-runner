@@ -1,11 +1,12 @@
-defmodule ApplicationRunner.Environment.Token do
+defmodule ApplicationRunner.Environments.Token do
   @moduledoc """
-    Lenra.Sessionstate handle all operation for session state.
+    The Environment Token is attached to an environment for the app to authenticate.
+    Any data query must send this token, the data route then check the token stored.
   """
 
   alias ApplicationRunner.Guardian.AppGuardian
 
-  alias ApplicationRunner.Environment.{
+  alias ApplicationRunner.Environments.{
     Supervisor,
     Token
   }

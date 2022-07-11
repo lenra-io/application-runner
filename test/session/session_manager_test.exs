@@ -13,9 +13,9 @@ defmodule ApplicationRunner.SessionManagerTest do
     SessionSupervisor
   }
 
-  alias ApplicationRunner.Environment.Managers
+  alias ApplicationRunner.Environments.Managers
 
-  alias ApplicationRunner.Lenra.{
+  alias ApplicationRunner.Contract.{
     Environment,
     User
   }
@@ -28,7 +28,7 @@ defmodule ApplicationRunner.SessionManagerTest do
     start_supervised(SessionManagers)
 
     {:ok, env} = Repo.insert(Environment.new())
-    {:ok, user} = Repo.insert(User.new("test@test.te"))
+    {:ok, user} = Repo.insert(User.new(%{email: "test@test.te"}))
 
     bypass = Bypass.open()
     Bypass.stub(bypass, "POST", "/function/test_function", &handle_request(&1))

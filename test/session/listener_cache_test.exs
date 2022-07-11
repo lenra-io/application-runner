@@ -9,9 +9,9 @@ defmodule ApplicationRunner.ListenerCacheTest do
     SessionSupervisor
   }
 
-  alias ApplicationRunner.Environment.Managers
+  alias ApplicationRunner.Environments.Managers
 
-  alias ApplicationRunner.Lenra.{
+  alias ApplicationRunner.Contract.{
     Environment,
     User
   }
@@ -25,7 +25,7 @@ defmodule ApplicationRunner.ListenerCacheTest do
     start_supervised({Finch, name: AppHttp})
 
     {:ok, env} = Repo.insert(Environment.new())
-    {:ok, user} = Repo.insert(User.new("test@test.te"))
+    {:ok, user} = Repo.insert(User.new(%{email: "test@test.te"}))
 
     bypass = Bypass.open()
 

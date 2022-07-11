@@ -5,7 +5,7 @@ defmodule ApplicationRunner.UserSocket do
     quote do
       use Phoenix.Socket
 
-      alias ApplicationRunner.User
+      alias ApplicationRunner.Contract.User
 
       @repo Application.compile_env(:application_runner, :repo)
 

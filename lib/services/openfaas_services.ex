@@ -4,8 +4,8 @@ defmodule ApplicationRunner.OpenfaasServices do
   """
 
   alias ApplicationRunner.{
-    Environment,
-    Environment.Token,
+    Environments,
+    Environments.Token,
     Session.SessionStateServices,
     SessionState
   }
@@ -30,7 +30,7 @@ defmodule ApplicationRunner.OpenfaasServices do
   """
 
   def run_listener(
-        %Environment.State{function_name: function_name, env_id: env_id},
+        %Environments.State{function_name: function_name, env_id: env_id},
         action,
         props,
         event
@@ -51,7 +51,7 @@ defmodule ApplicationRunner.OpenfaasServices do
     run_listener(function_name, action, props, event, token)
   end
 
-  @spec run_listener(Environment.State.t(), String.t(), map(), map(), String.t()) ::
+  @spec run_listener(Environments.State.t(), String.t(), map(), map(), String.t()) ::
           {:ok, map()} | {:error, any()}
   defp run_listener(
          function_name,
@@ -121,12 +121,8 @@ defmodule ApplicationRunner.OpenfaasServices do
     end
   end
 
-  # def fetch_manifest(%Environment{} = environment)
-  #     when is_nil(environment.deployed_build),
-  #     do: {:error, :environement_not_build}
-
-  @spec fetch_manifest(Environment.State.t()) :: {:ok, map()} | {:error, any()} | :error404
-  def fetch_manifest(%Environment.State{function_name: function_name}) do
+  @spec fetch_manifest(Environments.State.t()) :: {:ok, map()} | {:error, any()} | :error404
+  def fetch_manifest(%Environments.State{function_name: function_name}) do
     {base_url, base_headers} = get_http_context()
 
     url = "#{base_url}/function/#{function_name}"

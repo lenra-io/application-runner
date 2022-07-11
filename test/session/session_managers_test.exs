@@ -12,9 +12,9 @@ defmodule ApplicationRunner.SessionManagersTest do
     SessionSupervisor
   }
 
-  alias ApplicationRunner.Environment.Managers
+  alias ApplicationRunner.Environments.Managers
 
-  alias ApplicationRunner.Lenra.{
+  alias ApplicationRunner.Contract.{
     Environment,
     User
   }
@@ -38,7 +38,7 @@ defmodule ApplicationRunner.SessionManagersTest do
     Application.put_env(:application_runner, :faas_url, "http://localhost:#{bypass.port}")
 
     {:ok, env} = Repo.insert(Environment.new())
-    {:ok, user} = Repo.insert(User.new("test@test.te"))
+    {:ok, user} = Repo.insert(User.new(%{email: "test@test.te"}))
     {:ok, %{user_id: user.id, env_id: env.id}}
   end
 

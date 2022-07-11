@@ -3,12 +3,12 @@ defmodule ApplicationRunner.DatastoreServiceTest do
 
   use ApplicationRunner.RepoCase
 
-  alias ApplicationRunner.{FakeLenraEnvironment, JsonStorage}
-
+  alias ApplicationRunner.Contract.Environment
+  alias ApplicationRunner.JsonStorage
   alias ApplicationRunner.JsonStorage.{Data, Datastore}
 
   setup do
-    {:ok, environment} = Repo.insert(FakeLenraEnvironment.new())
+    {:ok, environment} = Repo.insert(Environment.new())
     {:ok, env_id: environment.id}
   end
 
@@ -33,7 +33,7 @@ defmodule ApplicationRunner.DatastoreServiceTest do
     end
 
     test "should create datastore if datastore same name but different env_id", %{env_id: env_id} do
-      {:ok, environment} = Repo.insert(FakeLenraEnvironment.new())
+      {:ok, environment} = Repo.insert(Environment.new())
 
       assert {:ok, %{inserted_datastore: _inserted_datastore}} =
                JsonStorage.create_datastore(env_id, %{"name" => "users"})
@@ -43,7 +43,7 @@ defmodule ApplicationRunner.DatastoreServiceTest do
     end
 
     test "should create datastore if different name but same env_id", %{env_id: env_id} do
-      {:ok, environment} = Repo.insert(FakeLenraEnvironment.new())
+      {:ok, environment} = Repo.insert(Environment.new())
 
       assert {:ok, %{inserted_datastore: _inserted_datastore}} =
                JsonStorage.create_datastore(env_id, %{"name" => "users"})
