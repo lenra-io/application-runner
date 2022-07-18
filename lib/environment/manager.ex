@@ -5,9 +5,9 @@ defmodule ApplicationRunner.Environments.Manager do
   use GenServer
 
   alias ApplicationRunner.{
+    ApplicationServices,
     Environments,
-    EventHandler,
-    OpenfaasServices
+    EventHandler
   }
 
   alias ApplicationRunner.Environments

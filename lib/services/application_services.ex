@@ -5,8 +5,6 @@ defmodule ApplicationRunner.ApplicationServices do
 
   alias ApplicationRunner.{
     Environments,
-    Environment.Token,
-    EnvState,
     Session
   }
 
@@ -35,7 +33,7 @@ defmodule ApplicationRunner.ApplicationServices do
         props,
         event
       ) do
-    token = Token.fetch_token(env_id)
+    token = Environments.fetch_token(env_id)
 
     run_listener(function_name, action, props, event, token)
   end

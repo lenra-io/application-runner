@@ -7,8 +7,7 @@ defmodule ApplicationRunner.Guardian.AppGuardian do
 
   alias ApplicationRunner.{
     Environments,
-    Session,
-    Lenra
+    Session
   }
 
   @repo Application.compile_env(:application_runner, :repo)
