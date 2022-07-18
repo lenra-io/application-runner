@@ -1,4 +1,4 @@
-defmodule ApplicationRunner.SessionManager do
+defmodule ApplicationRunner.Session.Manager do
   @moduledoc """
     This module is the Session supervisor that handles the SupervisorManager children modules.
   """
@@ -11,13 +11,14 @@ defmodule ApplicationRunner.SessionManager do
     EventHandler,
     JsonStorage,
     ListenersCache,
-    SessionManagers,
-    SessionState,
-    SessionSupervisor,
-    UiCache,
-    UiContext,
-    WidgetCache,
-    WidgetContext
+    Session,
+    Ui,
+    Widget
+  }
+
+  alias ApplicationRunner.Session.{
+    Managers,
+    Supervisor
   }
 
   @on_user_first_join_action "onUserFirstJoin"
@@ -52,7 +53,7 @@ defmodule ApplicationRunner.SessionManager do
 
   @spec reload_ui(number()) :: :ok
   def reload_ui(session_id) do
-    with {:ok, pid} <- SessionManagers.fetch_session_manager_pid(session_id) do
+    with {:ok, pid} <- Managers.fetch_session_manager_pid(session_id) do
       send(pid, :data_changed)
     end
   end
@@ -66,15 +67,15 @@ defmodule ApplicationRunner.SessionManager do
     function_name = Map.fetch!(session_state, :function_name)
     assigns = Map.fetch!(session_state, :assigns)
 
-    {:ok, session_supervisor_pid} = SessionSupervisor.start_link(opts)
+    {:ok, session_supervisor_pid} = Supervisor.start_link(opts)
     # Link the process to kill the manager if the supervisor is killed.
     # The SessionManager should be restarted by the SessionManagers then it will restart the supervisor.
     Process.link(session_supervisor_pid)
 
-    event_handler_pid = SessionSupervisor.fetch_module_pid!(session_supervisor_pid, EventHandler)
+    event_handler_pid = Supervisor.fetch_module_pid!(session_supervisor_pid, EventHandler)
     EventHandler.subscribe(event_handler_pid)
 
-    session_state = %SessionState{
+    session_state = %Session.State{
       session_id: session_id,
       user_id: user_id,
       env_id: env_id,
@@ -144,12 +145,12 @@ defmodule ApplicationRunner.SessionManager do
     {:noreply, session_state}
   end
 
-  def handle_info(:data_changed, %SessionState{} = session_state) do
+  def handle_info(:data_changed, %Session.State{} = session_state) do
     with %{"rootWidget" => root_widget} <-
            EnvManager.get_manifest(session_state.env_id),
          {:ok, ui} <- get_and_build_ui(session_state, root_widget) do
       transformed_ui = transform_ui(ui)
-      res = UiCache.diff_and_save(session_state, transformed_ui)
+      res = Ui.Cache.diff_and_save(session_state, transformed_ui)
       send_res(session_state, res)
     else
       error ->
@@ -160,7 +161,7 @@ defmodule ApplicationRunner.SessionManager do
   end
 
   defp send_res(
-         %SessionState{
+         %Session.State{
            assigns: %{
              socket_pid: socket_pid
            }
@@ -199,21 +200,21 @@ defmodule ApplicationRunner.SessionManager do
     {:noreply, session_state, session_state.inactivity_timeout}
   end
 
-  @spec get_and_build_ui(SessionState.t(), String.t()) ::
+  @spec get_and_build_ui(Session.State.t(), String.t()) ::
           {:ok, map()} | {:error, any()}
   def get_and_build_ui(session_state, root_widget) do
     props = %{}
     query = nil
     data = []
-    id = WidgetCache.generate_widget_id(root_widget, query, props)
+    id = Widget.Cache.generate_widget_id(root_widget, query, props)
 
-    WidgetCache.get_and_build_widget(
+    Widget.Cache.get_and_build_widget(
       session_state,
-      %UiContext{
+      %Ui.Context{
         widgets_map: %{},
         listeners_map: %{}
       },
-      %WidgetContext{
+      %Widget.Context{
         id: id,
         name: root_widget,
         prefix_path: "",
@@ -247,13 +248,13 @@ defmodule ApplicationRunner.SessionManager do
 
   defp do_send_event(session_state, action, props, event) do
     event_handler_pid =
-      SessionSupervisor.fetch_module_pid!(session_state.session_supervisor_pid, EventHandler)
+      Supervisor.fetch_module_pid!(session_state.session_supervisor_pid, EventHandler)
 
     EventHandler.send_event(event_handler_pid, session_state, action, props, event)
   end
 
   defp send_error(
-         %SessionState{
+         %Session.State{
            assigns: %{
              socket_pid: socket_pid
            }
@@ -266,7 +267,7 @@ defmodule ApplicationRunner.SessionManager do
   defp stop(session_state, from) do
     send_on_session_stop_event(session_state)
     if not is_nil(from), do: GenServer.reply(from, :ok)
-    SessionManagers.terminate_session(self())
+    Managers.terminate_session(self())
   end
 
   defp transform_ui(%{"rootWidget" => root_widget, "widgets" => widgets}) do

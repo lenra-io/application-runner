@@ -1,9 +1,9 @@
-defmodule ApplicationRunner.CacheMapMacro do
+defmodule ApplicationRunner.Cache.Macro do
   @moduledoc """
     This is a using macro to create a simple key/value in-memory cache.
 
     ```
-      use ApplicationRunner.CacheMapMacro
+      use ApplicationRunner.Cache.Macro
     ```
   """
   defmacro __using__(_opts) do

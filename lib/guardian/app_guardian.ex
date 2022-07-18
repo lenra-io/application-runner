@@ -8,7 +8,7 @@ defmodule ApplicationRunner.Guardian.AppGuardian do
   alias ApplicationRunner.{
     Environment,
     Environment.EnvironmentStateServices,
-    Session.SessionStateServices,
+    Session,
     User
   }
 
@@ -43,7 +43,7 @@ defmodule ApplicationRunner.Guardian.AppGuardian do
   defp get_app_token(claims) do
     case claims["type"] do
       "session" ->
-        SessionStateServices.fetch_token(claims["sub"])
+        Session.fetch_token(claims["sub"])
 
       "env" ->
         EnvironmentStateServices.fetch_token(String.to_integer(claims["sub"]))

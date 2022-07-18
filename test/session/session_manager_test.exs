@@ -11,8 +11,7 @@ defmodule ApplicationRunner.SessionManagerTest do
     EventHandler,
     MockGenServer,
     Repo,
-    SessionManagers,
-    SessionSupervisor,
+    Session,
     User
   }
 
@@ -21,7 +20,7 @@ defmodule ApplicationRunner.SessionManagerTest do
 
   setup do
     start_supervised(EnvManagers)
-    start_supervised(SessionManagers)
+    start_supervised(Session.Managers)
 
     {:ok, env} = Repo.insert(Environment.new())
     {:ok, user} = Repo.insert(User.new("test@test.te"))
@@ -68,7 +67,7 @@ defmodule ApplicationRunner.SessionManagerTest do
     env_id: env_id
   } do
     assert {:ok, pid} =
-             SessionManagers.start_session(
+             Session.start_session(
                Ecto.UUID.generate(),
                env_id,
                %{
@@ -83,13 +82,13 @@ defmodule ApplicationRunner.SessionManagerTest do
              )
 
     assert _pid =
-             SessionSupervisor.fetch_module_pid!(
+             Session.Supervisor.fetch_module_pid!(
                :sys.get_state(pid).session_supervisor_pid,
                MockGenServer
              )
 
     assert handler_pid =
-             SessionSupervisor.fetch_module_pid!(
+             Session.Supervisor.fetch_module_pid!(
                :sys.get_state(pid).session_supervisor_pid,
                EventHandler
              )
@@ -109,7 +108,7 @@ defmodule ApplicationRunner.SessionManagerTest do
     env_id: env_id
   } do
     assert {:ok, pid} =
-             SessionManagers.start_session(
+             Session.start_session(
                Ecto.UUID.generate(),
                env_id,
                %{
@@ -127,7 +126,7 @@ defmodule ApplicationRunner.SessionManagerTest do
       RuntimeError,
       "No such Module in SessionSupervisor. This should not happen.",
       fn ->
-        SessionSupervisor.fetch_module_pid!(
+        Session.Supervisor.fetch_module_pid!(
           :sys.get_state(pid).session_supervisor_pid,
           NotExistGenServer
         )
@@ -135,7 +134,7 @@ defmodule ApplicationRunner.SessionManagerTest do
     )
 
     assert handler_pid =
-             SessionSupervisor.fetch_module_pid!(
+             Session.Supervisor.fetch_module_pid!(
                :sys.get_state(pid).session_supervisor_pid,
                EventHandler
              )

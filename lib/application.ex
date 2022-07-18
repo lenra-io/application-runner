@@ -11,7 +11,7 @@ defmodule ApplicationRunner.Application do
       # Start the json validator server for the UI
       ApplicationRunner.JsonSchemata,
       ApplicationRunner.EnvManagers,
-      ApplicationRunner.SessionManagers,
+      ApplicationRunner.Session.Managers,
       {Finch,
        name: AppHttp,
        pools: %{

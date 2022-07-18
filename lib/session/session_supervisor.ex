@@ -1,11 +1,11 @@
-defmodule ApplicationRunner.SessionSupervisor do
+defmodule ApplicationRunner.Session.Supervisor do
   @moduledoc """
     This Supervisor is started by the SessionManager.
     It handle all the GenServer needed for the Session to work.
   """
   use Supervisor
 
-  alias ApplicationRunner.SessionManagers
+  alias ApplicationRunner.Session.Managers
 
   @doc """
     return the app-level module.
@@ -28,7 +28,7 @@ defmodule ApplicationRunner.SessionSupervisor do
   end
 
   def fetch_module_pid!(session_id, module_name) do
-    with {:ok, session_manager_pid} <- SessionManagers.fetch_session_manager_pid(session_id),
+    with {:ok, session_manager_pid} <- Managers.fetch_session_manager_pid(session_id),
          session_supervisor_pid <-
            GenServer.call(session_manager_pid, :fetch_session_supervisor_pid!) do
       fetch_module_pid!(session_supervisor_pid, module_name)
@@ -43,11 +43,11 @@ defmodule ApplicationRunner.SessionSupervisor do
   def init(opts) do
     children =
       [
-        ApplicationRunner.UiCache,
+        ApplicationRunner.Ui.Cache,
         ApplicationRunner.ListenersCache,
-        ApplicationRunner.WidgetCache,
+        ApplicationRunner.Widget.Cache,
         ApplicationRunner.EventHandler,
-        {ApplicationRunner.Session.TokenAgent, opts}
+        {ApplicationRunner.Session.Token.Agent, opts}
       ] ++ get_additionnal_modules(opts)
 
     Supervisor.init(children, strategy: :one_for_one)

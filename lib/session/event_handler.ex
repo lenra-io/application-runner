@@ -4,15 +4,24 @@ defmodule ApplicationRunner.EventHandler do
   """
   use GenServer
 
-  alias ApplicationRunner.OpenfaasServices
+  alias ApplicationRunner.ApplicationServices
 
   #########
   ## API ##
   #########
+
+  @doc """
+    Send async call to application,
+    the call will run listeners with the given `action` `props` `event`
+  """
   def send_event(handler_pid, state, action, props, event) do
     GenServer.cast(handler_pid, {:send_event, state, action, props, event})
   end
 
+  @doc """
+    Wait for the asynchronous call,
+    this synchronous call will succeed after the asynchronous calls.
+  """
   def subscribe(handler_pid) do
     GenServer.call(handler_pid, :subscribe)
   end
@@ -35,7 +44,7 @@ defmodule ApplicationRunner.EventHandler do
     current = self()
 
     spawn(fn ->
-      res = OpenfaasServices.run_listener(state, action, props, event)
+      res = ApplicationServices.run_listener(state, action, props, event)
       send(current, {:run_listener_result, res, action})
     end)
 

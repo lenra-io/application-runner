@@ -1,4 +1,4 @@
-defmodule ApplicationRunner.UiContext do
+defmodule ApplicationRunner.Ui.Context do
   @moduledoc """
     The UI Context that contain all widgets and listeners information
   """
@@ -8,7 +8,7 @@ defmodule ApplicationRunner.UiContext do
     :listeners_map
   ]
 
-  @type t :: %ApplicationRunner.UiContext{
+  @type t :: %__MODULE__{
           widgets_map: map(),
           listeners_map: map()
         }

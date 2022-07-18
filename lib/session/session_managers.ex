@@ -1,11 +1,11 @@
-defmodule ApplicationRunner.SessionManagers do
+defmodule ApplicationRunner.Session.Managers do
   @moduledoc """
     This module handles all the sessions for one app.
     This allows to create/recreate/delete sessions for the app and possibly many other operations on sessions.
   """
   use DynamicSupervisor
 
-  alias ApplicationRunner.{EnvManagers, SessionManager}
+  alias ApplicationRunner.{EnvManagers, Session}
 
   def start_link(opts) do
     DynamicSupervisor.start_link(__MODULE__, opts, name: __MODULE__)
@@ -28,8 +28,8 @@ defmodule ApplicationRunner.SessionManagers do
   def start_session(session_id, env_id, session_state, env_state) do
     with {:ok, _pid} <- EnvManagers.ensure_env_started(env_id, env_state) do
       DynamicSupervisor.start_child(
-        ApplicationRunner.SessionManagers,
-        {SessionManager, [env_id: env_id, session_id: session_id, session_state: session_state]}
+        ApplicationRunner.Session.Managers,
+        {Session.Manager, [env_id: env_id, session_id: session_id, session_state: session_state]}
       )
     end
   end
@@ -46,7 +46,7 @@ defmodule ApplicationRunner.SessionManagers do
   end
 
   def terminate_session(session_manager_pid) do
-    DynamicSupervisor.terminate_child(ApplicationRunner.SessionManagers, session_manager_pid)
+    DynamicSupervisor.terminate_child(ApplicationRunner.Session.Managers, session_manager_pid)
   end
 
   @spec fetch_session_manager_pid(any) :: {:error, :session_not_started} | {:ok, pid()}

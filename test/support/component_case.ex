@@ -18,9 +18,7 @@ defmodule ApplicationRunner.ComponentCase do
         EventHandler,
         FaasStub,
         Repo,
-        SessionManager,
-        SessionManagers,
-        SessionSupervisor,
+        Session,
         User
       }
 
@@ -28,7 +26,7 @@ defmodule ApplicationRunner.ComponentCase do
 
       setup context do
         start_supervised(EnvManagers)
-        start_supervised(SessionManagers)
+        start_supervised(Session.Managers)
         start_supervised(ApplicationRunnerAdapter)
         start_supervised({Finch, name: AppHttp})
         start_supervised(ApplicationRunner.JsonSchemata)
@@ -48,7 +46,7 @@ defmodule ApplicationRunner.ComponentCase do
         {:ok, user} = Repo.insert(User.new("test@test.te"))
 
         {:ok, pid} =
-          SessionManagers.start_session(
+          Session.start_session(
             Ecto.UUID.generate(),
             env.id,
             %{
@@ -65,7 +63,7 @@ defmodule ApplicationRunner.ComponentCase do
         session_state = :sys.get_state(pid)
 
         assert handler_pid =
-                 SessionSupervisor.fetch_module_pid!(
+                 Session.Supervisor.fetch_module_pid!(
                    session_state.session_supervisor_pid,
                    EventHandler
                  )

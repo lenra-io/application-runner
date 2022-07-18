@@ -11,10 +11,12 @@ defmodule ApplicationRunner.AppChannel do
         Environment,
         EnvState,
         ErrorHelpers,
-        SessionManager,
-        SessionManagers,
-        SessionState,
-        SessionStateServices
+        Session
+      }
+
+      alias ApplicationRunner.Session.{
+        Manager,
+        Managers
       }
 
       require Logger
@@ -34,7 +36,7 @@ defmodule ApplicationRunner.AppChannel do
           env_id = get_env(app_name)
 
           # prepare the assigns to the session/environment
-          session_state = %SessionState{
+          session_state = %Session.State{
             user_id: user.id,
             env_id: env_id,
             function_name: function_name,
@@ -156,11 +158,11 @@ defmodule ApplicationRunner.AppChannel do
     end
   end
 
-  alias ApplicationRunner.{SessionManager, SessionManagers}
+  alias ApplicationRunner.Session
   require Logger
 
   def start_session(session_id, env_id, session_state, env_state) do
-    case SessionManagers.start_session(session_id, env_id, session_state, env_state) do
+    case Session.start_session(session_id, env_id, session_state, env_state) do
       {:ok, session_pid} -> {:ok, session_pid}
       {:error, message} -> {:error, message}
     end
@@ -172,7 +174,7 @@ defmodule ApplicationRunner.AppChannel do
     } = socket.assigns
 
     Logger.debug("Handle run #{code}")
-    SessionManager.send_client_event(session_pid, code, event)
+    Session.send_client_event(session_pid, code, event)
 
     {:noreply, socket}
   end
