@@ -6,7 +6,8 @@ defmodule ApplicationRunner.JsonStorage.UserData do
   use Ecto.Schema
   import Ecto.Changeset
 
-  alias ApplicationRunner.JsonStorage.{Data, User, UserData}
+  alias ApplicationRunner.Contract.User
+  alias ApplicationRunner.JsonStorage.{Data, UserData}
 
   @derive {Jason.Encoder, only: [:id, :user_id, :data_id]}
   schema "user_datas" do

@@ -1,12 +1,11 @@
-defmodule ApplicationRunner.User do
+defmodule ApplicationRunner.Contract.User do
   @moduledoc """
-    The user schema.
+    The user "contract" schema.
+        This give ApplicationRunner an interface to match with the "real" user for both the Devtool and the Lenra server
   """
 
   use Ecto.Schema
   import Ecto.Changeset
-
-  alias ApplicationRunner.User
 
   alias ApplicationRunner.JsonStorage.UserData
 
@@ -32,7 +31,7 @@ defmodule ApplicationRunner.User do
       end
 
     changeset =
-      %User{}
+      %__MODULE__{}
       |> cast(user_map, [:id, :email, :inserted_at, :updated_at])
       |> validate_required([:id, :email, :inserted_at, :updated_at])
       |> unique_constraint(:email)
@@ -45,10 +44,8 @@ defmodule ApplicationRunner.User do
     end
   end
 
-  def new(email) do
-    %User{
-      email: email
-    }
-    |> User.changeset()
+  def new(params) do
+    %__MODULE__{}
+    |> __MODULE__.changeset(params)
   end
 end

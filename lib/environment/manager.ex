@@ -1,4 +1,4 @@
-defmodule ApplicationRunner.EnvManager do
+defmodule ApplicationRunner.Environments.Manager do
   @moduledoc """
     This module handles one application. This module is the root_widget to deal with children modules.
   """
@@ -6,24 +6,24 @@ defmodule ApplicationRunner.EnvManager do
 
   alias ApplicationRunner.{
     ApplicationServices,
-    EnvManagers,
-    EnvState,
-    EnvSupervisor,
+    Environments,
     EventHandler
   }
+
+  alias ApplicationRunner.Environments
 
   @on_env_start_action "onEnvStart"
   @on_env_stop_action "onEnvStop"
 
   @spec get_manifest(number()) :: map()
   def get_manifest(env_id) do
-    with {:ok, pid} <- EnvManagers.fetch_env_manager_pid(env_id) do
+    with {:ok, pid} <- Environments.Managers.fetch_env_manager_pid(env_id) do
       GenServer.call(pid, :get_manifest)
     end
   end
 
   def wait_until_ready(env_id) do
-    with {:ok, pid} <- EnvManagers.fetch_env_manager_pid(env_id) do
+    with {:ok, pid} <- Environments.Managers.fetch_env_manager_pid(env_id) do
       GenServer.call(pid, :wait_until_ready)
     end
   end
@@ -50,15 +50,17 @@ defmodule ApplicationRunner.EnvManager do
     function_name = Map.fetch!(state, :function_name)
     assigns = Map.fetch!(state, :assigns)
 
-    {:ok, env_supervisor_pid} = EnvSupervisor.start_link(opts)
+    {:ok, env_supervisor_pid} = Environments.Supervisor.start_link(opts)
     # Link the process to kill the manager if the supervisor is killed.
     # The EnvManager should be restarted by the EnvManagers then it will restart the supervisor.
     Process.link(env_supervisor_pid)
 
-    event_handler_pid = EnvSupervisor.fetch_module_pid!(env_supervisor_pid, EventHandler)
+    event_handler_pid =
+      Environments.Supervisor.fetch_module_pid!(env_supervisor_pid, EventHandler)
+
     EventHandler.subscribe(event_handler_pid)
 
-    env_state = %EnvState{
+    env_state = %Environments.State{
       env_id: env_id,
       function_name: function_name,
       assigns: assigns,
@@ -144,7 +146,7 @@ defmodule ApplicationRunner.EnvManager do
 
   defp do_send_event(env_state, action, props, event) do
     event_handler_pid =
-      EnvSupervisor.fetch_module_pid!(env_state.env_supervisor_pid, EventHandler)
+      Environments.Supervisor.fetch_module_pid!(env_state.env_supervisor_pid, EventHandler)
 
     EventHandler.send_event(event_handler_pid, env_state, action, props, event)
   end
@@ -155,11 +157,11 @@ defmodule ApplicationRunner.EnvManager do
   defp send_on_env_stop_event(env_state),
     do: do_send_event(env_state, @on_env_stop_action, %{}, %{})
 
-  defp stop(%EnvState{} = env_state, from) do
+  defp stop(%Environments.State{} = env_state, from) do
     # Stop all the session node for the given app and stop the app.
     Swarm.multi_call({:sessions, env_state.env_id}, :stop)
     send_on_env_stop_event(env_state)
     if not is_nil(from), do: GenServer.reply(from, :ok)
-    EnvManagers.terminate_app(self())
+    Environments.Managers.terminate_app(self())
   end
 end

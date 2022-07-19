@@ -2,12 +2,16 @@ defmodule ApplicationRunner.ListenerCacheTest do
   use ApplicationRunner.RepoCase, async: false
 
   alias ApplicationRunner.{
-    Environment,
-    EnvManagers,
     EventHandler,
     ListenersCache,
     Repo,
-    Session,
+    Session
+  }
+
+  alias ApplicationRunner.Environments.Managers
+
+  alias ApplicationRunner.Contract.{
+    Environment,
     User
   }
 
@@ -15,12 +19,12 @@ defmodule ApplicationRunner.ListenerCacheTest do
   @ui %{"root" => %{"children" => [], "type" => "flex"}}
 
   setup do
-    start_supervised(EnvManagers)
+    start_supervised(Managers)
     start_supervised(Session.Managers)
     start_supervised({Finch, name: AppHttp})
 
     {:ok, env} = Repo.insert(Environment.new())
-    {:ok, user} = Repo.insert(User.new("test@test.te"))
+    {:ok, user} = Repo.insert(User.new(%{email: "test@test.te"}))
 
     bypass = Bypass.open()
 

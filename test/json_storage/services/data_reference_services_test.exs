@@ -3,7 +3,7 @@ defmodule ApplicationRunner.DataReferenceServicesTest do
 
   use ApplicationRunner.RepoCase
 
-  alias ApplicationRunner.FakeLenraEnvironment
+  alias ApplicationRunner.Contract.Environment
 
   alias ApplicationRunner.JsonStorage
 
@@ -14,7 +14,7 @@ defmodule ApplicationRunner.DataReferenceServicesTest do
   }
 
   setup do
-    {:ok, environment} = Repo.insert(FakeLenraEnvironment.new())
+    {:ok, environment} = Repo.insert(Environment.new())
     {:ok, env_id: environment.id}
   end
 
@@ -94,7 +94,7 @@ defmodule ApplicationRunner.DataReferenceServicesTest do
     end
 
     test "should return error if data not same env_id", %{env_id: env_id} do
-      {:ok, environment} = Repo.insert(FakeLenraEnvironment.new())
+      {:ok, environment} = Repo.insert(Environment.new())
 
       {:ok, inserted_datastore_user} = Repo.insert(Datastore.new(env_id, %{name: "users"}))
 

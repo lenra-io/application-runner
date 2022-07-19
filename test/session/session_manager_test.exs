@@ -6,12 +6,16 @@ defmodule ApplicationRunner.SessionManagerTest do
   """
 
   alias ApplicationRunner.{
-    Environment,
-    EnvManagers,
     EventHandler,
     MockGenServer,
     Repo,
-    Session,
+    Session
+  }
+
+  alias ApplicationRunner.Environments.Managers
+
+  alias ApplicationRunner.Contract.{
+    Environment,
     User
   }
 
@@ -19,11 +23,11 @@ defmodule ApplicationRunner.SessionManagerTest do
   @ui %{"root" => %{"children" => [], "type" => "flex"}}
 
   setup do
-    start_supervised(EnvManagers)
+    start_supervised(Managers)
     start_supervised(Session.Managers)
 
     {:ok, env} = Repo.insert(Environment.new())
-    {:ok, user} = Repo.insert(User.new("test@test.te"))
+    {:ok, user} = Repo.insert(User.new(%{email: "test@test.te"}))
 
     bypass = Bypass.open()
     Bypass.stub(bypass, "POST", "/function/test_function", &handle_request(&1))

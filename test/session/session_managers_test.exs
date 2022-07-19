@@ -6,11 +6,15 @@ defmodule ApplicationRunner.SessionManagersTest do
   """
 
   alias ApplicationRunner.{
-    Environment,
-    EnvManagers,
     EventHandler,
     Repo,
-    Session,
+    Session
+  }
+
+  alias ApplicationRunner.Environments.Managers
+
+  alias ApplicationRunner.Contract.{
+    Environment,
     User
   }
 
@@ -18,7 +22,7 @@ defmodule ApplicationRunner.SessionManagersTest do
   @ui %{"root" => %{"children" => [], "type" => "flex"}}
 
   setup do
-    start_supervised(EnvManagers)
+    start_supervised(Managers)
     start_supervised(Session.Managers)
 
     bypass = Bypass.open()
@@ -33,7 +37,7 @@ defmodule ApplicationRunner.SessionManagersTest do
     Application.put_env(:application_runner, :faas_url, "http://localhost:#{bypass.port}")
 
     {:ok, env} = Repo.insert(Environment.new())
-    {:ok, user} = Repo.insert(User.new("test@test.te"))
+    {:ok, user} = Repo.insert(User.new(%{email: "test@test.te"}))
     {:ok, %{user_id: user.id, env_id: env.id}}
   end
 

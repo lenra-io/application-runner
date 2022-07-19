@@ -1,4 +1,4 @@
-defmodule ApplicationRunner.EnvManagerTest do
+defmodule ApplicationRunner.Environments.ManagerTest do
   use ApplicationRunner.RepoCase, async: false
 
   @moduledoc """
@@ -6,18 +6,22 @@ defmodule ApplicationRunner.EnvManagerTest do
   """
 
   alias ApplicationRunner.{
-    Environment,
-    EnvManager,
-    EnvManagers,
-    EnvSupervisor,
     MockGenServer,
     Repo
   }
 
+  alias ApplicationRunner.Environments.{
+    Manager,
+    Managers,
+    Supervisor
+  }
+
+  alias ApplicationRunner.Contract.Environment
+
   @manifest %{"rootWidget" => "root"}
 
   setup do
-    start_supervised(EnvManagers)
+    start_supervised(Managers)
     start_supervised({Finch, name: AppHttp})
 
     bypass = Bypass.open()
@@ -37,7 +41,7 @@ defmodule ApplicationRunner.EnvManagerTest do
     env_id: env_id
   } do
     assert {:ok, pid} =
-             EnvManagers.start_env(env_id, %{
+             Managers.start_env(env_id, %{
                env_id: env_id,
                function_name: "test_function",
                assigns: %{}
@@ -45,16 +49,16 @@ defmodule ApplicationRunner.EnvManagerTest do
 
     env_state = :sys.get_state(pid)
 
-    assert is_pid(EnvSupervisor.fetch_module_pid!(env_state.env_supervisor_pid, MockGenServer))
+    assert is_pid(Supervisor.fetch_module_pid!(env_state.env_supervisor_pid, MockGenServer))
 
-    assert :ok = EnvManager.wait_until_ready(env_id)
+    assert :ok = Manager.wait_until_ready(env_id)
   end
 
   test "EnvManager supervisor should be started and dont have MockGenServer in childs", %{
     env_id: env_id
   } do
     assert {:ok, pid} =
-             EnvManagers.start_env(env_id, %{
+             Managers.start_env(env_id, %{
                env_id: env_id,
                function_name: "test_function",
                assigns: %{}
@@ -65,28 +69,28 @@ defmodule ApplicationRunner.EnvManagerTest do
     assert_raise(
       RuntimeError,
       "No such Module in EnvSupervisor. This should not happen.",
-      fn -> EnvSupervisor.fetch_module_pid!(env_state.env_supervisor_pid, NotExistGenServer) end
+      fn -> Supervisor.fetch_module_pid!(env_state.env_supervisor_pid, NotExistGenServer) end
     )
 
-    assert :ok = EnvManager.wait_until_ready(env_id)
+    assert :ok = Manager.wait_until_ready(env_id)
   end
 
   test "get_manifest call the get_manifest of the adapter", %{env_id: env_id} do
     assert {:ok, _pid} =
-             EnvManagers.start_env(env_id, %{
+             Managers.start_env(env_id, %{
                env_id: env_id,
                function_name: "test_function",
                assigns: %{}
              })
 
-    assert @manifest == EnvManager.get_manifest(env_id)
+    assert @manifest == Manager.get_manifest(env_id)
 
-    assert :ok = EnvManager.wait_until_ready(env_id)
+    assert :ok = Manager.wait_until_ready(env_id)
   end
 
   test "EnvManager should stop if EnvSupervisor is killed.", %{env_id: env_id} do
     assert {:ok, pid} =
-             EnvManagers.start_env(env_id, %{
+             Managers.start_env(env_id, %{
                env_id: env_id,
                function_name: "test_function",
                assigns: %{}
@@ -97,7 +101,7 @@ defmodule ApplicationRunner.EnvManagerTest do
     assert Process.alive?(env_supervisor_pid)
     assert Process.alive?(pid)
 
-    assert :ok = EnvManager.wait_until_ready(env_id)
+    assert :ok = Manager.wait_until_ready(env_id)
 
     Process.exit(env_supervisor_pid, :kill)
     # Wait a little for process stoped
@@ -108,13 +112,13 @@ defmodule ApplicationRunner.EnvManagerTest do
 
   test "EnvManager should exist in Swarm group :envs", %{env_id: env_id} do
     assert {:ok, pid} =
-             EnvManagers.start_env(env_id, %{
+             Managers.start_env(env_id, %{
                env_id: env_id,
                function_name: "test_function",
                assigns: %{}
              })
 
     assert Enum.member?(Swarm.members(:envs), pid)
-    assert :ok = EnvManager.wait_until_ready(env_id)
+    assert :ok = Manager.wait_until_ready(env_id)
   end
 end

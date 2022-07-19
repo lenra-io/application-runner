@@ -3,20 +3,18 @@ defmodule ApplicationRunner.UserDataServicesTest do
 
   use ApplicationRunner.RepoCase
 
-  alias ApplicationRunner.{
-    FakeLenraEnvironment,
-    FakeLenraUser,
-    JsonStorage
-  }
+  alias ApplicationRunner.JsonStorage
 
   alias ApplicationRunner.JsonStorage.{
     Datastore,
     UserData
   }
 
+  alias ApplicationRunner.Contract.{Environment, User}
+
   setup do
-    {:ok, environment} = Repo.insert(FakeLenraEnvironment.new())
-    {:ok, user} = Repo.insert(FakeLenraUser.new())
+    {:ok, environment} = Repo.insert(Environment.new())
+    {:ok, user} = Repo.insert(User.new(%{email: "test@test.te"}))
     {:ok, env_id: environment.id, user_id: user.id}
   end
 
@@ -80,7 +78,7 @@ defmodule ApplicationRunner.UserDataServicesTest do
       {:ok, %{inserted_data: inserted_data}} =
         JsonStorage.create_data(env_id, %{"_datastore" => "users", "name" => "toto"})
 
-      {:ok, user_two} = Repo.insert(FakeLenraUser.new())
+      {:ok, user_two} = Repo.insert(User.new(%{email: "test@test.te"}))
 
       {:ok, %{inserted_user_data: _inserted_user_data}} =
         JsonStorage.create_user_data(%{user_id: user_id, data_id: inserted_data.id})
