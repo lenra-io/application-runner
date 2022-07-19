@@ -11,6 +11,8 @@ defmodule ApplicationRunner.ListenersCache do
     Supervisor
   }
 
+  alias ApplicationRunner.Errors.BusinessError
+
   @spec save_listener(State.t(), String.t(), map()) :: :ok
   def save_listener(%State{} = session_state, code, listener) do
     pid = Supervisor.fetch_module_pid!(session_state.session_supervisor_pid, __MODULE__)
@@ -23,7 +25,7 @@ defmodule ApplicationRunner.ListenersCache do
     pid = Supervisor.fetch_module_pid!(session_state.session_supervisor_pid, __MODULE__)
 
     case get(pid, code) do
-      nil -> {:error, :no_listener_with_code}
+      nil -> BusinessError.unknow_listener_code_tuple(code)
       res -> {:ok, res}
     end
   end

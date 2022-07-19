@@ -18,6 +18,8 @@ defmodule ApplicationRunner.SessionManagersTest do
     User
   }
 
+  alias ApplicationRunner.Errors.BusinessError
+
   @manifest %{"rootWidget" => "root"}
   @ui %{"root" => %{"children" => [], "type" => "flex"}}
 
@@ -140,7 +142,9 @@ defmodule ApplicationRunner.SessionManagersTest do
 
   test "Can start one session and get it after", %{user_id: user_id, env_id: env_id} do
     session_id = Ecto.UUID.generate()
-    assert {:error, :session_not_started} = Session.Managers.fetch_session_manager_pid(session_id)
+
+    assert {:error, BusinessError.session_not_started({:session, session_id})} ==
+             Session.Managers.fetch_session_manager_pid(session_id)
 
     assert {:ok, pid} =
              Session.start_session(

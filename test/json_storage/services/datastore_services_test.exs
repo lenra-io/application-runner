@@ -6,6 +6,7 @@ defmodule ApplicationRunner.DatastoreServiceTest do
   alias ApplicationRunner.Contract.Environment
   alias ApplicationRunner.JsonStorage
   alias ApplicationRunner.JsonStorage.{Data, Datastore}
+  alias ApplicationRunner.Errors.TechnicalError
 
   setup do
     {:ok, environment} = Repo.insert(Environment.new())
@@ -78,7 +79,7 @@ defmodule ApplicationRunner.DatastoreServiceTest do
     end
 
     test "should return error id invalid", %{env_id: _env_id} do
-      assert {:error, :datastore, :datastore_not_found, _changes_so_far} =
+      assert {:error, :datastore, TechnicalError.datastore_not_found(), %{}} ==
                JsonStorage.delete_datastore(-1)
     end
 
@@ -136,7 +137,7 @@ defmodule ApplicationRunner.DatastoreServiceTest do
     end
 
     test "should return error id invalid", %{env_id: _env_id} do
-      assert {:error, :datastore, :datastore_not_found, _changes_so_far} =
+      assert {:error, :datastore, TechnicalError.datastore_not_found(), %{}} ==
                JsonStorage.update_datastore(-1, %{"name" => "test"})
     end
   end

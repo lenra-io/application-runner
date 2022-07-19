@@ -6,8 +6,9 @@ defmodule ApplicationRunner.Guardian.ErrorHandler do
   @behaviour Guardian.Plug.ErrorHandler
 
   @impl Guardian.Plug.ErrorHandler
-  def auth_error(conn, {:error, :did_not_accept_cgu}, _opts) do
-    [translated_error] = ApplicationRunner.ErrorHelpers.translate_error(:did_not_accept_cgu)
+
+  def auth_error(conn, %LenraCommon.Errors.BusinessError{} = err, _opts) do
+    [translated_error] = LenraCommonWeb.ErrorHelpers.translate_error(err)
 
     conn
     |> Phoenix.Controller.put_view(ApplicationRunner.ErrorView)
@@ -35,6 +36,6 @@ defmodule ApplicationRunner.Guardian.ErrorHandler do
     conn
     |> Phoenix.Controller.put_view(ApplicationRunner.ErrorView)
     |> Plug.Conn.put_status(401)
-    |> Phoenix.Controller.render("401.json", message: message)
+    |> Phoenix.Controller.render("401.json", %{message: message, reason: type})
   end
 end

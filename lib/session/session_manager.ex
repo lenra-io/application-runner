@@ -21,6 +21,8 @@ defmodule ApplicationRunner.Session.Manager do
     Supervisor
   }
 
+  alias ApplicationRunner.Errors.TechnicalError
+
   @on_user_first_join_action "onUserFirstJoin"
   @on_user_quit_action "onUserQuit"
   @on_session_start_action "onSessionStart"
@@ -136,7 +138,7 @@ defmodule ApplicationRunner.Session.Manager do
         :ok
 
       {a, :error404} when a not in @optional_handler_actions ->
-        send_error(session_state, {:error, :listener_not_found})
+        send_error(session_state, TechnicalError.listener_not_found_tuple())
 
       {_, err} ->
         send_error(session_state, err)

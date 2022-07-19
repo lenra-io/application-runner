@@ -7,6 +7,8 @@ defmodule ApplicationRunner.Session.Managers do
 
   alias ApplicationRunner.{Environments, Session}
 
+  alias ApplicationRunner.Errors.BusinessError
+
   def start_link(opts) do
     DynamicSupervisor.start_link(__MODULE__, opts, name: __MODULE__)
   end
@@ -49,10 +51,10 @@ defmodule ApplicationRunner.Session.Managers do
     DynamicSupervisor.terminate_child(ApplicationRunner.Session.Managers, session_manager_pid)
   end
 
-  @spec fetch_session_manager_pid(any) :: {:error, :session_not_started} | {:ok, pid()}
+  @spec fetch_session_manager_pid(any) :: BusinessError.session_not_started_tuple() | {:ok, pid()}
   def fetch_session_manager_pid(session_id) do
     case Swarm.whereis_name({:session, session_id}) do
-      :undefined -> {:error, :session_not_started}
+      :undefined -> BusinessError.session_not_started_tuple({:session, session_id})
       pid -> {:ok, pid}
     end
   end

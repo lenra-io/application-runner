@@ -4,6 +4,8 @@ defmodule ApplicationRunner.JsonStorage.Services.DataReferences do
 
   alias ApplicationRunner.JsonStorage.{Data, DataReferences, Datastore}
 
+  alias ApplicationRunner.Errors.{BusinessError, TechnicalError}
+
   @repo Application.compile_env!(:application_runner, :repo)
 
   def create(params), do: Ecto.Multi.new() |> create(params)
@@ -33,7 +35,7 @@ defmodule ApplicationRunner.JsonStorage.Services.DataReferences do
           {:ok, %{refs_id: refs, ref_by_id: refBy}}
 
         false ->
-          {:error, :reference_not_found}
+          TechnicalError.reference_not_found_tuple()
       end
     end)
   end
@@ -59,7 +61,7 @@ defmodule ApplicationRunner.JsonStorage.Services.DataReferences do
     |> Ecto.Multi.run(:reference, fn repo, _params ->
       case repo.get_by(DataReferences, refs_id: refs, ref_by_id: refBy) do
         nil ->
-          {:error, :reference_not_found}
+          TechnicalError.reference_not_found_tuple()
 
         ref ->
           {:ok, ref}
@@ -73,7 +75,7 @@ defmodule ApplicationRunner.JsonStorage.Services.DataReferences do
 
   def delete(multi, _params) do
     multi
-    |> Ecto.Multi.error(:reference, :json_format_invalid)
+    |> Ecto.Multi.error(:reference, BusinessError.json_format_invalid())
     |> @repo.transaction()
   end
 end

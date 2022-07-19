@@ -8,6 +8,7 @@ defmodule ApplicationRunner.ApplicationServices do
     Session
   }
 
+  alias ApplicationRunner.Errors.TechnicalError
   require Logger
 
   @url Application.compile_env!(:application_runner, :url)
@@ -111,9 +112,6 @@ defmodule ApplicationRunner.ApplicationServices do
       {:ok, %{"widget" => widget}} ->
         {:ok, widget}
 
-      :error404 ->
-        {:error, :widget_not_found}
-
       err ->
         err
     end
@@ -133,9 +131,6 @@ defmodule ApplicationRunner.ApplicationServices do
       {:ok, %{"manifest" => manifest}} ->
         Logger.debug("Got manifest : #{inspect(manifest)}")
         {:ok, manifest}
-
-      :error404 ->
-        {:error, :manifest_not_found}
 
       err ->
         Logger.error("Error while getting manifest : #{inspect(err)}")
@@ -244,7 +239,7 @@ defmodule ApplicationRunner.ApplicationServices do
 
   defp response({:error, %Mint.TransportError{reason: reason}}, _action) do
     Logger.error("Openfaas could not be reached. It should not happen. \n\t\t reason: #{reason}")
-    {:error, :openfass_not_recheable}
+    TechnicalError.openfaas_not_reachable_tuple()
   end
 
   defp response(
@@ -255,23 +250,23 @@ defmodule ApplicationRunner.ApplicationServices do
     case status_code do
       400 ->
         Logger.error(body)
-        {:error, :bad_request}
+        TechnicalError.bad_request_tuple(body)
 
       404 ->
         Logger.error(body)
-        :error404
+        TechnicalError.error_404_tuple(body)
 
       500 ->
         Logger.error(body)
-        {:error, body}
+        TechnicalError.error_500_tuple(body)
 
       504 ->
         Logger.error(body)
-        {:error, :timeout}
+        TechnicalError.timeout_tuple(body)
 
       _err ->
         Logger.error(body)
-        {:error, :unknow_error}
+        TechnicalError.unknown_error_tuple(body)
     end
   end
 end
