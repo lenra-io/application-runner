@@ -4,9 +4,9 @@ defmodule ApplicationRunner.DatastoreServiceTest do
   use ApplicationRunner.RepoCase
 
   alias ApplicationRunner.Contract.Environment
+  alias ApplicationRunner.Errors.TechnicalError
   alias ApplicationRunner.JsonStorage
   alias ApplicationRunner.JsonStorage.{Data, Datastore}
-  alias ApplicationRunner.Errors.TechnicalError
 
   setup do
     {:ok, environment} = Repo.insert(Environment.new())

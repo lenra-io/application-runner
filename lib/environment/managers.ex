@@ -22,7 +22,8 @@ defmodule ApplicationRunner.Environments.Managers do
   @doc """
     Fetch the `EnvManager` pid corresponding to the `env_id`.
   """
-  @spec fetch_env_manager_pid(number()) :: BusinessError.env_not_started_tuple() | {:ok, pid()}
+  @spec fetch_env_manager_pid(number()) ::
+          {:error, LenraCommon.Errors.BusinessError.t()} | {:ok, pid()}
   def fetch_env_manager_pid(env_id) do
     case Swarm.whereis_name({:env, env_id}) do
       :undefined -> BusinessError.env_not_started_tuple()
