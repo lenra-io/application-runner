@@ -6,7 +6,7 @@ defmodule ApplicationRunner.DataReferenceController do
   def create(conn, params) do
     with {:ok, inserted_reference: reference} <- JsonStorage.create_reference(params) do
       conn
-      |> assign_data(:inserted_reference, reference)
+      |> assign_data(reference)
       |> reply
     end
   end
@@ -14,7 +14,7 @@ defmodule ApplicationRunner.DataReferenceController do
   def delete(conn, params) do
     with {:ok, deleted_reference: reference} <- JsonStorage.delete_reference(params) do
       conn
-      |> assign_data(:deleted_reference, reference)
+      |> assign_data(reference)
       |> reply
     end
   end

@@ -11,6 +11,8 @@ defmodule ApplicationRunner.Environments.ManagersTest do
 
   alias ApplicationRunner.Environments.{Manager, Managers}
 
+  alias ApplicationRunner.Errors.BusinessError
+
   setup do
     start_supervised(Managers)
 
@@ -56,7 +58,7 @@ defmodule ApplicationRunner.Environments.ManagersTest do
   end
 
   test "Can start one Env and get it after", %{env_id: env_id} do
-    assert {:error, :env_not_started} = Managers.fetch_env_manager_pid(env_id)
+    assert {:error, BusinessError.env_not_started()} == Managers.fetch_env_manager_pid(env_id)
 
     assert {:ok, pid} =
              Managers.start_env(env_id, %{

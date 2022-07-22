@@ -6,6 +6,7 @@ defmodule ApplicationRunner.Environments.Managers do
   use DynamicSupervisor
 
   alias ApplicationRunner.Environments.Managers
+  alias ApplicationRunner.Errors.BusinessError
 
   @doc false
   def start_link(opts) do
@@ -21,10 +22,11 @@ defmodule ApplicationRunner.Environments.Managers do
   @doc """
     Fetch the `EnvManager` pid corresponding to the `env_id`.
   """
-  @spec fetch_env_manager_pid(number()) :: {:error, :env_not_started} | {:ok, pid()}
+  @spec fetch_env_manager_pid(number()) ::
+          {:error, LenraCommon.Errors.BusinessError.t()} | {:ok, pid()}
   def fetch_env_manager_pid(env_id) do
     case Swarm.whereis_name({:env, env_id}) do
-      :undefined -> {:error, :env_not_started}
+      :undefined -> BusinessError.env_not_started_tuple()
       pid -> {:ok, pid}
     end
   end

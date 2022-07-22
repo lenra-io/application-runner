@@ -19,27 +19,15 @@ defmodule ApplicationRunner do
 
   def controller do
     quote do
-      use Phoenix.Controller, namespace: ApplicationRunner
+      use LenraCommonWeb, :controller
 
-      import ApplicationRunner.ControllerHelpers
-      import Plug.Conn
-
-      # credo:disable-for-next-line Credo.Check.Readability.AliasAs
       alias ApplicationRunner.Router.Helpers, as: Routes
-      plug(:put_view, ApplicationRunner.BaseView)
-      action_fallback(ApplicationRunner.FallbackController)
     end
   end
 
   def view do
     quote do
-      use Phoenix.View,
-        root: "lib/templates",
-        namespace: ApplicationRunner
-
-      # Import convenience functions from controllers
-      import Phoenix.Controller,
-        only: [get_flash: 1, get_flash: 2, view_module: 1, view_template: 1]
+      use LenraCommonWeb, :view
 
       # Include shared imports and aliases for views
       unquote(view_helpers())
@@ -48,9 +36,7 @@ defmodule ApplicationRunner do
 
   defp view_helpers do
     quote do
-      # Import basic rendering functionality (render, render_layout, etc)
-      import Phoenix.View
-      import ApplicationRunner.ErrorHelpers
+      use LenraCommonWeb, :view_helpers
 
       # credo:disable-for-next-line Credo.Check.Readability.AliasAs
       alias ApplicationRunner.Router.Helpers, as: Routes

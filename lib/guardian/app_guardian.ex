@@ -10,6 +10,8 @@ defmodule ApplicationRunner.Guardian.AppGuardian do
     Session
   }
 
+  alias ApplicationRunner.Errors.{BusinessError, TechnicalError}
+
   @repo Application.compile_env(:application_runner, :repo)
 
   def subject_for_token(session_pid, _claims) do
@@ -34,7 +36,7 @@ defmodule ApplicationRunner.Guardian.AppGuardian do
          token do
       {:ok, claims}
     else
-      {:error, :invalid_token}
+      BusinessError.invalid_token_tuple()
     end
   end
 
@@ -47,7 +49,7 @@ defmodule ApplicationRunner.Guardian.AppGuardian do
         Environments.Token.fetch_token(String.to_integer(claims["sub"]))
 
       _err ->
-        :error
+        TechnicalError.unknown_error_tuple()
     end
   end
 end

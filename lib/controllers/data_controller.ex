@@ -12,7 +12,7 @@ defmodule ApplicationRunner.DataController do
              params["id"]
            ) do
       conn
-      |> assign_all(result.data)
+      |> assign_data(result.data)
       |> reply
     end
   end
@@ -21,7 +21,7 @@ defmodule ApplicationRunner.DataController do
     with session_assigns <- Plug.current_resource(conn),
          result <- JsonStorage.get_all_data(session_assigns.environment.id, params["datastore"]) do
       conn
-      |> assign_all(Enum.map(result, fn r -> r.data end))
+      |> assign_data(Enum.map(result, fn r -> r.data end))
       |> reply
     end
   end
@@ -34,7 +34,7 @@ defmodule ApplicationRunner.DataController do
              session_assigns.user.id
            ) do
       conn
-      |> assign_data(:user_data, result)
+      |> assign_data(result)
       |> reply
     end
   end
@@ -47,7 +47,7 @@ defmodule ApplicationRunner.DataController do
          {:ok, %{inserted_data: data}} <-
            JsonStorage.create_data(session_assigns.environment.id, params) do
       conn
-      |> assign_data(:inserted_data, data)
+      |> assign_data(data)
       |> reply
     end
   end
@@ -60,7 +60,7 @@ defmodule ApplicationRunner.DataController do
          {:ok, %{updated_data: data}} <-
            JsonStorage.update_data(session_assigns.environment.id, params) do
       conn
-      |> assign_data(:updated_data, data)
+      |> assign_data(data)
       |> reply
     end
   end
@@ -73,7 +73,7 @@ defmodule ApplicationRunner.DataController do
          {:ok, %{deleted_data: data}} <-
            JsonStorage.delete_data(session_assigns.environment.id, params["_id"]) do
       conn
-      |> assign_data(:deleted_data, data)
+      |> assign_data(data)
       |> reply
     end
   end
@@ -87,7 +87,7 @@ defmodule ApplicationRunner.DataController do
              session_assigns.user.id
            ) do
       conn
-      |> assign_all(data)
+      |> assign_data(data)
       |> reply
     end
   end
@@ -100,7 +100,7 @@ defmodule ApplicationRunner.DataController do
   # But we cannot put underscores "_" in the route without a lot of warning everywhere.
   # To avoid these warnings, we set the variable without the "_" in the route and transform them in the
   # Controller with this function.
-  #
+  # :error
   # !!! Since "id" is a valid json_data the dev can provide, we must first transform only the path_params
   # to add the underscores. Only then we can merge this transformed params to the body_params.
   defp reformat_params_with_underscore(body_params, path_params, key_list) do

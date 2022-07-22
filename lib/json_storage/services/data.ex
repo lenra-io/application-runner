@@ -11,6 +11,8 @@ defmodule ApplicationRunner.JsonStorage.Services.Data do
   }
 
   alias QueryParser.AST.{EctoParser, Parser}
+
+  alias ApplicationRunner.Errors.{BusinessError, TechnicalError}
   import Ecto.Query, only: [from: 2]
 
   @repo Application.compile_env!(:application_runner, :repo)
@@ -109,7 +111,7 @@ defmodule ApplicationRunner.JsonStorage.Services.Data do
     Ecto.Multi.run(multi, :datastore, fn repo, _params ->
       case repo.get_by(Datastore, name: datastore, environment_id: environment_id) do
         nil ->
-          {:error, :datastore_not_found}
+          TechnicalError.datastore_not_found_tuple()
 
         datastore ->
           {:ok, datastore}
@@ -118,7 +120,7 @@ defmodule ApplicationRunner.JsonStorage.Services.Data do
   end
 
   defp get_datastore(multi, _environment_id, _metadata) do
-    Ecto.Multi.error(multi, :data, :json_format_invalid)
+    Ecto.Multi.error(multi, :data, BusinessError.json_format_invalid())
   end
 
   defp insert_data(multi, data) do
@@ -143,7 +145,7 @@ defmodule ApplicationRunner.JsonStorage.Services.Data do
   end
 
   defp handle_refs(multi, %{"_refs" => _refs}) do
-    Ecto.Multi.error(multi, :data, :json_format_invalid)
+    Ecto.Multi.error(multi, :data, BusinessError.json_format_invalid())
   end
 
   defp handle_refs(multi, _metadata) do
@@ -166,7 +168,7 @@ defmodule ApplicationRunner.JsonStorage.Services.Data do
   end
 
   defp handle_ref_by(multi, %{"_refBy" => _ref_by}) do
-    Ecto.Multi.error(multi, :data, :json_format_invalid)
+    Ecto.Multi.error(multi, :data, BusinessError.json_format_invalid())
   end
 
   defp handle_ref_by(multi, _metadata) do
@@ -208,7 +210,7 @@ defmodule ApplicationRunner.JsonStorage.Services.Data do
 
       case data do
         nil ->
-          {:error, :data_not_found}
+          TechnicalError.data_not_found_tuple()
 
         data ->
           {:ok, data}
@@ -221,7 +223,7 @@ defmodule ApplicationRunner.JsonStorage.Services.Data do
   end
 
   defp update_refs(multi, %{"_refs" => _refs}) do
-    Ecto.Multi.error(multi, :data, :json_format_invalid)
+    Ecto.Multi.error(multi, :data, BusinessError.json_format_invalid())
   end
 
   defp update_refs(multi, _metadata) do
@@ -233,7 +235,7 @@ defmodule ApplicationRunner.JsonStorage.Services.Data do
   end
 
   defp update_ref_by(multi, %{"_refBy" => _refs}) do
-    Ecto.Multi.error(multi, :data, :json_format_invalid)
+    Ecto.Multi.error(multi, :data, BusinessError.json_format_invalid())
   end
 
   defp update_ref_by(multi, _metadata) do
@@ -273,7 +275,7 @@ defmodule ApplicationRunner.JsonStorage.Services.Data do
           |> repo.update()
 
         false ->
-          {:error, :references_not_found}
+          TechnicalError.reference_not_found_tuple()
       end
     end)
   end

@@ -5,6 +5,8 @@ defmodule ApplicationRunner.JsonStorage.Services.Datastore do
 
   alias ApplicationRunner.JsonStorage.Datastore
 
+  alias ApplicationRunner.Errors.TechnicalError
+
   @repo Application.compile_env!(:application_runner, :repo)
 
   def create(environment_id, params), do: Ecto.Multi.new() |> create(environment_id, params)
@@ -24,7 +26,7 @@ defmodule ApplicationRunner.JsonStorage.Services.Datastore do
       fn repo, _params ->
         case repo.get(Datastore, datastore_id) do
           nil ->
-            {:error, :datastore_not_found}
+            TechnicalError.datastore_not_found_tuple()
 
           datastore ->
             {:ok, datastore}
@@ -46,7 +48,7 @@ defmodule ApplicationRunner.JsonStorage.Services.Datastore do
       fn repo, _params ->
         case repo.get(Datastore, datastore_id) do
           nil ->
-            {:error, :datastore_not_found}
+            TechnicalError.datastore_not_found_tuple()
 
           datastore ->
             {:ok, datastore}

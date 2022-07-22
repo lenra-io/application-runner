@@ -15,6 +15,8 @@ defmodule ApplicationRunner.ListenerCacheTest do
     User
   }
 
+  alias ApplicationRunner.Errors.BusinessError
+
   @manifest %{"rootWidget" => "root"}
   @ui %{"root" => %{"children" => [], "type" => "flex"}}
 
@@ -110,7 +112,7 @@ defmodule ApplicationRunner.ListenerCacheTest do
 
     code = Crypto.hash({action, props})
 
-    assert {:error, :no_listener_with_code} ==
+    assert {:error, BusinessError.unknow_listener_code(code)} ==
              ListenersCache.fetch_listener(session_state, code)
 
     assert :ok == ListenersCache.save_listener(session_state, code, listener)

@@ -13,6 +13,8 @@ defmodule ApplicationRunner.DataReferenceServicesTest do
     Datastore
   }
 
+  alias ApplicationRunner.Errors.{BusinessError, TechnicalError}
+
   setup do
     {:ok, environment} = Repo.insert(Environment.new())
     {:ok, env_id: environment.id}
@@ -63,7 +65,7 @@ defmodule ApplicationRunner.DataReferenceServicesTest do
       {:ok, inserted_user} =
         Repo.insert(Data.new(inserted_datastore_point.id, %{"name" => "toto"}))
 
-      assert {:error, :data_reference, :reference_not_found, _change_so_far} =
+      assert {:error, :data_reference, TechnicalError.reference_not_found(), %{}} ==
                JsonStorage.create_reference(%{
                  refs_id: inserted_user.id,
                  ref_by_id: -1
@@ -106,7 +108,7 @@ defmodule ApplicationRunner.DataReferenceServicesTest do
 
       {:ok, inserted_point} = Repo.insert(Data.new(inserted_datastore_point.id, %{"score" => 10}))
 
-      assert {:error, :data_reference, :reference_not_found, _change_so_far} =
+      assert {:error, :data_reference, TechnicalError.reference_not_found(), %{}} ==
                JsonStorage.create_reference(%{
                  refs_id: inserted_user.id,
                  ref_by_id: inserted_point.id
@@ -143,7 +145,7 @@ defmodule ApplicationRunner.DataReferenceServicesTest do
       {:ok, inserted_user} =
         Repo.insert(Data.new(inserted_datastore_user.id, %{"name" => "toto"}))
 
-      assert {:error, :reference, :reference_not_found, %{}} ==
+      assert {:error, :reference, TechnicalError.reference_not_found(), %{}} ==
                JsonStorage.delete_reference(%{
                  refs_id: -1,
                  ref_by_id: inserted_user.id
@@ -157,11 +159,11 @@ defmodule ApplicationRunner.DataReferenceServicesTest do
       {:ok, inserted_user} =
         Repo.insert(Data.new(inserted_datastore_user.id, %{"name" => "toto"}))
 
-      {:error, :reference, :reference_not_found, %{}} =
-        JsonStorage.delete_reference(%{
-          refs_id: inserted_user.id,
-          ref_by_id: -1
-        })
+      assert {:error, :reference, TechnicalError.reference_not_found(), %{}} ==
+               JsonStorage.delete_reference(%{
+                 refs_id: inserted_user.id,
+                 ref_by_id: -1
+               })
     end
 
     test "should return error if json key invalid ", %{env_id: env_id} do
@@ -171,7 +173,7 @@ defmodule ApplicationRunner.DataReferenceServicesTest do
       {:ok, inserted_user} =
         Repo.insert(Data.new(inserted_datastore_user.id, %{"name" => "toto"}))
 
-      assert {:error, :reference, :json_format_invalid, %{}} ==
+      assert {:error, :reference, BusinessError.json_format_invalid(), %{}} ==
                JsonStorage.delete_reference(%{
                  refs_id: inserted_user.id,
                  refsBy_id: -1
