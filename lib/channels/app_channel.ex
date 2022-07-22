@@ -7,10 +7,11 @@ defmodule ApplicationRunner.AppChannel do
     quote do
       use Phoenix.Channel
 
-      alias ApplicationRunner.{
-        ErrorHelpers,
-        Session
-      }
+      alias ApplicationRunner.Session
+
+      alias LenraCommonWeb.ErrorHelpers
+
+      alias ApplicationRunner.Errors.BusinessError
 
       alias ApplicationRunner.Session.{
         Manager,
@@ -61,22 +62,22 @@ defmodule ApplicationRunner.AppChannel do
 
             # Application error
             {:error, reason} when is_bitstring(reason) ->
-              {:error, %{reason: [%{code: -1, message: reason}]}}
+              {:error, %{error: reason}}
 
             {:error, reason} when is_atom(reason) ->
-              {:error, %{reason: ErrorHelpers.translate_error(reason)}}
+              {:error, %{error: ErrorHelpers.translate_error(reason)}}
           end
         else
           {:error, :forbidden} ->
-            {:error, %{reason: ErrorHelpers.translate_error(:no_app_authorization)}}
+            {:error, %{error: ErrorHelpers.translate_error(:no_app_authorization)}}
 
           err ->
-            {:error, %{reason: ErrorHelpers.translate_error(:no_app_found)}}
+            BusinessError.no_app_found_tuple()
         end
       end
 
       def join("app", _any, _socket) do
-        {:error, %{reason: ErrorHelpers.translate_error(:no_app_found)}}
+        BusinessError.no_app_found_tuple()
       end
 
       # Override this function to allow user or not according to the server/devtools needs
@@ -114,7 +115,7 @@ defmodule ApplicationRunner.AppChannel do
       def handle_info({:send, :error, {:error, reason}}, socket) when is_atom(reason) do
         Logger.error("Send error #{inspect(reason)}")
 
-        push(socket, "error", %{"errors" => ErrorHelpers.translate_error(reason)})
+        push(socket, "error", reason)
         {:noreply, socket}
       end
 
@@ -125,12 +126,6 @@ defmodule ApplicationRunner.AppChannel do
           |> Enum.map(fn {message, path} -> %{code: 0, message: "#{message} at path #{path}"} end)
 
         push(socket, "error", %{"errors" => formatted_errors})
-        {:noreply, socket}
-      end
-
-      def handle_info({:send, :error, reason}, socket) when is_atom(reason) do
-        Logger.error("Send error atom #{inspect(reason)}")
-        push(socket, "error", %{"errors" => ErrorHelpers.translate_error(reason)})
         {:noreply, socket}
       end
 

@@ -13,6 +13,7 @@ defmodule ApplicationRunner.Errors.BusinessError do
       {:did_not_accept_cgu, "You must accept the CGU to use Lenra"},
       {:unknow_listener_code, "No listeners found for the given code"},
       {:session_not_started, "Session not started"},
-      {:json_format_invalid, "JSON format invalid"}
+      {:json_format_invalid, "JSON format invalid"},
+      {:no_app_found, "No application found for the current link"}
     ]
 end
