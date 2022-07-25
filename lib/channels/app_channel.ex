@@ -69,7 +69,7 @@ defmodule ApplicationRunner.AppChannel do
           end
         else
           {:error, :forbidden} ->
-            {:error,  ErrorHelpers.translate_error(BusinessError.no_app_found())}
+            {:error, ErrorHelpers.translate_error(BusinessError.no_app_found())}
 
           err ->
             BusinessError.no_app_found_tuple()
@@ -123,7 +123,9 @@ defmodule ApplicationRunner.AppChannel do
           when is_list(errors) do
         formatted_errors =
           errors
-          |> Enum.map(fn {message, path} -> %{message: "#{message} at path #{path}", "reason" => "invalid_ui"} end)
+          |> Enum.map(fn {message, path} ->
+            %{message: "#{message} at path #{path}", reason: "invalid_ui"}
+          end)
 
         push(socket, "error", %{"errors" => formatted_errors})
         {:noreply, socket}
@@ -131,7 +133,11 @@ defmodule ApplicationRunner.AppChannel do
 
       def handle_info({:send, :error, malformatted_error}, socket) do
         Logger.error("Malformatted error #{inspect(malformatted_error)}")
-        push(socket, "error", %{"errors" => ErrorHelpers.translate_error(TechnicalError.unknown_error())})
+
+        push(socket, "error", %{
+          "errors" => ErrorHelpers.translate_error(TechnicalError.unknown_error())
+        })
+
         {:noreply, socket}
       end
 
