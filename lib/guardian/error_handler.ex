@@ -13,7 +13,7 @@ defmodule ApplicationRunner.Guardian.ErrorHandler do
     conn
     |> Phoenix.Controller.put_view(ApplicationRunner.ErrorView)
     |> Plug.Conn.put_status(403)
-    |> Phoenix.Controller.render("403.json", error: translated_error)
+    |> Phoenix.Controller.render("403.json", translated_error)
   end
 
   @impl Guardian.Plug.ErrorHandler

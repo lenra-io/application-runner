@@ -11,7 +11,7 @@ defmodule ApplicationRunner.AppChannel do
 
       alias LenraCommonWeb.ErrorHelpers
 
-      alias ApplicationRunner.Errors.BusinessError
+      alias ApplicationRunner.Errors.{BusinessError, TechnicalError}
 
       alias ApplicationRunner.Session.{
         Manager,
@@ -62,14 +62,14 @@ defmodule ApplicationRunner.AppChannel do
 
             # Application error
             {:error, reason} when is_bitstring(reason) ->
-              {:error, %{error: reason}}
+              {:error, %{message: reason, reason: "application_error"}}
 
-            {:error, reason} when is_atom(reason) ->
+            {:error, reason} when is_struct(reason) ->
               {:error, %{error: ErrorHelpers.translate_error(reason)}}
           end
         else
           {:error, :forbidden} ->
-            {:error, %{error: ErrorHelpers.translate_error(:no_app_authorization)}}
+            {:error, ErrorHelpers.translate_error(BusinessError.no_app_found())}
 
           err ->
             BusinessError.no_app_found_tuple()
@@ -112,10 +112,10 @@ defmodule ApplicationRunner.AppChannel do
         {:noreply, socket}
       end
 
-      def handle_info({:send, :error, {:error, reason}}, socket) when is_atom(reason) do
-        Logger.error("Send error #{inspect(reason)}")
+      def handle_info({:send, :error, {:error, err}}, socket) when is_struct(err) do
+        Logger.error("Send error #{inspect(err)}")
 
-        push(socket, "error", reason)
+        push(socket, "error", ErrorHelpers.translate_error(err))
         {:noreply, socket}
       end
 
@@ -123,7 +123,9 @@ defmodule ApplicationRunner.AppChannel do
           when is_list(errors) do
         formatted_errors =
           errors
-          |> Enum.map(fn {message, path} -> %{code: 0, message: "#{message} at path #{path}"} end)
+          |> Enum.map(fn {message, path} ->
+            %{message: "#{message} at path #{path}", reason: "invalid_ui"}
+          end)
 
         push(socket, "error", %{"errors" => formatted_errors})
         {:noreply, socket}
@@ -131,7 +133,11 @@ defmodule ApplicationRunner.AppChannel do
 
       def handle_info({:send, :error, malformatted_error}, socket) do
         Logger.error("Malformatted error #{inspect(malformatted_error)}")
-        push(socket, "error", %{"errors" => ErrorHelpers.translate_error(:unknow_error)})
+
+        push(socket, "error", %{
+          "errors" => ErrorHelpers.translate_error(TechnicalError.unknown_error())
+        })
+
         {:noreply, socket}
       end
 
