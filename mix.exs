@@ -56,7 +56,7 @@ defmodule ApplicationRunner.MixProject do
         name: :lenra_common,
         host: "github.com",
         project: "lenra-io/lenra-common.git",
-        tag: "v2.0.2",
+        tag: "v2.0.3",
         credentials: "shiipou:#{System.get_env("GH_PERSONNAL_TOKEN")}"
       )
     ]
