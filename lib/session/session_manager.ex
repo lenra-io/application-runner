@@ -211,7 +211,7 @@ defmodule ApplicationRunner.Session.Manager do
     query = nil
     data = []
     context = %{}
-    id = WidgetCache.generate_widget_id(root_widget, query, props, context)
+    id = Widget.Cache.generate_widget_id(root_widget, query, props, context)
 
     Widget.Cache.get_and_build_widget(
       session_state,
@@ -219,7 +219,7 @@ defmodule ApplicationRunner.Session.Manager do
         widgets_map: %{},
         listeners_map: %{}
       },
-      %WidgetContext{
+      %Widget.Context{
         context: context,
         id: id,
         name: root_widget,
