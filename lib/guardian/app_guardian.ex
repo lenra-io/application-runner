@@ -6,6 +6,7 @@ defmodule ApplicationRunner.Guardian.AppGuardian do
   use Guardian, otp_app: :application_runner
 
   alias ApplicationRunner.{
+    Contract,
     Environments,
     Session
   }
