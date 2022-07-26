@@ -8,7 +8,7 @@ defmodule ApplicationRunner.Guardian.ErrorHandler do
   @impl Guardian.Plug.ErrorHandler
 
   def auth_error(conn, %LenraCommon.Errors.BusinessError{} = err, _opts) do
-    [translated_error] = LenraCommonWeb.ErrorHelpers.translate_error(err)
+    translated_error = LenraCommonWeb.ErrorHelpers.translate_error(err)
 
     conn
     |> Phoenix.Controller.put_view(ApplicationRunner.ErrorView)
