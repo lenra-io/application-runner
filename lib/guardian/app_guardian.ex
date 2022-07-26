@@ -20,8 +20,6 @@ defmodule ApplicationRunner.Guardian.AppGuardian do
   end
 
   def resource_from_claims(%{"user_id" => user_id, "env_id" => env_id}) do
-    IO.inspect({:resource_from_claims_session, env_id})
-
     with env <- @repo.get(Contract.Environment, env_id),
          user <- @repo.get(Contract.User, user_id) do
       {:ok, %{environment: env, user: user}}
@@ -29,12 +27,8 @@ defmodule ApplicationRunner.Guardian.AppGuardian do
   end
 
   def resource_from_claims(%{"env_id" => env_id}) do
-    IO.inspect({:resource_from_claims_env, env_id})
-
     with env <- @repo.get(Contract.Environment, env_id) do
-      {:ok, %{environment: env}} |> IO.inspect()
-    else
-      err -> IO.inspect({:error, err})
+      {:ok, %{environment: env}}
     end
   end
 
