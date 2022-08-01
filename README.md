@@ -49,12 +49,12 @@
 
 ### Prerequisites
 
-You can run Applicationrunner itself, but in fact the application is built as a library and needs a Phoenix parent application to access all functionality: 
-- Add Application Runner to yout project:
+You can run Application Runner itself, but it is generally built as a library and needs a Phoenix parent application to access all functionalities: 
+#### Add Application Runner to your project:
 ```elixir
 {:application_runner, git: "https://github.com/lenra-io/application-runner.git", tag: "v1.0.0.beta.X"}
 ```
-- Configure the Library:
+#### Configure the Library:
 ```elixir
 config :application_runner,
   lenra_environment_table: __,
@@ -63,13 +63,13 @@ config :application_runner,
   url: __,
 ```
 with:  
-- lenra_environment_table: the name of the environment table in String
-- lenra_user_table: the name of the user table in String
-- repo: Your app reposirtory
-- url: url of your application, this url is passed to Lenra application to make API request
+- **lenra_environment_table**: the name of the environment table as String
+- **lenra_user_table**: the name of the user table as String
+- **repo**: Your app repository
+- **url**: the url of your application, this url is passed to Lenra application to make API requests
 
-- Implement Web socket & Channel:  
-   - You also need to implement a channel using Applciationrunner channel
+#### Implement Web socket & Channel:  
+   - You also need to implement a channel using ApplicationRunner's channel
 
 ```elixir
 defmodule LenraWeb.AppChannel do
@@ -90,7 +90,7 @@ defmodule LenraWeb.AppChannel do
   end
 end
 ```
-  - You need to Implement an Socket for your applciation that use ApplciationRunner Socket, here an exxemple:
+  - How to implement a Socket for your application that uses ApplicationRunner Socket:
 
 ```elixir
 defmodule YourApp.Socket do
@@ -99,7 +99,7 @@ defmodule YourApp.Socket do
   defp resource_from_params(params) do
     # This function validate that the client can open a socket following params
     # To accept the connection return {:ok, _params}
-    # To refut the connection return :error 
+    # To refuse the connection return :error 
   end
 end
   ```
@@ -143,4 +143,4 @@ Project Link: [https://github.com/lenra-io/application-runner](https://github.co
 [issues-shield]: https://img.shields.io/github/issues/lenra-io/application-runner.svg?style=for-the-badge
 [issues-url]: https://github.com/lenra-io/application-runner/issues
 [license-shield]: https://img.shields.io/github/license/lenra-io/application-runner.svg?style=for-the-badge
-[license-url]: https://github.com/lenra-io/application-runner/blob/master/LICENSE.txt
+[license-url]: https://github.com/lenra-io/application-runner/blob/master/LICENSE
