@@ -27,11 +27,11 @@ defmodule ApplicationRunner.Session.Managers do
   """
   @spec start_session(term(), term(), term(), term()) ::
           {:error, any} | {:ok, pid()}
-  def start_session(session_id, env_id, session_state, env_state, context) do
+  def start_session(session_id, env_id, session_state, env_state) do
     with {:ok, _pid} <- Environments.ensure_env_started(env_id, env_state) do
       DynamicSupervisor.start_child(
         ApplicationRunner.Session.Managers,
-        {Session.Manager, [env_id: env_id, session_id: session_id, session_state: session_state, context: context]}
+        {Session.Manager, [env_id: env_id, session_id: session_id, session_state: session_state]}
       )
     end
   end
