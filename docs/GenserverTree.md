@@ -31,7 +31,6 @@ MSDS --> MS
 QDS --> Q
 MTDS --> MT
 
-style Environment.Managers fill:#bbf,stroke:#333,stroke-width:4px
 ```
 
 with:
