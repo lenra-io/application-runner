@@ -20,7 +20,7 @@ defmodule ApplicationRunner.AppChannel do
 
       require Logger
 
-      def join("app", %{"app" => app_name}, socket) do
+      def join("app", %{"app" => app_name, "context" => context}, socket) do
         session_id = Ecto.UUID.generate()
         user = socket.assigns.user
 
@@ -42,7 +42,8 @@ defmodule ApplicationRunner.AppChannel do
             assigns: %{
               socket_pid: self()
             },
-            session_id: session_id
+            session_id: session_id,
+            context: context
           }
 
           env_state = %{
