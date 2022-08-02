@@ -42,6 +42,7 @@ defmodule ApplicationRunner.Session.Supervisor do
   @impl true
   def init(opts) do
     children = [
+      # TODO: add module once they done !
       # {ApplicationRunner.Session.Token.Agent, opts}
       ApplicationRunner.EventHandler
       # Event.OnUserFirstJoin
