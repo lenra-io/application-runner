@@ -41,14 +41,15 @@ defmodule ApplicationRunner.Session.Supervisor do
 
   @impl true
   def init(opts) do
-    children =
-      [
-        ApplicationRunner.Ui.Cache,
-        ApplicationRunner.ListenersCache,
-        ApplicationRunner.Widget.Cache,
-        ApplicationRunner.EventHandler,
-        {ApplicationRunner.Session.Token.Agent, opts}
-      ] ++ get_additionnal_modules(opts)
+    children = [
+      # {ApplicationRunner.Session.Token.Agent, opts}
+      ApplicationRunner.EventHandler
+      # Event.OnUserFirstJoin
+      # Event.OnSessionStart
+      # UiBuilder
+    ]
+
+    # ++ get_additionnal_modules(opts)
 
     Supervisor.init(children, strategy: :one_for_one)
   end

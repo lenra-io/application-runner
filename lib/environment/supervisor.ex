@@ -41,8 +41,18 @@ defmodule ApplicationRunner.Environments.Supervisor do
   def init(opts) do
     children =
       [
-        ApplicationRunner.EventHandler,
-        {ApplicationRunner.Environments.Token.Agent, opts}
+        {ApplicationRunner.Environments.Token.Agent, opts},
+        ApplicationRunner.EventHandler
+        # MongoRepo
+        # ChangeStream
+        # MongoSessionDynamicSup
+        # MongoTransaDynSup
+        # Event.OnEnvStart
+        # ManifestHandler
+        # ApplicationRunner.ListenersCache
+        # QueryDynSup
+        # WidgetDynSup
+        # Session.Managers
       ] ++ get_additionnal_modules(opts)
 
     Supervisor.init(children, strategy: :one_for_one)
