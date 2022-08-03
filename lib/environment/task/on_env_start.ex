@@ -2,6 +2,7 @@ defmodule ApplicationRunner.Environments.Task.OnEnvStart do
   @moduledoc """
     OnEnvStart task send listeners onEnvStart
   """
+
   use Task
 
   alias ApplicationRunner.ApplicationServices
