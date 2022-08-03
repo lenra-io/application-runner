@@ -45,12 +45,12 @@ defmodule ApplicationRunner.Environments.Manager do
 
   @impl true
   def init(opts) do
+    env_supervisor_pid = Keyword.fetch!(opts, :env_supervisor_pid)
     state = Keyword.fetch!(opts, :env_state)
     env_id = Keyword.fetch!(opts, :env_id)
     function_name = Map.fetch!(state, :function_name)
     assigns = Map.fetch!(state, :assigns)
 
-    {:ok, env_supervisor_pid} = Environments.Supervisor.start_link(opts)
     # Link the process to kill the manager if the supervisor is killed.
     # The EnvManager should be restarted by the EnvManagers then it will restart the supervisor.
     Process.link(env_supervisor_pid)
