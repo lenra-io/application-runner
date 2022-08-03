@@ -45,7 +45,7 @@ defmodule ApplicationRunner.Environments.Managers do
   def start_env(env_id, env_state) do
     DynamicSupervisor.start_child(
       __MODULE__,
-      {ApplicationRunner.Environments.Manager, [env_id: env_id, env_state: env_state]}
+      {ApplicationRunner.Environments.Supervisor, [env_id: env_id, env_state: env_state]}
     )
   end
 

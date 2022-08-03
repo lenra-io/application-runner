@@ -4,7 +4,7 @@ defmodule ApplicationRunner.Environments.Supervisor do
   """
   use Supervisor
 
-  alias ApplicationRunner.Environments.Managers
+  alias ApplicationRunner.Environments
 
   @doc """
     return the app-level module.
@@ -26,7 +26,7 @@ defmodule ApplicationRunner.Environments.Supervisor do
   end
 
   def fetch_module_pid!(env_id, module_name) do
-    with {:ok, env_manager_pid} <- Managers.fetch_env_manager_pid(env_id),
+    with {:ok, env_manager_pid} <- Environments.Managers.fetch_env_manager_pid(env_id),
          env_supervisor_pid <- GenServer.call(env_manager_pid, :fetch_env_supervisor_pid!) do
       fetch_module_pid!(env_supervisor_pid, module_name)
     end
@@ -39,11 +39,13 @@ defmodule ApplicationRunner.Environments.Supervisor do
   @impl true
 
   def init(opts) do
+    opts = Keyword.merge(opts, env_supervisor_pid: self())
+
     children =
       [
         # TODO: add module once they done !
         {ApplicationRunner.Environments.Token.Agent, opts},
-        ApplicationRunner.EventHandler
+        ApplicationRunner.EventHandler,
         # MongoRepo
         # ChangeStream
         # MongoSessionDynamicSup
@@ -54,6 +56,9 @@ defmodule ApplicationRunner.Environments.Supervisor do
         # QueryDynSup
         # WidgetDynSup
         # Session.Managers
+
+        # this module will be replace in next PR
+        {Environments.Manager, opts}
       ] ++ get_additionnal_modules(opts)
 
     Supervisor.init(children, strategy: :one_for_one)
