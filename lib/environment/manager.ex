@@ -15,18 +15,18 @@ defmodule ApplicationRunner.Environments.Manager do
   @on_env_start_action "onEnvStart"
   @on_env_stop_action "onEnvStop"
 
-  @spec get_manifest(number()) :: map()
-  def get_manifest(env_id) do
-    with {:ok, pid} <- Environments.Managers.fetch_env_manager_pid(env_id) do
-      GenServer.call(pid, :get_manifest)
-    end
-  end
+  # @spec get_manifest(number()) :: map()
+  # def get_manifest(env_id) do
+  #   with {:ok, pid} <- Environments.Managers.fetch_env_manager_pid(env_id) do
+  #     GenServer.call(pid, :get_manifest)
+  #   end
+  # end
 
-  def wait_until_ready(env_id) do
-    with {:ok, pid} <- Environments.Managers.fetch_env_manager_pid(env_id) do
-      GenServer.call(pid, :wait_until_ready)
-    end
-  end
+  # def wait_until_ready(env_id) do
+  #   with {:ok, pid} <- Environments.Managers.fetch_env_manager_pid(env_id) do
+  #     GenServer.call(pid, :wait_until_ready)
+  #   end
+  # end
 
   @spec reload_all_ui(number()) :: :ok
   def reload_all_ui(env_id) do
@@ -66,9 +66,7 @@ defmodule ApplicationRunner.Environments.Manager do
       assigns: assigns,
       env_supervisor_pid: env_supervisor_pid,
       inactivity_timeout:
-        Application.get_env(:application_runner, :env_inactivity_timeout, 1000 * 60 * 60),
-      ready?: false,
-      waiting_from: []
+        Application.get_env(:application_runner, :env_inactivity_timeout, 1000 * 60 * 60)
     }
 
     with {:ok, manifest} <- ApplicationServices.fetch_manifest(env_state),

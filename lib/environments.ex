@@ -2,11 +2,12 @@ defmodule ApplicationRunner.Environments do
   @moduledoc """
     ApplicationRunner.Environments manage Environments.
   """
-  defdelegate wait_until_ready(env_id), to: ApplicationRunner.Environments.Manager
+
+  # defdelegate wait_until_ready(env_id), to: ApplicationRunner.Environments.Manager
 
   defdelegate reload_all_ui(env_id), to: ApplicationRunner.Environments.Manager
 
-  defdelegate get_manifest(env_id), to: ApplicationRunner.Environments.Manager
+  defdelegate get_manifest(env_id), to: ApplicationRunner.Environments.ManifestHandler
 
   defdelegate ensure_env_started(env_id, env_state), to: ApplicationRunner.Environments.Managers
 

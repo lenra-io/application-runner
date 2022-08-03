@@ -4,11 +4,12 @@ defmodule ApplicationRunner.Environments.Token do
     Any data query must send this token, the data route then check the token stored.
   """
 
+  alias ApplicationRunner.Environments
+
   alias ApplicationRunner.Guardian.AppGuardian
 
   alias ApplicationRunner.Environments.{
-    Supervisor,
-    Token
+    Supervisor
   }
 
   def create_token(env_id) do
@@ -19,7 +20,7 @@ defmodule ApplicationRunner.Environments.Token do
   end
 
   def fetch_token(env_id) do
-    with agent <- Supervisor.fetch_module_pid!(env_id, Token.Agent) do
+    with agent <- Supervisor.fetch_module_pid!(env_id, Environments.Agent.Metadata) do
       Agent.get(agent, fn state -> state end)
     end
   end
