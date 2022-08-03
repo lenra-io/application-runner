@@ -15,10 +15,7 @@ defmodule ApplicationRunner.Environments.ManifestHandler do
 
   @impl true
   def init(opts) do
-    IO.inspect(opts)
     state = Keyword.fetch!(opts, :env_state)
-
-    IO.inspect(state)
 
     case ApplicationServices.fetch_manifest(state) do
       {:ok, manifest} ->
