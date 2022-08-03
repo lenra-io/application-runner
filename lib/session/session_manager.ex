@@ -121,17 +121,19 @@ defmodule ApplicationRunner.Session.Manager do
 
   def handle_info({:event_finished, action, result}, session_state) do
     case {action, result} do
-      {@on_session_start_action, :ok} ->
-        Environments.reload_all_ui(session_state.env_id)
-        :ok
+      # This Manager will be reworked in future PR
+
+      # {@on_session_start_action, :ok} ->
+      #   Environments.reload_all_ui(session_state.env_id)
+      #   :ok
 
       {@on_session_start_action, _} ->
         reload_ui(session_state.session_id)
         :ok
 
-      {_, :ok} ->
-        Environments.reload_all_ui(session_state.env_id)
-        :ok
+      # {_, :ok} ->
+      #   Environments.reload_all_ui(session_state.env_id)
+      #   :ok
 
       {a, :error404} when a in @optional_handler_actions ->
         :ok

@@ -70,7 +70,7 @@ defmodule ApplicationRunner.Environments.Managers do
     with {:ok, env_metadata_pid} <- fetch_env_metadata_pid(env_id),
          env_supervisor_pid when is_pid(env_supervisor_pid) <-
            GenServer.call(env_metadata_pid, :fetch_env_supervisor_pid!) do
-      GenServer.call(env_supervisor_pid, :stop)
+      Supervisor.stop(env_supervisor_pid)
     else
       _err -> {:error, BusinessError.env_not_started()}
     end
