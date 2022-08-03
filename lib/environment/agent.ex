@@ -8,9 +8,7 @@ defmodule ApplicationRunner.Environments.Token do
 
   alias ApplicationRunner.Guardian.AppGuardian
 
-  alias ApplicationRunner.Environments.{
-    Supervisor
-  }
+  alias ApplicationRunner.Environments.Supervisor
 
   def create_token(env_id) do
     with {:ok, token, _claims} <-
