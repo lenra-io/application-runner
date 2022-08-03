@@ -10,8 +10,7 @@ defmodule ApplicationRunner.Environments.State do
     :env_supervisor_pid,
     :inactivity_timeout,
     :assigns,
-    :ready?,
-    :waiting_from
+    :token
   ]
 
   @type t :: %__MODULE__{
@@ -21,7 +20,6 @@ defmodule ApplicationRunner.Environments.State do
           env_supervisor_pid: pid(),
           inactivity_timeout: number(),
           assigns: term(),
-          ready?: boolean(),
-          waiting_from: list(pid())
+          token: term()
         }
 end
