@@ -57,7 +57,7 @@ defmodule ApplicationRunner.Environments.Supervisor do
         # WidgetDynSup
         # Session.Managers
 
-        # this module will be replace in next PR
+        # this module will be replaced in next PR
         {Environments.Manager, opts}
       ] ++ get_additionnal_modules(opts)
 
