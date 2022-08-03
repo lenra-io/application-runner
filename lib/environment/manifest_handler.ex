@@ -1,6 +1,6 @@
 defmodule ApplicationRunner.Environments.ManifestHandler do
   @moduledoc """
-    Environments.ManifestHandler is a genserver that get and cache manifest for one app
+    Environments.ManifestHandler is a genserver that gets and caches the manifest of an app
   """
   use GenServer
 
