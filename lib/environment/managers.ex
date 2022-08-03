@@ -23,10 +23,10 @@ defmodule ApplicationRunner.Environments.Managers do
   @doc """
     Fetch the `EnvManager` pid corresponding to the `env_id`.
   """
-  @spec fetch_env_manager_pid(number()) ::
+  @spec fetch_env_metadata_pid(number()) ::
           {:error, LenraCommon.Errors.BusinessError.t()} | {:ok, pid()}
-  def fetch_env_manager_pid(env_id) do
-    case Swarm.whereis_name({:env, env_id}) do
+  def fetch_env_metadata_pid(env_id) do
+    case Swarm.whereis_name({:env_metadata, env_id}) do
       :undefined -> BusinessError.env_not_started_tuple()
       pid -> {:ok, pid}
     end
@@ -76,8 +76,12 @@ defmodule ApplicationRunner.Environments.Managers do
   """
   @spec stop_env(number()) :: :ok | {:error, :app_not_started}
   def stop_env(env_id) do
-    with {:ok, pid} <- fetch_env_manager_pid(env_id) do
-      GenServer.call(pid, :stop)
+    with {:ok, env_metadata_pid} <- fetch_env_metadata_pid(env_id),
+         env_supervisor_pid when is_pid(env_supervisor_pid) <-
+           GenServer.call(env_metadata_pid, :fetch_env_supervisor_pid!) do
+      GenServer.call(env_supervisor_pid, :stop)
+    else
+      _err -> {:error, BusinessError.env_not_started()}
     end
   end
 

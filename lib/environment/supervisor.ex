@@ -26,8 +26,8 @@ defmodule ApplicationRunner.Environments.Supervisor do
   end
 
   def fetch_module_pid!(env_id, module_name) do
-    with {:ok, env_manager_pid} <- Environments.Managers.fetch_env_manager_pid(env_id),
-         env_supervisor_pid <- GenServer.call(env_manager_pid, :fetch_env_supervisor_pid!) do
+    with {:ok, env_metadata_pid} <- Environments.Managers.fetch_env_metadata_pid(env_id),
+         env_supervisor_pid <- GenServer.call(env_metadata_pid, :fetch_env_supervisor_pid!) do
       fetch_module_pid!(env_supervisor_pid, module_name)
     end
   end
@@ -44,14 +44,14 @@ defmodule ApplicationRunner.Environments.Supervisor do
     children =
       [
         # TODO: add module once they done !
-        {ApplicationRunner.Environments.Token.Agent, opts},
+        {ApplicationRunner.Environments.Agent.Metadata, opts},
         ApplicationRunner.EventHandler,
         # MongoRepo
         # ChangeStream
         # MongoSessionDynamicSup
         # MongoTransaDynSup
         # Event.OnEnvStart
-        # ManifestHandler
+        {ApplicationRunner.Environments.ManifestHandler, opts},
         # ApplicationRunner.ListenersCache
         # QueryDynSup
         # WidgetDynSup

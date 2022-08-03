@@ -92,8 +92,7 @@ defmodule ApplicationRunner.Session.Manager do
 
     first_time_user = JsonStorage.has_user_data?(env_id, user_id)
 
-    with :ok <- Environments.wait_until_ready(env_id),
-         :ok <- create_user_data_if_needed(session_state, first_time_user),
+    with :ok <- create_user_data_if_needed(session_state, first_time_user),
          :ok <- send_on_session_start_event(session_state) do
       {:ok, session_state, session_state.inactivity_timeout}
     else
