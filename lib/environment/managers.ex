@@ -56,7 +56,7 @@ defmodule ApplicationRunner.Environments.Managers do
   def ensure_env_started(env_id, env_state) do
     case Managers.start_env(env_id, env_state) do
       {:ok, pid} -> {:ok, pid}
-      {:error, message} when is_atom(message) or is_bitstring(message) -> {:error, message}
+      {:error, message} when is_struct(message) or is_bitstring(message) -> {:error, message}
       {:error, {:already_started, pid}} -> {:ok, pid}
     end
   end
