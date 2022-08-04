@@ -50,15 +50,12 @@ defmodule ApplicationRunner.Environments.Supervisor do
         # ChangeStream
         # MongoSessionDynamicSup
         # MongoTransaDynSup
-        # Event.OnEnvStart
-        {ApplicationRunner.Environments.ManifestHandler, opts},
+        {ApplicationRunner.Environments.Task.OnEnvStart, opts},
+        {ApplicationRunner.Environments.ManifestHandler, opts}
         # ApplicationRunner.ListenersCache
         # QueryDynSup
         # WidgetDynSup
         # Session.Managers
-
-        # this module will be replaced in next PR
-        {Environments.Manager, opts}
       ] ++ get_additionnal_modules(opts)
 
     Supervisor.init(children, strategy: :one_for_one)
