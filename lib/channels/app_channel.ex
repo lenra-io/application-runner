@@ -69,15 +69,15 @@ defmodule ApplicationRunner.AppChannel do
           end
         else
           {:error, :forbidden} ->
-            {:error, ErrorHelpers.translate_error(BusinessError.no_app_found())}
+            {:error, ErrorHelpers.translate_error(BusinessError.forbidden())}
 
           err ->
-            BusinessError.no_app_found_tuple()
+            {:error, ErrorHelpers.translate_error(BusinessError.no_app_found())}
         end
       end
 
       def join("app", _any, _socket) do
-        BusinessError.no_app_found_tuple()
+        {:error, ErrorHelpers.translate_error(BusinessError.no_app_found())}
       end
 
       # Override this function to allow user or not according to the server/devtools needs
