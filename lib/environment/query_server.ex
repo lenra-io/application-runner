@@ -11,44 +11,55 @@ defmodule ApplicationRunner.Environment.QueryServer do
                       )
 
   def start_link(opts) do
-    query = Keyword.get(opts, :query)
-    coll = Keyword.get(opts, :coll)
-    GenServer.start_link(__MODULE__, opts, name: {:via, :swarm, get_name(query, coll)})
+    with {:ok, query} <- Keyword.fetch(opts, :query),
+         {:ok, coll} <- Keyword.fetch(opts, :coll),
+         {:ok, env_id} <- Keyword.fetch(opts, :env_id) do
+      GenServer.start_link(__MODULE__, opts, name: {:via, :swarm, get_name(env_id, coll, query)})
+    else
+      :error ->
+        DevError.exception(message: "QueryServer need a collection, a query and an env_id")
+    end
   end
 
-  def get_name(query, coll) do
-    hash = Crypto.hash({query, coll})
-    {ApplicationRunner.Environment.QueryServer, hash}
+  def get_name(env_id, coll, query) do
+    {ApplicationRunner.Environment.QueryServer, env_id, coll, query}
+  end
+
+  # TODO : Move this to the Widget genserver
+  def get_widget_group(env_id, coll, query) do
+    {:widget, env_id, coll, query}
+  end
+
+  def get_group(session_id) do
+    {:query, session_id}
   end
 
   def init(opts) do
     with {:ok, query} <- Keyword.fetch(opts, :query),
          {:ok, coll} <- Keyword.fetch(opts, :coll),
          {:ok, data} <- fetch_initial_data(coll, query),
-         {:ok, ast} <- Parser.parse(query, %{}) do
-      {:ok, %{data: data, query: ast, coll: coll}, @inactivity_timeout}
+         {:ok, ast} <- Parser.parse(query, %{}),
+         {:ok, env_id} <- Keyword.fetch(opts, :env_id) do
+      inactivity_timeout = Keyword.get(opts, :inactivity_timeout, @inactivity_timeout)
+
+      {:ok,
+       %{
+         data: data,
+         query_str: query,
+         env_id: env_id,
+         query: ast,
+         coll: coll,
+         inactivity_timeout: inactivity_timeout
+       }, inactivity_timeout}
     else
       {:error, err} ->
         {:stop, err}
-
-      :error ->
-        {:stop, DevError.exception(message: "QueryServer need a collection and a query")}
     end
   end
 
   def fetch_initial_data(_coll, _query) do
     {:ok, []}
   end
-
-  #   {
-  #     _id : { <BSON Object> },
-  #     "operationType" : "<operation>",
-  #     "fullDocument" : { <document> },
-  #     "ns" : {
-  #        "db" : "<database>",
-  #        "coll" : "<collection>"
-  #     }
-  #  }
 
   def handle_call(
         {:mongo_event, event},
@@ -80,9 +91,14 @@ defmodule ApplicationRunner.Environment.QueryServer do
 
   defp change_coll(
          "rename",
-         %{"ns" => %{"coll" => _old_coll}, "to" => %{"coll" => new_coll}},
-         state
+         %{"ns" => %{"coll" => old_coll}, "to" => %{"coll" => new_coll}},
+         %{query_str: query_str, env_id: env_id} = state
        ) do
+    # Since the genserver name depend on coll, we change the name if the coll change.
+    # Unregister old name
+    Swarm.unregister_name(get_name(env_id, old_coll, query_str))
+    # Register new name
+    Swarm.register_name(get_name(env_id, new_coll, query_str), self())
     reply_timeout(:ok, Map.put(state, :coll, new_coll))
   end
 
@@ -99,27 +115,42 @@ defmodule ApplicationRunner.Environment.QueryServer do
   end
 
   defp change_data("insert", full_doc, _doc_id, data, query, state) do
-    new_data = if Exec.match?(full_doc, query), do: data ++ [full_doc], else: data
-    reply_timeout(:ok, Map.put(state, :data, new_data))
+    if Exec.match?(full_doc, query) do
+      new_data = data ++ [full_doc]
+      notify_widgets(new_data, state)
+      reply_timeout(:ok, Map.put(state, :data, new_data))
+    else
+      reply_timeout(:ok, state)
+    end
   end
 
   defp change_data(opType, full_doc, doc_id, data, query, state)
        when opType in ["update", "replace"] do
-    new_data =
-      if Exec.match?(full_doc, query) do
+    if Exec.match?(full_doc, query) do
+      new_data =
         Enum.map(data, fn
           %{"_id" => ^doc_id} -> full_doc
           d -> d
         end)
-      else
-        Enum.reject(data, fn %{"_id" => id} -> id == doc_id end)
-      end
 
-    reply_timeout(:ok, Map.put(state, :data, new_data))
+      notify_widgets(new_data, state)
+      reply_timeout(:ok, Map.put(state, :data, new_data))
+    else
+      old_length = length(data)
+      new_data = Enum.reject(data, fn %{"_id" => id} -> id == doc_id end)
+
+      if old_length == length(new_data) do
+        reply_timeout(:ok, state)
+      else
+        notify_widgets(new_data, state)
+        reply_timeout(:ok, Map.put(state, :data, new_data))
+      end
+    end
   end
 
   defp change_data("delete", _full_doc, doc_id, data, _query, state) do
     new_data = Enum.reject(data, fn doc -> Map.get(doc, "_id") == doc_id end)
+    notify_widgets(new_data, state)
     reply_timeout(:ok, Map.put(state, :data, new_data))
   end
 
@@ -127,8 +158,13 @@ defmodule ApplicationRunner.Environment.QueryServer do
     raise DevError.exception("Could not handle #{op_type} event.")
   end
 
+  defp notify_widgets(new_data, %{env_id: env_id, query_str: query_str, coll: coll}) do
+    group = get_widget_group(env_id, coll, query_str)
+    Swarm.publish(group, {:data_changed, new_data})
+  end
+
   defp reply_timeout(res, state) do
-    {:reply, res, state, @inactivity_timeout}
+    {:reply, res, state, state.inactivity_timeout}
   end
 
   def handle_info(:timeout, state) do

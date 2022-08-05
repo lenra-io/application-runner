@@ -3,7 +3,6 @@ import Config
 config :application_runner,
   additional_env_modules: {ApplicationRunner.ModuleInjector, :add_env_modules},
   additional_session_modules: {ApplicationRunner.ModuleInjector, :add_session_modules},
-  query_inactivity_timeout: 100,
   ecto_repos: [ApplicationRunner.Repo],
   faas_url: "http://localhost:1234",
   faas_auth: "Basic YWRtaW46M2kwREc4NTdLWlVaODQ3R0pheW5qMXAwbQ==",

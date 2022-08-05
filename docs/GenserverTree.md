@@ -56,12 +56,14 @@ with:
         - Listen for message in `{:scm, env_id}` and call all `{:query, session_id}`
         - After all Query respond notify UiBuilder to rebuild 
 - Q: **Query**, which listens to the swarm messages sent by QSD and notifies W if the data has changed.
-    - Started by Environment.Supervisor
-    - Stopped by Environment.Supervisor
-    - In group `{:query, session_id}`
+    - Started by Widget
+    - Stopped Automatically after timeout 
+    - Timeout after 10 min
+    - In multiple `{:query, session_id}` groups
+    - named with `{:via, :swarm, {__MODULE__, env_id, coll, query}}`
     - Jobs: 
         - called by SCM with Mongo Event, check if change impact query
-        - If change concern data notify Widget to rebuild
+        - If change concern data notify Widget to rebuild with message `{:data_changed, new_data}`
         - If not respond :ok to SCM
 - **UiBuilder**: Genserver that cache last ui and build new ui with widget cache
     - Started by session.supervisor
@@ -76,7 +78,7 @@ with:
 - W: **Widget**, cache the widget interface, and listen to Q to rebuild if necessary.
     - Started by UiBuilder
     - Stopped by UiBuilder
-    - In group `{:w, session_id}`
+    - In group `{:widget, hash({env_id, coll, query})}`
     - Timeout after X min
     - Jobs:
         - On startup buid ui first time

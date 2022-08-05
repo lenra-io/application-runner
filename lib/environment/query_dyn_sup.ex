@@ -12,22 +12,26 @@ defmodule ApplicationRunner.Environment.QueryDynSup do
     DynamicSupervisor.init(strategy: :one_for_one)
   end
 
-  def start_child(coll, query, session_id) do
-    DynamicSupervisor.start_child(__MODULE__, {QueryServer, query: query, coll: coll})
-  end
-
-  def ensure_child_started(coll, query, session_id) do
-    case start_child(coll, query, session_id) do
+  def ensure_child_started(env_id, session_id, coll, query, opts \\ []) do
+    case start_child(env_id, coll, query, opts) do
       {:ok, pid} ->
-        Swarm.join({:query, session_id}, pid)
+        group = QueryServer.get_group(session_id)
+        Swarm.join(group, pid)
         :ok
 
       {:error, {:already_started, pid}} ->
-        Swarm.join({:query, session_id}, pid)
+        group = QueryServer.get_group(session_id)
+
+        Swarm.join(group, pid)
         :ok
 
       err ->
         err
     end
+  end
+
+  defp start_child(env_id, coll, query, opts \\ []) do
+    init_value = Keyword.merge(opts, query: query, coll: coll, env_id: env_id)
+    DynamicSupervisor.start_child(__MODULE__, {QueryServer, init_value})
   end
 end
