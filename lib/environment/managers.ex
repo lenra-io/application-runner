@@ -7,6 +7,7 @@ defmodule ApplicationRunner.Environments.Managers do
 
   alias ApplicationRunner.Environments.Managers
   alias ApplicationRunner.Errors.BusinessError
+  alias LenraCommon.Errors.DevError
 
   @doc false
   def start_link(opts) do
@@ -55,9 +56,17 @@ defmodule ApplicationRunner.Environments.Managers do
   @spec ensure_env_started(number(), term()) :: {:ok, pid} | {:error, atom | bitstring}
   def ensure_env_started(env_id, env_state) do
     case Managers.start_env(env_id, env_state) do
-      {:ok, pid} -> {:ok, pid}
-      {:error, message} when is_struct(message) or is_bitstring(message) -> {:error, message}
-      {:error, {:already_started, pid}} -> {:ok, pid}
+      {:ok, pid} ->
+        {:ok, pid}
+
+      {:error, message} when is_struct(message) or is_bitstring(message) ->
+        {:error, message}
+
+      {:error, {:already_started, pid}} ->
+        {:ok, pid}
+
+      error ->
+        raise DevError.exception("Unexpected error: #{inspect(error)}")
     end
   end
 

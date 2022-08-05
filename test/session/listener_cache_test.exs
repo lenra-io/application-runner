@@ -69,8 +69,6 @@ defmodule ApplicationRunner.ListenerCacheTest do
 
     assert_receive({:send, :ui, @ui})
 
-    {:ok, pid} = Session.Managers.start_session(make_ref(), make_ref(), %{}, %{})
-
     {:ok, %{session_state: :sys.get_state(pid)}}
   end
 
