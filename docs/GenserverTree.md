@@ -78,7 +78,7 @@ with:
 - W: **Widget**, cache the widget interface, and listen to Q to rebuild if necessary.
     - Started by UiBuilder
     - Stopped by UiBuilder
-    - In group `{:widget, hash({env_id, coll, query})}`
+    - In group `{:widget, env_id, coll, query}`
     - Timeout after X min
     - Jobs:
         - On startup buid ui first time
