@@ -68,7 +68,12 @@ defmodule ApplicationRunner.Session.Manager do
     user_id = Map.fetch!(session_state, :user_id)
     function_name = Map.fetch!(session_state, :function_name)
     assigns = Map.fetch!(session_state, :assigns)
-    context = Map.fetch!(session_state, :context)
+
+    context =
+      case Map.fetch(session_state, :context) do
+        :error -> %{}
+        value -> value
+      end
 
     {:ok, session_supervisor_pid} = Supervisor.start_link(opts)
     # Link the process to kill the manager if the supervisor is killed.
