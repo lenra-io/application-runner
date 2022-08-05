@@ -135,6 +135,29 @@ defmodule Environment.QueryServerTest do
 
       assert {:error, {:already_started, ^pid}} = QueryDynSup.start_child("test", "{}", "42")
     end
+
+    test "should stop after timeout (100ms) passed" do
+      assert :ok = QueryDynSup.ensure_child_started("test", "{}", "42")
+      assert [pid] = Swarm.members({:query, "42"})
+      assert Process.alive?(pid)
+      :timer.sleep(60)
+      assert Process.alive?(pid)
+      :timer.sleep(60)
+      assert not Process.alive?(pid)
+    end
+
+    test "should extend timeout (100ms) if a message is sent" do
+      assert :ok = QueryDynSup.ensure_child_started("test", "{}", "42")
+      assert [pid] = Swarm.members({:query, "42"})
+      assert Process.alive?(pid)
+      :timer.sleep(60)
+      assert Process.alive?(pid)
+      assert :ok = GenServer.call(pid, {:mongo_event, insert_event(1)})
+      :timer.sleep(60)
+      assert Process.alive?(pid)
+      :timer.sleep(60)
+      assert not Process.alive?(pid)
+    end
   end
 
   describe "QueryServer insert" do

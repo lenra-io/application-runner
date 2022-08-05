@@ -4,6 +4,12 @@ defmodule ApplicationRunner.Environment.QueryServer do
   alias LenraCommon.Errors.DevError
   alias QueryParser.{Parser, Exec}
 
+  @inactivity_timeout Application.compile_env(
+                        :application_runner,
+                        :query_inactivity_timeout,
+                        1000 * 60 * 10
+                      )
+
   def start_link(opts) do
     query = Keyword.get(opts, :query)
     coll = Keyword.get(opts, :coll)
@@ -20,7 +26,7 @@ defmodule ApplicationRunner.Environment.QueryServer do
          {:ok, coll} <- Keyword.fetch(opts, :coll),
          {:ok, data} <- fetch_initial_data(coll, query),
          {:ok, ast} <- Parser.parse(query, %{}) do
-      {:ok, %{data: data, query: ast, coll: coll}}
+      {:ok, %{data: data, query: ast, coll: coll}, @inactivity_timeout}
     else
       {:error, err} ->
         {:stop, err}
@@ -68,7 +74,7 @@ defmodule ApplicationRunner.Environment.QueryServer do
         stop(state)
 
       true ->
-        {:reply, :ok, state}
+        reply_timeout(:ok, state)
     end
   end
 
@@ -77,7 +83,7 @@ defmodule ApplicationRunner.Environment.QueryServer do
          %{"ns" => %{"coll" => _old_coll}, "to" => %{"coll" => new_coll}},
          state
        ) do
-    {:reply, :ok, Map.put(state, :coll, new_coll)}
+    reply_timeout(:ok, Map.put(state, :coll, new_coll))
   end
 
   defp change_coll(op_type, _event, _state) do
@@ -88,9 +94,13 @@ defmodule ApplicationRunner.Environment.QueryServer do
     {:stop, :normal, :ok, state}
   end
 
+  defp stop_async(state) do
+    {:stop, :normal, state}
+  end
+
   defp change_data("insert", full_doc, _doc_id, data, query, state) do
     new_data = if Exec.match?(full_doc, query), do: data ++ [full_doc], else: data
-    {:reply, :ok, Map.put(state, :data, new_data)}
+    reply_timeout(:ok, Map.put(state, :data, new_data))
   end
 
   defp change_data(opType, full_doc, doc_id, data, query, state)
@@ -105,15 +115,23 @@ defmodule ApplicationRunner.Environment.QueryServer do
         Enum.reject(data, fn %{"_id" => id} -> id == doc_id end)
       end
 
-    {:reply, :ok, Map.put(state, :data, new_data)}
+    reply_timeout(:ok, Map.put(state, :data, new_data))
   end
 
   defp change_data("delete", _full_doc, doc_id, data, _query, state) do
     new_data = Enum.reject(data, fn doc -> Map.get(doc, "_id") == doc_id end)
-    {:reply, :ok, Map.put(state, :data, new_data)}
+    reply_timeout(:ok, Map.put(state, :data, new_data))
   end
 
   defp change_data(op_type, _full_doc, _doc_id, _data, _query, _state) do
     raise DevError.exception("Could not handle #{op_type} event.")
+  end
+
+  defp reply_timeout(res, state) do
+    {:reply, res, state, @inactivity_timeout}
+  end
+
+  def handle_info(:timeout, state) do
+    stop_async(state)
   end
 end
