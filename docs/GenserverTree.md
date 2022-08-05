@@ -51,14 +51,14 @@ with:
 - SCM: **Session Change Manager**
     - In swarm group `{:scm, env_id}` 
     - Delete swarm group
-    - Call all `{:q, session}`
+    - Call all `{:query, session_id}`
     - Jobs:
-        - Listen for message in `{:scm, env_id}` and call all `{:q, session}`
+        - Listen for message in `{:scm, env_id}` and call all `{:query, session_id}`
         - After all Query respond notify UiBuilder to rebuild 
 - Q: **Query**, which listens to the swarm messages sent by QSD and notifies W if the data has changed.
     - Started by Environment.Supervisor
     - Stopped by Environment.Supervisor
-    - In group `{:q, session_id}`
+    - In group `{:query, session_id}`
     - Jobs: 
         - called by SCM with Mongo Event, check if change impact query
         - If change concern data notify Widget to rebuild
