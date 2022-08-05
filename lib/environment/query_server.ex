@@ -4,6 +4,8 @@ defmodule ApplicationRunner.Environment.QueryServer do
   alias LenraCommon.Errors.DevError
   alias QueryParser.{Parser, Exec}
 
+  require Logger
+
   @inactivity_timeout Application.compile_env(
                         :application_runner,
                         :query_inactivity_timeout,
@@ -58,6 +60,7 @@ defmodule ApplicationRunner.Environment.QueryServer do
   end
 
   def fetch_initial_data(_coll, _query) do
+    # TODO
     {:ok, []}
   end
 
@@ -99,6 +102,7 @@ defmodule ApplicationRunner.Environment.QueryServer do
     Swarm.unregister_name(get_name(env_id, old_coll, query_str))
     # Register new name
     Swarm.register_name(get_name(env_id, new_coll, query_str), self())
+    notify_coll_changed(new_coll, state)
     reply_timeout(:ok, Map.put(state, :coll, new_coll))
   end
 
@@ -117,7 +121,7 @@ defmodule ApplicationRunner.Environment.QueryServer do
   defp change_data("insert", full_doc, _doc_id, data, query, state) do
     if Exec.match?(full_doc, query) do
       new_data = data ++ [full_doc]
-      notify_widgets(new_data, state)
+      notify_data_changed(new_data, state)
       reply_timeout(:ok, Map.put(state, :data, new_data))
     else
       reply_timeout(:ok, state)
@@ -133,7 +137,7 @@ defmodule ApplicationRunner.Environment.QueryServer do
           d -> d
         end)
 
-      notify_widgets(new_data, state)
+      notify_data_changed(new_data, state)
       reply_timeout(:ok, Map.put(state, :data, new_data))
     else
       old_length = length(data)
@@ -142,7 +146,7 @@ defmodule ApplicationRunner.Environment.QueryServer do
       if old_length == length(new_data) do
         reply_timeout(:ok, state)
       else
-        notify_widgets(new_data, state)
+        notify_data_changed(new_data, state)
         reply_timeout(:ok, Map.put(state, :data, new_data))
       end
     end
@@ -150,17 +154,23 @@ defmodule ApplicationRunner.Environment.QueryServer do
 
   defp change_data("delete", _full_doc, doc_id, data, _query, state) do
     new_data = Enum.reject(data, fn doc -> Map.get(doc, "_id") == doc_id end)
-    notify_widgets(new_data, state)
+    notify_data_changed(new_data, state)
     reply_timeout(:ok, Map.put(state, :data, new_data))
   end
 
-  defp change_data(op_type, _full_doc, _doc_id, _data, _query, _state) do
-    raise DevError.exception("Could not handle #{op_type} event.")
+  defp change_data(op_type, _full_doc, _doc_id, _data, _query, state) do
+    Logger.debug("Ingore event #{op_type}")
+    reply_timeout(:ok, state)
   end
 
-  defp notify_widgets(new_data, %{env_id: env_id, query_str: query_str, coll: coll}) do
+  defp notify_data_changed(new_data, %{env_id: env_id, query_str: query_str, coll: coll}) do
     group = get_widget_group(env_id, coll, query_str)
     Swarm.publish(group, {:data_changed, new_data})
+  end
+
+  defp notify_coll_changed(new_coll, %{env_id: env_id, query_str: query_str, coll: old_coll}) do
+    group = get_widget_group(env_id, old_coll, query_str)
+    Swarm.publish(group, {:coll_changed, new_coll})
   end
 
   defp reply_timeout(res, state) do

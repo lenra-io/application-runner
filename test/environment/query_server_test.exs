@@ -517,23 +517,32 @@ defmodule Environment.QueryServerTest do
   describe "QueryServer rename coll" do
     test "should rename the coll and still work under a new name" do
       :ok = QueryDynSup.ensure_child_started(1337, "42", "test", "{}")
-      [pid] = Swarm.members({:query, "42"})
       name = QueryServer.get_name(1337, "test", "{}")
-      assert ^pid = Swarm.whereis_name(name)
-
-      assert :ok = GenServer.call(pid, {:mongo_event, insert_event(1)})
-
-      assert %{coll: "test", data: [%{"_id" => "1"}]} = :sys.get_state(pid)
-      assert :ok = GenServer.call(pid, {:mongo_event, rename_event("test", "bar")})
-      # Old name should be undefined
-      assert :undefined = Swarm.whereis_name(name)
-      # New name should be found
       new_name = QueryServer.get_name(1337, "bar", "{}")
+
+      group = QueryServer.get_widget_group(1337, "test", "{}")
+      new_group = QueryServer.get_widget_group(1337, "bar", "{}")
+      p1 = spawn_pass_process(:p1)
+      p2 = spawn_pass_process(:p2)
+      Swarm.join(group, p1)
+      Swarm.join(new_group, p2)
+
+      [pid] = Swarm.members({:query, "42"})
+
+      # Register under the correct name, insert is working as expected.
+      :ok = GenServer.call(pid, {:mongo_event, insert_event(1)})
+      assert ^pid = Swarm.whereis_name(name)
+      assert_received {:p1, {:data_changed, [%{"_id" => "1"}]}}
+
+      # Rename the coll, the server should still work the same.
+      :ok = GenServer.call(pid, {:mongo_event, rename_event("test", "bar")})
+      assert :undefined = Swarm.whereis_name(name)
       assert ^pid = Swarm.whereis_name(new_name)
+      assert_received {:p1, {:coll_changed, "bar"}}
 
-      assert :ok = GenServer.call(pid, {:mongo_event, insert_event(2, "bar")})
-
-      assert %{coll: "bar", data: [%{"_id" => "1"}, %{"_id" => "2"}]} = :sys.get_state(pid)
+      # The notification is sent to the new group
+      :ok = GenServer.call(pid, {:mongo_event, insert_event(2, "bar")})
+      assert_received {:p2, {:data_changed, [%{"_id" => "1"}, %{"_id" => "2"}]}}
     end
 
     test "should ignore the rename if namesapce coll is different" do
