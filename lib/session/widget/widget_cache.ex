@@ -118,7 +118,7 @@ defmodule ApplicationRunner.Widget.Cache do
 
     context =
       if context_bool do
-        widget_context.context
+        session_state.context
       else
         %{}
       end
