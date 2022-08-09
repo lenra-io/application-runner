@@ -68,6 +68,7 @@ defmodule ApplicationRunner.Session.Manager do
     user_id = Map.fetch!(session_state, :user_id)
     function_name = Map.fetch!(session_state, :function_name)
     assigns = Map.fetch!(session_state, :assigns)
+    context = Map.get(session_state, :context, %{})
 
     {:ok, session_supervisor_pid} = Supervisor.start_link(opts)
     # Link the process to kill the manager if the supervisor is killed.
@@ -85,7 +86,8 @@ defmodule ApplicationRunner.Session.Manager do
       session_supervisor_pid: session_supervisor_pid,
       inactivity_timeout:
         Application.get_env(:application_runner, :session_inactivity_timeout, 1000 * 60 * 10),
-      assigns: assigns
+      assigns: assigns,
+      context: context
     }
 
     first_time_user = JsonStorage.has_user_data?(env_id, user_id)
@@ -208,7 +210,8 @@ defmodule ApplicationRunner.Session.Manager do
     props = %{}
     query = nil
     data = []
-    id = Widget.Cache.generate_widget_id(root_widget, query, props)
+    context = %{}
+    id = Widget.Cache.generate_widget_id(root_widget, query, props, context)
 
     Widget.Cache.get_and_build_widget(
       session_state,
@@ -217,6 +220,7 @@ defmodule ApplicationRunner.Session.Manager do
         listeners_map: %{}
       },
       %Widget.Context{
+        context: context,
         id: id,
         name: root_widget,
         prefix_path: "",

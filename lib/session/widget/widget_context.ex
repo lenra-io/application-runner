@@ -8,6 +8,7 @@ defmodule ApplicationRunner.Widget.Context do
     :name,
     :data,
     :props,
+    :context,
     :prefix_path
   ]
 
@@ -16,6 +17,7 @@ defmodule ApplicationRunner.Widget.Context do
           name: String.t(),
           data: list(map()) | map() | nil,
           props: map() | nil,
+          context: map() | nil,
           prefix_path: String.t() | nil
         }
 end
