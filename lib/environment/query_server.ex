@@ -51,7 +51,9 @@ defmodule ApplicationRunner.Environment.QueryServer do
          env_id: env_id,
          query: ast,
          coll: coll,
-         inactivity_timeout: inactivity_timeout
+         inactivity_timeout: inactivity_timeout,
+         latest_timestamp: 0,
+         done_ids: []
        }, inactivity_timeout}
     else
       {:error, err} ->
@@ -67,29 +69,60 @@ defmodule ApplicationRunner.Environment.QueryServer do
   def handle_call(
         {:mongo_event, event},
         _from,
-        %{coll: coll, data: data, query: query} = state
+        %{
+          coll: coll,
+          data: data,
+          query: query,
+          latest_timestamp: latest_timestamp,
+          done_ids: done_ids
+        } = state
       ) do
-    event_coll = get_in(event, ["ns", "coll"])
-    op_type = get_in(event, ["operationType"])
+    event_timestamp = get_in(event, ["clusterTime"])
+    event_id = get_in(event, ["_id"])
 
-    cond do
-      event_coll == coll and op_type in ["insert", "update", "replace", "delete"] ->
-        full_doc = get_in(event, ["fullDocument"])
-        doc_id = get_in(event, ["documentKey", "_id"])
-        change_data(op_type, full_doc, doc_id, data, query, state)
+    if event_handled?(done_ids, event_id, latest_timestamp, event_timestamp) do
+      # The event is already handled. Reply directly and ignore event.s
+      reply_timeout(:ok, state)
+    else
+      # The event must be handled.
+      event_coll = get_in(event, ["ns", "coll"])
+      op_type = get_in(event, ["operationType"])
 
-      event_coll == coll and op_type in ["rename"] ->
-        change_coll(op_type, event, state)
+      cond do
+        event_coll == coll and op_type in ["insert", "update", "replace", "delete"] ->
+          full_doc = get_in(event, ["fullDocument"])
+          doc_id = get_in(event, ["documentKey", "_id"])
+          new_data = change_data(op_type, full_doc, doc_id, data, query, state)
 
-      event_coll == coll and op_type in ["drop"] ->
-        stop(state)
+          new_done_ids =
+            if event_timestamp > latest_timestamp, do: [event_id], else: [event_id | done_ids]
 
-      op_type in ["dropDatabase"] ->
-        stop(state)
+          new_state =
+            Map.merge(state, %{
+              data: new_data,
+              done_ids: new_done_ids,
+              latest_timestamp: event_timestamp
+            })
 
-      true ->
-        reply_timeout(:ok, state)
+          reply_timeout(:ok, new_state)
+
+        event_coll == coll and op_type in ["rename"] ->
+          change_coll(op_type, event, state)
+
+        event_coll == coll and op_type in ["drop"] ->
+          stop(state)
+
+        op_type in ["dropDatabase"] ->
+          stop(state)
+
+        true ->
+          reply_timeout(:ok, state)
+      end
     end
+  end
+
+  defp event_handled?(done_ids, event_id, latest_timestamp, event_timestamp) do
+    event_timestamp < latest_timestamp or event_id in done_ids
   end
 
   defp change_coll(
@@ -122,9 +155,9 @@ defmodule ApplicationRunner.Environment.QueryServer do
     if Exec.match?(full_doc, query) do
       new_data = data ++ [full_doc]
       notify_data_changed(new_data, state)
-      reply_timeout(:ok, Map.put(state, :data, new_data))
+      new_data
     else
-      reply_timeout(:ok, state)
+      data
     end
   end
 
@@ -138,16 +171,16 @@ defmodule ApplicationRunner.Environment.QueryServer do
         end)
 
       notify_data_changed(new_data, state)
-      reply_timeout(:ok, Map.put(state, :data, new_data))
+      new_data
     else
       old_length = length(data)
       new_data = Enum.reject(data, fn %{"_id" => id} -> id == doc_id end)
 
       if old_length == length(new_data) do
-        reply_timeout(:ok, state)
+        data
       else
         notify_data_changed(new_data, state)
-        reply_timeout(:ok, Map.put(state, :data, new_data))
+        new_data
       end
     end
   end
@@ -155,7 +188,7 @@ defmodule ApplicationRunner.Environment.QueryServer do
   defp change_data("delete", _full_doc, doc_id, data, _query, state) do
     new_data = Enum.reject(data, fn doc -> Map.get(doc, "_id") == doc_id end)
     notify_data_changed(new_data, state)
-    reply_timeout(:ok, Map.put(state, :data, new_data))
+    new_data
   end
 
   defp change_data(op_type, _full_doc, _doc_id, _data, _query, state) do
