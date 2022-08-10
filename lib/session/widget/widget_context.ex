@@ -8,7 +8,9 @@ defmodule ApplicationRunner.Widget.Context do
     :name,
     :data,
     :props,
-    :prefix_path
+    :prefix_path,
+    :query,
+    :coll
   ]
 
   @type t :: %__MODULE__{
@@ -16,6 +18,8 @@ defmodule ApplicationRunner.Widget.Context do
           name: String.t(),
           data: list(map()) | map() | nil,
           props: map() | nil,
-          prefix_path: String.t() | nil
+          prefix_path: String.t() | nil,
+          query: map(),
+          coll: String.t()
         }
 end
