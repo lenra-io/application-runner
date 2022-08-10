@@ -44,12 +44,7 @@ defmodule ApplicationRunner.Environments.Supervisor do
 
     env_id = Keyword.get(opts, :env_id)
 
-    database_name =
-      if @env == "prod" do
-        env_id
-      else
-        @env <> "_#{env_id}"
-      end
+    database_name = @env <> "_#{env_id}"
 
     mongo_opts = [
       url: "mongodb://localhost:27017/#{database_name}",
