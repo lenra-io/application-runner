@@ -15,11 +15,12 @@ config :application_runner,
   lenra_environment_table: "environments",
   lenra_user_table: "users",
   repo: ApplicationRunner.Repo,
-  url: "localhost:4000"
+  url: "localhost:4000",
+  env: "dev"
 
 config :application_runner, ApplicationRunner.Repo,
   database: "file::memory:?cache=shared",
-  log: false
+  log: false,
 
 config :swarm,
   debug: false
