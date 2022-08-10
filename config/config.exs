@@ -20,7 +20,7 @@ config :application_runner,
 
 config :application_runner, ApplicationRunner.Repo,
   database: "file::memory:?cache=shared",
-  log: false,
+  log: false
 
 config :swarm,
   debug: false
