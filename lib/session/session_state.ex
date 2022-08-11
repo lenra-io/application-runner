@@ -10,7 +10,8 @@ defmodule ApplicationRunner.Session.State do
     :function_name,
     :session_supervisor_pid,
     :inactivity_timeout,
-    :assigns
+    :assigns,
+    :token
   ]
 
   @type t :: %__MODULE__{
@@ -20,6 +21,7 @@ defmodule ApplicationRunner.Session.State do
           function_name: String.t(),
           session_supervisor_pid: pid(),
           inactivity_timeout: number(),
-          assigns: term()
+          assigns: term(),
+          token: term()
         }
 end

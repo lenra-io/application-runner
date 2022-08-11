@@ -29,8 +29,8 @@ defmodule ApplicationRunner.Session.Supervisor do
 
   def fetch_module_pid!(session_id, module_name) do
     with {:ok, session_manager_pid} <- Managers.fetch_session_manager_pid(session_id),
-         session_supervisor_pid <-
-           GenServer.call(session_manager_pid, :fetch_session_supervisor_pid!) do
+         session_metadata_pid <-
+           GenServer.call(session_metadata_pid, :fetch_session_supervisor_pid!) do
       fetch_module_pid!(session_supervisor_pid, module_name)
     end
   end

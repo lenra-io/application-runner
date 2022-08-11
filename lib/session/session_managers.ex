@@ -54,8 +54,8 @@ defmodule ApplicationRunner.Session.Managers do
   @spec fetch_session_manager_pid(any) ::
           {:error, LenraCommon.Errors.BusinessError.t()} | {:ok, pid()}
   def fetch_session_manager_pid(session_id) do
-    case Swarm.whereis_name({:session, session_id}) do
-      :undefined -> BusinessError.session_not_started_tuple({:session, session_id})
+    case Swarm.whereis_name({:session_metadata, session_id}) do
+      :undefined -> BusinessError.session_not_started_tuple({:session_metadata, session_id})
       pid -> {:ok, pid}
     end
   end
