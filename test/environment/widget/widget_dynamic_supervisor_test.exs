@@ -24,7 +24,7 @@ defmodule ApplicationRunner.Environment.Widget.DynamicSupervisorTest do
     Plug.Conn.resp(conn, 200, Jason.encode!(@widget_ui))
   end
 
-  describe "AppicationRunner.Environments.Widget.DynamicSupervisor.ensure_child_started_1/1" do
+  describe "ApplicationRunner.Environments.Widget.DynamicSupervisor.ensure_child_started_1/1" do
     test "should start widget genserver with valid opts", %{function_name: function_name} do
       session_state = %State{session_id: 1, env_id: 1, user_id: 1, function_name: function_name}
       current_widget = %Context{id: 1, name: "test", prefix_path: ""}
