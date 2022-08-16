@@ -148,31 +148,31 @@ defmodule ApplicationRunner.Session.Manager do
     {:noreply, session_state}
   end
 
-  def handle_info(:data_changed, %Session.State{} = session_state) do
-    with %{"rootWidget" => root_widget} <-
-           Environments.get_manifest(session_state.env_id),
-         {:ok, ui} <- get_and_build_ui(session_state, root_widget) do
-      transformed_ui = transform_ui(ui)
-      res = Ui.Cache.diff_and_save(session_state, transformed_ui)
-      send_res(session_state, res)
-    else
-      error ->
-        send_error(session_state, error)
-    end
+  # def handle_info(:data_changed, %Session.State{} = session_state) do
+  #   with %{"rootWidget" => root_widget} <-
+  #          Environments.get_manifest(session_state.env_id),
+  #        {:ok, ui} <- get_and_build_ui(session_state, root_widget) do
+  #     transformed_ui = transform_ui(ui)
+  #     res = Ui.Cache.diff_and_save(session_state, transformed_ui)
+  #     send_res(session_state, res)
+  #   else
+  #     error ->
+  #       send_error(session_state, error)
+  #   end
 
-    {:noreply, session_state, session_state.inactivity_timeout}
-  end
+  #   {:noreply, session_state, session_state.inactivity_timeout}
+  # end
 
-  defp send_res(
-         %Session.State{
-           assigns: %{
-             socket_pid: socket_pid
-           }
-         },
-         {atom, ui_or_patches}
-       ) do
-    send(socket_pid, {:send, atom, ui_or_patches})
-  end
+  # defp send_res(
+  #        %Session.State{
+  #          assigns: %{
+  #            socket_pid: socket_pid
+  #          }
+  #        },
+  #        {atom, ui_or_patches}
+  #      ) do
+  #   send(socket_pid, {:send, atom, ui_or_patches})
+  # end
 
   @impl true
   def handle_call(:fetch_session_supervisor_pid!, _from, session_state) do
@@ -222,7 +222,9 @@ defmodule ApplicationRunner.Session.Manager do
         name: root_widget,
         prefix_path: "",
         data: data,
-        props: props
+        props: props,
+        query: %{},
+        coll: ""
       }
     )
     |> case do
@@ -273,13 +275,13 @@ defmodule ApplicationRunner.Session.Manager do
     Managers.terminate_session(self())
   end
 
-  defp transform_ui(%{"rootWidget" => root_widget, "widgets" => widgets}) do
-    transform(%{"root" => Map.fetch!(widgets, root_widget)}, widgets)
-  end
+  # defp transform_ui(%{"rootWidget" => root_widget, "widgets" => widgets}) do
+  #   transform(%{"root" => Map.fetch!(widgets, root_widget)}, widgets)
+  # end
 
-  defp transform(%{"type" => "widget", "id" => id}, widgets) do
-    transform(Map.fetch!(widgets, id), widgets)
-  end
+  # defp transform(%{"type" => "widget", "id" => id}, widgets) do
+  #   transform(Map.fetch!(widgets, id), widgets)
+  # end
 
   defp transform(widget, widgets) when is_map(widget) do
     Enum.map(widget, fn

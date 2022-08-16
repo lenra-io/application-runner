@@ -127,7 +127,9 @@ defmodule ApplicationRunner.Widget.Cache do
       name: name,
       data: data,
       props: props,
-      prefix_path: widget_context.prefix_path
+      prefix_path: widget_context.prefix_path,
+      query: %{},
+      coll: ""
     }
 
     case get_and_build_widget(session_state, ui_context, new_widget_context) do
