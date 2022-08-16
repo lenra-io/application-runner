@@ -1,6 +1,6 @@
 defmodule ApplicationRunner.Environment.Widget do
   @moduledoc """
-    ApplicationRunner.Environment.Widget get a widget and catch them
+    ApplicationRunner.Environment.Widget get a widget and cache them
   """
   use GenServer
 
