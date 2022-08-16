@@ -45,6 +45,7 @@ defmodule ApplicationRunner.MixProject do
       {:phoenix, "~> 1.5.9"},
       {:finch, "~> 0.12"},
       {:bypass, "~> 2.0", only: :test},
+      {:mongodb_driver, "~> 0.8.4"},
       private_git(
         name: :query_parser,
         host: "github.com",
