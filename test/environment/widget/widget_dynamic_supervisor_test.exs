@@ -1,4 +1,4 @@
-defmodule AppicationRunner.Environment.Widget.DynamicSupervisorTest do
+defmodule ApplicationRunner.Environment.Widget.DynamicSupervisorTest do
   use ApplicationRunner.RepoCase, async: false
 
   alias AppicationRunner.Environment.Widget.DynamicSupervisor
