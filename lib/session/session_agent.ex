@@ -1,4 +1,4 @@
-defmodule ApplicationRunner.Session.Token do
+defmodule ApplicationRunner.Session.Agent do
   @moduledoc """
     Lenra.Sessionstate handle all operation for session state.
   """

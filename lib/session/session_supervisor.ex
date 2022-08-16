@@ -41,27 +41,19 @@ defmodule ApplicationRunner.Session.Supervisor do
 
   @impl true
   def init(opts) do
+    state = Keyword.merge(opts, session_supervisor_pid: self())
+
     children = [
       # TODO: add module once they done !
       # {ApplicationRunner.Session.Token.Agent, opts}
-      ApplicationRunner.EventHandler
+      ApplicationRunner.EventHandler,
       # Event.OnUserFirstJoin
       # Event.OnSessionStart
       # UiBuilder
+
+      {ApplicationRunner.Session.Manager, state}
     ]
 
-    # ++ get_additionnal_modules(opts)
-
     Supervisor.init(children, strategy: :one_for_one)
-  end
-
-  defp get_additionnal_modules(opts) do
-    case Application.get_env(:application_runner, :additional_session_modules, :none) do
-      {module_name, function_name} ->
-        apply(module_name, function_name, [opts])
-
-      :none ->
-        []
-    end
   end
 end

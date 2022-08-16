@@ -31,7 +31,8 @@ defmodule ApplicationRunner.Session.Managers do
     with {:ok, _pid} <- Environments.ensure_env_started(env_id, env_state) do
       DynamicSupervisor.start_child(
         ApplicationRunner.Session.Managers,
-        {Session.Manager, [env_id: env_id, session_id: session_id, session_state: session_state]}
+        {Session.Supervisor,
+         [env_id: env_id, session_id: session_id, session_state: session_state]}
       )
     end
   end
@@ -54,7 +55,7 @@ defmodule ApplicationRunner.Session.Managers do
   @spec fetch_session_manager_pid(any) ::
           {:error, LenraCommon.Errors.BusinessError.t()} | {:ok, pid()}
   def fetch_session_manager_pid(session_id) do
-    case Swarm.whereis_name({:session, session_id}) do
+    case Swarm.whereis_name({:session_metadata, session_id}) do
       :undefined -> BusinessError.session_not_started_tuple({:session, session_id})
       pid -> {:ok, pid}
     end
