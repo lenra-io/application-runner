@@ -1,4 +1,4 @@
-defmodule AppicationRunner.Environment.Widget.DynamicSupervisor do
+defmodule ApplicationRunner.Environment.Widget.DynamicSupervisor do
   @moduledoc """
     Environments.Widget.DynamicSupervisor is a supervisor that manage Environment.Widget Genserver
   """
