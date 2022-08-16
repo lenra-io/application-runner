@@ -62,6 +62,7 @@ defmodule ApplicationRunner.Session.Manager do
 
   @impl true
   def init(opts) do
+    session_supervisor_pid = Keyword.fetch!(opts, :session_supervisor_pid)
     session_id = Keyword.fetch!(opts, :session_id)
     env_id = Keyword.fetch!(opts, :env_id)
     session_state = Keyword.fetch!(opts, :session_state)
@@ -69,10 +70,10 @@ defmodule ApplicationRunner.Session.Manager do
     function_name = Map.fetch!(session_state, :function_name)
     assigns = Map.fetch!(session_state, :assigns)
 
-    {:ok, session_supervisor_pid} = Supervisor.start_link(opts)
+    # {:ok, session_supervisor_pid} = Supervisor.start_link(opts)
     # Link the process to kill the manager if the supervisor is killed.
     # The SessionManager should be restarted by the SessionManagers then it will restart the supervisor.
-    Process.link(session_supervisor_pid)
+    # Process.link(session_supervisor_pid)
 
     event_handler_pid = Supervisor.fetch_module_pid!(session_supervisor_pid, EventHandler)
     EventHandler.subscribe(event_handler_pid)
