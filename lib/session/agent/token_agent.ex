@@ -36,9 +36,9 @@ defmodule ApplicationRunner.Session.Agent.Metadata do
     end
   end
 
-  def handle_call(:fetch_env_supervisor_pid!, _from, env_state) do
-    case Map.get(env_state, :env_supervisor_pid) do
-      nil -> raise "No EnvSupervisor. This should not happen."
+  def handle_call(:fetch_session_supervisor_pid!, _from, env_state) do
+    case Map.get(env_state, :session_supervisor_pid) do
+      nil -> raise "No SessionSupervisor. This should not happen."
       res -> {:reply, res, env_state, env_state.inactivity_timeout}
     end
   end

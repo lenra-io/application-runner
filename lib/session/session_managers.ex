@@ -30,8 +30,9 @@ defmodule ApplicationRunner.Session.Managers do
   def start_session(session_id, env_id, session_state, env_state) do
     with {:ok, _pid} <- Environments.ensure_env_started(env_id, env_state) do
       DynamicSupervisor.start_child(
-        ApplicationRunner.Session.Supervisor,
-        {Session.Manager, [env_id: env_id, session_id: session_id, session_state: session_state]}
+        ApplicationRunner.Session.Managers,
+        {Session.Supervisor,
+         [env_id: env_id, session_id: session_id, session_state: session_state]}
       )
     end
   end
