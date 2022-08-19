@@ -40,7 +40,8 @@ defmodule ApplicationRunner.Environment.QueryServer do
   def init(opts) do
     with {:ok, query} <- Keyword.fetch(opts, :query),
          {:ok, coll} <- Keyword.fetch(opts, :coll),
-         {:ok, data} <- fetch_initial_data(coll, query),
+         {:ok, query_map} <- Poison.decode(query),
+         {:ok, data} <- fetch_initial_data(coll, query_map),
          {:ok, ast} <- Parser.parse(query, %{}),
          {:ok, env_id} <- Keyword.fetch(opts, :env_id) do
       inactivity_timeout = Keyword.get(opts, :inactivity_timeout, @inactivity_timeout)
@@ -62,9 +63,11 @@ defmodule ApplicationRunner.Environment.QueryServer do
     end
   end
 
-  def fetch_initial_data(_coll, _query) do
-    # TODO
-    {:ok, []}
+  def fetch_initial_data(coll, query) do
+    case Mongo.find({:global, {:test, Mongo}}, coll, query) do
+      {:error, term} -> raise "Oups : Todo change error"
+      cursor -> {:ok, Enum.to_list(cursor)}
+    end
   end
 
   def handle_call(

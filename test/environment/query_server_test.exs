@@ -127,14 +127,24 @@ defmodule Environment.QueryServerTest do
   setup do
     start_supervised({QueryDynSup, env_id: @env_id})
 
+    mongo_name = {:global, {:test, Mongo}}
+
+    start_supervised({
+      Mongo,
+      url: "mongodb://localhost:27017/test", name: mongo_name
+    })
+
+    Mongo.drop_collection(mongo_name, "test")
+
     # Register self in swarm to allow grouping
     :yes = Swarm.register_name(:test_process, self())
 
     # Swarm seems to be a bit too slow to add/remove to groups when a genserver start/stop leading to
     # some random error in unit test.
     # I'm adding a small sleep to hopefully prevent this.
-    :timer.sleep(10)
-    :ok
+    :timer.sleep(50)
+
+    {:ok, %{mongo_name: mongo_name}}
   end
 
   describe "QueryServer setup" do
@@ -151,6 +161,29 @@ defmodule Environment.QueryServerTest do
 
       assert %{coll: "test", query: %{"clauses" => [], "pos" => "expression"}, data: []} =
                :sys.get_state(pid)
+    end
+
+    test "should get the correct data from the mongo db", %{mongo_name: mongo_name} do
+      data = [
+        %{"name" => "test1", "idx" => 1},
+        %{"name" => "test2", "idx" => 2},
+        %{"name" => "test3", "idx" => 3}
+      ]
+
+      Mongo.insert_many!(mongo_name, "test", data)
+
+      :ok = QueryDynSup.ensure_child_started(@env_id, "42", "test", "{}")
+      [pid] = Swarm.members(QueryServer.group_name("42"))
+
+      assert %{
+               coll: "test",
+               query: %{"clauses" => [], "pos" => "expression"},
+               data: [
+                 %{"name" => "test1", "idx" => 1, "_id" => _},
+                 %{"name" => "test2", "idx" => 2, "_id" => _},
+                 %{"name" => "test3", "idx" => 3, "_id" => _}
+               ]
+             } = :sys.get_state(pid)
     end
 
     test "should return :ok for the {:mongo_event, event} call" do
