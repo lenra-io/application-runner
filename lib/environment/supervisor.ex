@@ -70,7 +70,7 @@ defmodule ApplicationRunner.Environments.Supervisor do
 
     [
       url: "#{@mongo_base_url}/#{database_name}",
-      name: {:via, :swarm, {:mongo, env_id}}
+      name: {:via, :swarm, {Mongo, env_id}}
     ]
   end
 
