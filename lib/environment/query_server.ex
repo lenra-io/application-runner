@@ -32,8 +32,8 @@ defmodule ApplicationRunner.Environment.QueryServer do
     {:widget, env_id, coll, query}
   end
 
-  def get_group(session_id) do
-    {:query, session_id}
+  def group_name(session_id) do
+    {__MODULE__, session_id}
   end
 
   def init(opts) do

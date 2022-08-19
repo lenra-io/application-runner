@@ -4,8 +4,12 @@ defmodule ApplicationRunner.Environment.QueryDynSup do
   alias ApplicationRunner.Environment.QueryServer
 
   def start_link(opts) do
-    env_id = Keyword.get(opts, :env_id)
-    DynamicSupervisor.start_link(__MODULE__, :ok, name: {:via, :swarm, get_name(env_id)})
+    env_id = Keyword.fetch!(opts, :env_id)
+    DynamicSupervisor.start_link(__MODULE__, :ok, name: full_name(env_id))
+  end
+
+  defp full_name(env_id) do
+    {:via, :swarm, get_name(env_id)}
   end
 
   def get_name(env_id) do
@@ -20,14 +24,11 @@ defmodule ApplicationRunner.Environment.QueryDynSup do
   def ensure_child_started(env_id, session_id, coll, query, opts \\ []) do
     case start_child(env_id, coll, query, opts) do
       {:ok, pid} ->
-        group = QueryServer.get_group(session_id)
-        Swarm.join(group, pid)
+        register_group(session_id, pid)
         :ok
 
       {:error, {:already_started, pid}} ->
-        group = QueryServer.get_group(session_id)
-
-        Swarm.join(group, pid)
+        register_group(session_id, pid)
         :ok
 
       err ->
@@ -35,8 +36,13 @@ defmodule ApplicationRunner.Environment.QueryDynSup do
     end
   end
 
+  defp register_group(session_id, pid) do
+    group = QueryServer.group_name(session_id)
+    Swarm.join(group, pid)
+  end
+
   defp start_child(env_id, coll, query, opts \\ []) do
     init_value = Keyword.merge(opts, query: query, coll: coll, env_id: env_id)
-    DynamicSupervisor.start_child(__MODULE__, {QueryServer, init_value})
+    DynamicSupervisor.start_child(full_name(env_id), {QueryServer, init_value})
   end
 end
