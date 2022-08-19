@@ -128,6 +128,7 @@ defmodule Environment.QueryServerTest do
 
     mongo_name = {:global, {:test, Mongo}}
 
+    # TODO : create a mongo module and use it to create a new mongo connexion.
     start_supervised({
       Mongo,
       url: "mongodb://localhost:27017/test", name: mongo_name
