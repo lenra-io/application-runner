@@ -125,7 +125,7 @@ defmodule Environment.QueryServerTest do
   end
 
   setup do
-    start_supervised(QueryDynSup)
+    start_supervised(QueryDynSup, env_id: 1)
 
     # Register self in swarm to allow grouping
     :yes = Swarm.register_name(:test_process, self())
