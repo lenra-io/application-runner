@@ -1,8 +1,7 @@
 defmodule Environment.QueryServerTest do
   use ExUnit.Case
 
-  alias ApplicationRunner.Environment.{QueryDynSup, QueryServer}
-  alias ApplicationRunner.Environment.QueryServer
+  alias ApplicationRunner.Environment.{QueryDynSup, QueryServer, Widget}
 
   @env_id 1337
 
@@ -330,15 +329,15 @@ defmodule Environment.QueryServerTest do
       :ok = QueryDynSup.ensure_child_started(@env_id, "42", "test", "{\"idx\": 1}")
 
       # BOTH process in Group 1 should receive the change event
-      group1 = QueryServer.get_widget_group(@env_id, "test", "{}")
+      group1 = Widget.get_widget_group(@env_id, "test", "{}")
       # Group 1 should NOT receive the change event (wrong env_id)
-      group2 = QueryServer.get_widget_group(@env_id + 1, "test", "{}")
+      group2 = Widget.get_widget_group(@env_id + 1, "test", "{}")
       # Group 1 should NOT receive the change event (wrong coll)
-      group3 = QueryServer.get_widget_group(@env_id, "test1", "{}")
+      group3 = Widget.get_widget_group(@env_id, "test1", "{}")
       # Group 1 should NOT receive the change event (query does not match)
-      group4 = QueryServer.get_widget_group(@env_id, "test", "{\"aaaa\": 1}")
+      group4 = Widget.get_widget_group(@env_id, "test", "{\"aaaa\": 1}")
       # Group 1 should receive the change event (query match)
-      group5 = QueryServer.get_widget_group(@env_id, "test", "{\"idx\": 1}")
+      group5 = Widget.get_widget_group(@env_id, "test", "{\"idx\": 1}")
 
       p1 = spawn_pass_process(:a1)
       p1b = spawn_pass_process(:a1b)
@@ -633,8 +632,8 @@ defmodule Environment.QueryServerTest do
       name = QueryServer.get_name(@env_id, "test", "{}")
       new_name = QueryServer.get_name(@env_id, "bar", "{}")
 
-      group = QueryServer.get_widget_group(@env_id, "test", "{}")
-      new_group = QueryServer.get_widget_group(@env_id, "bar", "{}")
+      group = Widget.get_widget_group(@env_id, "test", "{}")
+      new_group = Widget.get_widget_group(@env_id, "bar", "{}")
       p1 = spawn_pass_process(:p1)
       p2 = spawn_pass_process(:p2)
       Swarm.join(group, p1)

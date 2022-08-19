@@ -15,6 +15,7 @@ defmodule ApplicationRunner.Errors.TechnicalError do
       {:manifest_not_found, "Manifest not found"},
       {:openfaas_not_reachable, "Openfaas could not be reached."},
       {:timeout, "Timeout"},
-      {:listener_not_found, "Listener not found"}
+      {:listener_not_found, "Listener not found"},
+      {:mongo_data_fetch_error, "Could not fetch data from mongo."}
     ]
 end

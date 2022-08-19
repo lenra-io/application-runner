@@ -1,7 +1,8 @@
 defmodule ApplicationRunner.Environment.QueryServer do
   use GenServer
 
-  alias LenraCommon.Errors.DevError
+  alias LenraCommon.Errors.{DevError, TechnicalError}
+  alias ApplicationRunner.Environment.Widget
   alias QueryParser.{Parser, Exec}
 
   require Logger
@@ -29,12 +30,6 @@ defmodule ApplicationRunner.Environment.QueryServer do
 
   def group_name(session_id) do
     {__MODULE__, session_id}
-  end
-
-  # TODO : Move this to the Widget genserver
-  def get_widget_group(env_id, coll, query) do
-    # TODO Change :widget to __MODULE__ in the Widget server.
-    {:widget, env_id, coll, query}
   end
 
   def init(opts) do
@@ -65,7 +60,7 @@ defmodule ApplicationRunner.Environment.QueryServer do
 
   def fetch_initial_data(coll, query) do
     case Mongo.find({:global, {:test, Mongo}}, coll, query) do
-      {:error, term} -> raise "Oups : Todo change error"
+      {:error, term} -> TechnicalError.mongo_data_fetch_error_tuple(term)
       cursor -> {:ok, Enum.to_list(cursor)}
     end
   end
@@ -201,12 +196,12 @@ defmodule ApplicationRunner.Environment.QueryServer do
   end
 
   defp notify_data_changed(new_data, %{env_id: env_id, query_str: query_str, coll: coll}) do
-    group = get_widget_group(env_id, coll, query_str)
+    group = Widget.get_widget_group(env_id, coll, query_str)
     Swarm.publish(group, {:data_changed, new_data})
   end
 
   defp notify_coll_changed(new_coll, %{env_id: env_id, query_str: query_str, coll: old_coll}) do
-    group = get_widget_group(env_id, old_coll, query_str)
+    group = Widget.get_widget_group(env_id, old_coll, query_str)
     Swarm.publish(group, {:coll_changed, new_coll})
   end
 
