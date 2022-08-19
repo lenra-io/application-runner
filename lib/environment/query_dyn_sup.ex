@@ -3,8 +3,13 @@ defmodule ApplicationRunner.Environment.QueryDynSup do
 
   alias ApplicationRunner.Environment.QueryServer
 
-  def start_link(_) do
-    DynamicSupervisor.start_link(__MODULE__, :ok, name: __MODULE__)
+  def start_link(opts) do
+    env_id = Keyword.get(opts, :env_id)
+    DynamicSupervisor.start_link(__MODULE__, :ok, name: {:via, :swarm, get_name(env_id)})
+  end
+
+  def get_name(env_id) do
+    {__MODULE__, env_id}
   end
 
   @impl true

@@ -24,7 +24,7 @@ defmodule ApplicationRunner.Environment.QueryServer do
   end
 
   def get_name(env_id, coll, query) do
-    {ApplicationRunner.Environment.QueryServer, env_id, coll, query}
+    {__MODULE__, env_id, coll, query}
   end
 
   # TODO : Move this to the Widget genserver
