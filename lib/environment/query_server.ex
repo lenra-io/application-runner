@@ -27,13 +27,14 @@ defmodule ApplicationRunner.Environment.QueryServer do
     {__MODULE__, env_id, coll, query}
   end
 
-  # TODO : Move this to the Widget genserver
-  def get_widget_group(env_id, coll, query) do
-    {:widget, env_id, coll, query}
-  end
-
   def group_name(session_id) do
     {__MODULE__, session_id}
+  end
+
+  # TODO : Move this to the Widget genserver
+  def get_widget_group(env_id, coll, query) do
+    # TODO Change :widget to __MODULE__ in the Widget server.
+    {:widget, env_id, coll, query}
   end
 
   def init(opts) do

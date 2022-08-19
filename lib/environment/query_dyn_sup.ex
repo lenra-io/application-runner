@@ -24,11 +24,11 @@ defmodule ApplicationRunner.Environment.QueryDynSup do
   def ensure_child_started(env_id, session_id, coll, query, opts \\ []) do
     case start_child(env_id, coll, query, opts) do
       {:ok, pid} ->
-        register_group(session_id, pid)
+        join_group(session_id, pid)
         :ok
 
       {:error, {:already_started, pid}} ->
-        register_group(session_id, pid)
+        join_group(session_id, pid)
         :ok
 
       err ->
@@ -36,7 +36,7 @@ defmodule ApplicationRunner.Environment.QueryDynSup do
     end
   end
 
-  defp register_group(session_id, pid) do
+  defp join_group(session_id, pid) do
     group = QueryServer.group_name(session_id)
     Swarm.join(group, pid)
   end
