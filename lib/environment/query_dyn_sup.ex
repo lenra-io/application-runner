@@ -1,4 +1,9 @@
 defmodule ApplicationRunner.Environment.QueryDynSup do
+  @moduledoc """
+    This module is responsible to start the QueryServer for a given env_id.
+    If the query server is already started, it act like it just started.
+    It also add the QueryServer to the correct group after it started it.
+  """
   use DynamicSupervisor
 
   alias ApplicationRunner.Environment.QueryServer

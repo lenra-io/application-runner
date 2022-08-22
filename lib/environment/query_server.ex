@@ -1,9 +1,16 @@
 defmodule ApplicationRunner.Environment.QueryServer do
+  @moduledoc """
+    This module take care of updating a data to sync with the database.
+    - It get the initial data from the mongo db using coll/query.
+    - It wait for the Session Change Event and update the data accordingly
+    - It use QueryParser to check if the new data actually match the query.
+    - If the data is updated, it notify the Widget group using Swarm.publish
+  """
   use GenServer
 
   alias LenraCommon.Errors.{DevError, TechnicalError}
   alias ApplicationRunner.Environment.{MongoInstance, Widget}
-  alias QueryParser.{Parser, Exec}
+  alias QueryParser.{Exec, Parser}
 
   require Logger
 
@@ -74,60 +81,79 @@ defmodule ApplicationRunner.Environment.QueryServer do
   def handle_call(
         {:mongo_event, event},
         _from,
-        %{
-          coll: coll,
-          data: data,
-          query: query,
-          latest_timestamp: latest_timestamp,
-          done_ids: done_ids
-        } = state
+        state
       ) do
     event_timestamp = get_in(event, ["clusterTime"])
     event_id = get_in(event, ["_id"])
 
-    if event_handled?(done_ids, event_id, latest_timestamp, event_timestamp) do
+    if event_handled?(event_id, event_timestamp, state) do
       # The event is already handled. Reply directly and ignore event.s
       reply_timeout(:ok, state)
     else
       # The event must be handled.
-      event_coll = get_in(event, ["ns", "coll"])
-      op_type = get_in(event, ["operationType"])
-
-      cond do
-        event_coll == coll and op_type in ["insert", "update", "replace", "delete"] ->
-          full_doc = get_in(event, ["fullDocument"])
-          doc_id = get_in(event, ["documentKey", "_id"])
-          new_data = change_data(op_type, full_doc, doc_id, data, query, state)
-
-          new_done_ids =
-            if event_timestamp > latest_timestamp, do: [event_id], else: [event_id | done_ids]
-
-          new_state =
-            Map.merge(state, %{
-              data: new_data,
-              done_ids: new_done_ids,
-              latest_timestamp: event_timestamp
-            })
-
-          reply_timeout(:ok, new_state)
-
-        event_coll == coll and op_type in ["rename"] ->
-          change_coll(op_type, event, state)
-
-        event_coll == coll and op_type in ["drop"] ->
-          stop(state)
-
-        op_type in ["dropDatabase"] ->
-          stop(state)
-
-        true ->
-          reply_timeout(:ok, state)
-      end
+      handle_event(event, event_id, event_timestamp, state)
     end
   end
 
-  defp event_handled?(done_ids, event_id, latest_timestamp, event_timestamp) do
+  defp event_handled?(
+         event_id,
+         event_timestamp,
+         %{
+           latest_timestamp: latest_timestamp,
+           done_ids: done_ids
+         }
+       ) do
     event_timestamp < latest_timestamp or event_id in done_ids
+  end
+
+  defp handle_event(
+         event,
+         event_id,
+         event_timestamp,
+         %{
+           latest_timestamp: latest_timestamp,
+           done_ids: done_ids,
+           query: query,
+           data: data,
+           coll: coll
+         } = state
+       ) do
+    event_coll = get_in(event, ["ns", "coll"])
+    op_type = get_in(event, ["operationType"])
+
+    cond do
+      event_coll == coll and op_type in ["insert", "update", "replace", "delete"] ->
+        full_doc = get_in(event, ["fullDocument"])
+        doc_id = get_in(event, ["documentKey", "_id"])
+
+        new_data = change_data(op_type, full_doc, doc_id, data, query, state)
+        new_done_ids = get_new_done_ids(event_timestamp, latest_timestamp, event_id, done_ids)
+
+        new_state =
+          Map.merge(state, %{
+            data: new_data,
+            done_ids: new_done_ids,
+            latest_timestamp: event_timestamp
+          })
+
+        reply_timeout(:ok, new_state)
+
+      event_coll == coll and op_type in ["rename"] ->
+        change_coll(op_type, event, state)
+
+      event_coll == coll and op_type in ["drop"] ->
+        stop(state)
+
+      op_type in ["dropDatabase"] ->
+        stop(state)
+
+      true ->
+        reply_timeout(:ok, state)
+    end
+  end
+
+  defp get_new_done_ids(event_timestamp, latest_timestamp, event_id, done_ids) do
+    if event_timestamp > latest_timestamp, do: [event_id], else: [event_id | done_ids]
   end
 
   defp change_coll(
@@ -166,8 +192,8 @@ defmodule ApplicationRunner.Environment.QueryServer do
     end
   end
 
-  defp change_data(opType, full_doc, doc_id, data, query, state)
-       when opType in ["update", "replace"] do
+  defp change_data(op_type, full_doc, doc_id, data, query, state)
+       when op_type in ["update", "replace"] do
     if Exec.match?(full_doc, query) do
       new_data =
         Enum.map(data, fn

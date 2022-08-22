@@ -1,7 +1,12 @@
 defmodule Environment.QueryServerTest do
   use ExUnit.Case
 
-  alias ApplicationRunner.Environment.{QueryDynSup, QueryServer, Widget, MongoInstance}
+  alias ApplicationRunner.Environment.{
+    MongoInstance,
+    QueryDynSup,
+    QueryServer,
+    Widget
+  }
 
   @env_id 1337
 
