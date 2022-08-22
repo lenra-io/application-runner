@@ -39,26 +39,40 @@ defmodule ApplicationRunner.Environments.Supervisor do
 
   @impl true
   def init(opts) do
+    # This is how the supervisor should look like with mongo update
+    # children = [
+    #   {ApplicationRunner.Environments.Token.Agent, opts},
+    #   ApplicationRunner.EventHandler
+    #   {Mongo, MongoInstance.config(env_id)}
+    #   ChangeStream
+    #   MongoSessionDynamicSup
+    #   MongoTransaDynSup
+    #   Event.OnEnvStart
+    #   ManifestHandler
+    #   ApplicationRunner.ListenersCache
+    #   QueryDynSup
+    #   WidgetDynSup
+    #   Session.Managers
+    # ]
     opts = Keyword.merge(opts, env_supervisor_pid: self())
 
     env_id = Keyword.get(opts, :env_id)
 
-    children =
-      [
-        # TODO: add module once they done !
-        {ApplicationRunner.Environments.Agent.Metadata, opts},
-        ApplicationRunner.EventHandler,
-        {Mongo, MongoInstance.config(env_id)}
-        # ChangeStream
-        # MongoSessionDynamicSup
-        # MongoTransaDynSup
-        # {ApplicationRunner.Environments.Task.OnEnvStart, opts}
-        # {ApplicationRunner.Environments.ManifestHandler, opts}
-        # ApplicationRunner.ListenersCache
-        # QueryDynSup
-        # WidgetDynSup
-        # Session.Managers
-      ] ++ get_additionnal_modules(opts)
+    children = [
+      # TODO: add module once they done !
+      {ApplicationRunner.Environments.Agent.Metadata, opts},
+      ApplicationRunner.EventHandler,
+      {Mongo, MongoInstance.config(env_id)}
+      # ChangeStream
+      # MongoSessionDynamicSup
+      # MongoTransaDynSup
+      # {ApplicationRunner.Environments.Task.OnEnvStart, opts}
+      # {ApplicationRunner.Environments.ManifestHandler, opts}
+      # ApplicationRunner.ListenersCache
+      # QueryDynSup
+      # WidgetDynSup
+      # Session.Managers
+    ]
 
     Supervisor.init(children, strategy: :one_for_one)
   end

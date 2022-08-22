@@ -10,71 +10,52 @@ defmodule ApplicationRunner.JsonStorage.Services.Data do
     Services
   }
 
-  alias QueryParser.AST.{EctoParser, Parser}
+  alias ApplicationRunner.Environment.MongoInstance
 
   alias ApplicationRunner.Errors.{BusinessError, TechnicalError}
   import Ecto.Query, only: [from: 2]
 
   @repo Application.compile_env!(:application_runner, :repo)
 
-  def exec_query(_env_id, _user_id, nil) do
-    []
-  end
+  def parse_and_exec_query(env_id, coll, query) do
+    env_id
+    |> MongoInstance.get_full_name()
+    |> Mongo.find(coll, query)
 
-  def exec_query(query, env_id, user_id) do
-    user_data =
-      env_id
-      |> Services.UserData.current_user_data_query(user_id)
-      |> @repo.one()
-
-    query
-    |> EctoParser.to_ecto(env_id, user_data.id)
-    |> @repo.all()
-  end
-
-  def parse_and_exec_query(query, env_id, user_id) do
-    query
-    |> Parser.from_json()
-    |> exec_query(env_id, user_id)
+    # TODO : Handle error to return a technical/Business error
+    # TODO : Add @spec
   end
 
   ##########
   # get #
   ##########
 
-  def get(env_id, ds_name, data_id) do
+  def get(env_id, coll, data_id) do
     env_id
-    |> Services.DataQueryView.get_one(ds_name, data_id)
-    |> @repo.one()
+    |> MongoInstance.get_full_name()
+    |> Mongo.find_one(coll, %{"_id" => data_id})
+
+    # TODO : Handle error to return a technical/Business error
+    # TODO : Add @spec
   end
 
-  def get_all(env_id, ds_name) do
+  def get_all(env_id, coll) do
     env_id
-    |> Services.DataQueryView.get_all(ds_name)
-    |> @repo.all()
+    |> MongoInstance.get_full_name()
+    |> Mongo.find(coll, %{})
+
+    # TODO : Handle error to return a technical/Business error
+    # TODO : Add @spec
   end
 
   def get_current_user_data(env_id, user_id) do
-    data_id = get_user_data_id(env_id, user_id)
-
-    env_id
-    |> Services.DataQueryView.get_one("_users", data_id)
-    |> @repo.one()
+    # TODO : Find a new way to handle the user_data (?)
+    {:ok, %{}}
   end
 
   defp get_user_data_id(env_id, user_id) do
-    select =
-      from(d in Data,
-        join: ud in UserData,
-        on: ud.data_id == d.id,
-        join: ds in Datastore,
-        on: d.datastore_id == ds.id,
-        where: ud.user_id == ^user_id and ds.environment_id == ^env_id,
-        select: d.id
-      )
-
-    select
-    |> @repo.one()
+    # TODO : Find a new way to handle user_data_id (?)
+    42
   end
 
   ##########

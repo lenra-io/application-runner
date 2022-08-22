@@ -15,7 +15,7 @@ defmodule ApplicationRunner.Environment.MongoInstance do
   end
 
   def get_name(env_id) do
-    {__MODULE__, env_id}
+    {Mongo, env_id}
   end
 
   def get_full_name(env_id) do
