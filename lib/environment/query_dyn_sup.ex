@@ -5,10 +5,10 @@ defmodule ApplicationRunner.Environment.QueryDynSup do
 
   def start_link(opts) do
     env_id = Keyword.fetch!(opts, :env_id)
-    DynamicSupervisor.start_link(__MODULE__, :ok, name: full_name(env_id))
+    DynamicSupervisor.start_link(__MODULE__, :ok, name: get_full_name(env_id))
   end
 
-  defp full_name(env_id) do
+  def get_full_name(env_id) do
     {:via, :swarm, get_name(env_id)}
   end
 
@@ -43,6 +43,6 @@ defmodule ApplicationRunner.Environment.QueryDynSup do
 
   defp start_child(env_id, coll, query, opts \\ []) do
     init_value = Keyword.merge(opts, query: query, coll: coll, env_id: env_id)
-    DynamicSupervisor.start_child(full_name(env_id), {QueryServer, init_value})
+    DynamicSupervisor.start_child(get_full_name(env_id), {QueryServer, init_value})
   end
 end

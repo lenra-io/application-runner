@@ -124,26 +124,32 @@ defmodule Environment.QueryServerTest do
   end
 
   setup do
-    start_supervised({QueryDynSup, env_id: @env_id})
+    {:ok, _} = start_supervised({QueryDynSup, env_id: @env_id})
 
     # TODO : create a mongo module and use it to create a new mongo connexion.
 
     mongo_name = MongoInstance.get_full_name(@env_id)
 
-    start_supervised({
-      Mongo,
-      MongoInstance.config(@env_id)
-    })
+    {:ok, _} =
+      start_supervised({
+        Mongo,
+        MongoInstance.config(@env_id)
+      })
 
     Mongo.drop_collection(mongo_name, "test")
 
     # Register self in swarm to allow grouping
     :yes = Swarm.register_name(:test_process, self())
 
-    # Swarm seems to be a bit too slow to add/remove to groups when a genserver start/stop leading to
-    # some random error in unit test.
-    # I'm adding a small sleep to hopefully prevent this.
-    :timer.sleep(50)
+    # Swarm seems to be a bit too slow to remove a registered name when a genserver stop leading to
+    # QueryDynSup acting as already started on some random test.
+    # To prevent this, i make sure to unregister every added supervised server
+
+    on_exit(fn ->
+      Swarm.unregister_name(:test_process)
+      Swarm.unregister_name(QueryDynSup.get_name(@env_id))
+      Swarm.unregister_name(MongoInstance.get_name(@env_id))
+    end)
 
     {:ok, %{mongo_name: mongo_name}}
   end
@@ -158,10 +164,9 @@ defmodule Environment.QueryServerTest do
 
     test "should have the correct state" do
       :ok = QueryDynSup.ensure_child_started(@env_id, "42", "test", "{}")
-      [pid] = Swarm.members(QueryServer.group_name("42"))
 
       assert %{coll: "test", query: %{"clauses" => [], "pos" => "expression"}, data: []} =
-               :sys.get_state(pid)
+               :sys.get_state(QueryServer.get_full_name(@env_id, "test", "{}"))
     end
 
     test "should get the correct data from the mongo db", %{mongo_name: mongo_name} do
@@ -174,7 +179,6 @@ defmodule Environment.QueryServerTest do
       Mongo.insert_many!(mongo_name, "test", data)
 
       :ok = QueryDynSup.ensure_child_started(@env_id, "42", "test", "{}")
-      [pid] = Swarm.members(QueryServer.group_name("42"))
 
       assert %{
                coll: "test",
@@ -184,7 +188,7 @@ defmodule Environment.QueryServerTest do
                  %{"name" => "test2", "idx" => 2, "_id" => _},
                  %{"name" => "test3", "idx" => 3, "_id" => _}
                ]
-             } = :sys.get_state(pid)
+             } = :sys.get_state(QueryServer.get_full_name(@env_id, "test", "{}"))
     end
 
     test "should return :ok for the {:mongo_event, event} call" do
@@ -262,60 +266,63 @@ defmodule Environment.QueryServerTest do
   describe "QueryServer prevent handling duplicate event" do
     test "should reject two event with same id and timestamp" do
       assert :ok = QueryDynSup.ensure_child_started(@env_id, "42", "test", "{}")
-      assert [pid] = Swarm.members(QueryServer.group_name("42"))
       timestamp = System.os_time(:microsecond)
+      name = QueryServer.get_full_name(@env_id, "test", "{}")
 
-      GenServer.call(pid, {:mongo_event, insert_event(1, "test", 1, timestamp)})
-      assert %{data: [%{"_id" => "1"}]} = :sys.get_state(pid)
-      GenServer.call(pid, {:mongo_event, insert_event(2, "test", 1, timestamp)})
-      assert %{data: [%{"_id" => "1"}]} = :sys.get_state(pid)
+      GenServer.call(name, {:mongo_event, insert_event(1, "test", 1, timestamp)})
+
+      assert %{data: [%{"_id" => "1"}]} = :sys.get_state(name)
+
+      GenServer.call(name, {:mongo_event, insert_event(2, "test", 1, timestamp)})
+
+      assert %{data: [%{"_id" => "1"}]} = :sys.get_state(name)
     end
 
     test "should handle two event with same timestamp but different ids" do
       assert :ok = QueryDynSup.ensure_child_started(@env_id, "42", "test", "{}")
-      assert [pid] = Swarm.members(QueryServer.group_name("42"))
+      name = QueryServer.get_full_name(@env_id, "test", "{}")
       timestamp = System.os_time(:microsecond)
 
-      GenServer.call(pid, {:mongo_event, insert_event(1, "test", 1, timestamp)})
-      assert %{data: [%{"_id" => "1"}]} = :sys.get_state(pid)
-      GenServer.call(pid, {:mongo_event, insert_event(2, "test", 2, timestamp)})
-      assert %{data: [%{"_id" => "1"}, %{"_id" => "2"}]} = :sys.get_state(pid)
+      GenServer.call(name, {:mongo_event, insert_event(1, "test", 1, timestamp)})
+      assert %{data: [%{"_id" => "1"}]} = :sys.get_state(name)
+      GenServer.call(name, {:mongo_event, insert_event(2, "test", 2, timestamp)})
+      assert %{data: [%{"_id" => "1"}, %{"_id" => "2"}]} = :sys.get_state(name)
     end
 
     test "should handle N event incremental ids and timestamps" do
       assert :ok = QueryDynSup.ensure_child_started(@env_id, "42", "test", "{}")
-      assert [pid] = Swarm.members(QueryServer.group_name("42"))
+      name = QueryServer.get_full_name(@env_id, "test", "{}")
       timestamp = System.os_time(:microsecond)
 
-      GenServer.call(pid, {:mongo_event, insert_event(1, "test", 1, timestamp)})
-      assert %{data: [%{"_id" => "1"}]} = :sys.get_state(pid)
-      GenServer.call(pid, {:mongo_event, insert_event(2, "test", 2, timestamp + 100)})
-      assert %{data: [%{"_id" => "1"}, %{"_id" => "2"}]} = :sys.get_state(pid)
-      GenServer.call(pid, {:mongo_event, insert_event(3, "test", 3, timestamp + 200)})
-      assert %{data: [%{"_id" => "1"}, %{"_id" => "2"}, %{"_id" => "3"}]} = :sys.get_state(pid)
+      GenServer.call(name, {:mongo_event, insert_event(1, "test", 1, timestamp)})
+      assert %{data: [%{"_id" => "1"}]} = :sys.get_state(name)
+      GenServer.call(name, {:mongo_event, insert_event(2, "test", 2, timestamp + 100)})
+      assert %{data: [%{"_id" => "1"}, %{"_id" => "2"}]} = :sys.get_state(name)
+      GenServer.call(name, {:mongo_event, insert_event(3, "test", 3, timestamp + 200)})
+      assert %{data: [%{"_id" => "1"}, %{"_id" => "2"}, %{"_id" => "3"}]} = :sys.get_state(name)
     end
 
     test "should reject an event with older timestamp" do
       assert :ok = QueryDynSup.ensure_child_started(@env_id, "42", "test", "{}")
-      assert [pid] = Swarm.members(QueryServer.group_name("42"))
+      name = QueryServer.get_full_name(@env_id, "test", "{}")
       timestamp = System.os_time(:microsecond)
 
-      GenServer.call(pid, {:mongo_event, insert_event(1, "test", 1, timestamp)})
-      assert %{data: [%{"_id" => "1"}]} = :sys.get_state(pid)
-      GenServer.call(pid, {:mongo_event, insert_event(2, "test", 2, timestamp + 100)})
-      assert %{data: [%{"_id" => "1"}, %{"_id" => "2"}]} = :sys.get_state(pid)
-      GenServer.call(pid, {:mongo_event, insert_event(3, "test", 3, timestamp + 50)})
-      assert %{data: [%{"_id" => "1"}, %{"_id" => "2"}]} = :sys.get_state(pid)
+      GenServer.call(name, {:mongo_event, insert_event(1, "test", 1, timestamp)})
+      assert %{data: [%{"_id" => "1"}]} = :sys.get_state(name)
+      GenServer.call(name, {:mongo_event, insert_event(2, "test", 2, timestamp + 100)})
+      assert %{data: [%{"_id" => "1"}, %{"_id" => "2"}]} = :sys.get_state(name)
+      GenServer.call(name, {:mongo_event, insert_event(3, "test", 3, timestamp + 50)})
+      assert %{data: [%{"_id" => "1"}, %{"_id" => "2"}]} = :sys.get_state(name)
     end
   end
 
   describe "QueryServer insert" do
     test "should insert data for the correct coll" do
       :ok = QueryDynSup.ensure_child_started(@env_id, "42", "test", "{}")
-      [pid] = Swarm.members(QueryServer.group_name("42"))
+      name = QueryServer.get_full_name(@env_id, "test", "{}")
 
-      assert :ok = GenServer.call(pid, {:mongo_event, insert_event(1)})
-      assert :ok = GenServer.call(pid, {:mongo_event, insert_event(2)})
+      assert :ok = GenServer.call(name, {:mongo_event, insert_event(1)})
+      assert :ok = GenServer.call(name, {:mongo_event, insert_event(2)})
 
       assert %{
                coll: "test",
@@ -323,7 +330,7 @@ defmodule Environment.QueryServerTest do
                  %{"_id" => "1", "idx" => 1, "name" => "test1"},
                  %{"_id" => "2", "idx" => 2, "name" => "test2"}
                ]
-             } = :sys.get_state(pid)
+             } = :sys.get_state(name)
     end
 
     test "should notify data changed in the widget group correctly" do
@@ -367,244 +374,244 @@ defmodule Environment.QueryServerTest do
 
     test "should NOT insert data for the wrong coll" do
       :ok = QueryDynSup.ensure_child_started(@env_id, "42", "test", "{}")
-      [pid] = Swarm.members(QueryServer.group_name("42"))
+      name = QueryServer.get_full_name(@env_id, "test", "{}")
 
-      assert :ok = GenServer.call(pid, {:mongo_event, insert_event(1)})
-      assert :ok = GenServer.call(pid, {:mongo_event, insert_event(2, "foo")})
+      assert :ok = GenServer.call(name, {:mongo_event, insert_event(1)})
+      assert :ok = GenServer.call(name, {:mongo_event, insert_event(2, "foo")})
 
       assert %{
                coll: "test",
                data: [%{"_id" => "1"}]
-             } = :sys.get_state(pid)
+             } = :sys.get_state(name)
     end
 
     test "should NOT insert data if the query does not match the new element" do
       :ok = QueryDynSup.ensure_child_started(@env_id, "42", "test", "{\"idx\": {\"$lt\": 3}}")
-      [pid] = Swarm.members(QueryServer.group_name("42"))
+      name = QueryServer.get_full_name(@env_id, "test", "{\"idx\": {\"$lt\": 3}}")
 
-      assert :ok = GenServer.call(pid, {:mongo_event, insert_event(1)})
-      assert :ok = GenServer.call(pid, {:mongo_event, insert_event(2)})
-      assert :ok = GenServer.call(pid, {:mongo_event, insert_event(3)})
+      assert :ok = GenServer.call(name, {:mongo_event, insert_event(1)})
+      assert :ok = GenServer.call(name, {:mongo_event, insert_event(2)})
+      assert :ok = GenServer.call(name, {:mongo_event, insert_event(3)})
 
       assert %{
                coll: "test",
                data: [%{"_id" => "1"}, %{"_id" => "2"}]
-             } = :sys.get_state(pid)
+             } = :sys.get_state(name)
     end
   end
 
   describe "QueryServer update" do
     test "should update an older data if doc _id is the same" do
       :ok = QueryDynSup.ensure_child_started(@env_id, "42", "test", "{}")
-      [pid] = Swarm.members(QueryServer.group_name("42"))
+      name = QueryServer.get_full_name(@env_id, "test", "{}")
 
-      assert :ok = GenServer.call(pid, {:mongo_event, insert_event(1, "test", 1)})
+      assert :ok = GenServer.call(name, {:mongo_event, insert_event(1, "test", 1)})
 
       assert %{
                coll: "test",
                data: [%{"_id" => "1", "name" => "test1"}]
-             } = :sys.get_state(pid)
+             } = :sys.get_state(name)
 
-      assert :ok = GenServer.call(pid, {:mongo_event, update_event(1, "test", 2)})
+      assert :ok = GenServer.call(name, {:mongo_event, update_event(1, "test", 2)})
 
       assert %{
                coll: "test",
                data: [%{"_id" => "1", "name" => "new_test1", "foo" => "bar"}]
-             } = :sys.get_state(pid)
+             } = :sys.get_state(name)
     end
 
     test "should NOT update an older data if _id is different" do
       :ok = QueryDynSup.ensure_child_started(@env_id, "42", "test", "{}")
-      [pid] = Swarm.members(QueryServer.group_name("42"))
+      name = QueryServer.get_full_name(@env_id, "test", "{}")
 
-      assert :ok = GenServer.call(pid, {:mongo_event, insert_event(1)})
-
-      assert %{
-               coll: "test",
-               data: [%{"_id" => "1", "name" => "test1"}]
-             } = :sys.get_state(pid)
-
-      assert :ok = GenServer.call(pid, {:mongo_event, update_event(2)})
+      assert :ok = GenServer.call(name, {:mongo_event, insert_event(1)})
 
       assert %{
                coll: "test",
                data: [%{"_id" => "1", "name" => "test1"}]
-             } = :sys.get_state(pid)
+             } = :sys.get_state(name)
+
+      assert :ok = GenServer.call(name, {:mongo_event, update_event(2)})
+
+      assert %{
+               coll: "test",
+               data: [%{"_id" => "1", "name" => "test1"}]
+             } = :sys.get_state(name)
     end
 
     test "should NOT update an older data if the coll is different" do
       :ok = QueryDynSup.ensure_child_started(@env_id, "42", "test", "{}")
-      [pid] = Swarm.members(QueryServer.group_name("42"))
+      name = QueryServer.get_full_name(@env_id, "test", "{}")
 
-      assert :ok = GenServer.call(pid, {:mongo_event, insert_event(1)})
-
-      assert %{
-               coll: "test",
-               data: [%{"_id" => "1", "name" => "test1"}]
-             } = :sys.get_state(pid)
-
-      assert :ok = GenServer.call(pid, {:mongo_event, update_event(1, "foo")})
+      assert :ok = GenServer.call(name, {:mongo_event, insert_event(1)})
 
       assert %{
                coll: "test",
                data: [%{"_id" => "1", "name" => "test1"}]
-             } = :sys.get_state(pid)
+             } = :sys.get_state(name)
+
+      assert :ok = GenServer.call(name, {:mongo_event, update_event(1, "foo")})
+
+      assert %{
+               coll: "test",
+               data: [%{"_id" => "1", "name" => "test1"}]
+             } = :sys.get_state(name)
     end
 
     test "should remove the old data if _id is the same but query does not match anymore" do
       :ok = QueryDynSup.ensure_child_started(@env_id, "42", "test", "{\"name\": \"test1\"}")
-      [pid] = Swarm.members(QueryServer.group_name("42"))
+      name = QueryServer.get_full_name(@env_id, "test", "{\"name\": \"test1\"}")
 
-      assert :ok = GenServer.call(pid, {:mongo_event, insert_event(1, "test", 1)})
+      assert :ok = GenServer.call(name, {:mongo_event, insert_event(1, "test", 1)})
 
       assert %{
                coll: "test",
                data: [%{"_id" => "1", "name" => "test1"}]
-             } = :sys.get_state(pid)
+             } = :sys.get_state(name)
 
-      assert :ok = GenServer.call(pid, {:mongo_event, update_event(1, "test", 2)})
+      assert :ok = GenServer.call(name, {:mongo_event, update_event(1, "test", 2)})
 
       assert %{
                coll: "test",
                data: []
-             } = :sys.get_state(pid)
+             } = :sys.get_state(name)
     end
   end
 
   describe "QueryServer replace" do
     test "should replace an older data if _id is the same" do
       :ok = QueryDynSup.ensure_child_started(@env_id, "42", "test", "{}")
-      [pid] = Swarm.members(QueryServer.group_name("42"))
+      name = QueryServer.get_full_name(@env_id, "test", "{}")
 
-      assert :ok = GenServer.call(pid, {:mongo_event, insert_event(1, "test", 1)})
+      assert :ok = GenServer.call(name, {:mongo_event, insert_event(1, "test", 1)})
 
       assert %{
                coll: "test",
                data: [%{"_id" => "1", "name" => "test1"}]
-             } = :sys.get_state(pid)
+             } = :sys.get_state(name)
 
-      assert :ok = GenServer.call(pid, {:mongo_event, replace_event(1, "test", 2)})
+      assert :ok = GenServer.call(name, {:mongo_event, replace_event(1, "test", 2)})
 
       assert %{
                coll: "test",
                data: [%{"_id" => "1", "name" => "new_test1", "foo" => "bar"}]
-             } = :sys.get_state(pid)
+             } = :sys.get_state(name)
     end
 
     test "should NOT replace an older data if _id is different" do
       :ok = QueryDynSup.ensure_child_started(@env_id, "42", "test", "{}")
-      [pid] = Swarm.members(QueryServer.group_name("42"))
+      name = QueryServer.get_full_name(@env_id, "test", "{}")
 
-      assert :ok = GenServer.call(pid, {:mongo_event, insert_event(1)})
-
-      assert %{
-               coll: "test",
-               data: [%{"_id" => "1", "name" => "test1"}]
-             } = :sys.get_state(pid)
-
-      assert :ok = GenServer.call(pid, {:mongo_event, replace_event(2)})
+      assert :ok = GenServer.call(name, {:mongo_event, insert_event(1)})
 
       assert %{
                coll: "test",
                data: [%{"_id" => "1", "name" => "test1"}]
-             } = :sys.get_state(pid)
+             } = :sys.get_state(name)
+
+      assert :ok = GenServer.call(name, {:mongo_event, replace_event(2)})
+
+      assert %{
+               coll: "test",
+               data: [%{"_id" => "1", "name" => "test1"}]
+             } = :sys.get_state(name)
     end
 
     test "should NOT replace an older data if the coll is different" do
       :ok = QueryDynSup.ensure_child_started(@env_id, "42", "test", "{}")
-      [pid] = Swarm.members(QueryServer.group_name("42"))
+      name = QueryServer.get_full_name(@env_id, "test", "{}")
 
-      assert :ok = GenServer.call(pid, {:mongo_event, insert_event(1)})
-
-      assert %{
-               coll: "test",
-               data: [%{"_id" => "1", "name" => "test1"}]
-             } = :sys.get_state(pid)
-
-      assert :ok = GenServer.call(pid, {:mongo_event, replace_event(1, "foo", 2)})
+      assert :ok = GenServer.call(name, {:mongo_event, insert_event(1)})
 
       assert %{
                coll: "test",
                data: [%{"_id" => "1", "name" => "test1"}]
-             } = :sys.get_state(pid)
+             } = :sys.get_state(name)
+
+      assert :ok = GenServer.call(name, {:mongo_event, replace_event(1, "foo", 2)})
+
+      assert %{
+               coll: "test",
+               data: [%{"_id" => "1", "name" => "test1"}]
+             } = :sys.get_state(name)
     end
 
     test "should remove the old data if _id is the same but query does not match anymore" do
       :ok = QueryDynSup.ensure_child_started(@env_id, "42", "test", "{\"name\": \"test1\"}")
-      [pid] = Swarm.members(QueryServer.group_name("42"))
+      name = QueryServer.get_full_name(@env_id, "test", "{\"name\": \"test1\"}")
 
-      assert :ok = GenServer.call(pid, {:mongo_event, insert_event(1, "test", 1)})
+      assert :ok = GenServer.call(name, {:mongo_event, insert_event(1, "test", 1)})
 
       assert %{
                coll: "test",
                data: [%{"_id" => "1", "name" => "test1"}]
-             } = :sys.get_state(pid)
+             } = :sys.get_state(name)
 
-      assert :ok = GenServer.call(pid, {:mongo_event, replace_event(1, "test", 2)})
+      assert :ok = GenServer.call(name, {:mongo_event, replace_event(1, "test", 2)})
 
       assert %{
                coll: "test",
                data: []
-             } = :sys.get_state(pid)
+             } = :sys.get_state(name)
     end
   end
 
   describe "QueryServer delete" do
     test "should delete an older data if _id and coll is the same" do
       :ok = QueryDynSup.ensure_child_started(@env_id, "42", "test", "{}")
-      [pid] = Swarm.members(QueryServer.group_name("42"))
+      name = QueryServer.get_full_name(@env_id, "test", "{}")
 
-      assert :ok = GenServer.call(pid, {:mongo_event, insert_event(1, "test", 1)})
+      assert :ok = GenServer.call(name, {:mongo_event, insert_event(1, "test", 1)})
 
       assert %{
                coll: "test",
                data: [%{"_id" => "1", "name" => "test1"}]
-             } = :sys.get_state(pid)
+             } = :sys.get_state(name)
 
-      assert :ok = GenServer.call(pid, {:mongo_event, delete_event(1, "test", 2)})
+      assert :ok = GenServer.call(name, {:mongo_event, delete_event(1, "test", 2)})
 
       assert %{
                coll: "test",
                data: []
-             } = :sys.get_state(pid)
+             } = :sys.get_state(name)
     end
 
     test "should NOT delete an older data if coll is different" do
       :ok = QueryDynSup.ensure_child_started(@env_id, "42", "test", "{}")
-      [pid] = Swarm.members(QueryServer.group_name("42"))
+      name = QueryServer.get_full_name(@env_id, "test", "{}")
 
-      assert :ok = GenServer.call(pid, {:mongo_event, insert_event(1, "test", 1)})
-
-      assert %{
-               coll: "test",
-               data: [%{"_id" => "1", "name" => "test1"}]
-             } = :sys.get_state(pid)
-
-      assert :ok = GenServer.call(pid, {:mongo_event, delete_event(1, "foo", 2)})
+      assert :ok = GenServer.call(name, {:mongo_event, insert_event(1, "test", 1)})
 
       assert %{
                coll: "test",
                data: [%{"_id" => "1", "name" => "test1"}]
-             } = :sys.get_state(pid)
+             } = :sys.get_state(name)
+
+      assert :ok = GenServer.call(name, {:mongo_event, delete_event(1, "foo", 2)})
+
+      assert %{
+               coll: "test",
+               data: [%{"_id" => "1", "name" => "test1"}]
+             } = :sys.get_state(name)
     end
 
     test "should NOT delete an older data if id is different" do
       :ok = QueryDynSup.ensure_child_started(@env_id, "42", "test", "{}")
-      [pid] = Swarm.members(QueryServer.group_name("42"))
+      name = QueryServer.get_full_name(@env_id, "test", "{}")
 
-      assert :ok = GenServer.call(pid, {:mongo_event, insert_event(1, "test", 1)})
-
-      assert %{
-               coll: "test",
-               data: [%{"_id" => "1", "name" => "test1"}]
-             } = :sys.get_state(pid)
-
-      assert :ok = GenServer.call(pid, {:mongo_event, delete_event(2, "test", 2)})
+      assert :ok = GenServer.call(name, {:mongo_event, insert_event(1, "test", 1)})
 
       assert %{
                coll: "test",
                data: [%{"_id" => "1", "name" => "test1"}]
-             } = :sys.get_state(pid)
+             } = :sys.get_state(name)
+
+      assert :ok = GenServer.call(name, {:mongo_event, delete_event(2, "test", 2)})
+
+      assert %{
+               coll: "test",
+               data: [%{"_id" => "1", "name" => "test1"}]
+             } = :sys.get_state(name)
     end
   end
 
@@ -663,16 +670,16 @@ defmodule Environment.QueryServerTest do
 
     test "should ignore the rename if namesapce coll is different" do
       :ok = QueryDynSup.ensure_child_started(@env_id, "42", "test", "{}")
-      [pid] = Swarm.members(QueryServer.group_name("42"))
+      name = QueryServer.get_full_name(@env_id, "test", "{}")
 
-      assert :ok = GenServer.call(pid, {:mongo_event, insert_event(1)})
-      assert %{coll: "test", data: [%{"_id" => "1"}]} = :sys.get_state(pid)
+      assert :ok = GenServer.call(name, {:mongo_event, insert_event(1)})
+      assert %{coll: "test", data: [%{"_id" => "1"}]} = :sys.get_state(name)
 
-      assert :ok = GenServer.call(pid, {:mongo_event, rename_event("foo", "bar")})
-      assert :ok = GenServer.call(pid, {:mongo_event, insert_event(2)})
-      assert :ok = GenServer.call(pid, {:mongo_event, insert_event(3, "bar")})
+      assert :ok = GenServer.call(name, {:mongo_event, rename_event("foo", "bar")})
+      assert :ok = GenServer.call(name, {:mongo_event, insert_event(2)})
+      assert :ok = GenServer.call(name, {:mongo_event, insert_event(3, "bar")})
 
-      assert %{coll: "test", data: [%{"_id" => "1"}, %{"_id" => "2"}]} = :sys.get_state(pid)
+      assert %{coll: "test", data: [%{"_id" => "1"}, %{"_id" => "2"}]} = :sys.get_state(name)
     end
   end
 end

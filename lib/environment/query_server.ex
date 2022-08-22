@@ -17,11 +17,15 @@ defmodule ApplicationRunner.Environment.QueryServer do
     with {:ok, query} <- Keyword.fetch(opts, :query),
          {:ok, coll} <- Keyword.fetch(opts, :coll),
          {:ok, env_id} <- Keyword.fetch(opts, :env_id) do
-      GenServer.start_link(__MODULE__, opts, name: {:via, :swarm, get_name(env_id, coll, query)})
+      GenServer.start_link(__MODULE__, opts, name: get_full_name(env_id, coll, query))
     else
       :error ->
         DevError.exception(message: "QueryServer need a collection, a query and an env_id")
     end
+  end
+
+  def get_full_name(env_id, coll, query) do
+    {:via, :swarm, get_name(env_id, coll, query)}
   end
 
   def get_name(env_id, coll, query) do
