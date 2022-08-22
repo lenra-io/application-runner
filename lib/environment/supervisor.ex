@@ -4,9 +4,9 @@ defmodule ApplicationRunner.Environments.Supervisor do
   """
   use Supervisor
 
+  alias ApplicationRunner.Environment.MongoInstance
   alias ApplicationRunner.Environments
 
-  @env Application.compile_env!(:application_runner, :env)
   @doc """
     return the app-level module.
     This can be used to get module declared in the `EnvSupervisor` (like the cache module for example)
@@ -38,25 +38,17 @@ defmodule ApplicationRunner.Environments.Supervisor do
   end
 
   @impl true
-
   def init(opts) do
     opts = Keyword.merge(opts, env_supervisor_pid: self())
 
     env_id = Keyword.get(opts, :env_id)
-
-    database_name = @env <> "_#{env_id}"
-
-    mongo_opts = [
-      url: "mongodb://localhost:27017/#{database_name}",
-      name: {:global, database_name}
-    ]
 
     children =
       [
         # TODO: add module once they done !
         {ApplicationRunner.Environments.Agent.Metadata, opts},
         ApplicationRunner.EventHandler,
-        {Mongo, mongo_opts}
+        {Mongo, MongoInstance.config(env_id)}
         # ChangeStream
         # MongoSessionDynamicSup
         # MongoTransaDynSup
