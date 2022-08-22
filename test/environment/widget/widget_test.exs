@@ -7,8 +7,6 @@ defmodule ApplicationRunner.Environment.WidgetTest do
 
   alias ApplicationRunner.Widget.Context
 
-  alias LenraCommon.Errors.TechnicalError
-
   @widget_ui %{widget: %{"text" => "test"}}
 
   setup do
@@ -60,7 +58,7 @@ defmodule ApplicationRunner.Environment.WidgetTest do
     session_state = %State{session_id: 1, env_id: 1, user_id: 1, function_name: function_name}
     current_widget = %Context{id: 1, name: "test", prefix_path: ""}
 
-    {:ok, pid} = Widget.start_link(session_state: session_state, current_widget: current_widget)
+    {:ok, _pid} = Widget.start_link(session_state: session_state, current_widget: current_widget)
 
     name = "#{session_state.env_id}_#{current_widget.name}"
 
