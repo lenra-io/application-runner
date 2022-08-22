@@ -4,8 +4,8 @@ defmodule ApplicationRunner.Environments.Supervisor do
   """
   use Supervisor
 
-  alias ApplicationRunner.Environments
   alias ApplicationRunner.Environment.MongoInstance
+  alias ApplicationRunner.Environments
 
   @doc """
     return the app-level module.
