@@ -35,7 +35,7 @@ defmodule ApplicationRunner.MixProject do
       {:credo, "~> 1.4", only: [:dev, :test], runtime: false},
       {:dialyxir, "~> 1.0", only: [:dev, :test], runtime: false},
       {:ex_component_schema,
-       git: "https://github.com/lenra-io/ex_component_schema", ref: "v1.0.0-beta.2"},
+       git: "https://github.com/lenra-io/ex_component_schema", ref: "v1.0.0-beta.3"},
       {:jason, "~> 1.2"},
       {:json_diff, "~> 0.1"},
       {:swarm, "~> 3.0"},
@@ -50,7 +50,7 @@ defmodule ApplicationRunner.MixProject do
         name: :query_parser,
         host: "github.com",
         project: "lenra-io/query-parser.git",
-        tag: "v1.0.0-beta.3",
+        tag: "v1.0.0-beta.5",
         credentials: "shiipou:#{System.get_env("GH_PERSONNAL_TOKEN")}"
       ),
       private_git(

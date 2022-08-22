@@ -111,14 +111,15 @@ defmodule ApplicationRunner.Widget.Cache do
     name = Map.get(component, "name")
     props = Map.get(component, "props")
 
-    query = component |> Map.get("query") |> AST.Parser.from_json()
+    # component |> Map.get("query") |> AST.Parser.from_json()
+    query = nil
 
-    data =
-      if is_nil(query) do
-        []
-      else
-        JsonStorage.exec_query(query, session_state.env_id, session_state.user_id)
-      end
+    data = []
+    # if is_nil(query) do
+    #   []
+    # else
+    #   JsonStorage.exec_query(query, session_state.env_id, session_state.user_id)
+    # end
 
     id = generate_widget_id(name, data, props)
 
