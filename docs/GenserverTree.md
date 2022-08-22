@@ -45,7 +45,6 @@ with:
     - Started by Environment.Supervisor
     - Stopped by Environment.Supervisor
     - Notify `{:scm, env_id}`
-    - timeout after X min
     - Jobs: 
         - Notify session change manager on mongo event
 - SCM: **Session Change Manager**
