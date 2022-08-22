@@ -10,7 +10,7 @@ defmodule Environment.QueryServerTest do
 
   @env_id 1337
 
-  def insert_event(idx, coll \\ "test", id \\ nil, time \\ System.os_time(:microsecond)) do
+  def insert_event(idx, coll \\ "test", id \\ nil, time \\ Mongo.timestamp(DateTime.utc_now())) do
     id = if id == nil, do: idx, else: id
 
     %{
@@ -31,7 +31,7 @@ defmodule Environment.QueryServerTest do
     }
   end
 
-  def update_event(idx, coll \\ "test", id \\ nil, time \\ System.os_time(:microsecond)) do
+  def update_event(idx, coll \\ "test", id \\ nil, time \\ Mongo.timestamp(DateTime.utc_now())) do
     id = if id == nil, do: idx, else: id
 
     %{
@@ -52,7 +52,7 @@ defmodule Environment.QueryServerTest do
     }
   end
 
-  def replace_event(idx, coll \\ "test", id \\ nil, time \\ System.os_time(:microsecond)) do
+  def replace_event(idx, coll \\ "test", id \\ nil, time \\ Mongo.timestamp(DateTime.utc_now())) do
     id = if id == nil, do: idx, else: id
 
     %{
@@ -73,7 +73,7 @@ defmodule Environment.QueryServerTest do
     }
   end
 
-  def delete_event(idx, coll \\ "test", id \\ nil, time \\ System.os_time(:microsecond)) do
+  def delete_event(idx, coll \\ "test", id \\ nil, time \\ Mongo.timestamp(DateTime.utc_now())) do
     id = if id == nil, do: idx, else: id
 
     %{
@@ -89,7 +89,7 @@ defmodule Environment.QueryServerTest do
     }
   end
 
-  def drop_event(coll, id \\ 1, time \\ System.os_time(:microsecond)) do
+  def drop_event(coll, id \\ 1, time \\ Mongo.timestamp(DateTime.utc_now())) do
     %{
       "_id" => id,
       "clusterTime" => time,
@@ -100,7 +100,7 @@ defmodule Environment.QueryServerTest do
     }
   end
 
-  def rename_event(from, to, id \\ 1, time \\ System.os_time(:microsecond)) do
+  def rename_event(from, to, id \\ 1, time \\ Mongo.timestamp(DateTime.utc_now())) do
     %{
       "_id" => id,
       "clusterTime" => time,
@@ -271,7 +271,8 @@ defmodule Environment.QueryServerTest do
   describe "QueryServer prevent handling duplicate event" do
     test "should reject two event with same id and timestamp" do
       assert :ok = QueryDynSup.ensure_child_started(@env_id, "42", "test", "{}")
-      timestamp = System.os_time(:microsecond)
+
+      timestamp = Mongo.timestamp(DateTime.utc_now())
       name = QueryServer.get_full_name({@env_id, "test", "{}"})
 
       GenServer.call(name, {:mongo_event, insert_event(1, "test", 1, timestamp)})
@@ -285,8 +286,9 @@ defmodule Environment.QueryServerTest do
 
     test "should handle two event with same timestamp but different ids" do
       assert :ok = QueryDynSup.ensure_child_started(@env_id, "42", "test", "{}")
+
       name = QueryServer.get_full_name({@env_id, "test", "{}"})
-      timestamp = System.os_time(:microsecond)
+      timestamp = Mongo.timestamp(DateTime.utc_now())
 
       GenServer.call(name, {:mongo_event, insert_event(1, "test", 1, timestamp)})
       assert %{data: [%{"_id" => "1"}]} = :sys.get_state(name)
@@ -296,27 +298,38 @@ defmodule Environment.QueryServerTest do
 
     test "should handle N event incremental ids and timestamps" do
       assert :ok = QueryDynSup.ensure_child_started(@env_id, "42", "test", "{}")
-      name = QueryServer.get_full_name({@env_id, "test", "{}"})
-      timestamp = System.os_time(:microsecond)
 
-      GenServer.call(name, {:mongo_event, insert_event(1, "test", 1, timestamp)})
+      name = QueryServer.get_full_name({@env_id, "test", "{}"})
+
+      # The Mongo timestamp is made with two values :
+      # - The :value part is the number of seconds since epoch (second timestamp)
+      # - The :ordinal part is an incremental value in case of multiple event in the same second.
+      # We can simply increment the ordinal to create a new timestamp.
+      timestamp_1 = Mongo.timestamp(DateTime.utc_now())
+      timestamp_2 = Map.put(timestamp_1, :ordinal, 2)
+      timestamp_3 = Map.put(timestamp_1, :ordinal, 3)
+
+      GenServer.call(name, {:mongo_event, insert_event(1, "test", 1, timestamp_1)})
       assert %{data: [%{"_id" => "1"}]} = :sys.get_state(name)
-      GenServer.call(name, {:mongo_event, insert_event(2, "test", 2, timestamp + 100)})
+      GenServer.call(name, {:mongo_event, insert_event(2, "test", 2, timestamp_2)})
       assert %{data: [%{"_id" => "1"}, %{"_id" => "2"}]} = :sys.get_state(name)
-      GenServer.call(name, {:mongo_event, insert_event(3, "test", 3, timestamp + 200)})
+      GenServer.call(name, {:mongo_event, insert_event(3, "test", 3, timestamp_3)})
       assert %{data: [%{"_id" => "1"}, %{"_id" => "2"}, %{"_id" => "3"}]} = :sys.get_state(name)
     end
 
     test "should reject an event with older timestamp" do
       assert :ok = QueryDynSup.ensure_child_started(@env_id, "42", "test", "{}")
-      name = QueryServer.get_full_name({@env_id, "test", "{}"})
-      timestamp = System.os_time(:microsecond)
 
-      GenServer.call(name, {:mongo_event, insert_event(1, "test", 1, timestamp)})
+      name = QueryServer.get_full_name({@env_id, "test", "{}"})
+      timestamp_1 = Mongo.timestamp(DateTime.utc_now())
+      timestamp_2 = Map.put(timestamp_1, :ordinal, 2)
+      timestamp_3 = Map.put(timestamp_1, :ordinal, 3)
+
+      GenServer.call(name, {:mongo_event, insert_event(1, "test", 1, timestamp_1)})
       assert %{data: [%{"_id" => "1"}]} = :sys.get_state(name)
-      GenServer.call(name, {:mongo_event, insert_event(2, "test", 2, timestamp + 100)})
+      GenServer.call(name, {:mongo_event, insert_event(2, "test", 2, timestamp_3)})
       assert %{data: [%{"_id" => "1"}, %{"_id" => "2"}]} = :sys.get_state(name)
-      GenServer.call(name, {:mongo_event, insert_event(3, "test", 3, timestamp + 50)})
+      GenServer.call(name, {:mongo_event, insert_event(3, "test", 3, timestamp_2)})
       assert %{data: [%{"_id" => "1"}, %{"_id" => "2"}]} = :sys.get_state(name)
     end
   end
@@ -655,21 +668,23 @@ defmodule Environment.QueryServerTest do
 
       [pid] = Swarm.members(QueryServer.group_name("42"))
 
-      timestamp = System.os_time(:microsecond)
+      timestamp_1 = Mongo.timestamp(DateTime.utc_now())
+      timestamp_2 = Map.put(timestamp_1, :ordinal, 2)
+      timestamp_3 = Map.put(timestamp_1, :ordinal, 3)
 
       # Register under the correct name, insert is working as expected.
-      :ok = GenServer.call(pid, {:mongo_event, insert_event(1, "test", 1, timestamp)})
+      :ok = GenServer.call(pid, {:mongo_event, insert_event(1, "test", 1, timestamp_1)})
       assert ^pid = Swarm.whereis_name(name)
       assert_receive {:p1, {:data_changed, [%{"_id" => "1"}]}}
 
       # Rename the coll, the server should still work the same.
-      :ok = GenServer.call(pid, {:mongo_event, rename_event("test", "bar", 2, timestamp + 100)})
+      :ok = GenServer.call(pid, {:mongo_event, rename_event("test", "bar", 2, timestamp_2)})
       assert :undefined = Swarm.whereis_name(name)
       assert ^pid = Swarm.whereis_name(new_name)
       assert_receive {:p1, {:coll_changed, "bar"}}
 
       # The notification is sent to the new group
-      :ok = GenServer.call(pid, {:mongo_event, insert_event(2, "bar", 3, timestamp + 200)})
+      :ok = GenServer.call(pid, {:mongo_event, insert_event(2, "bar", 3, timestamp_3)})
       assert_receive {:p2, {:data_changed, [%{"_id" => "1"}, %{"_id" => "2"}]}}
     end
 

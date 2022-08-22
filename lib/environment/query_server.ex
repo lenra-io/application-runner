@@ -57,7 +57,7 @@ defmodule ApplicationRunner.Environment.QueryServer do
          query: ast,
          coll: coll,
          inactivity_timeout: inactivity_timeout,
-         latest_timestamp: 0,
+         latest_timestamp: Mongo.timestamp(DateTime.utc_now()),
          done_ids: []
        }, inactivity_timeout}
     else
@@ -103,7 +103,7 @@ defmodule ApplicationRunner.Environment.QueryServer do
            done_ids: done_ids
          }
        ) do
-    event_timestamp < latest_timestamp or event_id in done_ids
+    BSON.Timestamp.is_before(event_timestamp, latest_timestamp) or event_id in done_ids
   end
 
   defp handle_event(
@@ -153,7 +153,9 @@ defmodule ApplicationRunner.Environment.QueryServer do
   end
 
   defp get_new_done_ids(event_timestamp, latest_timestamp, event_id, done_ids) do
-    if event_timestamp > latest_timestamp, do: [event_id], else: [event_id | done_ids]
+    if BSON.Timestamp.is_before(event_timestamp, latest_timestamp),
+      do: [event_id | done_ids],
+      else: [event_id]
   end
 
   defp change_coll(

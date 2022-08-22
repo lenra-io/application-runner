@@ -45,10 +45,10 @@ defmodule ApplicationRunner.Session.ChangeEventManager do
     )
     |> case do
       :ok ->
-        GenServer.call({:via, :swarm, {:ui_builder, session_id}}, :rebuild)
+        GenServer.cast({:via, :swarm, {:ui_builder, session_id}}, :rebuild)
 
       {:error, err} ->
-        GenServer.call({:via, :swarm, {:ui_builder, session_id}}, {:data_error, err})
+        GenServer.cast({:via, :swarm, {:ui_builder, session_id}}, {:data_error, err})
     end
 
     {:noreply, state}

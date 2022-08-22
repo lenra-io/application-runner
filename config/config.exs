@@ -19,6 +19,8 @@ config :application_runner,
   repo: ApplicationRunner.Repo,
   url: "localhost:4000",
   mongo_base_url: "mongodb://localhost:27017",
+
+  # mongo_base_url: "mongodb+srv://lenra:pakipaki@cluster0.9yxqo.mongodb.net",
   env: "dev"
 
 config :application_runner, ApplicationRunner.Repo,
