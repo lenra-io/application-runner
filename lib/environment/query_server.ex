@@ -8,7 +8,8 @@ defmodule ApplicationRunner.Environment.QueryServer do
   """
   use GenServer
 
-  alias LenraCommon.Errors.{DevError, TechnicalError}
+  alias LenraCommon.Errors.DevError
+  alias ApplicationRunner.Errors.TechnicalError
   alias ApplicationRunner.Environment.{MongoInstance, Widget}
   alias QueryParser.{Exec, Parser}
 
@@ -43,6 +44,9 @@ defmodule ApplicationRunner.Environment.QueryServer do
     {__MODULE__, session_id}
   end
 
+  # I cant figure a way to fix the warning throw by Parser...
+  @dialyzer {:no_match, init: 1}
+
   def init(opts) do
     with {:ok, env_id} <- Keyword.fetch(opts, :env_id),
          {:ok, query} <- Keyword.fetch(opts, :query),
@@ -64,6 +68,9 @@ defmodule ApplicationRunner.Environment.QueryServer do
          done_ids: []
        }, inactivity_timeout}
     else
+      :error ->
+        raise DevError.exception("Missing data in opts (#{inspect(opts)}")
+
       {:error, err} ->
         {:stop, err}
     end
