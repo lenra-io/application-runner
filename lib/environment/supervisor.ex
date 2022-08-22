@@ -5,9 +5,7 @@ defmodule ApplicationRunner.Environments.Supervisor do
   use Supervisor
 
   alias ApplicationRunner.Environments
-
-  @env Application.compile_env!(:application_runner, :env)
-  @mongo_base_url Application.compile_env!(:application_runner, :mongo_base_url)
+  alias ApplicationRunner.Environment.MongoInstance
 
   @doc """
     return the app-level module.
@@ -50,7 +48,7 @@ defmodule ApplicationRunner.Environments.Supervisor do
         # TODO: add module once they done !
         {ApplicationRunner.Environments.Agent.Metadata, opts},
         ApplicationRunner.EventHandler,
-        {Mongo, mongo_opts(env_id)}
+        {Mongo, MongoInstance.config(env_id)}
         # ChangeStream
         # MongoSessionDynamicSup
         # MongoTransaDynSup
@@ -63,15 +61,6 @@ defmodule ApplicationRunner.Environments.Supervisor do
       ] ++ get_additionnal_modules(opts)
 
     Supervisor.init(children, strategy: :one_for_one)
-  end
-
-  defp mongo_opts(env_id) do
-    database_name = @env <> "_#{env_id}"
-
-    [
-      url: "#{@mongo_base_url}/#{database_name}",
-      name: {:via, :swarm, {Mongo, env_id}}
-    ]
   end
 
   defp get_additionnal_modules(opts) do
