@@ -8,9 +8,9 @@ defmodule ApplicationRunner.Environment.QueryServer do
   """
   use GenServer
 
-  alias LenraCommon.Errors.DevError
   alias ApplicationRunner.Errors.TechnicalError
   alias ApplicationRunner.Environment.{MongoInstance, Widget}
+  alias LenraCommon.Errors.DevError
   alias QueryParser.{Exec, Parser}
 
   require Logger
