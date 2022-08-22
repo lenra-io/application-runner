@@ -1,7 +1,7 @@
 defmodule Environment.QueryServerTest do
   use ExUnit.Case
 
-  alias ApplicationRunner.Environment.{QueryDynSup, QueryServer, Widget}
+  alias ApplicationRunner.Environment.{QueryDynSup, QueryServer, Widget, MongoInstance}
 
   @env_id 1337
 
@@ -126,12 +126,13 @@ defmodule Environment.QueryServerTest do
   setup do
     start_supervised({QueryDynSup, env_id: @env_id})
 
-    mongo_name = {:global, {:test, Mongo}}
-
     # TODO : create a mongo module and use it to create a new mongo connexion.
+
+    mongo_name = MongoInstance.get_full_name(@env_id)
+
     start_supervised({
       Mongo,
-      url: "mongodb://localhost:27017/test", name: mongo_name
+      MongoInstance.config(@env_id)
     })
 
     Mongo.drop_collection(mongo_name, "test")

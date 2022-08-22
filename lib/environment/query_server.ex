@@ -2,7 +2,7 @@ defmodule ApplicationRunner.Environment.QueryServer do
   use GenServer
 
   alias LenraCommon.Errors.{DevError, TechnicalError}
-  alias ApplicationRunner.Environment.Widget
+  alias ApplicationRunner.Environment.{MongoInstance, Widget}
   alias QueryParser.{Parser, Exec}
 
   require Logger
@@ -33,12 +33,12 @@ defmodule ApplicationRunner.Environment.QueryServer do
   end
 
   def init(opts) do
-    with {:ok, query} <- Keyword.fetch(opts, :query),
+    with {:ok, env_id} <- Keyword.fetch(opts, :env_id),
+         {:ok, query} <- Keyword.fetch(opts, :query),
          {:ok, coll} <- Keyword.fetch(opts, :coll),
          {:ok, query_map} <- Poison.decode(query),
-         {:ok, data} <- fetch_initial_data(coll, query_map),
-         {:ok, ast} <- Parser.parse(query, %{}),
-         {:ok, env_id} <- Keyword.fetch(opts, :env_id) do
+         {:ok, data} <- fetch_initial_data(env_id, coll, query_map),
+         {:ok, ast} <- Parser.parse(query, %{}) do
       inactivity_timeout = Keyword.get(opts, :inactivity_timeout, @inactivity_timeout)
 
       {:ok,
@@ -58,8 +58,10 @@ defmodule ApplicationRunner.Environment.QueryServer do
     end
   end
 
-  def fetch_initial_data(coll, query) do
-    case Mongo.find({:global, {:test, Mongo}}, coll, query) do
+  def fetch_initial_data(env_id, coll, query) do
+    mongo_name = MongoInstance.get_full_name(env_id)
+
+    case Mongo.find(mongo_name, coll, query) do
       {:error, term} -> TechnicalError.mongo_data_fetch_error_tuple(term)
       cursor -> {:ok, Enum.to_list(cursor)}
     end
