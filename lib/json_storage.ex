@@ -12,15 +12,13 @@ defmodule ApplicationRunner.JsonStorage do
 
   defdelegate create_data(environment_id, params), to: Services.Data, as: :create
 
-  defdelegate exec_query(query, env_id, user_id), to: Services.Data, as: :exec_query
-
-  defdelegate parse_and_exec_query(query, env_id, user_id),
+  defdelegate parse_and_exec_query(env_id, coll, query),
     to: Services.Data,
     as: :parse_and_exec_query
 
-  defdelegate get_data(env_id, ds_name, data_id), to: Services.Data, as: :get
+  defdelegate get_data(env_id, coll, data_id), to: Services.Data, as: :get
 
-  defdelegate get_all_data(query, env_id), to: Services.Data, as: :get_all
+  defdelegate get_all_data(env_id, coll), to: Services.Data, as: :get_all
 
   defdelegate get_current_user_data(env_id, user_id),
     to: Services.Data,
@@ -70,7 +68,7 @@ defmodule ApplicationRunner.JsonStorage do
   # QUERY VIEW #
   ##############
 
-  defdelegate get_one(env_id, datastore_name, data_id), to: Services.DataQueryView, as: :get_one
+  # defdelegate get_one(env_id, datastore_name, data_id), to: Services.DataQueryView, as: :get_one
 
-  defdelegate get_all(env_id, datastore_name), to: Services.DataQueryView, as: :get_all
+  # defdelegate get_all(env_id, datastore_name), to: Services.DataQueryView, as: :get_all
 end

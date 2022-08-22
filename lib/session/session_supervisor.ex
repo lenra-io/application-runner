@@ -41,6 +41,14 @@ defmodule ApplicationRunner.Session.Supervisor do
 
   @impl true
   def init(opts) do
+    # This is how the supervisor should look like with mongo update
+    # children = [
+    #   {ApplicationRunner.Session.Token.Agent, opts}
+    #   ApplicationRunner.EventHandler
+    #   Event.OnUserFirstJoin
+    #   Event.OnSessionStart
+    #   UiBuilder
+    # ]
     state = Keyword.merge(opts, session_supervisor_pid: self())
 
     children = [
