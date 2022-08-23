@@ -7,8 +7,8 @@ defmodule ApplicationRunner.AppChannel do
     quote do
       use Phoenix.Channel
 
-      alias ApplicationRunner.Session
       alias ApplicationRunner.Environment
+      alias ApplicationRunner.Session
 
       alias LenraCommonWeb.ErrorHelpers
 
@@ -150,8 +150,8 @@ defmodule ApplicationRunner.AppChannel do
     end
   end
 
-  alias ApplicationRunner.Session
   alias ApplicationRunner.Guardian.AppGuardian
+  alias ApplicationRunner.Session
   require Logger
 
   def handle_run(socket, code, event \\ %{}) do

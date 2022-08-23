@@ -5,8 +5,8 @@ defmodule ApplicationRunner.Environment.Supervisor do
   use Supervisor
   use SwarmNamed
 
-  alias ApplicationRunner.Environment.MongoInstance
   alias ApplicationRunner.Environment
+  alias ApplicationRunner.Environment.MongoInstance
 
   def start_link(%Environment.Metadata{} = env_metadata) do
     env_id = Map.fetch!(env_metadata, :env_id)
