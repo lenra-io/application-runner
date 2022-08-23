@@ -8,7 +8,9 @@ defmodule ApplicationRunner.Session do
 
     Returns UUID.
   """
-  defdelegate fetch_token(session_id), to: ApplicationRunner.Session.Agent, as: :fetch_token
+  defdelegate fetch_token(session_id),
+    to: ApplicationRunner.Session.MetadataAgent,
+    as: :fetch_token
 
   @doc """
     Start a Session GenServer for the given `session_id` (must be unique),
@@ -18,8 +20,8 @@ defmodule ApplicationRunner.Session do
 
     Returns {:ok, session_pid} | {:error, tuple()}
   """
-  defdelegate start_session(session_id, env_id, session_state, env_state),
-    to: ApplicationRunner.Session.Managers,
+  defdelegate start_session(session_state, env_state),
+    to: ApplicationRunner.Session.DynamicSupervisor,
     as: :start_session
 
   @doc """

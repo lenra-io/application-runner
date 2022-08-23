@@ -1,4 +1,4 @@
-defmodule ApplicationRunner.Environments.Task.OnEnvStart do
+defmodule ApplicationRunner.Environment.Task.OnEnvStart do
   @moduledoc """
     OnEnvStart task send listeners onEnvStart
   """

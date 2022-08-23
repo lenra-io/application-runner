@@ -5,20 +5,13 @@ defmodule ApplicationRunner.Environment.QueryDynSup do
     It also add the QueryServer to the correct group after it started it.
   """
   use DynamicSupervisor
+  use SwarmNamed
 
   alias ApplicationRunner.Environment.QueryServer
 
   def start_link(opts) do
     env_id = Keyword.fetch!(opts, :env_id)
     DynamicSupervisor.start_link(__MODULE__, :ok, name: get_full_name(env_id))
-  end
-
-  def get_full_name(env_id) do
-    {:via, :swarm, get_name(env_id)}
-  end
-
-  def get_name(env_id) do
-    {__MODULE__, env_id}
   end
 
   @impl true

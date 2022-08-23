@@ -1,23 +1,22 @@
-defmodule ApplicationRunner.Environments.ManifestHandler do
+defmodule ApplicationRunner.Environment.ManifestHandler do
   @moduledoc """
-    Environments.ManifestHandler is a genserver that gets and caches the manifest of an app
+    Environment.ManifestHandler is a genserver that gets and caches the manifest of an app
   """
   use GenServer
+  use SwarmNamed
 
-  alias ApplicationRunner.{ApplicationServices, Environments}
+  alias ApplicationRunner.{ApplicationServices, Environment}
 
-  def start_link(opts) do
+  def start_link(%Environment.Metadata{} = env_metadata) do
     with {:ok, pid} <-
-           GenServer.start_link(__MODULE__, opts) do
+           GenServer.start_link(__MODULE__, env_metadata, name: get_full_name(env_metadata.env_id)) do
       pid
     end
   end
 
   @impl true
-  def init(opts) do
-    state = Keyword.fetch!(opts, :env_state)
-
-    case ApplicationServices.fetch_manifest(state) do
+  def init(env_metadata) do
+    case ApplicationServices.fetch_manifest(env_metadata) do
       {:ok, manifest} ->
         {:ok, %{manifest: manifest}}
 
@@ -28,9 +27,7 @@ defmodule ApplicationRunner.Environments.ManifestHandler do
 
   @spec get_manifest(number()) :: map()
   def get_manifest(env_id) do
-    with pid when is_pid(pid) <- Environments.Supervisor.fetch_module_pid!(env_id, __MODULE__) do
-      GenServer.call(pid, :get_manifest)
-    end
+    GenServer.call(get_full_name(env_id), :get_manifest)
   end
 
   @impl true

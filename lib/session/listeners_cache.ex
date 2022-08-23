@@ -4,29 +4,31 @@ defmodule ApplicationRunner.ListenersCache do
     It save the listener props/action using a hash the value (sha256) as key.
     Then we can retrieve the listener (action/props) by giving the key.
   """
-  use ApplicationRunner.Cache.Macro
+  use Agent
+  use SwarmNamed
 
-  alias ApplicationRunner.Session.{
-    State,
-    Supervisor
-  }
+  alias ApplicationRunner.Session
 
   alias ApplicationRunner.Errors.BusinessError
 
-  @spec save_listener(State.t(), String.t(), map()) :: :ok
-  def save_listener(%State{} = session_state, code, listener) do
-    pid = Supervisor.fetch_module_pid!(session_state.session_supervisor_pid, __MODULE__)
-    put(pid, code, listener)
-    :ok
+  def start_link(%Session.Metadata{} = session_metadata) do
+    Agent.start_link(fn -> %{} end, name: get_full_name(session_metadata.session_id))
   end
 
-  @spec fetch_listener(State.t(), String.t()) :: {:ok, map()} | {:error, atom()}
-  def fetch_listener(%State{} = session_state, code) do
-    pid = Supervisor.fetch_module_pid!(session_state.session_supervisor_pid, __MODULE__)
+  @spec save_listener(Session.Metadata.t(), String.t(), map()) :: :ok
+  def save_listener(%Session.Metadata{} = session_metadata, code, listener) do
+    Agent.update(get_full_name(session_metadata.env_id), fn cache ->
+      Map.put(cache, code, listener)
+    end)
+  end
 
-    case get(pid, code) do
-      nil -> BusinessError.unknow_listener_code_tuple(code)
-      res -> {:ok, res}
-    end
+  @spec fetch_listener(Session.Metadata.t(), String.t()) :: {:ok, map()} | {:error, atom()}
+  def fetch_listener(%Session.Metadata{} = session_metadata, code) do
+    Agent.get(get_full_name(session_metadata.env_id), fn cache ->
+      case Map.fetch(cache, code) do
+        :error -> BusinessError.unknow_listener_code_tuple(code)
+        res -> res
+      end
+    end)
   end
 end

@@ -7,7 +7,7 @@ defmodule ApplicationRunner.Guardian.AppGuardian do
 
   alias ApplicationRunner.{
     Contract,
-    Environments,
+    Environment,
     Session
   }
 
@@ -47,7 +47,7 @@ defmodule ApplicationRunner.Guardian.AppGuardian do
         Session.fetch_token(claims["sub"])
 
       "env" ->
-        Environments.Token.fetch_token(String.to_integer(claims["sub"]))
+        Environment.fetch_token(String.to_integer(claims["sub"]))
 
       _err ->
         TechnicalError.unknown_error_tuple()
