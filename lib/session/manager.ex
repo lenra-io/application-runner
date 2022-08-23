@@ -2,7 +2,6 @@ defmodule ApplicationRunner.Session.Manager do
   @moduledoc """
     This module is the Session supervisor that handles the SupervisorManager children modules.
   """
-  use GenServer
 
   require Logger
 
@@ -40,18 +39,18 @@ defmodule ApplicationRunner.Session.Manager do
     GenServer.cast(session_manager_pid, {:send_client_event, code, event})
   end
 
-  @spec start_link(keyword) :: :ignore | {:error, any} | {:ok, pid}
-  def start_link(opts) do
-    session_id = Keyword.fetch!(opts, :session_id)
-    env_id = Keyword.fetch!(opts, :env_id)
+  # @spec start_link(keyword) :: :ignore | {:error, any} | {:ok, pid}
+  # def start_link(opts) do
+  #   session_id = Keyword.fetch!(opts, :session_id)
+  #   env_id = Keyword.fetch!(opts, :env_id)
 
-    with {:ok, pid} <-
-           GenServer.start_link(__MODULE__, opts, name: {:via, :swarm, {:session, session_id}}) do
-      Swarm.join(:sessions, pid)
-      Swarm.join({:sessions, env_id}, pid)
-      {:ok, pid}
-    end
-  end
+  #   with {:ok, pid} <-
+  #          GenServer.start_link(__MODULE__, opts, name: {:via, :swarm, {:session, session_id}}) do
+  #     Swarm.join(:sessions, pid)
+  #     Swarm.join({:sessions, env_id}, pid)
+  #     {:ok, pid}
+  #   end
+  # end
 
   @spec reload_ui(number()) :: :ok
   def reload_ui(session_id) do
@@ -60,46 +59,46 @@ defmodule ApplicationRunner.Session.Manager do
     end
   end
 
-  @impl true
-  def init(opts) do
-    session_supervisor_pid = Keyword.fetch!(opts, :session_supervisor_pid)
-    session_id = Keyword.fetch!(opts, :session_id)
-    env_id = Keyword.fetch!(opts, :env_id)
-    session_state = Keyword.fetch!(opts, :session_state)
-    user_id = Map.fetch!(session_state, :user_id)
-    function_name = Map.fetch!(session_state, :function_name)
-    assigns = Map.fetch!(session_state, :assigns)
+  # @impl true
+  # def init(opts) do
+  #   session_supervisor_pid = Keyword.fetch!(opts, :session_supervisor_pid)
+  #   session_id = Keyword.fetch!(opts, :session_id)
+  #   env_id = Keyword.fetch!(opts, :env_id)
+  #   session_state = Keyword.fetch!(opts, :session_state)
+  #   user_id = Map.fetch!(session_state, :user_id)
+  #   function_name = Map.fetch!(session_state, :function_name)
+  #   assigns = Map.fetch!(session_state, :assigns)
 
-    # {:ok, session_supervisor_pid} = Supervisor.start_link(opts)
-    # Link the process to kill the manager if the supervisor is killed.
-    # The SessionManager should be restarted by the SessionManagers then it will restart the supervisor.
-    # Process.link(session_supervisor_pid)
+  #   # {:ok, session_supervisor_pid} = Supervisor.start_link(opts)
+  #   # Link the process to kill the manager if the supervisor is killed.
+  #   # The SessionManager should be restarted by the SessionManagers then it will restart the supervisor.
+  #   # Process.link(session_supervisor_pid)
 
-    event_handler_pid = Supervisor.fetch_module_pid!(session_supervisor_pid, EventHandler)
-    EventHandler.subscribe(event_handler_pid)
+  #   event_handler_pid = Supervisor.fetch_module_pid!(session_supervisor_pid, EventHandler)
+  #   EventHandler.subscribe(event_handler_pid)
 
-    session_state = %Session.State{
-      session_id: session_id,
-      user_id: user_id,
-      env_id: env_id,
-      function_name: function_name,
-      session_supervisor_pid: session_supervisor_pid,
-      inactivity_timeout:
-        Application.get_env(:application_runner, :session_inactivity_timeout, 1000 * 60 * 10),
-      assigns: assigns
-    }
+  #   session_state = %Session.Metadata{
+  #     session_id: session_id,
+  #     user_id: user_id,
+  #     env_id: env_id,
+  #     function_name: function_name,
+  #     session_supervisor_pid: session_supervisor_pid,
+  #     inactivity_timeout:
+  #       Application.get_env(:application_runner, :session_inactivity_timeout, 1000 * 60 * 10),
+  #     assigns: assigns
+  #   }
 
-    first_time_user = JsonStorage.has_user_data?(env_id, user_id)
+  #   first_time_user = JsonStorage.has_user_data?(env_id, user_id)
 
-    with :ok <- create_user_data_if_needed(session_state, first_time_user),
-         :ok <- send_on_session_start_event(session_state) do
-      {:ok, session_state, session_state.inactivity_timeout}
-    else
-      {:error, reason} = err ->
-        send_error(session_state, err)
-        {:stop, reason}
-    end
-  end
+  #   with :ok <- create_user_data_if_needed(session_state, first_time_user),
+  #        :ok <- send_on_session_start_event(session_state) do
+  #     {:ok, session_state, session_state.inactivity_timeout}
+  #   else
+  #     {:error, reason} = err ->
+  #       send_error(session_state, err)
+  #       {:stop, reason}
+  #   end
+  # end
 
   defp create_user_data_if_needed(
          session_state,
@@ -113,12 +112,12 @@ defmodule ApplicationRunner.Session.Manager do
     :ok
   end
 
-  @impl true
+  # @impl true
 
-  def handle_info(:timeout, session_state) do
-    stop(session_state, nil)
-    {:noreply, session_state}
-  end
+  # def handle_info(:timeout, session_state) do
+  #   stop(session_state, nil)
+  #   {:noreply, session_state}
+  # end
 
   def handle_info({:event_finished, action, result}, session_state) do
     case {action, result} do
@@ -175,18 +174,18 @@ defmodule ApplicationRunner.Session.Manager do
   #   send(socket_pid, {:send, atom, ui_or_patches})
   # end
 
-  @impl true
-  def handle_call(:fetch_session_supervisor_pid!, _from, session_state) do
-    case Map.fetch!(session_state, :session_supervisor_pid) do
-      nil -> raise "No SessionSupervisor. This should not happen."
-      res -> {:reply, res, session_state, session_state.inactivity_timeout}
-    end
-  end
+  # @impl true
+  # def handle_call(:fetch_session_supervisor_pid!, _from, session_state) do
+  #   case Map.fetch!(session_state, :session_supervisor_pid) do
+  #     nil -> raise "No SessionSupervisor. This should not happen."
+  #     res -> {:reply, res, session_state, session_state.inactivity_timeout}
+  #   end
+  # end
 
-  def handle_call(:stop, from, session_state) do
-    stop(session_state, from)
-    {:noreply, session_state}
-  end
+  # def handle_call(:stop, from, session_state) do
+  #   stop(session_state, from)
+  #   {:noreply, session_state}
+  # end
 
   @doc """
     This callback is called when the `SessionManagers` is asked to kill this node.
@@ -260,21 +259,19 @@ defmodule ApplicationRunner.Session.Manager do
   end
 
   defp send_error(
-         %Session.State{
-           assigns: %{
-             socket_pid: socket_pid
-           }
+         %Session.Metadata{
+           socket_pid: socket_pid
          },
          error
        ) do
     send(socket_pid, {:send, :error, error})
   end
 
-  defp stop(session_state, from) do
-    send_on_session_stop_event(session_state)
-    if not is_nil(from), do: GenServer.reply(from, :ok)
-    Managers.terminate_session(self())
-  end
+  # defp stop(session_state, from) do
+  #   send_on_session_stop_event(session_state)
+  #   if not is_nil(from), do: GenServer.reply(from, :ok)
+  #   Managers.terminate_session(self())
+  # end
 
   # defp transform_ui(%{"rootWidget" => root_widget, "widgets" => widgets}) do
   #   transform(%{"root" => Map.fetch!(widgets, root_widget)}, widgets)
