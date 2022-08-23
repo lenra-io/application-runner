@@ -1,92 +1,38 @@
 defmodule ApplicationRunner.Environment.WidgetTest do
   use ApplicationRunner.RepoCase, async: false
 
-  alias ApplicationRunner.Environment.WidgetServer
+  alias ApplicationRunner.Environment.{QueryDynSup, MongoInstance, WidgetServer, WidgetUid}
+  alias ApplicationRunner.Environment
 
   alias ApplicationRunner.Session
 
   alias ApplicationRunner.Widget.Context
 
+  @env_id 42
   @widget_ui %{widget: %{"text" => "test"}}
+  @function_name Ecto.UUID.generate()
+  @url "/function/#{@function_name}"
+
+  @env_metadata %Environment.Metadata{
+    env_id: @env_id,
+    function_name: @function_name,
+    token: "abc"
+  }
 
   setup do
-    function_name = Ecto.UUID.generate()
-    url = "/function/#{function_name}"
+    {:ok, _pid} = start_supervised({Environment.Supervisor, @env_metadata})
 
     bypass = Bypass.open(port: 1234)
-    Bypass.stub(bypass, "POST", url, &handle_resp/1)
+    Bypass.stub(bypass, "POST", @url, &handle_resp/1)
 
-    {:ok, function_name: function_name, bypass: bypass}
+    on_exit(fn ->
+      Swarm.unregister_name(Environment.Supervisor.get_name(@env_id))
+    end)
+
+    {:ok, %{bypass: bypass}}
   end
 
   defp handle_resp(conn) do
     Plug.Conn.resp(conn, 200, Jason.encode!(@widget_ui))
-  end
-
-  describe "ApplicationRunner.Environment.Widget_1/1" do
-    test "should start GenServer with valid opts", %{function_name: function_name} do
-      session_metadata = %Session.Metadata{
-        session_id: 1,
-        env_id: 1,
-        user_id: 1,
-        function_name: function_name,
-        token: "abc",
-        socket_pid: self()
-      }
-
-      current_widget = %Context{id: 1, name: "test", prefix_path: ""}
-
-      {:ok, pid} =
-        start_supervised(
-          {WidgetServer, session_metadata: session_metadata, current_widget: current_widget}
-        )
-
-      assert is_pid(pid)
-    end
-
-    # test "should return error if openfass not reachable", %{
-    #   function_name: function_name,
-    #   bypass: bypass
-    # } do
-    #   Bypass.down(bypass)
-
-    #   session_state = %State{
-    #     session_id: 1,
-    #     env_id: 1,
-    #     user_id: 1,
-    #     function_name: function_name
-    #   }
-
-    #   current_widget = %Context{id: 1, name: "test", prefix_path: ""}
-
-    #   Process.flag(:trap_exit, true)
-
-    #   assert_raise TechnicalError,
-    #                "Openfaas could not be reached.",
-    #                Widget.start_link(session_state: session_state, current_widget: current_widget)
-    # end
-  end
-
-  test "call get_widget on widget genserver", %{function_name: function_name} do
-    session_metadata = %Session.Metadata{
-      session_id: 1,
-      env_id: 1,
-      user_id: 1,
-      function_name: function_name,
-      token: "abc",
-      socket_pid: self()
-    }
-
-    current_widget = %Context{id: 1, name: "test", prefix_path: ""}
-
-    {:ok, _pid} =
-      start_supervised(
-        {WidgetServer, session_metadata: session_metadata, current_widget: current_widget}
-      )
-
-    name = "#{session_metadata.env_id}_#{current_widget.name}"
-
-    assert {:ok, @widget_ui.widget} ==
-             GenServer.call({:via, :swarm, name}, :get_widget)
   end
 end

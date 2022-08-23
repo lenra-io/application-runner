@@ -4,13 +4,16 @@ defmodule ApplicationRunner.Session.DynamicSupervisor do
     This allows to create/recreate/delete sessions for the app and possibly many other operations on sessions.
   """
   use DynamicSupervisor
+  use SwarmNamed
 
   alias ApplicationRunner.{Environment, Session}
 
-  alias ApplicationRunner.Errors.BusinessError
+  def start_link(%Environment.Metadata{env_id: env_id}) do
+    DynamicSupervisor.start_link(__MODULE__, :ok, name: get_full_name(env_id))
+  end
 
   def start_link(opts) do
-    DynamicSupervisor.start_link(__MODULE__, opts, name: __MODULE__)
+    raise "No Env Metadata #{inspect(opts)}"
   end
 
   @impl true
@@ -30,7 +33,7 @@ defmodule ApplicationRunner.Session.DynamicSupervisor do
   def start_session(session_metadata, env_metadata) do
     with {:ok, _pid} <- Environment.ensure_env_started(env_metadata) do
       DynamicSupervisor.start_child(
-        __MODULE__,
+        get_full_name(env_metadata.env_id),
         {Session.Supervisor, session_metadata}
       )
     end
@@ -47,14 +50,5 @@ defmodule ApplicationRunner.Session.DynamicSupervisor do
 
   def terminate_session(session_manager_pid) do
     DynamicSupervisor.terminate_child(ApplicationRunner.Session.Managers, session_manager_pid)
-  end
-
-  @spec fetch_session_manager_pid(any) ::
-          {:error, LenraCommon.Errors.BusinessError.t()} | {:ok, pid()}
-  def fetch_session_manager_pid(session_id) do
-    case Swarm.whereis_name({:session_metadata, session_id}) do
-      :undefined -> BusinessError.session_not_started_tuple({:session, session_id})
-      pid -> {:ok, pid}
-    end
   end
 end

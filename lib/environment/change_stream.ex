@@ -1,9 +1,9 @@
 defmodule ApplicationRunner.Environment.ChangeStream do
   use GenServer
+  use SwarmNamed
 
   alias ApplicationRunner.Environment.MongoInstance
   alias ApplicationRunner.Session.ChangeEventManager
-  alias LenraCommon.Errors.DevError
 
   require Logger
 
@@ -12,25 +12,18 @@ defmodule ApplicationRunner.Environment.ChangeStream do
     GenServer.start_link(__MODULE__, opts, name: get_full_name(env_id))
   end
 
-  def get_full_name(env_id) do
-    {:via, :swarm, get_name(env_id)}
-  end
-
-  def get_name(env_id) do
-    {__MODULE__, env_id}
-  end
-
   def init(opts) do
     env_id = Keyword.fetch!(opts, :env_id)
-    cs_pid = spawn(fn -> start_change_stream(env_id) end)
 
-    if Process.alive?(cs_pid) do
-      # The process did start correctly.
-      state = %{env_id: env_id, cs_pid: cs_pid}
-      {:ok, state}
-    else
-      {:stop, DevError.exception("The change stream process stopped.")}
-    end
+    state = %{env_id: env_id}
+    {:ok, state, {:continue, :start_stream}}
+  end
+
+  def handle_continue(:start_stream, %{env_id: env_id} = state) do
+    # With spawn_link, if the started process die, this genserver dies too.
+    cs_pid = spawn_link(fn -> start_change_stream(env_id) end)
+    new_state = Map.put(state, :cs_pid, cs_pid)
+    {:noreply, new_state}
   end
 
   def handle_cast({:token_event, token}, state) do
@@ -56,6 +49,7 @@ defmodule ApplicationRunner.Environment.ChangeStream do
       end,
       full_document: "updateLookup"
     )
+    # This Enum.each loop forever. It lock the current process.
     |> Enum.each(fn doc ->
       GenServer.cast(cs_name, {:mongo_event, doc})
     end)

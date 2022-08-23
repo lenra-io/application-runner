@@ -1,4 +1,4 @@
-defmodule Environment.QueryServerTest do
+defmodule ApplicationRunner.Environment.QueryServerTest do
   use ExUnit.Case
 
   alias ApplicationRunner.Environment.{
@@ -123,7 +123,7 @@ defmodule Environment.QueryServerTest do
   end
 
   def spawn_pass_process(name) do
-    pid = spawn(Environment.QueryServerTest, :loop, [name, self()])
+    pid = spawn(__MODULE__, :loop, [name, self()])
     Swarm.register_name({:test_pass_process, name}, pid)
     pid
   end
@@ -163,12 +163,13 @@ defmodule Environment.QueryServerTest do
     test "should start with coll and query in the correct swarm group" do
       assert [] = Swarm.members(QueryServer.group_name("42"))
 
-      assert :ok = QueryDynSup.ensure_child_started(@env_id, "42", "test", "{}")
+      assert {:ok, pid} = QueryDynSup.ensure_child_started(@env_id, "test", "{}")
+      QueryServer.join_group(pid, "42")
       assert [_pid] = Swarm.members(QueryServer.group_name("42"))
     end
 
     test "should have the correct state" do
-      :ok = QueryDynSup.ensure_child_started(@env_id, "42", "test", "{}")
+      {:ok, _} = QueryDynSup.ensure_child_started(@env_id, "test", "{}")
 
       assert %{coll: "test", query: %{"clauses" => [], "pos" => "expression"}, data: []} =
                :sys.get_state(QueryServer.get_full_name({@env_id, "test", "{}"}))
@@ -183,7 +184,7 @@ defmodule Environment.QueryServerTest do
 
       Mongo.insert_many!(mongo_name, "test", data)
 
-      :ok = QueryDynSup.ensure_child_started(@env_id, "42", "test", "{}")
+      {:ok, _} = QueryDynSup.ensure_child_started(@env_id, "test", "{}")
 
       assert %{
                coll: "test",
@@ -197,21 +198,24 @@ defmodule Environment.QueryServerTest do
     end
 
     test "should return :ok for the {:mongo_event, event} call" do
-      :ok = QueryDynSup.ensure_child_started(@env_id, "42", "test", "{}")
-      [pid] = Swarm.members(QueryServer.group_name("42"))
+      {:ok, pid} = QueryDynSup.ensure_child_started(@env_id, "test", "{}")
 
       assert :ok = GenServer.call(pid, {:mongo_event, insert_event(1)})
     end
 
     test "should be able to called a group using Swarm.multi_call" do
-      :ok = QueryDynSup.ensure_child_started(@env_id, "42", "test", "{}")
-      :ok = QueryDynSup.ensure_child_started(@env_id, "43", "test", "{}")
-      :ok = QueryDynSup.ensure_child_started(@env_id, "43", "foo", "{}")
-      assert [pid1] = Swarm.members(QueryServer.group_name("42"))
-      assert [_pid2, _pid3] = pids = Swarm.members(QueryServer.group_name("43"))
-      # the two group share the same "test", "{}" server
-      assert pid1 in pids
+      {:ok, pid1} = QueryDynSup.ensure_child_started(@env_id, "test", "{}")
+      {:ok, ^pid1} = QueryDynSup.ensure_child_started(@env_id, "test", "{}")
+      {:ok, pid2} = QueryDynSup.ensure_child_started(@env_id, "foo", "{}")
+      QueryServer.join_group(pid1, "42")
+      QueryServer.join_group(pid1, "43")
+      QueryServer.join_group(pid2, "43")
 
+      assert [^pid1] = Swarm.members(QueryServer.group_name("42"))
+      pids = Swarm.members(QueryServer.group_name("43"))
+      assert pid1 in pids
+      assert pid2 in pids
+      # the two group share the same "test", "{}" server
       assert [:ok] =
                Swarm.multi_call(QueryServer.group_name("42"), {:mongo_event, insert_event(1)})
 
@@ -220,57 +224,77 @@ defmodule Environment.QueryServerTest do
     end
 
     test "should start once with the same coll/query" do
-      assert :ok = QueryDynSup.ensure_child_started(@env_id, "42", "test", "{}")
-      assert [pid] = Swarm.members(QueryServer.group_name("42"))
-
-      assert :ok = QueryDynSup.ensure_child_started(@env_id, "42", "test", "{}")
-      assert [^pid] = Swarm.members(QueryServer.group_name("42"))
+      assert {:ok, pid} = QueryDynSup.ensure_child_started(@env_id, "test", "{}")
+      assert {:ok, ^pid} = QueryDynSup.ensure_child_started(@env_id, "test", "{}")
     end
 
     test "should be registered with a specific name" do
-      assert :ok = QueryDynSup.ensure_child_started(@env_id, "42", "test", "{}")
-      assert [pid] = Swarm.members(QueryServer.group_name("42"))
+      assert {:ok, pid} = QueryDynSup.ensure_child_started(@env_id, "test", "{}")
 
       name = {QueryServer, {@env_id, "test", "{}"}}
       assert ^name = QueryServer.get_name({@env_id, "test", "{}"})
       assert ^pid = Swarm.whereis_name(name)
     end
 
-    test "should stop after timeout (100ms) passed" do
-      assert :ok =
-               QueryDynSup.ensure_child_started(@env_id, "42", "test", "{}",
-                 inactivity_timeout: 100
-               )
+    test "should start monitoring process if asked to" do
+      assert {:ok, qs_pid} = QueryDynSup.ensure_child_started(@env_id, "test", "{}")
 
-      assert [pid] = Swarm.members(QueryServer.group_name("42"))
-      assert Process.alive?(pid)
-      :timer.sleep(60)
-      assert Process.alive?(pid)
-      :timer.sleep(60)
-      assert not Process.alive?(pid)
+      pid1 =
+        spawn(fn ->
+          receive do
+            :stop -> :ok
+          end
+        end)
+
+      pid2 =
+        spawn(fn ->
+          receive do
+            :stop -> :ok
+          end
+        end)
+
+      QueryServer.monitor(qs_pid, pid1)
+      QueryServer.monitor(qs_pid, pid2)
+      assert {:monitors, [{:process, pid1}, {:process, pid2}]} == Process.info(qs_pid, :monitors)
+      assert {:monitored_by, [qs_pid]} == Process.info(pid1, :monitored_by)
+      assert {:monitored_by, [qs_pid]} == Process.info(pid2, :monitored_by)
+      ms = MapSet.new([pid1, pid2])
+      assert %{w_pids: ^ms} = :sys.get_state(qs_pid)
     end
 
-    test "should extend timeout (100ms) if a message is sent" do
-      assert :ok =
-               QueryDynSup.ensure_child_started(@env_id, "42", "test", "{}",
-                 inactivity_timeout: 100
-               )
+    test "should quit if monitored process dies" do
+      assert {:ok, qs_pid} = QueryDynSup.ensure_child_started(@env_id, "test", "{}")
 
-      assert [pid] = Swarm.members(QueryServer.group_name("42"))
-      assert Process.alive?(pid)
-      :timer.sleep(60)
-      assert Process.alive?(pid)
-      assert :ok = GenServer.call(pid, {:mongo_event, insert_event(1)})
-      :timer.sleep(60)
-      assert Process.alive?(pid)
-      :timer.sleep(60)
-      assert not Process.alive?(pid)
+      pid1 =
+        spawn_link(fn ->
+          receive do
+            :stop -> :ok
+          end
+        end)
+
+      pid2 =
+        spawn_link(fn ->
+          receive do
+            :stop -> :ok
+          end
+        end)
+
+      QueryServer.monitor(qs_pid, pid1)
+      QueryServer.monitor(qs_pid, pid2)
+
+      assert Process.alive?(qs_pid)
+      send(pid1, :stop)
+      assert Process.alive?(qs_pid)
+      send(pid2, :stop)
+      # Wait a bit to let the genserver the time to stop
+      :timer.sleep(100)
+      assert not Process.alive?(qs_pid)
     end
   end
 
   describe "QueryServer prevent handling duplicate event" do
     test "should reject two event with same id and timestamp" do
-      assert :ok = QueryDynSup.ensure_child_started(@env_id, "42", "test", "{}")
+      assert {:ok, _} = QueryDynSup.ensure_child_started(@env_id, "test", "{}")
 
       timestamp = Mongo.timestamp(DateTime.utc_now())
       name = QueryServer.get_full_name({@env_id, "test", "{}"})
@@ -285,7 +309,7 @@ defmodule Environment.QueryServerTest do
     end
 
     test "should handle two event with same timestamp but different ids" do
-      assert :ok = QueryDynSup.ensure_child_started(@env_id, "42", "test", "{}")
+      assert {:ok, _} = QueryDynSup.ensure_child_started(@env_id, "test", "{}")
 
       name = QueryServer.get_full_name({@env_id, "test", "{}"})
       timestamp = Mongo.timestamp(DateTime.utc_now())
@@ -297,7 +321,7 @@ defmodule Environment.QueryServerTest do
     end
 
     test "should handle N event incremental ids and timestamps" do
-      assert :ok = QueryDynSup.ensure_child_started(@env_id, "42", "test", "{}")
+      assert {:ok, _} = QueryDynSup.ensure_child_started(@env_id, "test", "{}")
 
       name = QueryServer.get_full_name({@env_id, "test", "{}"})
 
@@ -318,7 +342,7 @@ defmodule Environment.QueryServerTest do
     end
 
     test "should reject an event with older timestamp" do
-      assert :ok = QueryDynSup.ensure_child_started(@env_id, "42", "test", "{}")
+      assert {:ok, _} = QueryDynSup.ensure_child_started(@env_id, "test", "{}")
 
       name = QueryServer.get_full_name({@env_id, "test", "{}"})
       timestamp_1 = Mongo.timestamp(DateTime.utc_now())
@@ -336,7 +360,7 @@ defmodule Environment.QueryServerTest do
 
   describe "QueryServer insert" do
     test "should insert data for the correct coll" do
-      :ok = QueryDynSup.ensure_child_started(@env_id, "42", "test", "{}")
+      {:ok, _} = QueryDynSup.ensure_child_started(@env_id, "test", "{}")
       name = QueryServer.get_full_name({@env_id, "test", "{}"})
 
       assert :ok = GenServer.call(name, {:mongo_event, insert_event(1)})
@@ -352,19 +376,21 @@ defmodule Environment.QueryServerTest do
     end
 
     test "should notify data changed in the widget group correctly" do
-      :ok = QueryDynSup.ensure_child_started(@env_id, "42", "test", "{}")
-      :ok = QueryDynSup.ensure_child_started(@env_id, "42", "test", "{\"idx\": 1}")
+      {:ok, pid1} = QueryDynSup.ensure_child_started(@env_id, "test", "{}")
+      {:ok, pid2} = QueryDynSup.ensure_child_started(@env_id, "test", "{\"idx\": 1}")
+      QueryServer.join_group(pid1, "42")
+      QueryServer.join_group(pid2, "42")
 
       # BOTH process in Group 1 should receive the change event
-      group1 = WidgetServer.get_group(@env_id, "test", "{}")
+      group1 = WidgetServer.group_name(@env_id, "test", "{}")
       # Group 1 should NOT receive the change event (wrong env_id)
-      group2 = WidgetServer.get_group(@env_id + 1, "test", "{}")
+      group2 = WidgetServer.group_name(@env_id + 1, "test", "{}")
       # Group 1 should NOT receive the change event (wrong coll)
-      group3 = WidgetServer.get_group(@env_id, "test1", "{}")
+      group3 = WidgetServer.group_name(@env_id, "test1", "{}")
       # Group 1 should NOT receive the change event (query does not match)
-      group4 = WidgetServer.get_group(@env_id, "test", "{\"aaaa\": 1}")
+      group4 = WidgetServer.group_name(@env_id, "test", "{\"aaaa\": 1}")
       # Group 1 should receive the change event (query match)
-      group5 = WidgetServer.get_group(@env_id, "test", "{\"idx\": 1}")
+      group5 = WidgetServer.group_name(@env_id, "test", "{\"idx\": 1}")
 
       p1 = spawn_pass_process(:a1)
       p1b = spawn_pass_process(:a1b)
@@ -391,7 +417,7 @@ defmodule Environment.QueryServerTest do
     end
 
     test "should NOT insert data for the wrong coll" do
-      :ok = QueryDynSup.ensure_child_started(@env_id, "42", "test", "{}")
+      {:ok, _} = QueryDynSup.ensure_child_started(@env_id, "test", "{}")
       name = QueryServer.get_full_name({@env_id, "test", "{}"})
 
       assert :ok = GenServer.call(name, {:mongo_event, insert_event(1)})
@@ -404,7 +430,8 @@ defmodule Environment.QueryServerTest do
     end
 
     test "should NOT insert data if the query does not match the new element" do
-      :ok = QueryDynSup.ensure_child_started(@env_id, "42", "test", "{\"idx\": {\"$lt\": 3}}")
+      {:ok, _} = QueryDynSup.ensure_child_started(@env_id, "test", "{\"idx\": {\"$lt\": 3}}")
+
       name = QueryServer.get_full_name({@env_id, "test", "{\"idx\": {\"$lt\": 3}}"})
 
       assert :ok = GenServer.call(name, {:mongo_event, insert_event(1)})
@@ -420,7 +447,7 @@ defmodule Environment.QueryServerTest do
 
   describe "QueryServer update" do
     test "should update an older data if doc _id is the same" do
-      :ok = QueryDynSup.ensure_child_started(@env_id, "42", "test", "{}")
+      {:ok, _} = QueryDynSup.ensure_child_started(@env_id, "test", "{}")
       name = QueryServer.get_full_name({@env_id, "test", "{}"})
 
       assert :ok = GenServer.call(name, {:mongo_event, insert_event(1, "test", 1)})
@@ -439,7 +466,7 @@ defmodule Environment.QueryServerTest do
     end
 
     test "should NOT update an older data if _id is different" do
-      :ok = QueryDynSup.ensure_child_started(@env_id, "42", "test", "{}")
+      {:ok, _} = QueryDynSup.ensure_child_started(@env_id, "test", "{}")
       name = QueryServer.get_full_name({@env_id, "test", "{}"})
 
       assert :ok = GenServer.call(name, {:mongo_event, insert_event(1)})
@@ -458,7 +485,7 @@ defmodule Environment.QueryServerTest do
     end
 
     test "should NOT update an older data if the coll is different" do
-      :ok = QueryDynSup.ensure_child_started(@env_id, "42", "test", "{}")
+      {:ok, _} = QueryDynSup.ensure_child_started(@env_id, "test", "{}")
       name = QueryServer.get_full_name({@env_id, "test", "{}"})
 
       assert :ok = GenServer.call(name, {:mongo_event, insert_event(1)})
@@ -477,7 +504,7 @@ defmodule Environment.QueryServerTest do
     end
 
     test "should remove the old data if _id is the same but query does not match anymore" do
-      :ok = QueryDynSup.ensure_child_started(@env_id, "42", "test", "{\"name\": \"test1\"}")
+      {:ok, _} = QueryDynSup.ensure_child_started(@env_id, "test", "{\"name\": \"test1\"}")
       name = QueryServer.get_full_name({@env_id, "test", "{\"name\": \"test1\"}"})
 
       assert :ok = GenServer.call(name, {:mongo_event, insert_event(1, "test", 1)})
@@ -498,7 +525,7 @@ defmodule Environment.QueryServerTest do
 
   describe "QueryServer replace" do
     test "should replace an older data if _id is the same" do
-      :ok = QueryDynSup.ensure_child_started(@env_id, "42", "test", "{}")
+      {:ok, _} = QueryDynSup.ensure_child_started(@env_id, "test", "{}")
       name = QueryServer.get_full_name({@env_id, "test", "{}"})
 
       assert :ok = GenServer.call(name, {:mongo_event, insert_event(1, "test", 1)})
@@ -517,7 +544,7 @@ defmodule Environment.QueryServerTest do
     end
 
     test "should NOT replace an older data if _id is different" do
-      :ok = QueryDynSup.ensure_child_started(@env_id, "42", "test", "{}")
+      {:ok, _} = QueryDynSup.ensure_child_started(@env_id, "test", "{}")
       name = QueryServer.get_full_name({@env_id, "test", "{}"})
 
       assert :ok = GenServer.call(name, {:mongo_event, insert_event(1)})
@@ -536,7 +563,7 @@ defmodule Environment.QueryServerTest do
     end
 
     test "should NOT replace an older data if the coll is different" do
-      :ok = QueryDynSup.ensure_child_started(@env_id, "42", "test", "{}")
+      {:ok, _} = QueryDynSup.ensure_child_started(@env_id, "test", "{}")
       name = QueryServer.get_full_name({@env_id, "test", "{}"})
 
       assert :ok = GenServer.call(name, {:mongo_event, insert_event(1)})
@@ -555,7 +582,7 @@ defmodule Environment.QueryServerTest do
     end
 
     test "should remove the old data if _id is the same but query does not match anymore" do
-      :ok = QueryDynSup.ensure_child_started(@env_id, "42", "test", "{\"name\": \"test1\"}")
+      {:ok, _} = QueryDynSup.ensure_child_started(@env_id, "test", "{\"name\": \"test1\"}")
       name = QueryServer.get_full_name({@env_id, "test", "{\"name\": \"test1\"}"})
 
       assert :ok = GenServer.call(name, {:mongo_event, insert_event(1, "test", 1)})
@@ -576,7 +603,7 @@ defmodule Environment.QueryServerTest do
 
   describe "QueryServer delete" do
     test "should delete an older data if _id and coll is the same" do
-      :ok = QueryDynSup.ensure_child_started(@env_id, "42", "test", "{}")
+      {:ok, _} = QueryDynSup.ensure_child_started(@env_id, "test", "{}")
       name = QueryServer.get_full_name({@env_id, "test", "{}"})
 
       assert :ok = GenServer.call(name, {:mongo_event, insert_event(1, "test", 1)})
@@ -595,7 +622,7 @@ defmodule Environment.QueryServerTest do
     end
 
     test "should NOT delete an older data if coll is different" do
-      :ok = QueryDynSup.ensure_child_started(@env_id, "42", "test", "{}")
+      {:ok, _} = QueryDynSup.ensure_child_started(@env_id, "test", "{}")
       name = QueryServer.get_full_name({@env_id, "test", "{}"})
 
       assert :ok = GenServer.call(name, {:mongo_event, insert_event(1, "test", 1)})
@@ -614,7 +641,7 @@ defmodule Environment.QueryServerTest do
     end
 
     test "should NOT delete an older data if id is different" do
-      :ok = QueryDynSup.ensure_child_started(@env_id, "42", "test", "{}")
+      {:ok, _} = QueryDynSup.ensure_child_started(@env_id, "test", "{}")
       name = QueryServer.get_full_name({@env_id, "test", "{}"})
 
       assert :ok = GenServer.call(name, {:mongo_event, insert_event(1, "test", 1)})
@@ -635,8 +662,7 @@ defmodule Environment.QueryServerTest do
 
   describe "QueryServer drop coll" do
     test "should stop the genserver when drop the coll" do
-      :ok = QueryDynSup.ensure_child_started(@env_id, "42", "test", "{}")
-      [pid] = Swarm.members(QueryServer.group_name("42"))
+      {:ok, pid} = QueryDynSup.ensure_child_started(@env_id, "test", "{}")
 
       assert Process.alive?(pid)
       assert :ok = GenServer.call(pid, {:mongo_event, drop_event("test")})
@@ -644,8 +670,7 @@ defmodule Environment.QueryServerTest do
     end
 
     test "should NOT stop the genserver when drop another coll" do
-      :ok = QueryDynSup.ensure_child_started(@env_id, "42", "test", "{}")
-      [pid] = Swarm.members(QueryServer.group_name("42"))
+      {:ok, pid} = QueryDynSup.ensure_child_started(@env_id, "test", "{}")
 
       assert Process.alive?(pid)
       assert :ok = GenServer.call(pid, {:mongo_event, drop_event("foo")})
@@ -655,18 +680,16 @@ defmodule Environment.QueryServerTest do
 
   describe "QueryServer rename coll" do
     test "should rename the coll and still work under a new name" do
-      :ok = QueryDynSup.ensure_child_started(@env_id, "42", "test", "{}")
+      {:ok, pid} = QueryDynSup.ensure_child_started(@env_id, "test", "{}")
       name = QueryServer.get_name({@env_id, "test", "{}"})
       new_name = QueryServer.get_name({@env_id, "bar", "{}"})
 
-      group = WidgetServer.get_group(@env_id, "test", "{}")
-      new_group = WidgetServer.get_group(@env_id, "bar", "{}")
+      group = WidgetServer.group_name(@env_id, "test", "{}")
+      new_group = WidgetServer.group_name(@env_id, "bar", "{}")
       p1 = spawn_pass_process(:p1)
       p2 = spawn_pass_process(:p2)
       Swarm.join(group, p1)
       Swarm.join(new_group, p2)
-
-      [pid] = Swarm.members(QueryServer.group_name("42"))
 
       timestamp_1 = Mongo.timestamp(DateTime.utc_now())
       timestamp_2 = Map.put(timestamp_1, :ordinal, 2)
@@ -689,7 +712,7 @@ defmodule Environment.QueryServerTest do
     end
 
     test "should ignore the rename if namesapce coll is different" do
-      :ok = QueryDynSup.ensure_child_started(@env_id, "42", "test", "{}")
+      {:ok, _} = QueryDynSup.ensure_child_started(@env_id, "test", "{}")
       name = QueryServer.get_full_name({@env_id, "test", "{}"})
 
       assert :ok = GenServer.call(name, {:mongo_event, insert_event(1)})

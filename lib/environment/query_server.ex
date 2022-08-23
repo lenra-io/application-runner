@@ -16,12 +16,6 @@ defmodule ApplicationRunner.Environment.QueryServer do
 
   require Logger
 
-  @inactivity_timeout Application.compile_env(
-                        :application_runner,
-                        :query_inactivity_timeout,
-                        1000 * 60 * 10
-                      )
-
   def start_link(opts) do
     with {:ok, query} <- Keyword.fetch(opts, :query),
          {:ok, coll} <- Keyword.fetch(opts, :coll),
@@ -37,6 +31,22 @@ defmodule ApplicationRunner.Environment.QueryServer do
     {__MODULE__, session_id}
   end
 
+  def join_group(pid, session_id) do
+    group = group_name(session_id)
+    Swarm.join(group, pid)
+  end
+
+  def get_data(env_id, coll, query) do
+    GenServer.call(get_full_name({env_id, coll, query}), :get_data)
+  end
+
+  @doc """
+    Start monotoring the given WidgetServer
+  """
+  def monitor(qs_pid, w_pid) do
+    GenServer.call(qs_pid, {:monitor, w_pid})
+  end
+
   # I cant figure a way to fix the warning throw by Parser...
   @dialyzer {:no_match, init: 1}
 
@@ -47,8 +57,6 @@ defmodule ApplicationRunner.Environment.QueryServer do
          {:ok, query_map} <- Poison.decode(query),
          {:ok, data} <- fetch_initial_data(env_id, coll, query_map),
          {:ok, ast} <- Parser.parse(query, %{}) do
-      inactivity_timeout = Keyword.get(opts, :inactivity_timeout, @inactivity_timeout)
-
       {:ok,
        %{
          data: data,
@@ -56,10 +64,10 @@ defmodule ApplicationRunner.Environment.QueryServer do
          env_id: env_id,
          query: ast,
          coll: coll,
-         inactivity_timeout: inactivity_timeout,
          latest_timestamp: Mongo.timestamp(DateTime.utc_now()),
-         done_ids: []
-       }, inactivity_timeout}
+         done_ids: MapSet.new(),
+         w_pids: MapSet.new()
+       }}
     else
       :error ->
         raise DevError.exception("Missing data in opts (#{inspect(opts)}")
@@ -69,7 +77,7 @@ defmodule ApplicationRunner.Environment.QueryServer do
     end
   end
 
-  def fetch_initial_data(env_id, coll, query) do
+  defp fetch_initial_data(env_id, coll, query) do
     mongo_name = MongoInstance.get_full_name(env_id)
 
     case Mongo.find(mongo_name, coll, query) do
@@ -88,11 +96,21 @@ defmodule ApplicationRunner.Environment.QueryServer do
 
     if event_handled?(event_id, event_timestamp, state) do
       # The event is already handled. Reply directly and ignore event.s
-      reply_timeout(:ok, state)
+      {:reply, :ok, state}
     else
       # The event must be handled.
       handle_event(event, event_id, event_timestamp, state)
     end
+  end
+
+  def handle_call(:get_data, _from, state) do
+    {:reply, Map.get(state, :data), state}
+  end
+
+  def handle_call({:monitor, w_pid}, _from, state) do
+    Process.monitor(w_pid)
+    new_w_ids = MapSet.put(state.w_pids, w_pid)
+    {:reply, Map.get(state, :data), Map.put(state, :w_pids, new_w_ids)}
   end
 
   defp event_handled?(
@@ -136,7 +154,7 @@ defmodule ApplicationRunner.Environment.QueryServer do
             latest_timestamp: event_timestamp
           })
 
-        reply_timeout(:ok, new_state)
+        {:reply, :ok, new_state}
 
       event_coll == coll and op_type in ["rename"] ->
         change_coll(op_type, event, state)
@@ -148,14 +166,14 @@ defmodule ApplicationRunner.Environment.QueryServer do
         stop(state)
 
       true ->
-        reply_timeout(:ok, state)
+        {:reply, :ok, state}
     end
   end
 
   defp get_new_done_ids(event_timestamp, latest_timestamp, event_id, done_ids) do
     if BSON.Timestamp.is_before(event_timestamp, latest_timestamp),
-      do: [event_id | done_ids],
-      else: [event_id]
+      do: MapSet.put(done_ids, event_id),
+      else: MapSet.new([event_id])
   end
 
   defp change_coll(
@@ -169,7 +187,7 @@ defmodule ApplicationRunner.Environment.QueryServer do
     # Register new name
     Swarm.register_name(get_name({env_id, new_coll, query_str}), self())
     notify_coll_changed(new_coll, state)
-    reply_timeout(:ok, Map.put(state, :coll, new_coll))
+    {:reply, :ok, Map.put(state, :coll, new_coll)}
   end
 
   defp change_coll(op_type, _event, _state) do
@@ -226,24 +244,28 @@ defmodule ApplicationRunner.Environment.QueryServer do
 
   defp change_data(op_type, _full_doc, _doc_id, _data, _query, state) do
     Logger.debug("Ingore event #{op_type}")
-    reply_timeout(:ok, state)
+    {:reply, :ok, state}
   end
 
   defp notify_data_changed(new_data, %{env_id: env_id, query_str: query_str, coll: coll}) do
-    group = WidgetServer.get_group(env_id, coll, query_str)
+    group = WidgetServer.group_name(env_id, coll, query_str)
     Swarm.publish(group, {:data_changed, new_data})
   end
 
   defp notify_coll_changed(new_coll, %{env_id: env_id, query_str: query_str, coll: old_coll}) do
-    group = WidgetServer.get_group(env_id, old_coll, query_str)
+    group = WidgetServer.group_name(env_id, old_coll, query_str)
     Swarm.publish(group, {:coll_changed, new_coll})
   end
 
-  defp reply_timeout(res, state) do
-    {:reply, res, state, state.inactivity_timeout}
-  end
+  # If a WidgetServer die, we receive a message here.
+  # If there is no more monitored WidgetServer, we stop this QueryServer.
+  def handle_info({:DOWN, _ref, :process, w_pid, _reason}, state) do
+    new_w_pids = MapSet.delete(state.w_pids, w_pid)
 
-  def handle_info(:timeout, state) do
-    stop_async(state)
+    if MapSet.size(new_w_pids) == 0 do
+      stop_async(state)
+    else
+      {:noreply, Map.put(state, :w_pids, new_w_pids)}
+    end
   end
 end

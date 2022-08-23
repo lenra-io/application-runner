@@ -5,11 +5,11 @@ defmodule ApplicationRunner.Environment.WidgetDynSup do
   use DynamicSupervisor
   use SwarmNamed
 
-  alias ApplicationRunner.Environment
-  alias ApplicationRunner.Environment.WidgetServer
+  alias ApplicationRunner.Environment.{QueryDynSup, QueryServer, WidgetServer, WidgetUid}
 
-  def start_link(%Environment.Metadata{} = env_metadata) do
-    DynamicSupervisor.start_link(__MODULE__, :ok, name: get_full_name(env_metadata.env_id))
+  def start_link(opts) do
+    env_id = Keyword.fetch!(opts, :env_id)
+    DynamicSupervisor.start_link(__MODULE__, :ok, name: get_full_name(env_id))
   end
 
   @impl true
@@ -17,33 +17,33 @@ defmodule ApplicationRunner.Environment.WidgetDynSup do
     DynamicSupervisor.init(strategy: :one_for_one)
   end
 
-  def ensure_child_started(session_metadata, current_widget) do
-    group_name =
-      WidgetServer.get_group(
-        session_metadata.env_id,
-        current_widget.coll,
-        current_widget.query
-      )
+  def ensure_child_started(env_id, session_id, function_name, %WidgetUid{} = widget_uid) do
+    coll = widget_uid.coll
+    query = widget_uid.query
 
-    case start_child(session_metadata, current_widget) do
-      {:ok, pid} ->
-        Swarm.join(group_name, pid)
-        :ok
+    with {:ok, qs_pid} <- QueryDynSup.ensure_child_started(env_id, coll, query) do
+      case start_child(env_id, function_name, widget_uid) do
+        {:ok, pid} ->
+          QueryServer.join_group(pid, session_id)
+          WidgetServer.join_group(pid, env_id, coll, query)
+          QueryServer.monitor(qs_pid, pid)
+          {:ok, pid}
 
-      {:error, {:already_started, pid}} ->
-        Swarm.join(group_name, pid)
-        :ok
+        {:error, {:already_started, pid}} ->
+          QueryServer.join_group(pid, session_id)
+          {:ok, pid}
 
-      err ->
-        err
+        err ->
+          err
+      end
     end
   end
 
-  defp start_child(session_metadata, current_widget) do
-    init_value = [session_metadata: session_metadata, current_widget: current_widget]
+  defp start_child(env_id, function_name, widget_uid) do
+    init_value = [env_id: env_id, function_name: function_name, widget_uid: widget_uid]
 
     DynamicSupervisor.start_child(
-      get_full_name(session_metadata.env_id),
+      get_full_name(env_id),
       {WidgetServer, init_value}
     )
   end
