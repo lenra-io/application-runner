@@ -9,18 +9,12 @@ defmodule ApplicationRunner.Widget.Cache do
   use ApplicationRunner.Cache.AsyncMacro
 
   alias ApplicationRunner.{
-    ApplicationServices,
     JsonSchemata,
-    JsonStorage,
     ListenersCache,
     Session,
     Ui,
     Widget
   }
-
-  alias ApplicationRunner.Session.Supervisor
-
-  alias QueryParser.AST
 
   @type widget_ui :: map()
   @type component :: map()
@@ -28,31 +22,33 @@ defmodule ApplicationRunner.Widget.Cache do
   @type build_errors :: list(error_tuple())
 
   @spec clear_cache(Session.Metadata.t()) :: :ok
-  def clear_cache(%Session.Metadata{} = session_state) do
-    pid = Supervisor.fetch_module_pid!(session_state.session_supervisor_pid, __MODULE__)
+  def clear_cache(%Session.Metadata{} = _session_state) do
+    # pid = Supervisor.fetch_module_pid!(session_state.session_supervisor_pid, __MODULE__)
 
-    clear(pid)
+    # clear(pid)
+    :ok
   end
 
   @doc """
     Call the Adapter to get the Widget corresponding to the given the `WidgetContext`
   """
   @spec get_widget(Session.Metadata.t(), Widget.Context.t()) :: {:ok, map()} | {:error, any()}
-  def get_widget(%Session.Metadata{} = session_state, %Widget.Context{} = current_widget) do
-    pid = Supervisor.fetch_module_pid!(session_state.session_supervisor_pid, __MODULE__)
+  def get_widget(%Session.Metadata{} = _session_state, %Widget.Context{} = _current_widget) do
+    # pid = Supervisor.fetch_module_pid!(session_state.session_supervisor_pid, __MODULE__)
 
-    cache_function(
-      pid,
-      ApplicationServices,
-      :fetch_widget,
-      [
-        session_state,
-        current_widget.name,
-        current_widget.data,
-        current_widget.props
-      ],
-      current_widget.id
-    )
+    # cache_function(
+    #   pid,
+    #   ApplicationServices,
+    #   :fetch_widget,
+    #   [
+    #     session_state,
+    #     current_widget.name,
+    #     current_widget.data,
+    #     current_widget.props
+    #   ],
+    #   current_widget.id
+    # )
+    {:ok, %{}}
   end
 
   @doc """
@@ -112,7 +108,7 @@ defmodule ApplicationRunner.Widget.Cache do
     props = Map.get(component, "props")
 
     # component |> Map.get("query") |> AST.Parser.from_json()
-    query = nil
+    # query = nil
 
     data = []
     # if is_nil(query) do

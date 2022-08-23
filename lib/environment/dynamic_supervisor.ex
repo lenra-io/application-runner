@@ -6,6 +6,7 @@ defmodule ApplicationRunner.Environment.DynamicSupervisor do
   use DynamicSupervisor
 
   alias ApplicationRunner.Environment
+  alias LenraCommon.Errors.BusinessError
 
   @doc false
   def start_link(opts) do

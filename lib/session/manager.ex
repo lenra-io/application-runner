@@ -6,18 +6,12 @@ defmodule ApplicationRunner.Session.Manager do
   require Logger
 
   alias ApplicationRunner.{
-    Environments,
     EventHandler,
     JsonStorage,
     ListenersCache,
     Session,
     Ui,
     Widget
-  }
-
-  alias ApplicationRunner.Session.{
-    Managers,
-    Supervisor
   }
 
   alias ApplicationRunner.Errors.TechnicalError
@@ -53,10 +47,11 @@ defmodule ApplicationRunner.Session.Manager do
   # end
 
   @spec reload_ui(number()) :: :ok
-  def reload_ui(session_id) do
-    with {:ok, pid} <- Managers.fetch_session_manager_pid(session_id) do
-      send(pid, :data_changed)
-    end
+  def reload_ui(_session_id) do
+    # with {:ok, pid} <- Managers.fetch_session_manager_pid(session_id) do
+    #   send(pid, :data_changed)
+    # end
+    :ok
   end
 
   # @impl true
@@ -192,51 +187,53 @@ defmodule ApplicationRunner.Session.Manager do
     We cannot call directly `DynamicSupervisor.terminate_child/2` as we could be asking it on the wrong node.
     To prevent this we simply ask the child to call `DynamicSupervisor.terminate_child/2`to ensure that the correct SessionManagers is called.
   """
-  @impl true
-  def handle_cast({:send_client_event, code, event}, session_state) do
-    with {:ok, listener} <- ListenersCache.fetch_listener(session_state, code),
-         {:ok, action} <- Map.fetch(listener, "action"),
-         props <- Map.get(listener, "props", %{}) do
-      do_send_event(session_state, action, props, event)
-    end
+  # @impl true
+  def handle_cast({:send_client_event, _code, _event}, _session_state) do
+    # with {:ok, listener} <- ListenersCache.fetch_listener(session_state, code),
+    #      {:ok, action} <- Map.fetch(listener, "action"),
+    #      props <- Map.get(listener, "props", %{}) do
+    #   do_send_event(session_state, action, props, event)
+    # end
 
-    {:noreply, session_state, session_state.inactivity_timeout}
+    # {:noreply, session_state, session_state.inactivity_timeout}
+    :ok
   end
 
-  @spec get_and_build_ui(Session.State.t(), String.t()) ::
+  @spec get_and_build_ui(Session.Metadata.t(), String.t()) ::
           {:ok, map()} | {:error, any()}
-  def get_and_build_ui(session_state, root_widget) do
-    props = %{}
-    query = nil
-    data = []
-    id = Widget.Cache.generate_widget_id(root_widget, query, props)
+  def get_and_build_ui(_session_state, _root_widget) do
+    # props = %{}
+    # query = nil
+    # data = []
+    # id = Widget.Cache.generate_widget_id(root_widget, query, props)
 
-    Widget.Cache.get_and_build_widget(
-      session_state,
-      %Ui.Context{
-        widgets_map: %{},
-        listeners_map: %{}
-      },
-      %Widget.Context{
-        id: id,
-        name: root_widget,
-        prefix_path: "",
-        data: data,
-        props: props,
-        query: %{},
-        coll: ""
-      }
-    )
-    |> case do
-      {:ok, ui_context} ->
-        {:ok, %{"rootWidget" => id, "widgets" => ui_context.widgets_map}}
+    # Widget.Cache.get_and_build_widget(
+    #   session_state,
+    #   %Ui.Context{
+    #     widgets_map: %{},
+    #     listeners_map: %{}
+    #   },
+    #   %Widget.Context{
+    #     id: id,
+    #     name: root_widget,
+    #     prefix_path: "",
+    #     data: data,
+    #     props: props,
+    #     query: %{},
+    #     coll: ""
+    #   }
+    # )
+    # |> case do
+    #   {:ok, ui_context} ->
+    #     {:ok, %{"rootWidget" => id, "widgets" => ui_context.widgets_map}}
 
-      {:error, reason} when is_atom(reason) ->
-        {:error, reason}
+    #   {:error, reason} when is_atom(reason) ->
+    #     {:error, reason}
 
-      {:error, ui_error_list} when is_list(ui_error_list) ->
-        {:error, :invalid_ui, ui_error_list}
-    end
+    #   {:error, ui_error_list} when is_list(ui_error_list) ->
+    #     {:error, :invalid_ui, ui_error_list}
+    # end
+    {:ok, %{}}
   end
 
   defp send_on_user_first_join_event(session_state),
@@ -251,11 +248,12 @@ defmodule ApplicationRunner.Session.Manager do
   defp send_on_session_stop_event(session_state),
     do: do_send_event(session_state, @on_session_stop_action, %{}, %{})
 
-  defp do_send_event(session_state, action, props, event) do
-    event_handler_pid =
-      Supervisor.fetch_module_pid!(session_state.session_supervisor_pid, EventHandler)
+  defp do_send_event(_session_state, _action, _props, _event) do
+    # event_handler_pid =
+    #   Supervisor.fetch_module_pid!(session_state.session_supervisor_pid, EventHandler)
 
-    EventHandler.send_event(event_handler_pid, session_state, action, props, event)
+    # EventHandler.send_event(event_handler_pid, session_state, action, props, event)
+    :ok
   end
 
   defp send_error(
