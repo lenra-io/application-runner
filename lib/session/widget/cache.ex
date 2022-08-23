@@ -9,60 +9,56 @@ defmodule ApplicationRunner.Widget.Cache do
   use ApplicationRunner.Cache.AsyncMacro
 
   alias ApplicationRunner.{
-    ApplicationServices,
     JsonSchemata,
-    JsonStorage,
     ListenersCache,
     Session,
     Ui,
     Widget
   }
 
-  alias ApplicationRunner.Session.Supervisor
-
-  alias QueryParser.AST
-
   @type widget_ui :: map()
   @type component :: map()
   @type error_tuple :: {String.t(), String.t()}
   @type build_errors :: list(error_tuple())
 
-  @spec clear_cache(Session.State.t()) :: :ok
-  def clear_cache(%Session.State{} = session_state) do
-    pid = Supervisor.fetch_module_pid!(session_state.session_supervisor_pid, __MODULE__)
+  @spec clear_cache(Session.Metadata.t()) :: :ok
+  def clear_cache(%Session.Metadata{} = _session_state) do
+    # pid = Supervisor.fetch_module_pid!(session_state.session_supervisor_pid, __MODULE__)
 
-    clear(pid)
+    # clear(pid)
+    :ok
   end
 
   @doc """
     Call the Adapter to get the Widget corresponding to the given the `WidgetContext`
   """
-  @spec get_widget(Session.State.t(), Widget.Context.t()) :: {:ok, map()} | {:error, any()}
-  def get_widget(%Session.State{} = session_state, %Widget.Context{} = current_widget) do
-    pid = Supervisor.fetch_module_pid!(session_state.session_supervisor_pid, __MODULE__)
+  @spec get_widget(Session.Metadata.t(), Widget.Context.t()) :: {:ok, map()} | {:error, any()}
+  def get_widget(%Session.Metadata{} = _session_state, %Widget.Context{} = _current_widget) do
+    # pid = Supervisor.fetch_module_pid!(session_state.session_supervisor_pid, __MODULE__)
 
-    cache_function(
-      pid,
-      ApplicationServices,
-      :fetch_widget,
-      [
-        session_state,
-        current_widget.name,
-        current_widget.data,
-        current_widget.props
-      ],
-      current_widget.id
-    )
+    # cache_function(
+    #   pid,
+    #   ApplicationServices,
+    #   :fetch_widget,
+    #   [
+    #     session_state,
+    #     current_widget.name,
+    #     current_widget.data,
+    #     current_widget.props
+    #   ],
+    #   current_widget.id
+    # )
+    {:ok, %{}}
   end
 
   @doc """
     Call the `get_and_build_widget_cached/3` function and cache the result.
     All subsequent call of this function with the same arguments will return the same old cached result.
   """
-  @spec get_and_build_widget(Session.State.t(), Ui.Context.t(), Widget.Context.t()) ::
+  @spec get_and_build_widget(Session.Metadata.t(), Ui.Context.t(), Widget.Context.t()) ::
           {:ok, Ui.Context.t()} | {:error, any()}
   def get_and_build_widget(
-        %Session.State{} = session_state,
+        %Session.Metadata{} = session_state,
         %Ui.Context{} = ui_context,
         %Widget.Context{} = current_widget
       ) do
@@ -78,7 +74,7 @@ defmodule ApplicationRunner.Widget.Cache do
     If the component type is "widget" this is considered a Widget and will be handled like one.
     Everything else will be handled as a simple component.
   """
-  @spec build_component(Session.State.t(), widget_ui(), Ui.Context.t(), Widget.Context.t()) ::
+  @spec build_component(Session.Metadata.t(), widget_ui(), Ui.Context.t(), Widget.Context.t()) ::
           {:ok, component(), Ui.Context.t()} | {:error, build_errors()}
   def build_component(
         session_state,
@@ -105,14 +101,14 @@ defmodule ApplicationRunner.Widget.Cache do
     - Create a new WidgetContext corresponding to the Widget
     - Recursively get_and_build_widget.
   """
-  @spec handle_widget(Session.State.t(), widget_ui(), Ui.Context.t(), Widget.Context.t()) ::
+  @spec handle_widget(Session.Metadata.t(), widget_ui(), Ui.Context.t(), Widget.Context.t()) ::
           {:ok, component(), Ui.Context.t()}
   def handle_widget(session_state, component, ui_context, widget_context) do
     name = Map.get(component, "name")
     props = Map.get(component, "props")
 
     # component |> Map.get("query") |> AST.Parser.from_json()
-    query = nil
+    # query = nil
 
     data = []
     # if is_nil(query) do
@@ -150,7 +146,7 @@ defmodule ApplicationRunner.Widget.Cache do
       - Then merge all children/child context/widget with the current one.
   """
   @spec handle_component(
-          Session.State.t(),
+          Session.Metadata.t(),
           component(),
           Ui.Context.t(),
           Widget.Context.t(),
@@ -158,7 +154,7 @@ defmodule ApplicationRunner.Widget.Cache do
         ) ::
           {:ok, component(), Ui.Context.t()} | {:error, build_errors()}
   def handle_component(
-        %Session.State{} = session_state,
+        %Session.Metadata{} = session_state,
         component,
         ui_context,
         widget_context,
@@ -220,7 +216,7 @@ defmodule ApplicationRunner.Widget.Cache do
     Return {:error, build_errors} in case of any failure in one child.
   """
   @spec build_child_list(
-          Session.State.t(),
+          Session.Metadata.t(),
           component(),
           list(String.t()),
           Ui.Context.t(),
@@ -307,7 +303,7 @@ defmodule ApplicationRunner.Widget.Cache do
     Return {:error, build_errors} in case of any failure in one children list.
   """
   @spec build_children_list(
-          Session.State.t(),
+          Session.Metadata.t(),
           component(),
           list(),
           Ui.Context.t(),
@@ -357,7 +353,7 @@ defmodule ApplicationRunner.Widget.Cache do
   @doc """
     This will build a child list (children).
   """
-  @spec build_children(Session.State.t(), map, String.t(), Ui.Context.t(), Widget.Context.t()) ::
+  @spec build_children(Session.Metadata.t(), map, String.t(), Ui.Context.t(), Widget.Context.t()) ::
           {:error, list(error_tuple())} | {:ok, list(component()), Ui.Context.t()}
   def build_children(session_state, component, children_key, ui_context, widget_context) do
     case Map.get(component, children_key) do
@@ -414,7 +410,7 @@ defmodule ApplicationRunner.Widget.Cache do
     )
   end
 
-  @spec build_listeners(Session.State.t(), component(), list(String.t())) ::
+  @spec build_listeners(Session.Metadata.t(), component(), list(String.t())) ::
           {:ok, map()} | {:error, list()}
   defp build_listeners(session_state, component, listeners) do
     Enum.reduce(listeners, {:ok, %{}}, fn listener, {:ok, acc} ->
@@ -425,7 +421,7 @@ defmodule ApplicationRunner.Widget.Cache do
     end)
   end
 
-  @spec build_listener(Session.State.t(), map()) :: {:ok, map()}
+  @spec build_listener(Session.Metadata.t(), map()) :: {:ok, map()}
   defp build_listener(session_state, listener) do
     case listener do
       %{"action" => action_code} ->

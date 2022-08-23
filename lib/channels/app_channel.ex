@@ -7,55 +7,47 @@ defmodule ApplicationRunner.AppChannel do
     quote do
       use Phoenix.Channel
 
+      alias ApplicationRunner.Environment
       alias ApplicationRunner.Session
 
       alias LenraCommonWeb.ErrorHelpers
 
       alias ApplicationRunner.Errors.{BusinessError, TechnicalError}
 
-      alias ApplicationRunner.Session.{
-        Manager,
-        Managers
-      }
-
       require Logger
 
       def join("app", %{"app" => app_name}, socket) do
         session_id = Ecto.UUID.generate()
         user = socket.assigns.user
+        socket = assign(socket, session_id: session_id)
 
         Logger.debug("Joining channel for app : #{app_name}")
 
         with {:ok, _uuid} <- Ecto.UUID.cast(app_name),
-             %{function_name: function_name} <-
-               get_function_name(app_name),
-             :ok <- allow(user.id, app_name) do
-          socket = assign(socket, session_id: session_id)
-
-          env_id = get_env(app_name)
-
+             function_name <- get_function_name(app_name),
+             :ok <- allow(user.id, app_name),
+             env_id <- get_env(app_name),
+             {:ok, session_token} <- create_session_token(env_id, session_id, user.id),
+             {:ok, env_token} <- create_env_token(env_id) do
           # prepare the assigns to the session/environment
-          session_state = %Session.State{
+          session_metadaata = %Session.Metadata{
+            env_id: env_id,
+            session_id: session_id,
             user_id: user.id,
-            env_id: env_id,
             function_name: function_name,
-            assigns: %{
-              socket_pid: self()
-            },
-            session_id: session_id
+            socket_pid: self(),
+            token: session_token
           }
 
-          env_state = %{
+          env_metdata = %Environment.Metadata{
             env_id: env_id,
             function_name: function_name,
-            assigns: %{}
+            token: env_token
           }
 
-          case ApplicationRunner.AppChannel.start_session(
-                 session_id,
-                 env_id,
-                 session_state,
-                 env_state
+          case Session.start_session(
+                 session_metadaata,
+                 env_metdata
                ) do
             {:ok, session_pid} ->
               {:ok, assign(socket, session_pid: session_pid)}
@@ -86,6 +78,7 @@ defmodule ApplicationRunner.AppChannel do
       end
 
       # Override this function to return the function name according to the server/devtools needs
+      @spec get_function_name(String.t()) :: String.t()
       defp get_function_name(app_name) do
         String.downcase("dev-#{app_name}-1")
       end
@@ -157,15 +150,9 @@ defmodule ApplicationRunner.AppChannel do
     end
   end
 
+  alias ApplicationRunner.Guardian.AppGuardian
   alias ApplicationRunner.Session
   require Logger
-
-  def start_session(session_id, env_id, session_state, env_state) do
-    case Session.start_session(session_id, env_id, session_state, env_state) do
-      {:ok, session_pid} -> {:ok, session_pid}
-      {:error, message} -> {:error, message}
-    end
-  end
 
   def handle_run(socket, code, event \\ %{}) do
     %{
@@ -176,5 +163,23 @@ defmodule ApplicationRunner.AppChannel do
     Session.send_client_event(session_pid, code, event)
 
     {:noreply, socket}
+  end
+
+  def create_env_token(env_id) do
+    with {:ok, token, _claims} <-
+           AppGuardian.encode_and_sign(env_id, %{type: "env", env_id: env_id}) do
+      {:ok, token}
+    end
+  end
+
+  def create_session_token(env_id, session_id, user_id) do
+    with {:ok, token, _claims} <-
+           AppGuardian.encode_and_sign(session_id, %{
+             type: "session",
+             user_id: user_id,
+             env_id: env_id
+           }) do
+      {:ok, token}
+    end
   end
 end

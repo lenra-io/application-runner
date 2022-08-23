@@ -1,11 +1,11 @@
-defmodule ApplicationRunner.Session.Managers do
+defmodule ApplicationRunner.Session.DynamicSupervisor do
   @moduledoc """
     This module handles all the sessions for one app.
     This allows to create/recreate/delete sessions for the app and possibly many other operations on sessions.
   """
   use DynamicSupervisor
 
-  alias ApplicationRunner.{Environments, Session}
+  alias ApplicationRunner.{Environment, Session}
 
   alias ApplicationRunner.Errors.BusinessError
 
@@ -25,14 +25,13 @@ defmodule ApplicationRunner.Session.Managers do
 
   The session should be started with the same session_id if the client socket is disconnected for a short period of time.
   """
-  @spec start_session(term(), term(), term(), term()) ::
+  @spec start_session(term(), term()) ::
           {:error, any} | {:ok, pid()}
-  def start_session(session_id, env_id, session_state, env_state) do
-    with {:ok, _pid} <- Environments.ensure_env_started(env_id, env_state) do
+  def start_session(session_metadata, env_metadata) do
+    with {:ok, _pid} <- Environment.ensure_env_started(env_metadata) do
       DynamicSupervisor.start_child(
-        ApplicationRunner.Session.Managers,
-        {Session.Supervisor,
-         [env_id: env_id, session_id: session_id, session_state: session_state]}
+        __MODULE__,
+        {Session.Supervisor, session_metadata}
       )
     end
   end
@@ -43,9 +42,7 @@ defmodule ApplicationRunner.Session.Managers do
   """
   @spec stop_session(number()) :: :ok | {:error, :app_not_started}
   def stop_session(session_id) do
-    with {:ok, pid} <- fetch_session_manager_pid(session_id) do
-      GenServer.call(pid, :stop)
-    end
+    Supervisor.stop(Session.Supervisor.get_full_name(session_id))
   end
 
   def terminate_session(session_manager_pid) do

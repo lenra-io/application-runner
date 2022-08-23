@@ -7,9 +7,10 @@ defmodule ApplicationRunner.Environment.QueryServer do
     - If the data is updated, it notify the Widget group using Swarm.publish
   """
   use GenServer
+  use SwarmNamed
 
   alias ApplicationRunner.Errors.TechnicalError
-  alias ApplicationRunner.Environment.{MongoInstance, Widget}
+  alias ApplicationRunner.Environment.{MongoInstance, WidgetServer}
   alias LenraCommon.Errors.DevError
   alias QueryParser.{Exec, Parser}
 
@@ -25,19 +26,11 @@ defmodule ApplicationRunner.Environment.QueryServer do
     with {:ok, query} <- Keyword.fetch(opts, :query),
          {:ok, coll} <- Keyword.fetch(opts, :coll),
          {:ok, env_id} <- Keyword.fetch(opts, :env_id) do
-      GenServer.start_link(__MODULE__, opts, name: get_full_name(env_id, coll, query))
+      GenServer.start_link(__MODULE__, opts, name: get_full_name({env_id, coll, query}))
     else
       :error ->
         DevError.exception(message: "QueryServer need a collection, a query and an env_id")
     end
-  end
-
-  def get_full_name(env_id, coll, query) do
-    {:via, :swarm, get_name(env_id, coll, query)}
-  end
-
-  def get_name(env_id, coll, query) do
-    {__MODULE__, env_id, coll, query}
   end
 
   def group_name(session_id) do
@@ -170,9 +163,9 @@ defmodule ApplicationRunner.Environment.QueryServer do
        ) do
     # Since the genserver name depend on coll, we change the name if the coll change.
     # Unregister old name
-    Swarm.unregister_name(get_name(env_id, old_coll, query_str))
+    Swarm.unregister_name(get_name({env_id, old_coll, query_str}))
     # Register new name
-    Swarm.register_name(get_name(env_id, new_coll, query_str), self())
+    Swarm.register_name(get_name({env_id, new_coll, query_str}), self())
     notify_coll_changed(new_coll, state)
     reply_timeout(:ok, Map.put(state, :coll, new_coll))
   end
@@ -235,12 +228,12 @@ defmodule ApplicationRunner.Environment.QueryServer do
   end
 
   defp notify_data_changed(new_data, %{env_id: env_id, query_str: query_str, coll: coll}) do
-    group = Widget.get_widget_group(env_id, coll, query_str)
+    group = WidgetServer.get_group(env_id, coll, query_str)
     Swarm.publish(group, {:data_changed, new_data})
   end
 
   defp notify_coll_changed(new_coll, %{env_id: env_id, query_str: query_str, coll: old_coll}) do
-    group = Widget.get_widget_group(env_id, old_coll, query_str)
+    group = WidgetServer.get_group(env_id, old_coll, query_str)
     Swarm.publish(group, {:coll_changed, new_coll})
   end
 
