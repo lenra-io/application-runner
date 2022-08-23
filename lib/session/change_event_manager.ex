@@ -1,4 +1,8 @@
 defmodule ApplicationRunner.Session.ChangeEventManager do
+  @moduledoc """
+    This module is responsible to broadcast the mongo change event to all the QueryServer.
+    It receive the mongo change event from the Environment.ChangeStream server.
+  """
   use GenServer
 
   alias ApplicationRunner.Environment.QueryServer
