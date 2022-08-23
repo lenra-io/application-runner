@@ -4,7 +4,7 @@ defmodule ApplicationRunner.ApplicationServices do
   """
 
   alias ApplicationRunner.{
-    Environments,
+    Environment,
     Session
   }
 
@@ -27,18 +27,18 @@ defmodule ApplicationRunner.ApplicationServices do
   """
 
   def run_listener(
-        %Environments.State{function_name: function_name, env_id: env_id},
+        %Environment.Metadata{function_name: function_name, env_id: env_id},
         action,
         props,
         event
       ) do
-    token = Environments.fetch_token(env_id)
+    token = Environment.fetch_token(env_id)
 
     run_listener(function_name, action, props, event, token)
   end
 
   def run_listener(
-        %Session.State{function_name: function_name, session_id: session_id},
+        %Session.Metadata{function_name: function_name, session_id: session_id},
         action,
         props,
         event
@@ -48,7 +48,7 @@ defmodule ApplicationRunner.ApplicationServices do
     run_listener(function_name, action, props, event, token)
   end
 
-  @spec run_listener(Environments.State.t(), String.t(), map(), map(), String.t()) ::
+  @spec run_listener(Environment.Metadata.t(), String.t(), map(), map(), String.t()) ::
           {:ok, map()} | {:error, any()}
   defp run_listener(
          function_name,
@@ -89,10 +89,10 @@ defmodule ApplicationRunner.ApplicationServices do
     end
   end
 
-  @spec fetch_widget(Session.State.t(), String.t(), map(), map(), map()) ::
+  @spec fetch_widget(Session.Metadata.t(), String.t(), map(), map(), map()) ::
           {:ok, map()} | {:error, any()}
   def fetch_widget(
-        %Session.State{function_name: function_name},
+        %Session.Metadata{function_name: function_name},
         widget_name,
         data,
         props,
@@ -117,8 +117,8 @@ defmodule ApplicationRunner.ApplicationServices do
     end
   end
 
-  @spec fetch_manifest(Environments.State.t()) :: {:ok, map()} | {:error, any()} | :error404
-  def fetch_manifest(%Environments.State{function_name: function_name}) do
+  @spec fetch_manifest(Environment.Metadata.t()) :: {:ok, map()} | {:error, any()} | :error404
+  def fetch_manifest(%Environment.Metadata{function_name: function_name}) do
     {base_url, base_headers} = get_http_context()
 
     url = "#{base_url}/function/#{function_name}"

@@ -6,11 +6,11 @@ defmodule ApplicationRunner.Ui.Cache do
     If the current ui state already exists, UiCache save the new UI and return the diff JSON Patch between old and new UI state.
   """
   use GenServer
+  use SwarmNamed
 
-  alias ApplicationRunner.Session.{State, Supervisor}
-
-  def start_link(_) do
-    GenServer.start_link(__MODULE__, :ok, [])
+  def start_link(opts) do
+    session_id = Keyword.fetch!(opts, :session_id)
+    GenServer.start_link(__MODULE__, :ok, name: get_full_name(session_id))
   end
 
   def init(:ok) do
@@ -28,8 +28,7 @@ defmodule ApplicationRunner.Ui.Cache do
     end
   end
 
-  def diff_and_save(%State{} = session_state, ui) do
-    pid = Supervisor.fetch_module_pid!(session_state.session_supervisor_pid, __MODULE__)
-    GenServer.call(pid, {:diff_and_save, ui})
+  def diff_and_save(session_id, ui) do
+    GenServer.call(get_full_name(session_id), {:diff_and_save, ui})
   end
 end
