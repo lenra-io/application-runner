@@ -2,13 +2,12 @@ defmodule ApplicationRunner.Session.Metadata do
   @moduledoc """
     The Action struct.
   """
-  @enforce_keys [:session_id, :env_id, :user_id, :function_name, :socket_pid, :token]
+  @enforce_keys [:session_id, :env_id, :user_id, :function_name, :token]
   defstruct [
     :env_id,
     :session_id,
     :user_id,
     :function_name,
-    :socket_pid,
     :token,
     :session_supervisor_pid
   ]
@@ -18,7 +17,6 @@ defmodule ApplicationRunner.Session.Metadata do
           session_id: integer(),
           user_id: term(),
           function_name: String.t(),
-          socket_pid: pid(),
           token: String.t(),
           session_supervisor_pid: pid()
         }

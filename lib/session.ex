@@ -30,7 +30,7 @@ defmodule ApplicationRunner.Session do
 
     Returns :ok
   """
-  defdelegate send_client_event(session_manager_pid, code, event),
+  defdelegate send_client_event(session_id, code, event),
     to: ApplicationRunner.Session.Manager,
     as: :send_client_event
 end

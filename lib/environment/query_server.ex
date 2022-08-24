@@ -54,9 +54,9 @@ defmodule ApplicationRunner.Environment.QueryServer do
     with {:ok, env_id} <- Keyword.fetch(opts, :env_id),
          {:ok, query} <- Keyword.fetch(opts, :query),
          {:ok, coll} <- Keyword.fetch(opts, :coll),
-         {:ok, query_map} <- Poison.decode(query),
+         {:ok, query_map} <- decode_query(query),
          {:ok, data} <- fetch_initial_data(env_id, coll, query_map),
-         {:ok, ast} <- Parser.parse(query, %{}) do
+         {:ok, ast} <- parse_query(query, %{}) do
       {:ok,
        %{
          data: data,
@@ -77,13 +77,40 @@ defmodule ApplicationRunner.Environment.QueryServer do
     end
   end
 
+  defp parse_query(nil, _params) do
+    {:ok, nil}
+  end
+
+  defp parse_query(query, params) do
+    Parser.parse(query, params)
+  end
+
+  defp decode_query(nil) do
+    {:ok, nil}
+  end
+
+  defp decode_query(query) do
+    IO.inspect(query)
+    Poison.decode(query)
+  end
+
+  defp fetch_initial_data(_env_id, coll, query) when is_nil(coll) or is_nil(query) do
+    {:ok, []}
+  end
+
   defp fetch_initial_data(env_id, coll, query) do
+    IO.inspect({env_id, coll, query})
     mongo_name = MongoInstance.get_full_name(env_id)
 
     case Mongo.find(mongo_name, coll, query) do
       {:error, term} -> TechnicalError.mongo_data_fetch_error_tuple(term)
       cursor -> {:ok, Enum.to_list(cursor)}
     end
+  end
+
+  def handle_call({:mongo_event, _event}, _from, %{coll: coll, query: query} = state)
+      when is_nil(coll) or is_nil(query) do
+    {:reply, :ok, state}
   end
 
   def handle_call(

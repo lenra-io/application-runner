@@ -257,12 +257,11 @@ defmodule ApplicationRunner.Session.Manager do
   end
 
   defp send_error(
-         %Session.Metadata{
-           socket_pid: socket_pid
-         },
+         session_metadata,
          error
        ) do
-    send(socket_pid, {:send, :error, error})
+    # send(socket_pid, {:send, :error, error})
+    :ok
   end
 
   # defp stop(session_state, from) do
@@ -270,27 +269,4 @@ defmodule ApplicationRunner.Session.Manager do
   #   if not is_nil(from), do: GenServer.reply(from, :ok)
   #   Managers.terminate_session(self())
   # end
-
-  # defp transform_ui(%{"rootWidget" => root_widget, "widgets" => widgets}) do
-  #   transform(%{"root" => Map.fetch!(widgets, root_widget)}, widgets)
-  # end
-
-  # defp transform(%{"type" => "widget", "id" => id}, widgets) do
-  #   transform(Map.fetch!(widgets, id), widgets)
-  # end
-
-  defp transform(widget, widgets) when is_map(widget) do
-    Enum.map(widget, fn
-      {k, v} -> {k, transform(v, widgets)}
-    end)
-    |> Map.new()
-  end
-
-  defp transform(widget, widgets) when is_list(widget) do
-    Enum.map(widget, &transform(&1, widgets))
-  end
-
-  defp transform(widget, _widgets) do
-    widget
-  end
 end
