@@ -24,7 +24,7 @@ defmodule ApplicationRunner.Environment.WidgetDynSup do
     with {:ok, qs_pid} <- QueryDynSup.ensure_child_started(env_id, coll, query) do
       case start_child(env_id, function_name, widget_uid) do
         {:ok, pid} ->
-          QueryServer.join_group(pid, session_id)
+          QueryServer.join_group(qs_pid, session_id)
           WidgetServer.join_group(pid, env_id, coll, query)
           QueryServer.monitor(qs_pid, pid)
           {:ok, pid}

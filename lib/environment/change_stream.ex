@@ -1,4 +1,10 @@
 defmodule ApplicationRunner.Environment.ChangeStream do
+  @moduledoc """
+    This module listen from database change for the environment.
+    It then broadcast the change to all the Session.ChangeEventManager
+
+    It should never stop.
+  """
   use GenServer
   use SwarmNamed
 

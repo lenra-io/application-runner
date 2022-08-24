@@ -16,3 +16,11 @@ defmodule ApplicationRunner.Environment.MongoInstance do
     ]
   end
 end
+
+defimpl Jason.Encoder, for: BSON.ObjectId do
+  def encode(val, _opts \\ []) do
+    val
+    |> BSON.ObjectId.encode!()
+    |> Jason.encode!()
+  end
+end

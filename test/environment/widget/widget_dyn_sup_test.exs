@@ -2,23 +2,18 @@ defmodule ApplicationRunner.Environment.WidgetDynSupTest do
   use ApplicationRunner.RepoCase, async: false
 
   alias ApplicationRunner.Environment.{
-    QueryDynSup,
     WidgetDynSup,
     WidgetServer,
-    WidgetUid,
-    MongoInstance
+    WidgetUid
   }
 
   alias ApplicationRunner.Environment
 
-  alias ApplicationRunner.Widget.Context
-
   @widget_ui %{widget: %{"text" => "test"}}
 
   @function_name Ecto.UUID.generate()
-  @env_id 42
+  @env_id 43
   @session_id 1337
-  @user_id 1
 
   @env_metadata %Environment.Metadata{
     env_id: @env_id,
@@ -27,9 +22,6 @@ defmodule ApplicationRunner.Environment.WidgetDynSupTest do
   }
 
   setup do
-    # {:ok, _pid} = start_supervised({WidgetDynSup, env_id: @env_id})
-    # {:ok, _pid} = start_supervised({QueryDynSup, env_id: @env_id})
-    # {:ok, _} = start_supervised({Mongo, MongoInstance.config(@env_id)})
     {:ok, _pid} = start_supervised({Environment.Supervisor, @env_metadata})
 
     url = "/function/#{@function_name}"
@@ -38,9 +30,6 @@ defmodule ApplicationRunner.Environment.WidgetDynSupTest do
     |> Bypass.stub("POST", url, &handle_resp/1)
 
     on_exit(fn ->
-      # Swarm.unregister_name(WidgetDynSup.get_name(@env_id))
-      # Swarm.unregister_name(QueryDynSup.get_name(@env_id))
-      # Swarm.unregister_name(MongoInstance.get_name(@env_id))
       Swarm.unregister_name(Environment.Supervisor.get_name(@env_id))
     end)
 
@@ -65,8 +54,7 @@ defmodule ApplicationRunner.Environment.WidgetDynSupTest do
                  widget_uid
                )
 
-      # assert @widget_ui.widget ==
-      #          WidgetServer.get_widget(@env_id, widget_uid)
+      assert @widget_ui.widget == WidgetServer.get_widget(@env_id, widget_uid)
     end
   end
 end

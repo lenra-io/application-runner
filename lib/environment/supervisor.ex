@@ -6,7 +6,14 @@ defmodule ApplicationRunner.Environment.Supervisor do
   use SwarmNamed
 
   alias ApplicationRunner.Environment
-  alias ApplicationRunner.Environment.{ChangeStream, MongoInstance, QueryDynSup, WidgetDynSup}
+
+  alias ApplicationRunner.Environment.{
+    ChangeStream,
+    MongoInstance,
+    QueryDynSup,
+    WidgetDynSup
+  }
+
   alias ApplicationRunner.Session
 
   def start_link(%Environment.Metadata{} = env_metadata) do
