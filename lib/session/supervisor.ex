@@ -20,7 +20,9 @@ defmodule ApplicationRunner.Session.Supervisor do
       # TODO: add module once they done !
       {ApplicationRunner.Session.MetadataAgent, session_metadata},
       # {ApplicationRunner.Session.Token.Agent, opts}
-      ApplicationRunner.EventHandler
+      {Session.ChangeEventManager,
+       env_id: session_metadata.env_id, session_id: session_metadata.session_id}
+      # ApplicationRunner.EventHandler
       # Event.OnUserFirstJoin
       # Event.OnSessionStart
       # UiBuilder

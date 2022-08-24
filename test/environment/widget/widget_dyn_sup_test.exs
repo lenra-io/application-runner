@@ -1,18 +1,19 @@
 defmodule ApplicationRunner.Environment.WidgetDynSupTest do
   use ApplicationRunner.RepoCase, async: false
 
-  alias ApplicationRunner.Environment.WidgetDynSup
+  alias ApplicationRunner.Environment.{
+    WidgetDynSup,
+    WidgetServer,
+    WidgetUid
+  }
 
-  alias ApplicationRunner.{Environment, Session}
-
-  alias ApplicationRunner.Widget.Context
+  alias ApplicationRunner.Environment
 
   @widget_ui %{widget: %{"text" => "test"}}
 
   @function_name Ecto.UUID.generate()
-  @env_id 42
+  @env_id 43
   @session_id 1337
-  @user_id 1
 
   @env_metadata %Environment.Metadata{
     env_id: @env_id,
@@ -20,21 +21,17 @@ defmodule ApplicationRunner.Environment.WidgetDynSupTest do
     token: "abc"
   }
 
-  @session_metadata %Session.Metadata{
-    session_id: @session_id,
-    env_id: @env_id,
-    user_id: @user_id,
-    function_name: @function_name,
-    token: "abc",
-    socket_pid: self()
-  }
-
   setup do
-    {:ok, _pid} = start_supervised({WidgetDynSup, @env_metadata})
+    {:ok, _pid} = start_supervised({Environment.Supervisor, @env_metadata})
+
     url = "/function/#{@function_name}"
 
     Bypass.open(port: 1234)
     |> Bypass.stub("POST", url, &handle_resp/1)
+
+    on_exit(fn ->
+      Swarm.unregister_name(Environment.Supervisor.get_name(@env_id))
+    end)
 
     :ok
   end
@@ -43,20 +40,21 @@ defmodule ApplicationRunner.Environment.WidgetDynSupTest do
     Plug.Conn.resp(conn, 200, Jason.encode!(@widget_ui))
   end
 
-  describe "ApplicationRunner.Environments.WidgetDynSup.ensure_child_started_1/1" do
+  describe "ApplicationRunner.Environments.WidgetDynSup.ensure_child_started/2" do
     test "should start widget genserver with valid opts" do
-      current_widget = %Context{id: 1, name: "test", prefix_path: ""}
+      widget_uid = %WidgetUid{name: "test", coll: "testcoll", query: "{}", props: %{}}
 
-      assert :ok =
+      assert :undefined != Swarm.whereis_name(Environment.WidgetDynSup.get_name(@env_id))
+
+      assert {:ok, _pid} =
                WidgetDynSup.ensure_child_started(
-                 @session_metadata,
-                 current_widget
+                 @env_id,
+                 @session_id,
+                 @function_name,
+                 widget_uid
                )
 
-      name = "#{@session_metadata.env_id}_#{current_widget.name}"
-
-      assert {:ok, @widget_ui.widget} ==
-               GenServer.call({:via, :swarm, name}, :get_widget)
+      assert @widget_ui.widget == WidgetServer.get_widget(@env_id, widget_uid)
     end
   end
 end

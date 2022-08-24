@@ -30,7 +30,7 @@ defmodule ApplicationRunner.EventHandler do
   ## Callbacks ##
   ###############
 
-  def start_link(id: id) do
+  def start_link(_) do
     GenServer.start_link(__MODULE__, [], [])
   end
 
