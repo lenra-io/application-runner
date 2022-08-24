@@ -89,10 +89,10 @@ defmodule ApplicationRunner.ApplicationServices do
     end
   end
 
-  @spec fetch_widget(Session.Metadata.t(), String.t(), map(), map(), map()) ::
+  @spec fetch_widget(String.t(), String.t(), map(), map(), map()) ::
           {:ok, map()} | {:error, any()}
   def fetch_widget(
-        %Session.Metadata{function_name: function_name},
+        function_name,
         widget_name,
         data,
         props,

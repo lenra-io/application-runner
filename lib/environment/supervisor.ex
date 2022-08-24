@@ -6,7 +6,15 @@ defmodule ApplicationRunner.Environment.Supervisor do
   use SwarmNamed
 
   alias ApplicationRunner.Environment
-  alias ApplicationRunner.Environment.MongoInstance
+
+  alias ApplicationRunner.Environment.{
+    ChangeStream,
+    MongoInstance,
+    QueryDynSup,
+    WidgetDynSup
+  }
+
+  alias ApplicationRunner.Session
 
   def start_link(%Environment.Metadata{} = env_metadata) do
     env_id = Map.fetch!(env_metadata, :env_id)
@@ -19,17 +27,17 @@ defmodule ApplicationRunner.Environment.Supervisor do
     children = [
       # TODO: add module once they done !
       {ApplicationRunner.Environment.MetadataAgent, env_metadata},
-      ApplicationRunner.EventHandler,
-      {Mongo, MongoInstance.config(env_metadata.env_id)}
-      # ChangeStream
+      # ApplicationRunner.EventHandler,
+      {Mongo, MongoInstance.config(env_metadata.env_id)},
+      {ChangeStream, env_id: env_metadata.env_id},
       # MongoSessionDynamicSup
       # MongoTransaDynSup
       # {ApplicationRunner.Environment.Task.OnEnvStart, opts}
       # {ApplicationRunner.Environment.ManifestHandler, opts}
       # ApplicationRunner.ListenersCache
-      # QueryDynSup
-      # WidgetDynSup
-      # Session.Managers
+      {QueryDynSup, env_id: env_metadata.env_id},
+      {WidgetDynSup, env_id: env_metadata.env_id},
+      {Session.DynamicSupervisor, env_metadata}
     ]
 
     Supervisor.init(children, strategy: :one_for_one)

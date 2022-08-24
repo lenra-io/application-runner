@@ -3,65 +3,69 @@ defmodule ApplicationRunner.Environment.WidgetServer do
     ApplicationRunner.Environment.Widget get a widget and cache them
   """
   use GenServer
+  use SwarmNamed
 
   alias ApplicationRunner.ApplicationServices
+  alias ApplicationRunner.Environment.{QueryServer, WidgetUid}
 
   # 10 minutes timeout
   @inactivity_timeout 1000 * 60 * 10
 
-  def get_group(env_id, coll, query) do
-    {:widget, env_id, coll, query}
+  def group_name(env_id, coll, query) do
+    {__MODULE__, env_id, coll, query}
+  end
+
+  def join_group(pid, env_id, coll, query) do
+    group = group_name(env_id, coll, query)
+    Swarm.join(group, pid)
+  end
+
+  def get_widget(env_id, widget_uid) do
+    GenServer.call(get_full_name({env_id, widget_uid}), :get_widget)
   end
 
   def start_link(opts) do
-    session_metadata = Keyword.fetch!(opts, :session_metadata)
-    current_widget = Keyword.fetch!(opts, :current_widget)
-    name = "#{session_metadata.env_id}_#{current_widget.name}"
+    env_id = Keyword.fetch!(opts, :env_id)
+    widget_uid = Keyword.fetch!(opts, :widget_uid)
 
-    GenServer.start_link(__MODULE__, opts, name: {:via, :swarm, name})
+    GenServer.start_link(__MODULE__, opts, name: get_full_name({env_id, widget_uid}))
   end
 
   @impl true
   def init(opts) do
-    session_metadata = Keyword.fetch!(opts, :session_metadata)
-    current_widget = Keyword.fetch!(opts, :current_widget)
+    function_name = Keyword.fetch!(opts, :function_name)
+    env_id = Keyword.fetch!(opts, :env_id)
+    %WidgetUid{} = widget_uid = Keyword.fetch!(opts, :widget_uid)
 
-    case ApplicationServices.fetch_widget(
-           session_metadata,
-           current_widget.name,
-           current_widget.data,
-           current_widget.props
-         ) do
-      {:ok, widget} ->
-        state = %{
-          widget_ui: widget,
-          session_metadata: session_metadata,
-          current_widget: current_widget
-        }
+    with data <- QueryServer.get_data(env_id, widget_uid.coll, widget_uid.query),
+         {:ok, widget} <-
+           ApplicationServices.fetch_widget(
+             function_name,
+             widget_uid.name,
+             data,
+             widget_uid.props
+           ) do
+      state = %{
+        widget: widget,
+        function_name: function_name,
+        widget_uid: widget_uid
+      }
 
-        {:ok, state, @inactivity_timeout}
-
+      {:ok, state, @inactivity_timeout}
+    else
       {:error, error} ->
-        raise error
+        {:stop, error}
     end
   end
 
   @impl true
   def handle_info({:data_changed, new_data}, state) do
-    current_widget = Keyword.fetch!(state, :current_widget)
-    session_metadata = Keyword.fetch!(state, :session_metadata)
+    fna = Map.fetch!(state, :function_name)
+    wuid = Map.fetch!(state, :widget_uid)
 
-    current_widget_updated = Map.replace(current_widget, :data, new_data)
-
-    case ApplicationServices.fetch_widget(
-           session_metadata,
-           current_widget_updated.name,
-           current_widget_updated.data,
-           current_widget_updated.props
-         ) do
+    case ApplicationServices.fetch_widget(fna, wuid.name, new_data, wuid.props) do
       {:ok, widget} ->
-        new_state = Keyword.replace(state, :widget_ui, widget)
-        {:noreply, new_state}
+        {:noreply, Map.put(state, :widget, widget), @inactivity_timeout}
 
       {:error, error} ->
         raise error
@@ -70,6 +74,6 @@ defmodule ApplicationRunner.Environment.WidgetServer do
 
   @impl true
   def handle_call(:get_widget, _from, state) do
-    {:reply, {:ok, Map.get(state, :widget_ui)}, state}
+    {:reply, Map.get(state, :widget), state, @inactivity_timeout}
   end
 end

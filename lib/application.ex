@@ -11,7 +11,6 @@ defmodule ApplicationRunner.Application do
       # Start the json validator server for the UI
       ApplicationRunner.JsonSchemata,
       ApplicationRunner.Environment.DynamicSupervisor,
-      ApplicationRunner.Session.DynamicSupervisor,
       {Finch,
        name: AppHttp,
        pools: %{

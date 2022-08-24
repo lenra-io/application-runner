@@ -41,11 +41,11 @@ with:
 - **Session.Managers**: The Sessions dynamic supervisor
 - **Session.Supervisor**: The Session supervisor that start session and all needed genserver
 - QDS: **Query dynamic supervisor**, which starts Q, Q will be placed in the swarm group by the session.
+    - named with `{:via, :swarm, {__MODULE__, env_id}}` 
 - CS: **Change Stream**  
     - Started by Environment.Supervisor
     - Stopped by Environment.Supervisor
     - Notify `{:scm, env_id}`
-    - timeout after X min
     - Jobs: 
         - Notify session change manager on mongo event
 - SCM: **Session Change Manager**
@@ -57,8 +57,8 @@ with:
         - After all Query respond notify UiBuilder to rebuild 
 - Q: **Query**, which listens to the swarm messages sent by QSD and notifies W if the data has changed.
     - Started by Widget
-    - Stopped Automatically after timeout 
-    - Timeout after 10 min
+    - Monitor the Widgets that are using it
+    - Stopped when all monitored Widget are stopped. 
     - In multiple `{__MODULE__, session_id}` groups
     - named with `{:via, :swarm, {__MODULE__, env_id, coll, query}}`
     - Jobs: 
@@ -75,10 +75,11 @@ with:
         - Saved the UI for next send
 - WDS: **Widget dynamic supervisor**, starts the widget.
     - dynamically start widget, requested by UiBuilder
+    - named with `{:via, :swarm, {__MODULE__, env_id}}` 
 - W: **Widget**, cache the widget interface, and listen to Q to rebuild if necessary.
     - Started by UiBuilder
     - Stopped by UiBuilder
-    - In group `{:widget, env_id, coll, query}`
+    - In group `{__MODULE__, env_id, coll, query}`
     - Timeout after X min
     - Jobs:
         - On startup buid ui first time
