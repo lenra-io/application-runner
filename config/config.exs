@@ -21,6 +21,8 @@ config :application_runner,
   mongo_base_url: "mongodb://localhost:27017",
   env: "dev"
 
+# ecto_repos: [ApplicationRunner.Repo]
+
 config :application_runner, ApplicationRunner.Repo,
   database: "file::memory:?cache=shared",
   log: false

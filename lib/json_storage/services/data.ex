@@ -1,4 +1,4 @@
-defmodule ApplicationRunner.JsonStorage.Services.Data do
+defmodule ApplicationRunner.JsonStorage.Services.Document do
   @moduledoc """
     The service that manages actions on data.
   """
