@@ -24,6 +24,10 @@ defmodule ApplicationRunner.Session do
     to: ApplicationRunner.Session.DynamicSupervisor,
     as: :start_session
 
+  defdelegate stop_session(env_id, session_id),
+    to: ApplicationRunner.Session.DynamicSupervisor,
+    as: :stop_session
+
   @doc """
     Send an async call to the application,
     The call will run listeners for the given code `code` and `event`

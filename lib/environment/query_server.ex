@@ -90,7 +90,6 @@ defmodule ApplicationRunner.Environment.QueryServer do
   end
 
   defp decode_query(query) do
-    IO.inspect(query)
     Poison.decode(query)
   end
 
@@ -99,7 +98,6 @@ defmodule ApplicationRunner.Environment.QueryServer do
   end
 
   defp fetch_initial_data(env_id, coll, query) do
-    IO.inspect({env_id, coll, query})
     mongo_name = MongoInstance.get_full_name(env_id)
 
     case Mongo.find(mongo_name, coll, query) do

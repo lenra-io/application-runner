@@ -19,18 +19,35 @@ defmodule ApplicationRunner.EnvironmentTest do
     user_id: @user_id,
     session_id: @session_id,
     function_name: @function_name,
-    token: "abcd",
-    socket_pid: self()
+    token: "abcd"
   }
 
   setup do
     bypass = Bypass.open(port: 1234)
 
+    Bypass.stub(bypass, "POST", @url, fn conn ->
+      {:ok, body, conn} = Plug.Conn.read_body(conn)
+
+      case Jason.decode(body) do
+        {:ok, json} ->
+          data = Map.get(json, "data")
+
+          Plug.Conn.resp(
+            conn,
+            200,
+            Jason.encode!(%{widget: %{"type" => "text", "value" => Jason.encode!(data)}})
+          )
+
+        {:error, _} ->
+          Plug.Conn.resp(conn, 200, Jason.encode!(%{manifest: %{"rootWidget" => "main"}}))
+      end
+    end)
+
     {:ok, %{bypass: bypass}}
   end
 
   test "Check that all dependancies are started and correctly named" do
-    Session.start_session(@session_metadata, @env_metadata)
+    assert {:ok, pid} = Session.start_session(@session_metadata, @env_metadata)
 
     assert :undefined != Swarm.whereis_name(Environment.Supervisor.get_name(@env_id))
     assert :undefined != Swarm.whereis_name(Environment.MetadataAgent.get_name(@env_id))
@@ -42,21 +59,16 @@ defmodule ApplicationRunner.EnvironmentTest do
 
     assert :undefined != Swarm.whereis_name(Session.MetadataAgent.get_name(@session_id))
     assert :undefined != Swarm.whereis_name(Session.ChangeEventManager.get_name(@session_id))
+
+    on_exit(fn ->
+      Session.stop_session(@env_id, @session_id)
+      Swarm.unregister_name(Session.Supervisor.get_name(@session_id))
+    end)
   end
 
   test "Integration test, check that the UI change when the mongo db coll change", %{
     bypass: bypass
   } do
-    # Setup the stub that will return the data in text component
-    Bypass.stub(bypass, "POST", @url, fn conn ->
-      {:ok, body, conn} = Plug.Conn.read_body(conn)
-      json = Jason.decode!(body)
-
-      data = Map.get(json, "data")
-
-      Plug.Conn.resp(conn, 200, Jason.encode!(%{widget: %{"text" => Jason.encode!(data)}}))
-    end)
-
     # Setup, start env and reset coll
     coll = "init_test"
     Environment.DynamicSupervisor.ensure_env_started(@env_metadata)
@@ -85,7 +97,9 @@ defmodule ApplicationRunner.EnvironmentTest do
 
     # Get the actual data and compare
     encoded_data = Mongo.find(mongo_name, coll, query) |> Enum.to_list() |> Jason.encode!()
-    assert %{"text" => ^encoded_data} = Environment.WidgetServer.get_widget(@env_id, widget_uid)
+
+    assert %{"type" => "text", "value" => ^encoded_data} =
+             Environment.WidgetServer.get_widget(@env_id, widget_uid)
 
     # Add one more data, get it and compare
     %{inserted_id: data_id} = Mongo.insert_one!(mongo_name, coll, %{"foo" => "bar"})
@@ -93,7 +107,9 @@ defmodule ApplicationRunner.EnvironmentTest do
     # Wait for the widget to receive the new data
     # TODO : Remove this and wait for the ui_builder to receive the UI
     :timer.sleep(100)
-    assert %{"text" => ^encoded_data} = Environment.WidgetServer.get_widget(@env_id, widget_uid)
+
+    assert %{"type" => "text", "value" => ^encoded_data} =
+             Environment.WidgetServer.get_widget(@env_id, widget_uid)
 
     # Update the latest data and compare
     Mongo.update_one(mongo_name, coll, %{"_id" => data_id}, %{"$set" => %{"foo" => "baz"}})
@@ -101,6 +117,13 @@ defmodule ApplicationRunner.EnvironmentTest do
     assert Enum.count(data) == 1
     encoded_data = Jason.encode!(data)
     :timer.sleep(100)
-    assert %{"text" => ^encoded_data} = Environment.WidgetServer.get_widget(@env_id, widget_uid)
+
+    assert %{"type" => "text", "value" => ^encoded_data} =
+             Environment.WidgetServer.get_widget(@env_id, widget_uid)
+
+    on_exit(fn ->
+      Session.stop_session(@env_id, @session_id)
+      Swarm.unregister_name(Session.Supervisor.get_name(@session_id))
+    end)
   end
 end

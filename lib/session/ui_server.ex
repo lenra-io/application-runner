@@ -23,8 +23,6 @@ defmodule ApplicationRunner.Session.UiServer do
   def init(opts) do
     session_id = Keyword.fetch!(opts, :session_id)
 
-    IO.inspect({__MODULE__, "starting"})
-
     with {:ok, ui} <- load_ui(session_id) do
       send_to_channel(session_id, :ui, ui)
       {:ok, %{session_id: session_id, ui: ui}}
