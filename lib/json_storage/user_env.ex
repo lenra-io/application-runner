@@ -17,7 +17,7 @@ defmodule ApplicationRunner.JsonStorage.UserEnv do
 
   def changeset(userEnv, params \\ %{}) do
     userEnv
-    |> cast(params, [])
+    |> cast(params, [:environment_id, :user_id])
     |> validate_required([])
   end
 
