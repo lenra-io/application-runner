@@ -9,6 +9,7 @@ defmodule ApplicationRunner.AppChannel do
 
       alias ApplicationRunner.Environment
       alias ApplicationRunner.Session
+      alias ApplicationRunner.Guardian.AppGuardian
 
       alias LenraCommonWeb.ErrorHelpers
 
@@ -146,11 +147,28 @@ defmodule ApplicationRunner.AppChannel do
         ApplicationRunner.AppChannel.handle_run(socket, code)
       end
 
+      def create_env_token(env_id) do
+        with {:ok, token, _claims} <-
+               AppGuardian.encode_and_sign(env_id, %{type: "env", env_id: env_id}) do
+          {:ok, token}
+        end
+      end
+
+      def create_session_token(env_id, session_id, user_id) do
+        with {:ok, token, _claims} <-
+               AppGuardian.encode_and_sign(session_id, %{
+                 type: "session",
+                 user_id: user_id,
+                 env_id: env_id
+               }) do
+          {:ok, token}
+        end
+      end
+
       defoverridable allow: 2, get_function_name: 1, get_env: 1
     end
   end
 
-  alias ApplicationRunner.Guardian.AppGuardian
   alias ApplicationRunner.Session
   require Logger
 
@@ -163,23 +181,5 @@ defmodule ApplicationRunner.AppChannel do
     Session.send_client_event(session_pid, code, event)
 
     {:noreply, socket}
-  end
-
-  def create_env_token(env_id) do
-    with {:ok, token, _claims} <-
-           AppGuardian.encode_and_sign(env_id, %{type: "env", env_id: env_id}) do
-      {:ok, token}
-    end
-  end
-
-  def create_session_token(env_id, session_id, user_id) do
-    with {:ok, token, _claims} <-
-           AppGuardian.encode_and_sign(session_id, %{
-             type: "session",
-             user_id: user_id,
-             env_id: env_id
-           }) do
-      {:ok, token}
-    end
   end
 end
