@@ -1,19 +1,9 @@
-defmodule ApplicationRunner.JsonStorage.Services.Document do
+defmodule ApplicationRunner.MongoStorage.Document do
   @moduledoc """
     The service that manages actions on data.
   """
 
-  alias ApplicationRunner.JsonStorage.{
-    Document,
-    Services
-  }
-
   alias ApplicationRunner.Environment.MongoInstance
-
-  alias ApplicationRunner.Errors.{BusinessError, TechnicalError}
-  import Ecto.Query, only: [from: 2]
-
-  @repo Application.compile_env!(:application_runner, :repo)
 
   def parse_and_exec_query(env_id, coll, query) do
     env_id

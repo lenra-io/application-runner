@@ -1,4 +1,4 @@
-defmodule ApplicationRunner.JsonStorage.UserEnv do
+defmodule ApplicationRunner.Contract.UserEnv do
   @moduledoc """
     The user "contract" schema.
         This give ApplicationRunner an interface to match with the "real" user for both the Devtool and the Lenra server

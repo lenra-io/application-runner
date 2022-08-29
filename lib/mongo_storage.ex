@@ -1,4 +1,4 @@
-defmodule ApplicationRunner.JsonStorage do
+defmodule ApplicationRunner.MongoStorage do
   @moduledoc """
     ApplicationRunner.JsonStorage handles all data logic.
     We can find delegate function to associate Services.

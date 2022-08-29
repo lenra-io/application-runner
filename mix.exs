@@ -71,6 +71,12 @@ defmodule ApplicationRunner.MixProject do
         "ecto.migrate",
         "test"
       ],
+      "ecto.migrations": [
+        "ecto.migrations --migrations-path priv/repo/migrations --migrations-path priv/repo/test_migrations"
+      ],
+      "ecto.migrate": [
+        "ecto.migrate --migrations-path priv/repo/migrations --migrations-path priv/repo/test_migrations"
+      ],
       "ecto.setup": ["ecto.create", "ecto.migrate"],
       "ecto.reset": ["ecto.drop", "ecto.setup"]
     ]
