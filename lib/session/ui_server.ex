@@ -26,21 +26,22 @@ defmodule ApplicationRunner.Session.UiServer do
     IO.inspect({__MODULE__, "starting"})
 
     with {:ok, ui} <- load_ui(session_id) do
-      send(session_id, :ui, ui)
+      send_to_channel(session_id, :ui, ui)
       {:ok, %{session_id: session_id, ui: ui}}
     else
       err ->
+        send_to_channel(session_id, :error, err)
         {:stop, err}
     end
   end
 
   def handle_cast(:rebuild, %{session_id: session_id, ui: old_ui} = state) do
     with {:ok, ui} <- load_ui(session_id) do
-      send(session_id, :patches, JSONDiff.diff(old_ui, ui))
+      send_to_channel(session_id, :patches, JSONDiff.diff(old_ui, ui))
       {:noreply, Map.put(state, :ui, ui)}
     else
       err ->
-        send(session_id, :error, err)
+        send_to_channel(session_id, :error, err)
         {:noreply, state}
     end
   end
@@ -79,7 +80,7 @@ defmodule ApplicationRunner.Session.UiServer do
     widget
   end
 
-  defp send(session_id, atom, stuff) do
+  defp send_to_channel(session_id, atom, stuff) do
     Swarm.publish(AppChannel.get_group(session_id), {:send, atom, stuff})
   end
 
