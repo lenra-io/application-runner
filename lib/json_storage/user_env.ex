@@ -1,4 +1,4 @@
-defmodule ApplicationRunner.Contract.UserEnv do
+defmodule ApplicationRunner.JsonStorage.UserEnv do
   @moduledoc """
     The user "contract" schema.
         This give ApplicationRunner an interface to match with the "real" user for both the Devtool and the Lenra server
@@ -15,8 +15,8 @@ defmodule ApplicationRunner.Contract.UserEnv do
     timestamps()
   end
 
-  def changeset(user, params \\ %{}) do
-    user
+  def changeset(userEnv, params \\ %{}) do
+    userEnv
     |> cast(params, [])
     |> validate_required([])
   end
