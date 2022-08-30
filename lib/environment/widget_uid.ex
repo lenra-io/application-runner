@@ -7,13 +7,17 @@ defmodule ApplicationRunner.Environment.WidgetUid do
     :name,
     :props,
     :query,
-    :coll
+    :context,
+    :coll,
+    prefix_path: ""
   ]
 
   @type t :: %__MODULE__{
           name: String.t(),
           props: map() | nil,
-          query: String.t(),
-          coll: String.t()
+          query: String.t() | nil,
+          coll: String.t() | nil,
+          context: map() | nil,
+          prefix_path: String.t()
         }
 end
