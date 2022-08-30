@@ -12,4 +12,8 @@ defmodule ApplicationRunner.Ui.Context do
           widgets_map: map(),
           listeners_map: map()
         }
+
+  def new do
+    %__MODULE__{widgets_map: %{}, listeners_map: %{}}
+  end
 end

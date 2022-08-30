@@ -1,95 +1,102 @@
 defmodule ApplicationRunner.DataController do
   use ApplicationRunner, :controller
 
-  alias ApplicationRunner.{Guardian.AppGuardian.Plug, JsonStorage}
+  #  alias ApplicationRunner.{Guardian.AppGuardian.Plug, JsonStorage}
 
-  def get(conn, params) do
-    with session_assigns <- Plug.current_resource(conn),
-         result <-
-           JsonStorage.get_data(
-             session_assigns.environment.id,
-             params["datastore"],
-             params["id"]
-           ) do
-      conn
-      |> assign_data(result.data)
-      |> reply
-    end
+  def get(conn, _params) do
+    # with session_assigns <- Plug.current_resource(conn),
+    #      result <-
+    #        JsonStorage.get_data(
+    #          session_assigns.environment.id,
+    #          params["datastore"],
+    #          params["id"]
+    #        ) do
+    #   conn
+    #   |> assign_data(result.data)
+    #   |> reply
+    # end
+    reply(conn)
   end
 
-  def get_all(conn, params) do
-    with session_assigns <- Plug.current_resource(conn),
-         result <- JsonStorage.get_all_data(session_assigns.environment.id, params["datastore"]) do
-      conn
-      |> assign_data(Enum.map(result, fn r -> r.data end))
-      |> reply
-    end
+  def get_all(conn, _params) do
+    # with session_assigns <- Plug.current_resource(conn),
+    #      result <- JsonStorage.get_all_data(session_assigns.environment.id, params["datastore"]) do
+    #   conn
+    #   |> assign_data(Enum.map(result, fn r -> r.data end))
+    #   |> reply
+    # end
+    reply(conn)
   end
 
   def get_current_user_data(conn, _params) do
-    with session_assigns <- Plug.current_resource(conn),
-         result <-
-           JsonStorage.get_current_user_data(
-             session_assigns.environment.id,
-             session_assigns.user.id
-           ) do
-      conn
-      |> assign_data(result)
-      |> reply
-    end
+    # with session_assigns <- Plug.current_resource(conn),
+    #      result <-
+    #        JsonStorage.get_current_user_data(
+    #          session_assigns.environment.id,
+    #          session_assigns.user.id
+    #        ) do
+    #   conn
+    #   |> assign_data(result)
+    #   |> reply
+    # end
+    reply(conn)
   end
 
   def create(conn, _params) do
-    params =
-      reformat_params_with_underscore(conn.body_params, conn.path_params, ["_datastore", "_id"])
+    # params =
+    #   reformat_params_with_underscore(conn.body_params, conn.path_params, ["_datastore", "_id"])
 
-    with session_assigns <- Plug.current_resource(conn),
-         {:ok, %{inserted_data: data}} <-
-           JsonStorage.create_data(session_assigns.environment.id, params) do
-      conn
-      |> assign_data(data)
-      |> reply
-    end
+    # with session_assigns <- Plug.current_resource(conn),
+    #      {:ok, %{inserted_data: data}} <-
+    #        JsonStorage.create_data(session_assigns.environment.id, params) do
+    #   conn
+    #   |> assign_data(data)
+    #   |> reply
+    # end
+    reply(conn)
   end
 
   def update(conn, _params) do
-    params =
-      reformat_params_with_underscore(conn.body_params, conn.path_params, ["_datastore", "_id"])
+    # params =
+    #   reformat_params_with_underscore(conn.body_params, conn.path_params, ["_datastore", "_id"])
 
-    with session_assigns <- Plug.current_resource(conn),
-         {:ok, %{updated_data: data}} <-
-           JsonStorage.update_data(session_assigns.environment.id, params) do
-      conn
-      |> assign_data(data)
-      |> reply
-    end
+    # with session_assigns <- Plug.current_resource(conn),
+    #      {:ok, %{updated_data: data}} <-
+    #        JsonStorage.update_data(session_assigns.environment.id, params) do
+    #   conn
+    #   |> assign_data(data)
+    #   |> reply
+    # end
+    reply(conn)
   end
 
   def delete(conn, _params) do
-    params =
-      reformat_params_with_underscore(conn.body_params, conn.path_params, ["_datastore", "_id"])
+    # params =
+    #   reformat_params_with_underscore(conn.body_params, conn.path_params, ["_datastore", "_id"])
 
-    with session_assigns <- Plug.current_resource(conn),
-         {:ok, %{deleted_data: data}} <-
-           JsonStorage.delete_data(session_assigns.environment.id, params["_id"]) do
-      conn
-      |> assign_data(data)
-      |> reply
-    end
+    # with session_assigns <- Plug.current_resource(conn),
+    #      {:ok, %{deleted_data: data}} <-
+    #        JsonStorage.delete_data(session_assigns.environment.id, params["_id"]) do
+    #   conn
+    #   |> assign_data(data)
+    #   |> reply
+    # end
+    reply(conn)
   end
 
-  def query(conn, params) do
-    with session_assigns <- Plug.current_resource(conn),
-         data <-
-           JsonStorage.parse_and_exec_query(
-             params,
-             session_assigns.environment.id,
-             session_assigns.user.id
-           ) do
-      conn
-      |> assign_data(data)
-      |> reply
-    end
+  def query(conn, _params) do
+    # with session_assigns <- Plug.current_resource(conn),
+    #      data <-
+    #        JsonStorage.parse_and_exec_query(
+    #          params,
+    #          session_assigns.environment.id,
+    #          session_assigns.user.id
+    #        ) do
+    #   conn
+    #   |> assign_data(data)
+    #   |> reply
+    # end
+    reply(conn)
   end
 
   # On the phoenix controller the body and path params (variable in the route) create a "params" object.
@@ -103,16 +110,16 @@ defmodule ApplicationRunner.DataController do
   # :error
   # !!! Since "id" is a valid json_data the dev can provide, we must first transform only the path_params
   # to add the underscores. Only then we can merge this transformed params to the body_params.
-  defp reformat_params_with_underscore(body_params, path_params, key_list) do
-    Enum.reduce(key_list, path_params, &reformat_param_with_underscore/2)
-    |> Map.merge(body_params)
-  end
+  # defp reformat_params_with_underscore(body_params, path_params, key_list) do
+  #   Enum.reduce(key_list, path_params, &reformat_param_with_underscore/2)
+  #   |> Map.merge(body_params)
+  # end
 
-  defp reformat_param_with_underscore("_" <> key = u_key, path_params) do
-    value = Map.get(path_params, key)
+  # defp reformat_param_with_underscore("_" <> key = u_key, path_params) do
+  #   value = Map.get(path_params, key)
 
-    path_params
-    |> Map.put(u_key, value)
-    |> Map.delete(key)
-  end
+  #   path_params
+  #   |> Map.put(u_key, value)
+  #   |> Map.delete(key)
+  # end
 end

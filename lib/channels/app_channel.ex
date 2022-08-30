@@ -1,4 +1,7 @@
+# credo:disable-for-this-file Credo.Check.Refactor.LongQuoteBlocks
 defmodule ApplicationRunner.AppChannel do
+  use SwarmNamed
+
   @moduledoc """
     `ApplicationRunner.AppChannel` handle the app channel to run app and listeners and push to the user the resulted UI or Patch
   """
@@ -8,6 +11,7 @@ defmodule ApplicationRunner.AppChannel do
       use Phoenix.Channel
 
       alias ApplicationRunner.Environment
+      alias ApplicationRunner.Guardian.AppGuardian
       alias ApplicationRunner.Session
 
       alias LenraCommonWeb.ErrorHelpers
@@ -17,11 +21,30 @@ defmodule ApplicationRunner.AppChannel do
       require Logger
 
       def join("app", %{"app" => app_name}, socket) do
+        Logger.debug("Joining channel for app : #{app_name}")
+
+        with {:ok, env_metadata, session_metadata} <- create_metadatas(app_name),
+             {:ok, session_pid} <- Session.start_session(session_metadata, env_metdata) do
+          Swarm.register_name(get_name(session_id))
+          Swarm.join(get_group(session_id))
+          {:ok, assign(socket, session_pid: session_pid)}
+        else
+          # Application error
+          {:error, reason} when is_bitstring(reason) ->
+            {:error, %{message: reason, reason: "application_error"}}
+
+          {:error, reason} when is_struct(reason) ->
+            {:error, %{error: ErrorHelpers.translate_error(reason)}}
+        end
+      end
+
+      def join("app", _any, _socket) do
+        BusinessError.no_app_found_tuple()
+      end
+
+      defp create_metadatas(socket, app_name) do
         session_id = Ecto.UUID.generate()
         user = socket.assigns.user
-        socket = assign(socket, session_id: session_id)
-
-        Logger.debug("Joining channel for app : #{app_name}")
 
         with {:ok, _uuid} <- Ecto.UUID.cast(app_name),
              function_name <- get_function_name(app_name),
@@ -30,12 +53,11 @@ defmodule ApplicationRunner.AppChannel do
              {:ok, session_token} <- create_session_token(env_id, session_id, user.id),
              {:ok, env_token} <- create_env_token(env_id) do
           # prepare the assigns to the session/environment
-          session_metadaata = %Session.Metadata{
+          session_metadata = %Session.Metadata{
             env_id: env_id,
             session_id: session_id,
             user_id: user.id,
             function_name: function_name,
-            socket_pid: self(),
             token: session_token
           }
 
@@ -45,20 +67,7 @@ defmodule ApplicationRunner.AppChannel do
             token: env_token
           }
 
-          case Session.start_session(
-                 session_metadaata,
-                 env_metdata
-               ) do
-            {:ok, session_pid} ->
-              {:ok, assign(socket, session_pid: session_pid)}
-
-            # Application error
-            {:error, reason} when is_bitstring(reason) ->
-              {:error, %{message: reason, reason: "application_error"}}
-
-            {:error, reason} when is_struct(reason) ->
-              {:error, %{error: ErrorHelpers.translate_error(reason)}}
-          end
+          {:ok, env_metdata, session_metadata}
         else
           {:error, :forbidden} ->
             {:error, ErrorHelpers.translate_error(BusinessError.no_app_found())}
@@ -66,10 +75,6 @@ defmodule ApplicationRunner.AppChannel do
           err ->
             BusinessError.no_app_found_tuple()
         end
-      end
-
-      def join("app", _any, _socket) do
-        BusinessError.no_app_found_tuple()
       end
 
       # Override this function to allow user or not according to the server/devtools needs
@@ -146,6 +151,14 @@ defmodule ApplicationRunner.AppChannel do
         ApplicationRunner.AppChannel.handle_run(socket, code)
       end
 
+      def create_env_token(env_id) do
+        ApplicationRunner.AppChannel.do_create_env_token(env_id)
+      end
+
+      def create_session_token(env_id, session_id, user_id) do
+        ApplicationRunner.AppChannel.do_create_session_token(env_id, session_id, user_id)
+      end
+
       defoverridable allow: 2, get_function_name: 1, get_env: 1
     end
   end
@@ -156,23 +169,23 @@ defmodule ApplicationRunner.AppChannel do
 
   def handle_run(socket, code, event \\ %{}) do
     %{
-      session_pid: session_pid
+      session_id: session_id
     } = socket.assigns
 
     Logger.debug("Handle run #{code}")
-    Session.send_client_event(session_pid, code, event)
+    Session.send_client_event(session_id, code, event)
 
     {:noreply, socket}
   end
 
-  def create_env_token(env_id) do
+  def do_create_env_token(env_id) do
     with {:ok, token, _claims} <-
            AppGuardian.encode_and_sign(env_id, %{type: "env", env_id: env_id}) do
       {:ok, token}
     end
   end
 
-  def create_session_token(env_id, session_id, user_id) do
+  def do_create_session_token(env_id, session_id, user_id) do
     with {:ok, token, _claims} <-
            AppGuardian.encode_and_sign(session_id, %{
              type: "session",
@@ -181,5 +194,9 @@ defmodule ApplicationRunner.AppChannel do
            }) do
       {:ok, token}
     end
+  end
+
+  def get_group(session_id) do
+    {__MODULE__, session_id}
   end
 end

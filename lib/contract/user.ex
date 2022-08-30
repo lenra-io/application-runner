@@ -7,11 +7,8 @@ defmodule ApplicationRunner.Contract.User do
   use Ecto.Schema
   import Ecto.Changeset
 
-  alias ApplicationRunner.JsonStorage.UserData
-
   @table_name Application.compile_env!(:application_runner, :lenra_user_table)
   schema @table_name do
-    has_many(:user_datas, UserData, foreign_key: :user_id)
     field(:email, :string)
     timestamps()
   end
