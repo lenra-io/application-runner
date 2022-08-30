@@ -8,7 +8,27 @@ defmodule ApplicationRunner.MongoStorage do
   alias ApplicationRunner.MongoStorage.MongoUserLink
   @repo Application.compile_env(:application_runner, :repo)
 
-  # alias ApplicationRunner.JsonStorage.Services
+  alias ApplicationRunner.{Environment}
+  alias ApplicationRunner.MongoStorage.MongoUserLink
+  alias ApplicationRunner.Errors.TechnicalError
+  alias LenraCommon.Errors.TechnicalError, as: TechnicalErrorType
+
+  import Ecto.Query
+
+  defp mongo_instance(env_id) do
+    Environment.MongoInstance.get_full_name(env_id)
+  end
+
+  #################
+  # MongoUserLink #
+  #################
+
+  @spec get_mongo_user_link!(Ecto.Repo.t(), number(), number()) :: any
+  def get_mongo_user_link!(repo, env_id, user_id) do
+    repo.one!(
+      from(mul in MongoUserLink, where: mul.user_id == ^user_id and mul.environment_id == ^env_id)
+    )
+  end
 
   def has_user_link?(env_id, user_id) do
     query =
@@ -30,31 +50,111 @@ defmodule ApplicationRunner.MongoStorage do
 
   # defdelegate create_data(environment_id, params), to: Services.Data, as: :create
 
+  @spec create_doc(number(), String.t(), map()) :: :ok | {:error, TechnicalErrorType.t()}
+  def create_doc(env_id, coll, doc) do
+    env_id
+    |> mongo_instance()
+    |> Mongo.insert_one(coll, doc)
+    |> case do
+      {:error, err} ->
+        TechnicalError.mongo_error_tuple(err)
+
+      _res ->
+        :ok
+    end
+  end
+
   # defdelegate parse_and_exec_query(env_id, coll, query),
   #   to: Services.Data,
   #   as: :parse_and_exec_query
 
-  # defdelegate get_data(env_id, coll, data_id), to: Services.Data, as: :get
+  @spec fetch_doc(number(), String.t(), String.t()) ::
+          {:ok, map()} | {:error, TechnicalErrorType.t()}
+  def fetch_doc(env_id, coll, doc_id) do
+    with {:ok, bson_doc_id} <- BSON.ObjectId.decode(doc_id) do
+      env_id
+      |> mongo_instance()
+      |> Mongo.find_one(coll, %{"_id" => bson_doc_id})
+      |> case do
+        {:error, err} -> TechnicalError.mongo_error_tuple(err)
+        res -> {:ok, res}
+      end
+    end
+  end
 
-  # defdelegate get_all_data(env_id, coll), to: Services.Data, as: :get_all
+  @spec fetch_all_docs(number(), String.t()) ::
+          {:ok, list(map())} | {:error, TechnicalErrorType.t()}
+  def fetch_all_docs(env_id, coll) do
+    env_id
+    |> mongo_instance()
+    |> Mongo.find(coll, %{})
+    |> case do
+      {:error, err} ->
+        TechnicalError.mongo_error_tuple(err)
 
-  # defdelegate get_current_user_data(env_id, user_id),
-  #   to: Services.Data,
-  #   as: :get_current_user_data
+      cursor ->
+        {:ok, Enum.to_list(cursor)}
+    end
+  end
 
-  # defdelegate update_data(environment_id, params), to: Services.Data, as: :update
+  @spec filter_docs(number(), String.t(), map()) ::
+          {:ok, list(map())} | {:error, TechnicalErrorType.t()}
+  def filter_docs(env_id, coll, filter) do
+    env_id
+    |> mongo_instance()
+    |> Mongo.find(coll, filter)
+    |> case do
+      {:error, err} ->
+        TechnicalError.mongo_error_tuple(err)
 
-  # defdelegate delete_data(environment_id, params), to: Services.Data, as: :delete
+      cursor ->
+        {:ok, Enum.to_list(cursor)}
+    end
+  end
+
+  @spec update_doc(number(), String.t(), String.t(), map()) ::
+          :ok | {:error, TechnicalErrorType.t()}
+  def update_doc(env_id, coll, doc_id, new_doc) do
+    env_id
+    |> mongo_instance()
+    |> Mongo.update_one(coll, %{"_id" => doc_id}, new_doc)
+    |> case do
+      {:error, err} ->
+        TechnicalError.mongo_error_tuple(err)
+
+      _res ->
+        :ok
+    end
+  end
+
+  @spec delete_doc(number(), String.t(), String.t()) :: :ok | {:error, TechnicalErrorType.t()}
+  def delete_doc(env_id, coll, doc_id) do
+    env_id
+    |> mongo_instance()
+    |> Mongo.delete_one(coll, %{"_id" => doc_id})
+    |> case do
+      {:error, err} ->
+        TechnicalError.mongo_error_tuple(err)
+
+      _res ->
+        :ok
+    end
+  end
 
   #############
   # DATASTORE #
   #############
 
-  # defdelegate create_datastore(environment_id, params), to: Services.Datastore, as: :create
-
-  # defdelegate update_datastore(datastore_id, params), to: Services.Datastore, as: :update
-
-  # defdelegate delete_datastore(datastore_id), to: Services.Datastore, as: :delete
+  @spec delete_coll(number(), String.t()) :: :ok | TechnicalErrorType.t()
+  def delete_coll(env_id, coll) do
+    env_id
+    |> mongo_instance()
+    |> Mongo.drop_collection(coll)
+    |> case do
+      {:error, err} -> TechnicalError.mongo_error(err)
+      :ok -> :ok
+    end
+  end
 
   #############
   # USERDATA #

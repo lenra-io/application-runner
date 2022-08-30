@@ -101,7 +101,7 @@ defmodule ApplicationRunner.Environment.QueryServer do
     mongo_name = MongoInstance.get_full_name(env_id)
 
     case Mongo.find(mongo_name, coll, query) do
-      {:error, term} -> TechnicalError.mongo_data_fetch_error_tuple(term)
+      {:error, term} -> TechnicalError.mongo_error_tuple(term)
       cursor -> {:ok, Enum.to_list(cursor)}
     end
   end
