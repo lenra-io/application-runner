@@ -102,7 +102,6 @@ defmodule ApplicationRunner.ApplicationServices do
     {base_url, base_headers} = get_http_context()
 
     url = "#{base_url}/function/#{function_name}"
-
     headers = [{"Content-Type", "application/json"} | base_headers]
     body = Jason.encode!(%{widget: widget_name, data: data, props: props})
 

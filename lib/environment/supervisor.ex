@@ -27,6 +27,7 @@ defmodule ApplicationRunner.Environment.Supervisor do
     children = [
       # TODO: add module once they done !
       {ApplicationRunner.Environment.MetadataAgent, env_metadata},
+      {ApplicationRunner.Environment.ManifestHandler, env_metadata},
       # ApplicationRunner.EventHandler,
       {Mongo, MongoInstance.config(env_metadata.env_id)},
       {ChangeStream, env_id: env_metadata.env_id},

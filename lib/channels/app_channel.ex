@@ -1,5 +1,7 @@
 # credo:disable-for-this-file Credo.Check.Refactor.LongQuoteBlocks
 defmodule ApplicationRunner.AppChannel do
+  use SwarmNamed
+
   @moduledoc """
     `ApplicationRunner.AppChannel` handle the app channel to run app and listeners and push to the user the resulted UI or Patch
   """
@@ -23,6 +25,8 @@ defmodule ApplicationRunner.AppChannel do
 
         with {:ok, env_metadata, session_metadata} <- create_metadatas(app_name),
              {:ok, session_pid} <- Session.start_session(session_metadata, env_metdata) do
+          Swarm.register_name(get_name(session_id))
+          Swarm.join(get_group(session_id))
           {:ok, assign(socket, session_pid: session_pid)}
         else
           # Application error
@@ -54,7 +58,6 @@ defmodule ApplicationRunner.AppChannel do
             session_id: session_id,
             user_id: user.id,
             function_name: function_name,
-            socket_pid: self(),
             token: session_token
           }
 
@@ -162,8 +165,18 @@ defmodule ApplicationRunner.AppChannel do
 
   alias ApplicationRunner.Guardian.AppGuardian
   alias ApplicationRunner.Session
-
   require Logger
+
+  def handle_run(socket, code, event \\ %{}) do
+    %{
+      session_id: session_id
+    } = socket.assigns
+
+    Logger.debug("Handle run #{code}")
+    Session.send_client_event(session_id, code, event)
+
+    {:noreply, socket}
+  end
 
   def do_create_env_token(env_id) do
     with {:ok, token, _claims} <-
@@ -183,14 +196,7 @@ defmodule ApplicationRunner.AppChannel do
     end
   end
 
-  def handle_run(socket, code, event \\ %{}) do
-    %{
-      session_pid: session_pid
-    } = socket.assigns
-
-    Logger.debug("Handle run #{code}")
-    Session.send_client_event(session_pid, code, event)
-
-    {:noreply, socket}
+  def get_group(session_id) do
+    {__MODULE__, session_id}
   end
 end
