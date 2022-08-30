@@ -19,20 +19,18 @@ defmodule ApplicationRunner.Session.Task.OnUserFirstJoin do
   end
 
   def run(env_id, user_id, token, function_name) do
-    case MongoStorage.has_user_link?(env_id, user_id) do
-      true ->
-        :ok
+    if MongoStorage.has_user_link?(env_id, user_id) do
+      :ok
+    else
+      MongoStorage.create_user_link(%{env_id: env_id, user_id: user_id})
 
-      false ->
-        MongoStorage.create_user_link(%{env_id: env_id, user_id: user_id})
-
-        ApplicationServices.run_listener(
-          function_name,
-          @on_user_first_join_action,
-          %{},
-          %{},
-          token
-        )
+      ApplicationServices.run_listener(
+        function_name,
+        @on_user_first_join_action,
+        %{},
+        %{},
+        token
+      )
     end
   end
 end

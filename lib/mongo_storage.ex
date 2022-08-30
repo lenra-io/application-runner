@@ -11,13 +11,18 @@ defmodule ApplicationRunner.MongoStorage do
   # alias ApplicationRunner.JsonStorage.Services
 
   def has_user_link?(env_id, user_id) do
-    query = from u in MongoUserLink,
-    where: u.user_id == ^user_id and u.env_id == ^env_id
+    query =
+      from(u in MongoUserLink,
+        where: u.user_id == ^user_id and u.environment_id == ^env_id
+      )
 
     @repo.exists?(query)
   end
 
-  defdelegate create_user_link(params), to: MongoUserLink, as: :new
+  def create_user_link(params) do
+    MongoUserLink.new(params)
+    |> @repo.insert()
+  end
 
   ########
   # DATA #
