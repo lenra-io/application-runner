@@ -122,7 +122,7 @@ defmodule ApplicationRunner.Session.UiServer do
   # If the component type is "widget" this is considered a Widget and will be handled like one.
   # Everything else will be handled as a simple component.
   @spec build_component(Session.Metadata.t(), widget(), Ui.Context.t(), WidgetUid.t()) ::
-          {:ok, component(), UI.Context.t()} | {:error, build_errors()}
+          {:ok, component(), Ui.Context.t()} | {:error, build_errors()}
   defp build_component(
          session_metadata,
          %{"type" => comp_type} = component,
