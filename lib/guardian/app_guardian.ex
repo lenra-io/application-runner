@@ -8,8 +8,8 @@ defmodule ApplicationRunner.Guardian.AppGuardian do
   alias ApplicationRunner.{
     Contract,
     Environment,
-    Session,
-    MongoStorage
+    MongoStorage,
+    Session
   }
 
   alias ApplicationRunner.Errors.{BusinessError, TechnicalError}
@@ -31,6 +31,10 @@ defmodule ApplicationRunner.Guardian.AppGuardian do
   def resource_from_claims(%{"env_id" => env_id}) do
     env = @repo.get!(Contract.Environment, env_id)
     {:ok, %{environment: env}}
+  end
+
+  def resource_from_claims(_) do
+    raise "Claims not matching."
   end
 
   def on_verify(claims, token, _options) do

@@ -8,9 +8,9 @@ defmodule ApplicationRunner.MongoStorage do
   alias ApplicationRunner.MongoStorage.MongoUserLink
   @repo Application.compile_env(:application_runner, :repo)
 
-  alias ApplicationRunner.{Environment}
-  alias ApplicationRunner.MongoStorage.MongoUserLink
+  alias ApplicationRunner.Environment
   alias ApplicationRunner.Errors.TechnicalError
+  alias ApplicationRunner.MongoStorage.MongoUserLink
   alias LenraCommon.Errors.TechnicalError, as: TechnicalErrorType
 
   import Ecto.Query
@@ -115,29 +115,33 @@ defmodule ApplicationRunner.MongoStorage do
   @spec update_doc(number(), String.t(), String.t(), map()) ::
           :ok | {:error, TechnicalErrorType.t()}
   def update_doc(env_id, coll, doc_id, new_doc) do
-    env_id
-    |> mongo_instance()
-    |> Mongo.update_one(coll, %{"_id" => doc_id}, new_doc)
-    |> case do
-      {:error, err} ->
-        TechnicalError.mongo_error_tuple(err)
+    with {:ok, bson_doc_id} <- BSON.ObjectId.decode(doc_id) do
+      env_id
+      |> mongo_instance()
+      |> Mongo.replace_one(coll, %{"_id" => bson_doc_id}, new_doc)
+      |> case do
+        {:error, err} ->
+          TechnicalError.mongo_error_tuple(err)
 
-      _res ->
-        :ok
+        _res ->
+          :ok
+      end
     end
   end
 
   @spec delete_doc(number(), String.t(), String.t()) :: :ok | {:error, TechnicalErrorType.t()}
   def delete_doc(env_id, coll, doc_id) do
-    env_id
-    |> mongo_instance()
-    |> Mongo.delete_one(coll, %{"_id" => doc_id})
-    |> case do
-      {:error, err} ->
-        TechnicalError.mongo_error_tuple(err)
+    with {:ok, bson_doc_id} <- BSON.ObjectId.decode(doc_id) do
+      env_id
+      |> mongo_instance()
+      |> Mongo.delete_one(coll, %{"_id" => bson_doc_id})
+      |> case do
+        {:error, err} ->
+          TechnicalError.mongo_error_tuple(err)
 
-      _res ->
-        :ok
+        _res ->
+          :ok
+      end
     end
   end
 

@@ -20,10 +20,13 @@ config :application_runner, ApplicationRunner.Guardian.AppGuardian,
   secret_key: "5oIBVh2Hauo3LT4knNFu29lX9DYu74SWZfjZzYn+gfr0aryxuYIdpjm8xd0qGGqK"
 
 config :application_runner, ApplicationRunner.FakeEndpoint,
-  http: [port: String.to_integer(System.get_env("PORT", "4000"))],
+  http: [port: 4002],
+  server: false,
   secret_key_base: "jtmuKvO3YYasTYRMAMGs+LSgnBEIFLQIOh439wO3ZoQdSfvDhXrnjKg2R5lCuK04"
 
 config :swarm,
   sync_nodes_timeout: 0
+
+config :phoenix, :json_library, Jason
 
 config :bypass, enable_debug_log: true

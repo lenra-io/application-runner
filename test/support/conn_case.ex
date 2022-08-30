@@ -16,6 +16,7 @@ defmodule ApplicationRunner.ConnCase do
   """
 
   use ExUnit.CaseTemplate
+  alias Ecto.Adapters.SQL.Sandbox
 
   using do
     quote do
@@ -32,7 +33,13 @@ defmodule ApplicationRunner.ConnCase do
     end
   end
 
-  setup _tags do
+  setup tags do
+    :ok = Sandbox.checkout(ApplicationRunner.Repo)
+
+    unless tags[:async] do
+      Sandbox.mode(ApplicationRunner.Repo, {:shared, self()})
+    end
+
     {:ok, %{conn: Phoenix.ConnTest.build_conn()}}
   end
 end

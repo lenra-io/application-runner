@@ -1,8 +1,8 @@
 defmodule ApplicationRunner.CollsController do
   use ApplicationRunner, :controller
 
-  alias ApplicationRunner.MongoStorage
   alias ApplicationRunner.Errors.BusinessError
+  alias ApplicationRunner.MongoStorage
 
   def delete(conn, %{"coll" => coll}) do
     with %{environment: env} <- Guardian.Plug.current_resource(conn),
