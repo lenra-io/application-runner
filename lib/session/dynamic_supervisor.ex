@@ -40,12 +40,18 @@ defmodule ApplicationRunner.Session.DynamicSupervisor do
   end
 
   @doc """
-    Stop the `SessionManager` with the given `session_id` and return `:ok`.
-    If there is no `SessionManager` for the given `session_id`, then return `{:error, :not_started}`
+    Stop the `Session.Supervisor` with the given `session_id` and return `:ok`.
+    If there is no `Session.Supervisor` for the given `session_id`, then return `{:error, :not_started}`
   """
-  @spec stop_session(number()) :: :ok | {:error, :app_not_started}
-  def stop_session(session_id) do
-    Supervisor.stop(Session.Supervisor.get_full_name(session_id))
+  @spec stop_session(any(), any()) :: :ok | {:error, :app_not_started}
+  def stop_session(env_id, session_id) do
+    case Swarm.whereis_name(Session.Supervisor.get_full_name(session_id)) do
+      :undefined ->
+        {:error, :app_not_started}
+
+      pid ->
+        DynamicSupervisor.terminate_child(get_full_name(env_id), pid)
+    end
   end
 
   def terminate_session(session_manager_pid) do

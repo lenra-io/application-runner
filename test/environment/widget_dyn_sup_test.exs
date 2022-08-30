@@ -9,7 +9,8 @@ defmodule ApplicationRunner.Environment.WidgetDynSupTest do
 
   alias ApplicationRunner.Environment
 
-  @widget_ui %{widget: %{"text" => "test"}}
+  @manifest %{"rootWidget" => "main"}
+  @widget %{"type" => "text", "value" => "test"}
 
   @function_name Ecto.UUID.generate()
   @env_id 43
@@ -22,12 +23,10 @@ defmodule ApplicationRunner.Environment.WidgetDynSupTest do
   }
 
   setup do
-    {:ok, _pid} = start_supervised({Environment.Supervisor, @env_metadata})
-
-    url = "/function/#{@function_name}"
-
     Bypass.open(port: 1234)
-    |> Bypass.stub("POST", url, &handle_resp/1)
+    |> Bypass.stub("POST", "/function/#{@function_name}", &handle_resp/1)
+
+    {:ok, _pid} = start_supervised({Environment.Supervisor, @env_metadata})
 
     on_exit(fn ->
       Swarm.unregister_name(Environment.Supervisor.get_name(@env_id))
@@ -37,7 +36,19 @@ defmodule ApplicationRunner.Environment.WidgetDynSupTest do
   end
 
   defp handle_resp(conn) do
-    Plug.Conn.resp(conn, 200, Jason.encode!(@widget_ui))
+    {:ok, body, conn} = Plug.Conn.read_body(conn)
+
+    case Jason.decode(body) do
+      {:ok, _json} ->
+        Plug.Conn.resp(
+          conn,
+          200,
+          Jason.encode!(%{widget: @widget})
+        )
+
+      {:error, _} ->
+        Plug.Conn.resp(conn, 200, Jason.encode!(%{manifest: @manifest}))
+    end
   end
 
   describe "ApplicationRunner.Environments.WidgetDynSup.ensure_child_started/2" do
@@ -54,7 +65,7 @@ defmodule ApplicationRunner.Environment.WidgetDynSupTest do
                  widget_uid
                )
 
-      assert @widget_ui.widget == WidgetServer.get_widget(@env_id, widget_uid)
+      assert @widget == WidgetServer.get_widget(@env_id, widget_uid)
     end
   end
 end

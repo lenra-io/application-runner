@@ -17,6 +17,8 @@ defmodule ApplicationRunner.Environment.WidgetDynSup do
     DynamicSupervisor.init(strategy: :one_for_one)
   end
 
+  @spec ensure_child_started(number(), any(), String.t(), WidgetUid.t()) ::
+          {:error, any} | {:ok, pid}
   def ensure_child_started(env_id, session_id, function_name, %WidgetUid{} = widget_uid) do
     coll = widget_uid.coll
     query = widget_uid.query
@@ -30,7 +32,7 @@ defmodule ApplicationRunner.Environment.WidgetDynSup do
           {:ok, pid}
 
         {:error, {:already_started, pid}} ->
-          QueryServer.join_group(pid, session_id)
+          QueryServer.join_group(qs_pid, session_id)
           {:ok, pid}
 
         err ->

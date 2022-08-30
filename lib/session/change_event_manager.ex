@@ -8,6 +8,8 @@ defmodule ApplicationRunner.Session.ChangeEventManager do
 
   alias ApplicationRunner.Environment.QueryServer
 
+  alias ApplicationRunner.Session.UiServer
+
   def start_link(opts) do
     session_id = Keyword.fetch!(opts, :session_id)
     env_id = Keyword.fetch!(opts, :env_id)
@@ -42,10 +44,10 @@ defmodule ApplicationRunner.Session.ChangeEventManager do
     )
     |> case do
       :ok ->
-        GenServer.cast({:via, :swarm, {:ui_builder, session_id}}, :rebuild)
+        GenServer.cast(UiServer.get_full_name(session_id), :rebuild)
 
       {:error, err} ->
-        GenServer.cast({:via, :swarm, {:ui_builder, session_id}}, {:data_error, err})
+        GenServer.cast(UiServer.get_full_name(session_id), {:data_error, err})
     end
 
     {:noreply, state}
