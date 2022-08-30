@@ -15,8 +15,8 @@ defmodule ApplicationRunner.Contract.UserEnv do
     timestamps()
   end
 
-  def changeset(userEnv, params \\ %{}) do
-    userEnv
+  def changeset(user_env, params \\ %{}) do
+    user_env
     |> cast(params, [:environment_id, :user_id])
     |> validate_required([])
   end
