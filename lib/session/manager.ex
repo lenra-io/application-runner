@@ -95,17 +95,17 @@ defmodule ApplicationRunner.Session.Manager do
   #   end
   # end
 
-  defp create_user_data_if_needed(
-         session_state,
-         false
-       ) do
-    JsonStorage.create_user_data_with_data(session_state.env_id, session_state.user_id)
-    send_on_user_first_join_event(session_state)
-  end
+  # defp create_user_data_if_needed(
+  #        session_state,
+  #        false
+  #      ) do
+  #   JsonStorage.create_user_data_with_data(session_state.env_id, session_state.user_id)
+  #   send_on_user_first_join_event(session_state)
+  # end
 
-  defp create_user_data_if_needed(_session_state, true) do
-    :ok
-  end
+  # defp create_user_data_if_needed(_session_state, true) do
+  #   :ok
+  # end
 
   # @impl true
 

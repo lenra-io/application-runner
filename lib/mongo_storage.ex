@@ -3,8 +3,21 @@ defmodule ApplicationRunner.MongoStorage do
     ApplicationRunner.JsonStorage handles all data logic.
     We can find delegate function to associate Services.
   """
+  import Ecto.Query, only: [from: 2]
+
+  alias ApplicationRunner.MongoStorage.MongoUserLink
+  @repo Application.compile_env(:application_runner, :repo)
 
   # alias ApplicationRunner.JsonStorage.Services
+
+  def has_user_link?(env_id, user_id) do
+    query = from u in MongoUserLink,
+    where: u.user_id == ^user_id and u.env_id == ^env_id
+
+    @repo.exists?(query)
+  end
+
+  defdelegate create_user_link(params), to: MongoUserLink, as: :new
 
   ########
   # DATA #
