@@ -22,7 +22,7 @@ defmodule ApplicationRunner.Session.Task.OnUserFirstJoin do
     if MongoStorage.has_user_link?(env_id, user_id) do
       :ok
     else
-      MongoStorage.create_user_link(%{env_id: env_id, user_id: user_id})
+      MongoStorage.create_user_link(%{environment_id: env_id, user_id: user_id})
 
       ApplicationServices.run_listener(
         function_name,
