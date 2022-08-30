@@ -9,11 +9,14 @@ defmodule ApplicationRunner.Session.Task.OnSessionStart do
 
   @on_session_start_action "onSessionStart"
 
-  def start_link(arg) do
-    Task.start_link(__MODULE__, :run, [arg])
+  def start_link(opts) do
+    token = Keyword.fetch!(opts, :token)
+    function_name = Keyword.fetch!(opts, :function_name)
+
+    Task.start_link(__MODULE__, :run, [token, function_name])
   end
 
-  def run(state) do
-    ApplicationServices.run_listener(state, @on_session_start_action, %{}, %{})
+  def run(token, function_name) do
+    ApplicationServices.run_listener(function_name, @on_session_start_action, %{}, %{}, token)
   end
 end
