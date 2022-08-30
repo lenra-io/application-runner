@@ -1,4 +1,13 @@
 defmodule ApplicationRunner.Session.UiServer do
+  @moduledoc """
+    This module is started once per session and is responsible for the UI Rebuild.
+    When a ChangeEventManager did notify all the QueryServer
+    AND all the QueryServer did notify all the WidgetServer,
+    THEN the ChangeEventManager notify the UiServer.
+
+    The UiServer then rebuild the entire UI using the WidgetServer, store the new UI
+    and create a diff between the old and the new UI to send it to the AppChannel.
+  """
   use GenServer
   use SwarmNamed
 
@@ -7,13 +16,8 @@ defmodule ApplicationRunner.Session.UiServer do
   @type error_tuple :: {String.t(), String.t()}
   @type build_errors :: list(error_tuple())
 
-  alias ApplicationRunner.Environment
-  alias ApplicationRunner.Environment.{WidgetServer, WidgetDynSup, WidgetUid}
-  alias ApplicationRunner.Session
-  alias ApplicationRunner.Ui
-  alias ApplicationRunner.AppChannel
-
-  alias ApplicationRunner.JsonSchemata
+  alias ApplicationRunner.{AppChannel, Environment, JsonSchemata, Session, Ui}
+  alias ApplicationRunner.Environment.{WidgetDynSup, WidgetServer, WidgetUid}
 
   def start_link(opts) do
     session_id = Keyword.fetch!(opts, :session_id)
@@ -23,10 +27,11 @@ defmodule ApplicationRunner.Session.UiServer do
   def init(opts) do
     session_id = Keyword.fetch!(opts, :session_id)
 
-    with {:ok, ui} <- load_ui(session_id) do
-      send_to_channel(session_id, :ui, ui)
-      {:ok, %{session_id: session_id, ui: ui}}
-    else
+    case load_ui(session_id) do
+      {:ok, ui} ->
+        send_to_channel(session_id, :ui, ui)
+        {:ok, %{session_id: session_id, ui: ui}}
+
       err ->
         send_to_channel(session_id, :error, err)
         {:stop, err}
@@ -34,10 +39,11 @@ defmodule ApplicationRunner.Session.UiServer do
   end
 
   def handle_cast(:rebuild, %{session_id: session_id, ui: old_ui} = state) do
-    with {:ok, ui} <- load_ui(session_id) do
-      send_to_channel(session_id, :patches, JSONDiff.diff(old_ui, ui))
-      {:noreply, Map.put(state, :ui, ui)}
-    else
+    case load_ui(session_id) do
+      {:ok, ui} ->
+        send_to_channel(session_id, :patches, JSONDiff.diff(old_ui, ui))
+        {:noreply, Map.put(state, :ui, ui)}
+
       err ->
         send_to_channel(session_id, :error, err)
         {:noreply, state}

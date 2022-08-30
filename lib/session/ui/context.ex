@@ -13,7 +13,7 @@ defmodule ApplicationRunner.Ui.Context do
           listeners_map: map()
         }
 
-  def new() do
+  def new do
     %__MODULE__{widgets_map: %{}, listeners_map: %{}}
   end
 end
