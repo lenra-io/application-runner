@@ -28,14 +28,12 @@ defmodule ApplicationRunner.Session.Supervisor do
       {Session.Task.OnSessionStart,
        token: session_metadata.token, function_name: session_metadata.function_name},
       {Session.Task.OnUserFirstJoin,
-       [
-         env_id: session_metadata.env_id,
-         user_id: session_metadata.user_id,
-         token: session_metadata.token,
-         function_name: session_metadata.function_name
-       ]},
+       env_id: session_metadata.env_id,
+       user_id: session_metadata.user_id,
+       token: session_metadata.token,
+       function_name: session_metadata.function_name}
       # Event.OnSessionStart
-      {Session.UiServer, session_id: session_metadata.session_id}
+      # {Session.UiServer, session_id: session_metadata.session_id}
     ]
 
     Supervisor.init(children, strategy: :one_for_one)
