@@ -21,7 +21,7 @@ defmodule ApplicationRunner.Session.Supervisor do
       {ApplicationRunner.Session.MetadataAgent, session_metadata},
       # {ApplicationRunner.Session.Token.Agent, opts}
       {Session.ChangeEventManager,
-       env_id: session_metadata.env_id, session_id: session_metadata.session_id}
+       env_id: session_metadata.env_id, session_id: session_metadata.session_id},
       # ApplicationRunner.EventHandler
       # Event.OnUserFirstJoin
       {Session.Task.OnSessionStart, session_metadata}
