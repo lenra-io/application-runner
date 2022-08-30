@@ -1,7 +1,7 @@
-defmodule ApplicationRunner.Contract.UserEnv do
+defmodule ApplicationRunner.MongoStorage.MongoUserLink do
   @moduledoc """
-    The user "contract" schema.
-        This give ApplicationRunner an interface to match with the "real" user for both the Devtool and the Lenra server
+    The MongoUser schema.
+    This schema create the link between the User in Postgres and the user in the mongo app system.
   """
 
   use Ecto.Schema
@@ -9,14 +9,14 @@ defmodule ApplicationRunner.Contract.UserEnv do
   alias ApplicationRunner.Contract.{Environment, User}
 
   @primary_key {:mongo_user_id, Ecto.UUID, autogenerate: true}
-  schema "user_env" do
+  schema "mongo_user_link" do
     belongs_to(:user, User)
     belongs_to(:environment, Environment)
     timestamps()
   end
 
-  def changeset(user_env, params \\ %{}) do
-    user_env
+  def changeset(mongo_user_link, params \\ %{}) do
+    mongo_user_link
     |> cast(params, [:environment_id, :user_id])
     |> validate_required([])
   end
