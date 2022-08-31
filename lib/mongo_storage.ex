@@ -5,15 +5,14 @@ defmodule ApplicationRunner.MongoStorage do
   """
   import Ecto.Query, only: [from: 2]
 
-  alias ApplicationRunner.MongoStorage.MongoUserLink
-  @repo Application.compile_env(:application_runner, :repo)
-
   alias ApplicationRunner.Environment
   alias ApplicationRunner.Errors.TechnicalError
   alias ApplicationRunner.MongoStorage.MongoUserLink
   alias LenraCommon.Errors.TechnicalError, as: TechnicalErrorType
 
   import Ecto.Query
+
+  @repo Application.compile_env(:application_runner, :repo)
 
   defp mongo_instance(env_id) do
     Environment.MongoInstance.get_full_name(env_id)
@@ -23,9 +22,9 @@ defmodule ApplicationRunner.MongoStorage do
   # MongoUserLink #
   #################
 
-  @spec get_mongo_user_link!(Ecto.Repo.t(), number(), number()) :: any
-  def get_mongo_user_link!(repo, env_id, user_id) do
-    repo.one!(
+  @spec get_mongo_user_link!(number(), number()) :: any
+  def get_mongo_user_link!(env_id, user_id) do
+    @repo.one!(
       from(mul in MongoUserLink, where: mul.user_id == ^user_id and mul.environment_id == ^env_id)
     )
   end

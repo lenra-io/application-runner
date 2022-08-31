@@ -23,7 +23,7 @@ defmodule ApplicationRunner.Guardian.AppGuardian do
   def resource_from_claims(%{"user_id" => user_id, "env_id" => env_id}) do
     env = @repo.get!(Contract.Environment, env_id)
     user = @repo.get!(Contract.User, user_id)
-    mongo_user_link = MongoStorage.get_mongo_user_link!(@repo, env_id, user_id)
+    mongo_user_link = MongoStorage.get_mongo_user_link!(env_id, user_id)
 
     {:ok, %{environment: env, user: user, mongo_user_link: mongo_user_link}}
   end
