@@ -7,13 +7,16 @@ defmodule ApplicationRunner.Environment.ManifestHandler do
 
   alias ApplicationRunner.{ApplicationServices, Environment}
 
-  def start_link(%Environment.Metadata{} = env_metadata) do
-    GenServer.start_link(__MODULE__, env_metadata, name: get_full_name(env_metadata.env_id))
+  def start_link(opts) do
+    env_id = Keyword.fetch!(opts, :env_id)
+    GenServer.start_link(__MODULE__, opts, name: get_full_name(env_id))
   end
 
   @impl true
-  def init(env_metadata) do
-    case ApplicationServices.fetch_manifest(env_metadata) do
+  def init(opts) do
+    function_name = Keyword.fetch!(opts, :function_name)
+
+    case ApplicationServices.fetch_manifest(function_name) do
       {:ok, manifest} ->
         {:ok, %{manifest: manifest}}
 

@@ -165,15 +165,22 @@ defmodule ApplicationRunner.AppChannel do
 
   alias ApplicationRunner.Guardian.AppGuardian
   alias ApplicationRunner.Session
+  alias LenraCommonWeb.ErrorHelpers
+
   require Logger
 
   def handle_run(socket, code, event \\ %{}) do
-    %{
-      session_id: session_id
-    } = socket.assigns
+    session_id = Map.fetch!(socket.assigns, :session_id)
 
     Logger.debug("Handle run #{code}")
-    Session.send_client_event(session_id, code, event)
+
+    case Session.send_client_event(session_id, code, event) do
+      {:error, err} ->
+        Phoenix.Channel.push(socket, "error", ErrorHelpers.translate_error(err))
+
+      _ ->
+        :ok
+    end
 
     {:noreply, socket}
   end

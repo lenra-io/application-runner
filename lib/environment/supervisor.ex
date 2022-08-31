@@ -6,14 +6,6 @@ defmodule ApplicationRunner.Environment.Supervisor do
   use SwarmNamed
 
   alias ApplicationRunner.Environment
-
-  alias ApplicationRunner.Environment.{
-    ChangeStream,
-    MongoInstance,
-    QueryDynSup,
-    WidgetDynSup
-  }
-
   alias ApplicationRunner.Session
 
   def start_link(%Environment.Metadata{} = env_metadata) do
@@ -23,22 +15,19 @@ defmodule ApplicationRunner.Environment.Supervisor do
   end
 
   @impl true
-  def init(%Environment.Metadata{} = env_metadata) do
+  def init(%Environment.Metadata{} = em) do
     children = [
       # TODO: add module once they done !
-      {ApplicationRunner.Environment.MetadataAgent, env_metadata},
-      {ApplicationRunner.Environment.ManifestHandler, env_metadata},
-      # ApplicationRunner.EventHandler,
-      {Mongo, MongoInstance.config(env_metadata.env_id)},
-      {ChangeStream, env_id: env_metadata.env_id},
+      {Environment.MetadataAgent, em},
+      {Environment.ManifestHandler, env_id: em.env_id, function_name: em.function_name},
+      {ApplicationRunner.EventHandler, mode: :env, id: em.env_id},
+      {Mongo, Environment.MongoInstance.config(em.env_id)},
+      {Environment.Task.OnEnvStart, env_id: em.env_id},
+      {Environment.ChangeStream, env_id: em.env_id},
       # MongoSessionDynamicSup
-      # MongoTransaDynSup
-      # {ApplicationRunner.Environment.Task.OnEnvStart, opts}
-      # {ApplicationRunner.Environment.ManifestHandler, opts}
-      # ApplicationRunner.ListenersCache
-      {QueryDynSup, env_id: env_metadata.env_id},
-      {WidgetDynSup, env_id: env_metadata.env_id},
-      {Session.DynamicSupervisor, env_metadata}
+      {Environment.QueryDynSup, env_id: em.env_id},
+      {Environment.WidgetDynSup, env_id: em.env_id},
+      {Session.DynamicSupervisor, env_id: em.env_id}
     ]
 
     Supervisor.init(children, strategy: :one_for_one)

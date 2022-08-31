@@ -3,38 +3,31 @@ defmodule ApplicationRunner.Session do
     ApplicationRunner.Session manage all lenra session fonctionnality
   """
 
+  alias ApplicationRunner.Session
+
   @doc """
     Fetch the current token for the given `session_id`.
 
     Returns UUID.
   """
-  defdelegate fetch_token(session_id),
-    to: ApplicationRunner.Session.MetadataAgent,
-    as: :fetch_token
+  defdelegate fetch_token(session_id), to: Session.MetadataAgent
 
   @doc """
-    Start a Session GenServer for the given `session_id` (must be unique),
-    with the given session_state.
-    Make sure the environment Genserver is started for the given `env_id`,
+    Start a Session Supervisor for the given session_state (session_id must be unique),
+    Make sure the environment Supervisor is started for the given `env_state`,
     if the environment is not started, it is started with the given `env_state`.
 
     Returns {:ok, session_pid} | {:error, tuple()}
   """
-  defdelegate start_session(session_state, env_state),
-    to: ApplicationRunner.Session.DynamicSupervisor,
-    as: :start_session
+  defdelegate start_session(session_state, env_state), to: Session.DynamicSupervisor
 
-  defdelegate stop_session(env_id, session_id),
-    to: ApplicationRunner.Session.DynamicSupervisor,
-    as: :stop_session
+  defdelegate stop_session(env_id, session_id), to: Session.DynamicSupervisor
 
   @doc """
-    Send an async call to the application,
+    Send a sync call to the application,
     The call will run listeners for the given code `code` and `event`
 
     Returns :ok
   """
-  defdelegate send_client_event(session_id, code, event),
-    to: ApplicationRunner.Session.Manager,
-    as: :send_client_event
+  defdelegate send_client_event(session_id, code, event), to: ApplicationRunner.EventHandler
 end
