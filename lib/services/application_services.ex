@@ -48,15 +48,15 @@ defmodule ApplicationRunner.ApplicationServices do
     run_listener(function_name, action, props, event, token)
   end
 
-  @spec run_listener(Environment.Metadata.t(), String.t(), map(), map(), String.t()) ::
+  @spec run_listener(String.t(), String.t(), map(), map(), String.t()) ::
           {:ok, map()} | {:error, any()}
-  defp run_listener(
-         function_name,
-         action,
-         props,
-         event,
-         token
-       ) do
+  def run_listener(
+        function_name,
+        action,
+        props,
+        event,
+        token
+      ) do
     {base_url, base_headers} = get_http_context()
 
     url = "#{base_url}/function/#{function_name}"

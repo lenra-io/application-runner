@@ -42,6 +42,13 @@ defmodule ApplicationRunner.IntegrationTest do
       {:ok, body, conn} = Plug.Conn.read_body(conn)
 
       case Jason.decode(body) do
+        {:ok, %{"action" => _}} ->
+          Plug.Conn.resp(
+            conn,
+            200,
+            Jason.encode!(:ok)
+          )
+
         {:ok, json} ->
           name = Map.get(json, "widget")
           data = Map.get(json, "data")
