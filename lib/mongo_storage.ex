@@ -47,8 +47,6 @@ defmodule ApplicationRunner.MongoStorage do
   # DATA #
   ########
 
-  # defdelegate create_data(environment_id, params), to: Services.Data, as: :create
-
   @spec create_doc(number(), String.t(), map()) :: :ok | {:error, TechnicalErrorType.t()}
   def create_doc(env_id, coll, doc) do
     env_id
@@ -62,10 +60,6 @@ defmodule ApplicationRunner.MongoStorage do
         :ok
     end
   end
-
-  # defdelegate parse_and_exec_query(env_id, coll, query),
-  #   to: Services.Data,
-  #   as: :parse_and_exec_query
 
   @spec fetch_doc(number(), String.t(), String.t()) ::
           {:ok, map()} | {:error, TechnicalErrorType.t()}
@@ -158,38 +152,4 @@ defmodule ApplicationRunner.MongoStorage do
       :ok -> :ok
     end
   end
-
-  #############
-  # USERDATA #
-  #############
-
-  # defdelegate create_user_data(params), to: Services.UserData, as: :create
-
-  # defdelegate create_user_data_with_data(env_id, user_id),
-  #   to: Services.UserData,
-  #   as: :create_with_data
-
-  # defdelegate has_user_data?(env_id, user_id), to: Services.UserData, as: :has_user_data?
-
-  # defdelegate current_user_data_query(env_id, user_id),
-  #   to: Services.UserData,
-  #   as: :current_user_data_query
-
-  ##################
-  # DATA REFERENCE #
-  ##################
-
-  # defdelegate create_reference(params), to: Services.DataReferences, as: :create
-
-  # defdelegate delete_reference(params),
-  #   to: Services.DataReferences,
-  #   as: :delete
-
-  ##############
-  # QUERY VIEW #
-  ##############
-
-  # defdelegate get_one(env_id, datastore_name, data_id), to: Services.DataQueryView, as: :get_one
-
-  # defdelegate get_all(env_id, datastore_name), to: Services.DataQueryView, as: :get_all
 end
