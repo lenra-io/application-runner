@@ -21,7 +21,6 @@ defmodule ApplicationRunner do
     quote do
       use LenraCommonWeb, :controller
 
-      # credo:disable-for-next-line Credo.Check.Readability.AliasAs
       alias ApplicationRunner.Router.Helpers, as: Routes
     end
   end
