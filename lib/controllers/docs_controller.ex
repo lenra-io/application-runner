@@ -9,10 +9,6 @@ defmodule ApplicationRunner.DocsController do
     apply(__MODULE__, action_name(conn), args)
   end
 
-  def test(conn, _, _body_params) do
-    reply(conn)
-  end
-
   defp get_resource!(conn) do
     case AppGuardian.Plug.current_resource(conn) do
       nil -> raise DevError.exception(message: "There is no resource loaded from token.")

@@ -14,10 +14,6 @@ defmodule ApplicationRunner.Session.Task.OnUserFirstJoin do
     env_id = Keyword.fetch!(opts, :env_id)
     user_id = Keyword.fetch!(opts, :user_id)
 
-    Task.start_link(__MODULE__, :run, [session_id, env_id, user_id])
-  end
-
-  def run(session_id, env_id, user_id) do
     if MongoStorage.has_user_link?(env_id, user_id) do
       :ok
     else
@@ -30,5 +26,11 @@ defmodule ApplicationRunner.Session.Task.OnUserFirstJoin do
         )
       end
     end
+
+    Task.start_link(__MODULE__, :run, [])
+  end
+
+  def run do
+    :ok
   end
 end

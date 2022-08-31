@@ -41,7 +41,14 @@ defmodule ApplicationRunner.Session.UiServer do
   def handle_cast(:rebuild, %{session_id: session_id, ui: old_ui} = state) do
     case load_ui(session_id) do
       {:ok, ui} ->
-        send_to_channel(session_id, :patches, JSONDiff.diff(old_ui, ui))
+        case JSONDiff.diff(old_ui, ui) do
+          [] ->
+            :ok
+
+          patches ->
+            send_to_channel(session_id, :patches, patches)
+        end
+
         {:noreply, Map.put(state, :ui, ui)}
 
       err ->

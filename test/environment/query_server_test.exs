@@ -465,25 +465,6 @@ defmodule ApplicationRunner.Environment.QueryServerTest do
              } = :sys.get_state(name)
     end
 
-    test "should NOT update an older data if _id is different" do
-      {:ok, _} = QueryDynSup.ensure_child_started(@env_id, "test", "{}")
-      name = QueryServer.get_full_name({@env_id, "test", "{}"})
-
-      assert :ok = GenServer.call(name, {:mongo_event, insert_event(1)})
-
-      assert %{
-               coll: "test",
-               data: [%{"_id" => "1", "name" => "test1"}]
-             } = :sys.get_state(name)
-
-      assert :ok = GenServer.call(name, {:mongo_event, update_event(2)})
-
-      assert %{
-               coll: "test",
-               data: [%{"_id" => "1", "name" => "test1"}]
-             } = :sys.get_state(name)
-    end
-
     test "should NOT update an older data if the coll is different" do
       {:ok, _} = QueryDynSup.ensure_child_started(@env_id, "test", "{}")
       name = QueryServer.get_full_name({@env_id, "test", "{}"})
@@ -540,25 +521,6 @@ defmodule ApplicationRunner.Environment.QueryServerTest do
       assert %{
                coll: "test",
                data: [%{"_id" => "1", "name" => "new_test1", "foo" => "bar"}]
-             } = :sys.get_state(name)
-    end
-
-    test "should NOT replace an older data if _id is different" do
-      {:ok, _} = QueryDynSup.ensure_child_started(@env_id, "test", "{}")
-      name = QueryServer.get_full_name({@env_id, "test", "{}"})
-
-      assert :ok = GenServer.call(name, {:mongo_event, insert_event(1)})
-
-      assert %{
-               coll: "test",
-               data: [%{"_id" => "1", "name" => "test1"}]
-             } = :sys.get_state(name)
-
-      assert :ok = GenServer.call(name, {:mongo_event, replace_event(2)})
-
-      assert %{
-               coll: "test",
-               data: [%{"_id" => "1", "name" => "test1"}]
              } = :sys.get_state(name)
     end
 
