@@ -5,15 +5,14 @@ defmodule ApplicationRunner.Environment.Task.OnEnvStart do
 
   use Task
 
-  alias ApplicationRunner.ApplicationServices
-
   @on_env_start_action "onEnvStart"
 
-  def start_link(arg) do
-    Task.start_link(__MODULE__, :run, [arg])
+  def start_link(opts) do
+    env_id = Keyword.fetch!(opts, :env_id)
+    Task.start_link(__MODULE__, :run, [env_id])
   end
 
-  def run(state) do
-    ApplicationServices.run_listener(state, @on_env_start_action, %{}, %{})
+  def run(env_id) do
+    ApplicationRunner.EventHandler.send_env_event(env_id, @on_env_start_action, %{}, %{})
   end
 end
