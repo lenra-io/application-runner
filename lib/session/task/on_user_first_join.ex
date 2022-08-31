@@ -5,32 +5,30 @@ defmodule ApplicationRunner.Session.Task.OnUserFirstJoin do
 
   use Task
 
-  alias ApplicationRunner.{ApplicationServices, MongoStorage}
+  alias ApplicationRunner.MongoStorage
 
   @on_user_first_join_action "onUserFirstJoin"
 
   def start_link(opts) do
+    session_id = Keyword.fetch!(opts, :session_id)
     env_id = Keyword.fetch!(opts, :env_id)
     user_id = Keyword.fetch!(opts, :user_id)
-    token = Keyword.fetch!(opts, :token)
-    function_name = Keyword.fetch!(opts, :function_name)
 
-    Task.start_link(__MODULE__, :run, [env_id, user_id, token, function_name])
+    Task.start_link(__MODULE__, :run, [session_id, env_id, user_id])
   end
 
-  def run(env_id, user_id, token, function_name) do
+  def run(session_id, env_id, user_id) do
     if MongoStorage.has_user_link?(env_id, user_id) do
       :ok
     else
-      MongoStorage.create_user_link(%{environment_id: env_id, user_id: user_id})
-
-      ApplicationServices.run_listener(
-        function_name,
-        @on_user_first_join_action,
-        %{},
-        %{},
-        token
-      )
+      with {:ok, _} <- MongoStorage.create_user_link(%{environment_id: env_id, user_id: user_id}) do
+        ApplicationRunner.EventHandler.send_session_event(
+          session_id,
+          @on_user_first_join_action,
+          %{},
+          %{}
+        )
+      end
     end
   end
 end

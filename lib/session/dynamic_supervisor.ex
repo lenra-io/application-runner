@@ -8,12 +8,9 @@ defmodule ApplicationRunner.Session.DynamicSupervisor do
 
   alias ApplicationRunner.{Environment, Session}
 
-  def start_link(%Environment.Metadata{env_id: env_id}) do
-    DynamicSupervisor.start_link(__MODULE__, :ok, name: get_full_name(env_id))
-  end
-
   def start_link(opts) do
-    raise "No Env Metadata #{inspect(opts)}"
+    env_id = Keyword.fetch!(opts, :env_id)
+    DynamicSupervisor.start_link(__MODULE__, :ok, name: get_full_name(env_id))
   end
 
   @impl true
