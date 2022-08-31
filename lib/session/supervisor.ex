@@ -25,7 +25,8 @@ defmodule ApplicationRunner.Session.Supervisor do
        env_id: session_metadata.env_id, session_id: session_metadata.session_id},
       # ApplicationRunner.EventHandler
       # Event.OnUserFirstJoin
-      # Event.OnSessionStart
+      {Session.Task.OnSessionStart,
+       token: session_metadata.token, function_name: session_metadata.function_name},
       {Session.UiServer, session_id: session_metadata.session_id}
     ]
 
