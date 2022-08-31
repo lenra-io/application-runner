@@ -19,7 +19,7 @@ defmodule ApplicationRunner.MongoStorage do
     @repo.exists?(query)
   end
 
-  def create_user_link(params) do
+  def create_user_link(%{env_id: _, user_id: _} = params) do
     MongoUserLink.new(params)
     |> @repo.insert()
   end

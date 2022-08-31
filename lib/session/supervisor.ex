@@ -33,7 +33,7 @@ defmodule ApplicationRunner.Session.Supervisor do
        token: session_metadata.token,
        function_name: session_metadata.function_name}
       # Event.OnSessionStart
-      # {Session.UiServer, session_id: session_metadata.session_id}
+      {Session.UiServer, session_id: session_metadata.session_id}
     ]
 
     Supervisor.init(children, strategy: :one_for_one)
