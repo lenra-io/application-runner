@@ -1,31 +1,15 @@
 defmodule ApplicationRunner.IntegrationTest do
-  use ExUnit.Case, async: false
+  use ApplicationRunner.RepoCase, async: false
 
-  alias ApplicationRunner.{AppChannel, Environment, Session}
+  alias ApplicationRunner.{AppChannel, Contract, Environment, MongoStorage, Session}
 
-  @user_id 1
-  @env_id 42
-  @session_id 1337
+  @session_id Ecto.UUID.generate()
   @function_name Ecto.UUID.generate()
   @url "/function/#{@function_name}"
-
   @coll "test_integration"
   @query %{"foo" => "bar"}
 
   @manifest %{"rootWidget" => "main"}
-
-  @env_metadata %Environment.Metadata{
-    env_id: @env_id,
-    function_name: @function_name,
-    token: "abc"
-  }
-  @session_metadata %Session.Metadata{
-    env_id: @env_id,
-    user_id: @user_id,
-    session_id: @session_id,
-    function_name: @function_name,
-    token: "abcd"
-  }
 
   def widget("main", _) do
     %{"type" => "widget", "name" => "echo", "query" => @query, "coll" => @coll}
@@ -36,35 +20,73 @@ defmodule ApplicationRunner.IntegrationTest do
   end
 
   setup do
-    bypass = Bypass.open(port: 1234)
+    ctx = %{}
+    ctx = Map.merge(ctx, setup_db(ctx))
+    ctx = Map.merge(ctx, setup_bypass(ctx))
+    ctx = Map.merge(ctx, setup_env_metadata(ctx))
+    ctx = Map.merge(ctx, setup_session_metadata(ctx))
 
-    Bypass.stub(bypass, "POST", @url, fn conn ->
-      {:ok, body, conn} = Plug.Conn.read_body(conn)
+    {:ok, ctx}
+  end
 
-      case Jason.decode(body) do
-        {:ok, %{"action" => _}} ->
-          Plug.Conn.resp(
-            conn,
-            200,
-            Jason.encode!(:ok)
-          )
+  def setup_db(_ctx) do
+    {:ok, env} = ApplicationRunner.Repo.insert(Contract.Environment.new(%{}))
+    {:ok, user} = ApplicationRunner.Repo.insert(Contract.User.new(%{email: "test@test.te"}))
+    %{user: user, env: env}
+  end
 
-        {:ok, json} ->
-          name = Map.get(json, "widget")
-          data = Map.get(json, "data")
+  def setup_session_metadata(%{env: env, user: user}) do
+    %{
+      session_metadata: %Session.Metadata{
+        env_id: env.id,
+        user_id: user.id,
+        session_id: @session_id,
+        function_name: @function_name,
+        token: AppChannel.do_create_session_token(env.id, @session_id, user.id) |> elem(1)
+      }
+    }
+  end
 
-          Plug.Conn.resp(
-            conn,
-            200,
-            Jason.encode!(%{widget: widget(name, data)})
-          )
+  def setup_env_metadata(%{env: env}) do
+    %{
+      env_metadata: %Environment.Metadata{
+        env_id: env.id,
+        function_name: @function_name,
+        token: AppChannel.do_create_env_token(env.id) |> elem(1)
+      }
+    }
+  end
 
-        {:error, _} ->
-          Plug.Conn.resp(conn, 200, Jason.encode!(%{manifest: @manifest}))
-      end
-    end)
+  def setup_bypass(_ctx) do
+    bypass =
+      Bypass.open(port: 1234)
+      |> Bypass.stub("POST", @url, fn conn ->
+        {:ok, body, conn} = Plug.Conn.read_body(conn)
 
-    {:ok, %{bypass: bypass}}
+        case Jason.decode(body) do
+          {:ok, %{"action" => _}} ->
+            Plug.Conn.resp(
+              conn,
+              200,
+              Jason.encode!(:ok)
+            )
+
+          {:ok, json} ->
+            name = Map.get(json, "widget")
+            data = Map.get(json, "data")
+
+            Plug.Conn.resp(
+              conn,
+              200,
+              Jason.encode!(%{widget: widget(name, data)})
+            )
+
+          {:error, _} ->
+            Plug.Conn.resp(conn, 200, Jason.encode!(%{manifest: @manifest}))
+        end
+      end)
+
+    %{bypass: bypass}
   end
 
   # test "Check that all dependancies are started and correctly named" do
@@ -87,35 +109,29 @@ defmodule ApplicationRunner.IntegrationTest do
   #   end)
   # end
 
-  test "Integration test, check that the UI change when the mongo db coll change" do
+  test "Integration test, check that the UI change when the mongo db coll change", %{
+    env_metadata: em,
+    session_metadata: sm
+  } do
     # Self must join AppChannel group to receive new UI
-    Swarm.register_name(AppChannel.get_name(@session_id), self())
-    Swarm.join(AppChannel.get_group(@session_id), self())
+    Swarm.register_name(AppChannel.get_name(sm.session_id), self())
+    Swarm.join(AppChannel.get_group(sm.session_id), self())
+
     # Start env
-    Environment.DynamicSupervisor.ensure_env_started(@env_metadata)
+    Environment.DynamicSupervisor.ensure_env_started(em)
     # Reset and setup mongo coll
-    mongo_name = Environment.MongoInstance.get_full_name(@env_id)
+    mongo_name = Environment.MongoInstance.get_full_name(em.env_id)
     Mongo.drop_collection(mongo_name, @coll)
     Mongo.insert_one!(mongo_name, @coll, %{"foo" => "bar"})
 
+    # The mongo_user_link should not exist before starting the session
+    assert not MongoStorage.has_user_link?(em.env_id, sm.user_id)
+
     # Start the session and start one widget
-    Session.start_session(@session_metadata, @env_metadata)
+    Session.start_session(sm, em)
 
-    # query = %{"foo" => "bar"}
-
-    # widget_uid = %Environment.WidgetUid{
-    #   name: "all",
-    #   coll: coll,
-    #   query: Jason.encode!(query),
-    #   props: %{}
-    # }
-
-    # Environment.WidgetDynSup.ensure_child_started(
-    #   @env_id,
-    #   @session_id,
-    #   @function_name,
-    #   widget_uid
-    # )
+    # The mongo_user_link should have been creating when starting session.
+    assert MongoStorage.has_user_link?(em.env_id, sm.user_id)
 
     # Get the actual data and compare
     data = Mongo.find(mongo_name, @coll, @query) |> Enum.to_list()
@@ -160,8 +176,8 @@ defmodule ApplicationRunner.IntegrationTest do
                     ]}
 
     on_exit(fn ->
-      Session.stop_session(@env_id, @session_id)
-      Swarm.unregister_name(Session.Supervisor.get_name(@session_id))
+      Session.stop_session(em.env_id, sm.session_id)
+      Swarm.unregister_name(Session.Supervisor.get_name(sm.session_id))
     end)
   end
 end

@@ -5,15 +5,16 @@ defmodule ApplicationRunner.Session.Task.OnUserFirstJoin do
 
   use Task
 
-  alias ApplicationRunner.{ApplicationServices, Session, MongoStorage}
+  alias ApplicationRunner.MongoStorage
 
   @on_user_first_join_action "onUserFirstJoin"
 
   def start_link(opts) do
     session_id = Keyword.fetch!(opts, :session_id)
-    env_metadata = Session.MetadataAgent.get_metadata(session_id)
+    env_id = Keyword.fetch!(opts, :env_id)
+    user_id = Keyword.fetch!(opts, :user_id)
 
-    Task.start_link(__MODULE__, :run, [env_metadata.env_id, env_metadata.user_id])
+    Task.start_link(__MODULE__, :run, [session_id, env_id, user_id])
   end
 
   def run(session_id, env_id, user_id) do
