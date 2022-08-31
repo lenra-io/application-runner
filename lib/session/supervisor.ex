@@ -15,25 +15,17 @@ defmodule ApplicationRunner.Session.Supervisor do
   end
 
   @impl true
-  def init(%Session.Metadata{} = session_metadata) do
+  def init(%Session.Metadata{} = sm) do
     children = [
       # TODO: add module once they done !
-      {ApplicationRunner.Session.MetadataAgent, session_metadata},
-      # {ApplicationRunner.Session.Token.Agent, opts}
-      {Session.ListenersCache, session_id: session_metadata.session_id},
-      {Session.ChangeEventManager,
-       env_id: session_metadata.env_id, session_id: session_metadata.session_id},
-      # ApplicationRunner.EventHandler
-      # Event.OnUserFirstJoin
-      {Session.Task.OnSessionStart,
-       token: session_metadata.token, function_name: session_metadata.function_name},
+      {ApplicationRunner.Session.MetadataAgent, sm},
+      {ApplicationRunner.EventHandler, mode: :session, id: sm.session_id},
       {Session.Task.OnUserFirstJoin,
-       env_id: session_metadata.env_id,
-       user_id: session_metadata.user_id,
-       token: session_metadata.token,
-       function_name: session_metadata.function_name},
-      # Event.OnSessionStart
-      {Session.UiServer, session_id: session_metadata.session_id}
+       session_id: sm.session_id, env_id: sm.env_id, user_id: sm.user_id},
+      {Session.Task.OnSessionStart, session_id: sm.session_id},
+      {Session.ListenersCache, session_id: sm.session_id},
+      {Session.ChangeEventManager, env_id: sm.env_id, session_id: sm.session_id},
+      {Session.UiServer, session_id: sm.session_id}
     ]
 
     Supervisor.init(children, strategy: :one_for_one)

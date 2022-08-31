@@ -11,6 +11,7 @@ defmodule ApplicationRunner.Session.MetadataAgent do
     Agent.start_link(fn -> session_metadata end, name: get_full_name(session_metadata.session_id))
   end
 
+  @spec fetch_token(any()) :: String.t()
   def fetch_token(session_id) do
     Agent.get(
       get_full_name(session_id),

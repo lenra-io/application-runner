@@ -3,11 +3,6 @@ defmodule ApplicationRunner.ApplicationServices do
     The service that manages calls to an Openfaas action with `run_action/3`
   """
 
-  alias ApplicationRunner.{
-    Environment,
-    Session
-  }
-
   alias ApplicationRunner.Errors.TechnicalError
   require Logger
 
@@ -24,34 +19,11 @@ defmodule ApplicationRunner.ApplicationServices do
   @doc """
     Run a HTTP POST request with needed headers and body to call an Openfaas Action and decode the response body.
 
-    Returns `{:ok, decoded_body}` if the HTTP Post succeed
+    Returns `:ok` if the HTTP Post succeed
     Returns `{:error, reason}` if the HTTP Post fail
   """
-
-  def run_listener(
-        %Environment.Metadata{function_name: function_name, env_id: env_id},
-        action,
-        props,
-        event
-      ) do
-    token = Environment.fetch_token(env_id)
-
-    run_listener(function_name, action, props, event, token)
-  end
-
-  def run_listener(
-        %Session.Metadata{function_name: function_name, session_id: session_id},
-        action,
-        props,
-        event
-      ) do
-    token = Session.fetch_token(session_id)
-
-    run_listener(function_name, action, props, event, token)
-  end
-
   @spec run_listener(String.t(), String.t(), map(), map(), String.t()) ::
-          {:ok, map()} | {:error, any()}
+          :ok | {:error, any()}
   def run_listener(
         function_name,
         action,
@@ -117,8 +89,8 @@ defmodule ApplicationRunner.ApplicationServices do
     end
   end
 
-  @spec fetch_manifest(Environment.Metadata.t()) :: {:ok, map()} | {:error, any()} | :error404
-  def fetch_manifest(%Environment.Metadata{function_name: function_name}) do
+  @spec fetch_manifest(String.t()) :: {:ok, map()} | {:error, any()} | :error404
+  def fetch_manifest(function_name) do
     {base_url, base_headers} = get_http_context()
 
     url = "#{base_url}/function/#{function_name}"
