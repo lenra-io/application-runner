@@ -11,8 +11,6 @@ defmodule ApplicationRunner.ApplicationServices do
   alias ApplicationRunner.Errors.TechnicalError
   require Logger
 
-  @url Application.compile_env!(:application_runner, :url)
-
   defp get_http_context do
     base_url = Application.fetch_env!(:application_runner, :faas_url)
     auth = Application.fetch_env!(:application_runner, :faas_auth)
@@ -72,7 +70,7 @@ defmodule ApplicationRunner.ApplicationServices do
         action: action,
         props: props,
         event: event,
-        api: %{url: @url, token: token}
+        api: %{url: Application.fetch_env!(:application_runner, :url), token: token}
       })
 
     Logger.debug("Call to Openfaas : #{function_name}")
