@@ -108,10 +108,11 @@ defmodule ApplicationRunner.MongoStorage do
   @spec update_doc(number(), String.t(), String.t(), map()) ::
           :ok | {:error, TechnicalErrorType.t()}
   def update_doc(env_id, coll, doc_id, new_doc) do
-    with {:ok, bson_doc_id} <- BSON.ObjectId.decode(doc_id) do
+    with {:ok, bson_doc_id} <- BSON.ObjectId.decode(doc_id),
+         {_value, filtered_doc} <- Map.pop(new_doc, "_id") do
       env_id
       |> mongo_instance()
-      |> Mongo.replace_one(coll, %{"_id" => bson_doc_id}, new_doc)
+      |> Mongo.replace_one(coll, %{"_id" => bson_doc_id}, filtered_doc)
       |> case do
         {:error, err} ->
           TechnicalError.mongo_error_tuple(err)
