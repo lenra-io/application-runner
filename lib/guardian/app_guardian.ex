@@ -6,7 +6,6 @@ defmodule ApplicationRunner.Guardian.AppGuardian do
   use Guardian, otp_app: :application_runner
 
   alias ApplicationRunner.{
-    Contract,
     Environment,
     MongoStorage,
     Session
@@ -14,22 +13,20 @@ defmodule ApplicationRunner.Guardian.AppGuardian do
 
   alias ApplicationRunner.Errors.{BusinessError, TechnicalError}
 
-  @repo Application.compile_env(:application_runner, :repo)
-
   def subject_for_token(session_pid, _claims) do
     {:ok, to_string(session_pid)}
   end
 
   def resource_from_claims(%{"user_id" => user_id, "env_id" => env_id}) do
-    env = @repo.get!(Contract.Environment, env_id)
-    user = @repo.get!(Contract.User, user_id)
+    env = MongoStorage.get_env!(env_id)
+    user = MongoStorage.get_user!(user_id)
     mongo_user_link = MongoStorage.get_mongo_user_link!(env_id, user_id)
 
     {:ok, %{environment: env, user: user, mongo_user_link: mongo_user_link}}
   end
 
   def resource_from_claims(%{"env_id" => env_id}) do
-    env = @repo.get!(Contract.Environment, env_id)
+    env = MongoStorage.get_env!(env_id)
     {:ok, %{environment: env}}
   end
 

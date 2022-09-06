@@ -5,6 +5,7 @@ defmodule ApplicationRunner.MongoStorage do
   """
   import Ecto.Query, only: [from: 2]
 
+  alias ApplicationRunner.Contract
   alias ApplicationRunner.Environment
   alias ApplicationRunner.Errors.TechnicalError
   alias ApplicationRunner.MongoStorage.MongoUserLink
@@ -12,10 +13,30 @@ defmodule ApplicationRunner.MongoStorage do
 
   import Ecto.Query
 
-  @repo Application.compile_env(:application_runner, :repo)
-
   defp mongo_instance(env_id) do
     Environment.MongoInstance.get_full_name(env_id)
+  end
+
+  defp repo do
+    Application.get_env(:application_runner, :repo)
+  end
+
+  ###############
+  # Environment #
+  ###############
+
+  @spec get_env!(number()) :: any
+  def get_env!(env_id) do
+    repo().get!(Contract.Environment, env_id)
+  end
+
+  ########
+  # User #
+  ########
+
+  @spec get_user!(number()) :: any
+  def get_user!(user_id) do
+    repo().get!(Contract.User, user_id)
   end
 
   #################
@@ -24,23 +45,25 @@ defmodule ApplicationRunner.MongoStorage do
 
   @spec get_mongo_user_link!(number(), number()) :: any
   def get_mongo_user_link!(env_id, user_id) do
-    @repo.one!(
+    repo().one!(
       from(mul in MongoUserLink, where: mul.user_id == ^user_id and mul.environment_id == ^env_id)
     )
   end
 
+  @spec has_user_link?(number(), number()) :: any()
   def has_user_link?(env_id, user_id) do
     query =
       from(u in MongoUserLink,
         where: u.user_id == ^user_id and u.environment_id == ^env_id
       )
 
-    @repo.exists?(query)
+    repo().exists?(query)
   end
 
+  @spec create_user_link(map()) :: any()
   def create_user_link(%{environment_id: _, user_id: _} = params) do
     MongoUserLink.new(params)
-    |> @repo.insert()
+    |> repo().insert()
   end
 
   ########

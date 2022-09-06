@@ -7,13 +7,10 @@ defmodule ApplicationRunner.Contract.Environment do
   use Ecto.Schema
   import Ecto.Changeset
 
-  alias ApplicationRunner.JsonStorage.Datastore
-
   @type t :: %__MODULE__{}
 
   @table_name Application.compile_env!(:application_runner, :lenra_environment_table)
   schema @table_name do
-    has_one(:datastore, Datastore, foreign_key: :environment_id)
     timestamps()
   end
 

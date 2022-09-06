@@ -18,6 +18,7 @@ defmodule ApplicationRunner.AppChannel do
       alias LenraCommonWeb.ErrorHelpers
 
       alias ApplicationRunner.Errors.{BusinessError, TechnicalError}
+      alias LenraCommon.Errors.DevError
 
       require Logger
 
@@ -33,6 +34,9 @@ defmodule ApplicationRunner.AppChannel do
           # Application error
           {:error, reason} when is_bitstring(reason) ->
             {:error, %{message: reason, reason: "application_error"}}
+
+          :no ->
+            raise DevError.message("Could not register the AppChannel into swarm")
 
           {:error, reason} when is_struct(reason) ->
             {:error, ErrorHelpers.translate_error(reason)}
