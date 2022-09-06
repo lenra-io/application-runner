@@ -32,7 +32,7 @@ defmodule ApplicationRunner.Session.DynamicSupervisor do
              get_full_name(env_metadata.env_id),
              {Session.Supervisor, session_metadata}
            ) do
-        {:error, {:shutdown, {:failed_to_start_child, reason}}} ->
+        {:error, {:shutdown, {:failed_to_start_child, _module, reason}}} ->
           {:error, reason}
 
         res ->
