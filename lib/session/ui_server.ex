@@ -11,14 +11,14 @@ defmodule ApplicationRunner.Session.UiServer do
   use GenServer
   use SwarmNamed
 
-  @type widget :: map()
-  @type component :: map()
-  @type common_error ::
-          LenraCommon.Errors.BusinessError.t() | LenraCommon.Errors.TechnicalError.t()
-  @type common_errors :: list(common_error())
-
   alias ApplicationRunner.{AppChannel, Environment, JsonSchemata, Session, Ui}
   alias ApplicationRunner.Environment.{WidgetDynSup, WidgetServer, WidgetUid}
+  alias LenraCommon.Errors
+
+  @type widget :: map()
+  @type component :: map()
+  @type common_error :: Errors.BusinessError.t() | Errors.TechnicalError.t()
+  @type common_errors :: list(common_error())
 
   def start_link(opts) do
     session_id = Keyword.fetch!(opts, :session_id)
@@ -122,18 +122,18 @@ defmodule ApplicationRunner.Session.UiServer do
   @spec get_widget(Session.Metadata.t(), WidgetUid.t()) ::
           {:ok, map()} | {:error, common_errors()}
   defp get_widget(%Session.Metadata{} = session_metadata, %WidgetUid{} = widget_uid) do
-    with {:ok, _} <-
-           WidgetDynSup.ensure_child_started(
-             session_metadata.env_id,
-             session_metadata.session_id,
-             session_metadata.function_name,
-             widget_uid
-           ) do
-      widget = WidgetServer.get_widget(session_metadata.env_id, widget_uid)
+    case WidgetDynSup.ensure_child_started(
+           session_metadata.env_id,
+           session_metadata.session_id,
+           session_metadata.function_name,
+           widget_uid
+         ) do
+      {:ok, _} ->
+        widget = WidgetServer.get_widget(session_metadata.env_id, widget_uid)
+        {:ok, widget}
 
-      {:ok, widget}
-    else
-      {:error, err} -> {:error, [err]}
+      {:error, err} ->
+        {:error, [err]}
     end
   end
 
@@ -266,7 +266,7 @@ defmodule ApplicationRunner.Session.UiServer do
             acc, {message, "#" <> path} -> acc ++ ["#{message} at: #{prefix_path <> path}"]
           end)
 
-        {:error, LenraCommon.Errors.BusinessError.message(err_message)}
+        {:error, Errors.BusinessError.message(err_message)}
     end
   end
 
