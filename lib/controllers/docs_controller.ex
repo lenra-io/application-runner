@@ -51,7 +51,7 @@ defmodule ApplicationRunner.DocsController do
   def update(conn, %{"docId" => doc_id, "coll" => coll}, new_doc) do
     with %{environment: env} <- get_resource!(conn),
          {msec, :ok} <- :timer.tc(MongoStorage, :update_doc, [env.id, coll, doc_id, new_doc]) do
-      Logger.warn(msec)
+      IO.inspect({:timer, msec})
       reply(conn)
     end
   end
