@@ -41,7 +41,6 @@ defmodule ApplicationRunner.Environment.DynamicSupervisor do
       res ->
         res
     end
-    |> IO.inspect()
   end
 
   @doc """
@@ -51,7 +50,6 @@ defmodule ApplicationRunner.Environment.DynamicSupervisor do
   def ensure_env_started(env_metadata) do
     case start_env(env_metadata) do
       {:ok, pid} -> {:ok, pid}
-      {:error, message} when is_atom(message) or is_bitstring(message) -> {:error, message}
       {:error, {:already_started, pid}} -> {:ok, pid}
     end
   end
