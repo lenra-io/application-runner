@@ -60,6 +60,7 @@ defmodule ApplicationRunner.Environment.QueryServer do
       {:ok,
        %{
          data: data,
+         map_data: to_map_data(data),
          query_str: query,
          env_id: env_id,
          query: ast,
@@ -75,6 +76,14 @@ defmodule ApplicationRunner.Environment.QueryServer do
       {:error, err} ->
         {:stop, err}
     end
+  end
+
+  defp to_map_data(data) do
+    Map.new(data, fn d -> {Map.get(d, "_id"), d} end)
+  end
+
+  defp from_map_data(map_data) do
+    Map.values(map_data)
   end
 
   defp parse_query(nil, _params) do
@@ -101,7 +110,7 @@ defmodule ApplicationRunner.Environment.QueryServer do
     mongo_name = MongoInstance.get_full_name(env_id)
 
     case Mongo.find(mongo_name, coll, query) do
-      {:error, term} -> TechnicalError.mongo_data_fetch_error_tuple(term)
+      {:error, term} -> TechnicalError.mongo_error_tuple(term)
       cursor -> {:ok, Enum.to_list(cursor)}
     end
   end
@@ -135,7 +144,7 @@ defmodule ApplicationRunner.Environment.QueryServer do
   def handle_call({:monitor, w_pid}, _from, state) do
     Process.monitor(w_pid)
     new_w_ids = MapSet.put(state.w_pids, w_pid)
-    {:reply, Map.get(state, :data), Map.put(state, :w_pids, new_w_ids)}
+    {:reply, :ok, Map.put(state, :w_pids, new_w_ids)}
   end
 
   defp event_handled?(
@@ -158,6 +167,7 @@ defmodule ApplicationRunner.Environment.QueryServer do
            done_ids: done_ids,
            query: query,
            data: data,
+           map_data: map_data,
            coll: coll
          } = state
        ) do
@@ -169,12 +179,15 @@ defmodule ApplicationRunner.Environment.QueryServer do
         full_doc = get_in(event, ["fullDocument"])
         doc_id = get_in(event, ["documentKey", "_id"])
 
-        new_data = change_data(op_type, full_doc, doc_id, data, query, state)
+        {new_map_data, new_data} =
+          change_data(op_type, full_doc, doc_id, data, map_data, query, state)
+
         new_done_ids = get_new_done_ids(event_timestamp, latest_timestamp, event_id, done_ids)
 
         new_state =
           Map.merge(state, %{
             data: new_data,
+            map_data: new_map_data,
             done_ids: new_done_ids,
             latest_timestamp: event_timestamp
           })
@@ -227,47 +240,47 @@ defmodule ApplicationRunner.Environment.QueryServer do
     {:stop, :normal, state}
   end
 
-  defp change_data("insert", full_doc, _doc_id, data, query, state) do
+  defp change_data("insert", full_doc, doc_id, data, map_data, query, state) do
     if Exec.match?(full_doc, query) do
-      new_data = data ++ [full_doc]
+      new_map_data = Map.put(map_data, doc_id, full_doc)
+      new_data = from_map_data(new_map_data)
       notify_data_changed(new_data, state)
-      new_data
+      {new_map_data, new_data}
     else
-      data
+      {map_data, data}
     end
   end
 
-  defp change_data(op_type, full_doc, doc_id, data, query, state)
+  defp change_data(op_type, full_doc, doc_id, data, map_data, query, state)
        when op_type in ["update", "replace"] do
     if Exec.match?(full_doc, query) do
-      new_data =
-        Enum.map(data, fn
-          %{"_id" => ^doc_id} -> full_doc
-          d -> d
-        end)
+      new_map_data = Map.put(map_data, doc_id, full_doc)
+      new_data = from_map_data(new_map_data)
 
       notify_data_changed(new_data, state)
-      new_data
+      {new_map_data, new_data}
     else
-      old_length = length(data)
-      new_data = Enum.reject(data, fn %{"_id" => id} -> id == doc_id end)
+      old_length = Enum.count(map_data)
+      new_map_data = Map.delete(map_data, doc_id)
 
-      if old_length == length(new_data) do
-        data
+      if old_length == Enum.count(new_map_data) do
+        {map_data, data}
       else
+        new_data = from_map_data(new_map_data)
         notify_data_changed(new_data, state)
-        new_data
+        {new_map_data, new_data}
       end
     end
   end
 
-  defp change_data("delete", _full_doc, doc_id, data, _query, state) do
-    new_data = Enum.reject(data, fn doc -> Map.get(doc, "_id") == doc_id end)
+  defp change_data("delete", _full_doc, doc_id, _data, map_data, _query, state) do
+    new_map_data = Map.delete(map_data, doc_id)
+    new_data = from_map_data(new_map_data)
     notify_data_changed(new_data, state)
-    new_data
+    {new_map_data, new_data}
   end
 
-  defp change_data(op_type, _full_doc, _doc_id, _data, _query, state) do
+  defp change_data(op_type, _full_doc, _doc_id, _data, _map_data, _query, state) do
     Logger.debug("Ingore event #{op_type}")
     {:reply, :ok, state}
   end

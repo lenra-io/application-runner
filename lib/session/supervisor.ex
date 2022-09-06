@@ -20,9 +20,9 @@ defmodule ApplicationRunner.Session.Supervisor do
       # TODO: add module once they done !
       {ApplicationRunner.Session.MetadataAgent, sm},
       {ApplicationRunner.EventHandler, mode: :session, id: sm.session_id},
-      {Session.Task.OnUserFirstJoin,
+      {Session.Events.OnUserFirstJoin,
        session_id: sm.session_id, env_id: sm.env_id, user_id: sm.user_id},
-      {Session.Task.OnSessionStart, session_id: sm.session_id},
+      {Session.Events.OnSessionStart, session_id: sm.session_id},
       {Session.ListenersCache, session_id: sm.session_id},
       {Session.ChangeEventManager, env_id: sm.env_id, session_id: sm.session_id},
       {Session.UiServer, session_id: sm.session_id}
