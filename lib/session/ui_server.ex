@@ -424,6 +424,7 @@ defmodule ApplicationRunner.Session.UiServer do
       )
       |> IO.inspect()
     end)
+    |> IO.inspect()
     |> Enum.reduce(
       {[], ui_context, []},
       fn builded_child, {built_components, ui_context_acc, errors} ->
