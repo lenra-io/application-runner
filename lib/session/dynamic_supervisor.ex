@@ -33,6 +33,7 @@ defmodule ApplicationRunner.Session.DynamicSupervisor do
         {Session.Supervisor, session_metadata}
       )
     end
+    |> IO.inspect()
   end
 
   @doc """
