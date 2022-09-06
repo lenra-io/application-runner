@@ -413,6 +413,7 @@ defmodule ApplicationRunner.Session.UiServer do
     children
     |> Enum.with_index()
     |> Parallel.map(fn {child, index} ->
+      IO.inspect({child, index})
       children_path = "#{prefix_path}/#{index}"
 
       build_component(
@@ -421,8 +422,8 @@ defmodule ApplicationRunner.Session.UiServer do
         ui_context,
         Map.put(widget_uid, :prefix_path, children_path)
       )
+      |> IO.inspect()
     end)
-    |> IO.inspect()
     |> Enum.reduce(
       {[], ui_context, []},
       fn builded_child, {built_components, ui_context_acc, errors} ->
