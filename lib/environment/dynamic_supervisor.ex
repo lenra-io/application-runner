@@ -35,7 +35,7 @@ defmodule ApplicationRunner.Environment.DynamicSupervisor do
            __MODULE__,
            {ApplicationRunner.Environment.Supervisor, env_metadata}
          ) do
-      {:error, {:shutdown, {:failed_to_start_child, reason}}} ->
+      {:error, {:shutdown, {:failed_to_start_child, _module, reason}}} ->
         {:error, reason}
 
       res ->
