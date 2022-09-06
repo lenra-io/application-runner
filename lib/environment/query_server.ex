@@ -92,7 +92,7 @@ defmodule ApplicationRunner.Environment.QueryServer do
   end
 
   defp parse_query(query, params) do
-    Parser.parse(query, params)
+    Parser.parse(query, params) |> IO.inspect()
   end
 
   defp decode_query(nil) do
