@@ -22,7 +22,7 @@ defmodule ApplicationRunner.Environment.Supervisor do
       {Environment.ManifestHandler, env_id: em.env_id, function_name: em.function_name},
       {ApplicationRunner.EventHandler, mode: :env, id: em.env_id},
       {Mongo, Environment.MongoInstance.config(em.env_id)},
-      {Environment.Task.OnEnvStart, env_id: em.env_id},
+      {Environment.Events.OnEnvStart, env_id: em.env_id},
       {Environment.ChangeStream, env_id: em.env_id},
       # MongoSessionDynamicSup
       {Environment.QueryDynSup, env_id: em.env_id},
