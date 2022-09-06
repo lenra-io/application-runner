@@ -1,5 +1,5 @@
 defmodule ApplicationRunner.IntegrationTest do
-  use ApplicationRunner.RepoCase, async: false
+  use ApplicationRunner.ConnCase, async: false
 
   alias ApplicationRunner.{AppChannel, Contract, Environment, MongoStorage, Session}
 
@@ -19,14 +19,34 @@ defmodule ApplicationRunner.IntegrationTest do
     %{"type" => "text", "value" => Jason.encode!(data)}
   end
 
-  setup do
-    ctx = %{}
+  setup ctx do
+    Application.ensure_all_started(:postgrex)
+    {:ok, _} = start_supervised(ApplicationRunner.FakeEndpoint)
+    start_supervised(ApplicationRunner.Repo)
+
     ctx = Map.merge(ctx, setup_db(ctx))
-    ctx = Map.merge(ctx, setup_bypass(ctx))
+    ctx = Map.merge(ctx, setup_logger_agent(ctx))
     ctx = Map.merge(ctx, setup_env_metadata(ctx))
     ctx = Map.merge(ctx, setup_session_metadata(ctx))
+    ctx = Map.merge(ctx, setup_bypass(ctx))
+    ctx = Map.merge(ctx, setup_genservers(ctx))
 
     {:ok, ctx}
+  end
+
+  def setup_genservers(%{session_metadata: sm, env_metadata: em}) do
+    # Self must join AppChannel group to receive new UI
+    Swarm.register_name(AppChannel.get_name(sm.session_id), self())
+    Swarm.join(AppChannel.get_group(sm.session_id), self())
+
+    # Start env
+    Environment.DynamicSupervisor.ensure_env_started(em)
+
+    # Reset and setup mongo coll
+    mongo_name = Environment.MongoInstance.get_full_name(em.env_id)
+    Mongo.drop_collection(mongo_name, @coll)
+
+    %{}
   end
 
   def setup_db(_ctx) do
@@ -57,73 +77,123 @@ defmodule ApplicationRunner.IntegrationTest do
     }
   end
 
-  def setup_bypass(_ctx) do
+  def setup_logger_agent(_ctx) do
+    {:ok, pid} = start_supervised({Agent, fn -> [] end})
+    %{logger_agent: pid}
+  end
+
+  def add_log_to_agent(logger_agent, log) do
+    Agent.update(logger_agent, fn logs -> logs ++ [log] end)
+  end
+
+  def get_logs(logger_agent) do
+    Agent.get(logger_agent, fn logs -> logs end)
+  end
+
+  def setup_bypass(%{logger_agent: logger_agent, session_metadata: sm}) do
     bypass =
       Bypass.open(port: 1234)
       |> Bypass.stub("POST", @url, fn conn ->
         {:ok, body, conn} = Plug.Conn.read_body(conn)
 
         case Jason.decode(body) do
-          {:ok, %{"action" => _}} ->
-            Plug.Conn.resp(
-              conn,
-              200,
-              Jason.encode!(:ok)
-            )
+          {:ok, %{"action" => action, "props" => props}} ->
+            resp_listener(logger_agent, conn, action, props, sm.token)
 
-          {:ok, json} ->
-            name = Map.get(json, "widget")
-            data = Map.get(json, "data")
-
-            Plug.Conn.resp(
-              conn,
-              200,
-              Jason.encode!(%{widget: widget(name, data)})
-            )
+          {:ok, %{"widget" => name, "data" => data}} ->
+            resp_widget(logger_agent, conn, name, data)
 
           {:error, _} ->
-            Plug.Conn.resp(conn, 200, Jason.encode!(%{manifest: @manifest}))
+            resp_manifest(logger_agent, conn)
         end
       end)
 
     %{bypass: bypass}
   end
 
-  # test "Check that all dependancies are started and correctly named" do
-  #   assert {:ok, _pid} = Session.start_session(@session_metadata, @env_metadata)
+  def resp_manifest(logger_agent, conn) do
+    add_log_to_agent(logger_agent, {:manifest, @manifest})
+    Plug.Conn.resp(conn, 200, Jason.encode!(%{manifest: @manifest}))
+  end
 
-  #   assert :undefined != Swarm.whereis_name(Environment.Supervisor.get_name(@env_id))
-  #   assert :undefined != Swarm.whereis_name(Environment.MetadataAgent.get_name(@env_id))
-  #   assert :undefined != Swarm.whereis_name(Environment.MongoInstance.get_name(@env_id))
-  #   assert :undefined != Swarm.whereis_name(Environment.ChangeStream.get_name(@env_id))
-  #   assert :undefined != Swarm.whereis_name(Environment.QueryDynSup.get_name(@env_id))
-  #   assert :undefined != Swarm.whereis_name(Environment.WidgetDynSup.get_name(@env_id))
-  #   assert :undefined != Swarm.whereis_name(Session.DynamicSupervisor.get_name(@env_id))
+  def resp_widget(logger_agent, conn, name, data) do
+    add_log_to_agent(logger_agent, {:widget, name, data})
 
-  #   assert :undefined != Swarm.whereis_name(Session.MetadataAgent.get_name(@session_id))
-  #   assert :undefined != Swarm.whereis_name(Session.ChangeEventManager.get_name(@session_id))
+    Plug.Conn.resp(
+      conn,
+      200,
+      Jason.encode!(%{widget: widget(name, data)})
+    )
+  end
 
-  #   on_exit(fn ->
-  #     Session.stop_session(@env_id, @session_id)
-  #     :timer.sleep(1000)
-  #   end)
-  # end
+  def resp_listener(logger_agent, conn, action, props, token) do
+    add_log_to_agent(logger_agent, {:listener, action, props})
+
+    case action do
+      "insert" ->
+        conn = Phoenix.ConnTest.build_conn()
+
+        conn =
+          conn
+          |> Plug.Conn.put_req_header("authorization", "Bearer " <> token)
+          |> post(Routes.docs_path(conn, :create, @coll), props)
+
+        assert %{} = json_response(conn, 200)
+
+      "update" ->
+        conn = Phoenix.ConnTest.build_conn()
+
+        conn =
+          conn
+          |> Plug.Conn.put_req_header("authorization", "Bearer " <> token)
+          |> get(Routes.docs_path(conn, :get_all, @coll))
+
+        assert %{"data" => [%{"_id" => doc_id}]} = json_response(conn, 200)
+
+        conn = Phoenix.ConnTest.build_conn()
+
+        conn =
+          conn
+          |> Plug.Conn.put_req_header("authorization", "Bearer " <> token)
+          |> put(Routes.docs_path(conn, :update, @coll, doc_id), props)
+
+        assert %{} = json_response(conn, 200)
+
+      "delete" ->
+        conn = Phoenix.ConnTest.build_conn()
+
+        conn =
+          conn
+          |> Plug.Conn.put_req_header("authorization", "Bearer " <> token)
+          |> get(Routes.docs_path(conn, :get_all, @coll))
+
+        assert %{"data" => [%{"_id" => doc_id}]} = json_response(conn, 200)
+
+        conn = Phoenix.ConnTest.build_conn()
+
+        conn =
+          conn
+          |> Plug.Conn.put_req_header("authorization", "Bearer " <> token)
+          |> delete(Routes.docs_path(conn, :delete, @coll, doc_id))
+
+        assert %{} = json_response(conn, 200)
+
+      _ ->
+        nil
+    end
+
+    Plug.Conn.resp(
+      conn,
+      200,
+      Jason.encode!(%{})
+    )
+  end
 
   test "Integration test, check that the UI change when the mongo db coll change", %{
     env_metadata: em,
-    session_metadata: sm
+    session_metadata: sm,
+    logger_agent: logger_agent
   } do
-    # Self must join AppChannel group to receive new UI
-    Swarm.register_name(AppChannel.get_name(sm.session_id), self())
-    Swarm.join(AppChannel.get_group(sm.session_id), self())
-
-    # Start env
-    Environment.DynamicSupervisor.ensure_env_started(em)
-    # Reset and setup mongo coll
-    mongo_name = Environment.MongoInstance.get_full_name(em.env_id)
-    Mongo.drop_collection(mongo_name, @coll)
-    Mongo.insert_one!(mongo_name, @coll, %{"foo" => "bar"})
-
     # The mongo_user_link should not exist before starting the session
     assert not MongoStorage.has_user_link?(em.env_id, sm.user_id)
 
@@ -133,47 +203,128 @@ defmodule ApplicationRunner.IntegrationTest do
     # The mongo_user_link should have been creating when starting session.
     assert MongoStorage.has_user_link?(em.env_id, sm.user_id)
 
-    # Get the actual data and compare
-    data = Mongo.find(mongo_name, @coll, @query) |> Enum.to_list()
-    assert Enum.count(data) == 1
-    encoded_data = Jason.encode!(data)
+    # The first message should be a send ui message..
+    assert_receive {:send, :ui, %{"root" => %{"type" => "text", "value" => "[]"}}}
 
-    assert_receive {:send, :ui, %{"root" => %{"type" => "text", "value" => ^encoded_data}}}
+    # Add one data by simulating an "insert" event.
+    ApplicationRunner.EventHandler.send_session_event(
+      sm.session_id,
+      "insert",
+      %{"foo" => "bar"},
+      %{}
+    )
 
-    # Add one more data, get it and compare
-    %{inserted_id: data_id} = Mongo.insert_one!(mongo_name, @coll, %{"foo" => "bar"})
-    data = Mongo.find(mongo_name, @coll, @query) |> Enum.to_list()
-    assert Enum.count(data) == 2
-    encoded_data = Jason.encode!(data)
-    # Wait for the widget to receive the new data
-    # TODO : Remove this and wait for the ui_builder to receive the UI
-
+    # The second message should be a send patches message..
     assert_receive {
       :send,
       :patches,
       [
         %{
-          "value" => ^encoded_data,
+          "value" => value,
           "op" => "replace",
           "path" => "/root/value"
         }
       ]
     }
 
-    # Update the latest data and compare
-    Mongo.update_one(mongo_name, @coll, %{"_id" => data_id}, %{"$set" => %{"foo" => "baz"}})
-    data = Mongo.find(mongo_name, @coll, @query) |> Enum.to_list()
-    assert Enum.count(data) == 1
-    encoded_data = Jason.encode!(data)
+    assert [%{"foo" => "bar"}] = Jason.decode!(value)
 
+    # update the data by simulating an "update" event.
+    ApplicationRunner.EventHandler.send_session_event(
+      sm.session_id,
+      "update",
+      %{"foo" => "baz"},
+      %{}
+    )
+
+    # The third message should be a send patches message..
+    # The data should not appear since the query filter it.
     assert_receive {:send, :patches,
                     [
                       %{
-                        "value" => ^encoded_data,
+                        "value" => "[]",
                         "op" => "replace",
                         "path" => "/root/value"
                       }
                     ]}
+
+    # update the data again to make it match the query again.
+    ApplicationRunner.EventHandler.send_session_event(
+      sm.session_id,
+      "update",
+      %{"foo" => "bar"},
+      %{}
+    )
+
+    # The data should appear again.
+    assert_receive {:send, :patches,
+                    [
+                      %{
+                        "value" => value,
+                        "op" => "replace",
+                        "path" => "/root/value"
+                      }
+                    ]}
+
+    assert [%{"foo" => "bar"}] = Jason.decode!(value)
+
+    # delete the data by simulating an "delete" event.
+    ApplicationRunner.EventHandler.send_session_event(
+      sm.session_id,
+      "delete",
+      %{},
+      %{}
+    )
+
+    # The data should not disapear since it have been deleted.
+    assert_receive {:send, :patches,
+                    [
+                      %{
+                        "value" => "[]",
+                        "op" => "replace",
+                        "path" => "/root/value"
+                      }
+                    ]}
+
+    # check the agent logger.
+    # The logs should be in a specific order.
+    assert [
+             # First, the env starts...
+             # The manifest is fetched
+             {:manifest, %{"rootWidget" => "main"}},
+             # The onEnvStart event is run.
+             {:listener, "onEnvStart", %{}},
+             # Then the session starts.
+             # The onUserFirstJoin event is run
+             {:listener, "onUserFirstJoin", %{}},
+             # The onSessionStart event is run
+             {:listener, "onSessionStart", %{}},
+             # The UiServer get the UI for the first time during startup.
+             # The first widget "main" is fetched
+             {:widget, "main", []},
+             # The second widget "echo" is fetched because the main link to it. The data is empty.
+             {:widget, "echo", []},
+
+             # We then simulate an insert listener.
+             {:listener, "insert", %{"foo" => "bar"}},
+             # Only the "echo" widget is fetched again because "main" is cached.
+             {:widget, "echo", [%{"_id" => _, "foo" => "bar"}]},
+
+             # We then simulate an update listener.
+             {:listener, "update", %{"foo" => "baz"}},
+             # Again, only echo. This time, the query does not match the data anymore.
+             {:widget, "echo", []},
+
+             # We then simulate an update listener to revert the changes.
+             {:listener, "update", %{"foo" => "bar"}},
+             # Again, only echo. The query does match the data again.
+             {:widget, "echo", [%{"_id" => _, "foo" => "bar"}]},
+
+             # Finally, we simulate a delete listener to remove the data.
+             {:listener, "delete", %{}},
+             # The "echo" widget update for the last time.
+             {:widget, "echo", []}
+           ] = get_logs(logger_agent)
 
     on_exit(fn ->
       Session.stop_session(em.env_id, sm.session_id)
