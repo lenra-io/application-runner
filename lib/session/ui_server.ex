@@ -422,6 +422,7 @@ defmodule ApplicationRunner.Session.UiServer do
         Map.put(widget_uid, :prefix_path, children_path)
       )
     end)
+    |> IO.inspect()
     |> Enum.reduce(
       {[], ui_context, []},
       fn builded_child, {built_components, ui_context_acc, errors} ->
