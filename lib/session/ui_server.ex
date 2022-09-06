@@ -62,10 +62,18 @@ defmodule ApplicationRunner.Session.UiServer do
     session_metadata = Session.MetadataAgent.get_metadata(session_id)
     root_widget = Environment.ManifestHandler.get_root_widget(session_metadata.env_id)
 
-    with {:ok, ui_context} <-
-           get_and_build_widget(session_metadata, Ui.Context.new(), root_widget) do
-      {:ok,
-       transform_ui(%{"rootWidget" => widget_id(root_widget), "widgets" => ui_context.widgets_map})}
+    case get_and_build_widget(session_metadata, Ui.Context.new(), root_widget) do
+      {:ok, ui_context} ->
+        {:ok,
+         transform_ui(%{
+           "rootWidget" => widget_id(root_widget),
+           "widgets" => ui_context.widgets_map
+         })}
+
+      {:error, errors} ->
+        # The client cannot handle more than one error at the time.
+        # We format the error list here to return only the first one.
+        {:error, List.first(errors)}
     end
   end
 
