@@ -29,5 +29,6 @@ defmodule ApplicationRunner.Session.Supervisor do
     ]
 
     Supervisor.init(children, strategy: :one_for_one)
+    |> IO.inspect()
   end
 end
