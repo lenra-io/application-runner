@@ -433,8 +433,8 @@ defmodule ApplicationRunner.Session.UiServer do
             {built_components ++ [built_component],
              merge_ui_context(ui_context_acc, new_ui_context), errors}
 
-          {:error, children_errors} ->
-            {built_components, ui_context_acc, errors ++ children_errors}
+          {:error, child_error} ->
+            {built_components, ui_context_acc, errors ++ [child_error]}
         end
       end
     )
