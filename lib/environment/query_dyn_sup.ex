@@ -35,6 +35,7 @@ defmodule ApplicationRunner.Environment.QueryDynSup do
 
   defp start_child(env_id, coll, query, opts) do
     init_value = Keyword.merge(opts, query: query, coll: coll, env_id: env_id)
+
     DynamicSupervisor.start_child(get_full_name(env_id), {QueryServer, init_value})
   end
 end

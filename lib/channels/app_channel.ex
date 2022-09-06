@@ -35,12 +35,12 @@ defmodule ApplicationRunner.AppChannel do
             {:error, %{message: reason, reason: "application_error"}}
 
           {:error, reason} when is_struct(reason) ->
-            {:error, %{error: ErrorHelpers.translate_error(reason)}}
+            {:error, ErrorHelpers.translate_error(reason)}
         end
       end
 
       def join("app", _any, _socket) do
-        BusinessError.no_app_found_tuple()
+        {:error, ErrorHelpers.translate_error(BusinessError.no_app_found())}
       end
 
       defp create_metadatas(socket, app_name, context) do
