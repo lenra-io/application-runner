@@ -28,12 +28,17 @@ defmodule ApplicationRunner.Session.DynamicSupervisor do
   @spec start_session(term(), term()) :: {:error, any} | {:ok, pid()}
   def start_session(session_metadata, env_metadata) do
     with {:ok, _pid} <- Environment.ensure_env_started(env_metadata) do
-      DynamicSupervisor.start_child(
-        get_full_name(env_metadata.env_id),
-        {Session.Supervisor, session_metadata}
-      )
+      case DynamicSupervisor.start_child(
+             get_full_name(env_metadata.env_id),
+             {Session.Supervisor, session_metadata}
+           ) do
+        {:error, {:shutdown, {:failed_to_start_child, reason}}} ->
+          {:error, reason}
+
+        res ->
+          res
+      end
     end
-    |> IO.inspect()
   end
 
   @doc """
