@@ -4,6 +4,8 @@ defmodule ApplicationRunner.DocsController do
   alias ApplicationRunner.{Guardian.AppGuardian, MongoStorage}
   alias LenraCommon.Errors.DevError
 
+  require Logger
+
   def action(conn, _) do
     args = [conn, conn.path_params, conn.body_params]
     apply(__MODULE__, action_name(conn), args)
