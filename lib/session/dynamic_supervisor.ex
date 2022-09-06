@@ -39,6 +39,7 @@ defmodule ApplicationRunner.Session.DynamicSupervisor do
           res
       end
     end
+    |> IO.inspect()
   end
 
   @doc """
