@@ -34,10 +34,16 @@ defmodule ApplicationRunner.Environment.DynamicSupervisor do
   @spec start_env(term()) ::
           {:error, {:already_started, pid()}} | {:ok, pid()} | {:error, atom | bitstring}
   def start_env(env_metadata) do
-    DynamicSupervisor.start_child(
-      __MODULE__,
-      {ApplicationRunner.Environment.Supervisor, env_metadata}
-    )
+    case DynamicSupervisor.start_child(
+           __MODULE__,
+           {ApplicationRunner.Environment.Supervisor, env_metadata}
+         ) do
+      {:error, {:shutdown, {:failed_to_start_child, _module, reason}}} ->
+        {:error, reason}
+
+      res ->
+        res
+    end
   end
 
   @doc """
@@ -48,8 +54,8 @@ defmodule ApplicationRunner.Environment.DynamicSupervisor do
   def ensure_env_started(env_metadata) do
     case start_env(env_metadata) do
       {:ok, pid} -> {:ok, pid}
-      {:error, message} when is_atom(message) or is_bitstring(message) -> {:error, message}
       {:error, {:already_started, pid}} -> {:ok, pid}
+      {:error, err} -> {:error, err}
     end
   end
 
