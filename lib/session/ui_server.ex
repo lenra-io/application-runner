@@ -425,22 +425,23 @@ defmodule ApplicationRunner.Session.UiServer do
       |> IO.inspect()
     end)
     |> IO.inspect()
-    |> Enum.reduce(
+    |> Enum.reduce_while(
       {[], ui_context, []},
       fn builded_child, {built_components, ui_context_acc, errors} ->
         case builded_child do
           {:ok, built_component, new_ui_context} ->
-            {built_components ++ [built_component],
-             merge_ui_context(ui_context_acc, new_ui_context), errors}
+            {:cont,
+             {built_components ++ [built_component],
+              merge_ui_context(ui_context_acc, new_ui_context), errors}}
 
           {:error, child_error} ->
-            {built_components, ui_context_acc, errors ++ [child_error]}
+            {:halt, {built_components, ui_context_acc, child_error}}
         end
       end
     )
     |> case do
       {comp, merged_app_context, []} -> {:ok, comp, merged_app_context}
-      {_, _, errors} -> {:error, errors}
+      {_, _, error} -> {:error, error}
     end
   end
 
