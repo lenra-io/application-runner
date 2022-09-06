@@ -4,6 +4,8 @@ defmodule ApplicationRunner.DocsController do
   alias ApplicationRunner.{Guardian.AppGuardian, MongoStorage}
   alias LenraCommon.Errors.DevError
 
+  require Logger
+
   def action(conn, _) do
     args = [conn, conn.path_params, conn.body_params]
     apply(__MODULE__, action_name(conn), args)
@@ -48,7 +50,8 @@ defmodule ApplicationRunner.DocsController do
 
   def update(conn, %{"docId" => doc_id, "coll" => coll}, new_doc) do
     with %{environment: env} <- get_resource!(conn),
-         :ok <- MongoStorage.update_doc(env.id, coll, doc_id, new_doc) do
+         {msec, :ok} <- :timer.tc(MongoStorage, :update_doc, [env.id, coll, doc_id, new_doc]) do
+      Logger.warn(msec)
       reply(conn)
     end
   end
