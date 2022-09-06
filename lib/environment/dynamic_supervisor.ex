@@ -51,6 +51,7 @@ defmodule ApplicationRunner.Environment.DynamicSupervisor do
     case start_env(env_metadata) do
       {:ok, pid} -> {:ok, pid}
       {:error, {:already_started, pid}} -> {:ok, pid}
+      {:error, err} -> {:error, err}
     end
   end
 
