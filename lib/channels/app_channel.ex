@@ -9,6 +9,7 @@ defmodule ApplicationRunner.AppChannel do
   defmacro __using__(_opts) do
     quote do
       use Phoenix.Channel
+      use SwarmNamed
 
       alias ApplicationRunner.Environment
       alias ApplicationRunner.Guardian.AppGuardian
@@ -24,10 +25,10 @@ defmodule ApplicationRunner.AppChannel do
         Logger.debug("Joining channel for app : #{app_name}")
 
         with {:ok, env_metadata, session_metadata} <- create_metadatas(socket, app_name, context),
-             {:ok, session_pid} <- Session.start_session(session_metadata, env_metdata) do
-          Swarm.register_name(get_name(session_id))
-          Swarm.join(get_group(session_id))
-          {:ok, assign(socket, session_pid: session_pid)}
+             :yes <- Swarm.register_name(get_name(session_metadata.session_id), self()),
+             :ok <- Swarm.join(get_group(session_metadata.session_id), self()),
+             {:ok, session_pid} <- Session.start_session(session_metadata, env_metadata) do
+          {:ok, assign(socket, session_id: session_metadata.session_id)}
         else
           # Application error
           {:error, reason} when is_bitstring(reason) ->
@@ -58,21 +59,17 @@ defmodule ApplicationRunner.AppChannel do
             session_id: session_id,
             user_id: user.id,
             function_name: function_name,
-<<<<<<< HEAD
-            context: context
-            socket_pid: self(),
-=======
->>>>>>> e3577cc (feat!: New UIServer to handle the UI rebuild when data change. (#218))
+            context: context,
             token: session_token
           }
 
-          env_metdata = %Environment.Metadata{
+          env_metadata = %Environment.Metadata{
             env_id: env_id,
             function_name: function_name,
             token: env_token
           }
 
-          {:ok, env_metdata, session_metadata}
+          {:ok, env_metadata, session_metadata}
         else
           {:error, :forbidden} ->
             {:error, ErrorHelpers.translate_error(BusinessError.forbidden())}
@@ -166,6 +163,10 @@ defmodule ApplicationRunner.AppChannel do
 
       def create_session_token(env_id, session_id, user_id) do
         ApplicationRunner.AppChannel.do_create_session_token(env_id, session_id, user_id)
+      end
+
+      def get_group(session_id) do
+        ApplicationRunner.AppChannel.get_group(session_id)
       end
 
       defoverridable allow: 2, get_function_name: 1, get_env: 1
