@@ -36,6 +36,7 @@ defmodule ApplicationRunner.Session.DynamicSupervisor do
           {:error, reason}
 
         res ->
+          IO.inspect(res)
           res
       end
     end

@@ -74,7 +74,6 @@ defmodule ApplicationRunner.Environment.QueryServer do
         raise DevError.exception("Missing data in opts (#{inspect(opts)}")
 
       {:error, err} ->
-        IO.inspect(err)
         {:stop, err}
     end
   end
@@ -92,7 +91,7 @@ defmodule ApplicationRunner.Environment.QueryServer do
   end
 
   defp parse_query(query, params) do
-    Parser.parse(query, params) |> IO.inspect()
+    Parser.parse(query, params)
   end
 
   defp decode_query(nil) do

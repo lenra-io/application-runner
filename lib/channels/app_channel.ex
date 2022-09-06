@@ -40,7 +40,7 @@ defmodule ApplicationRunner.AppChannel do
       end
 
       def join("app", _any, _socket) do
-        {:error, ErrorHelpers.translate_error(BusinessError.no_app_found_tuple())}
+        {:error, ErrorHelpers.translate_error(BusinessError.no_app_found())}
       end
 
       defp create_metadatas(socket, app_name) do
