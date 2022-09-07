@@ -53,7 +53,13 @@ defmodule ApplicationRunner.Environment.WidgetDynSupTest do
 
   describe "ApplicationRunner.Environments.WidgetDynSup.ensure_child_started/2" do
     test "should start widget genserver with valid opts" do
-      widget_uid = %WidgetUid{name: "test", coll: "testcoll", query: "{}", props: %{}}
+      widget_uid = %WidgetUid{
+        name: "test",
+        coll: "testcoll",
+        query: "{}",
+        props: %{},
+        context: %{}
+      }
 
       assert :undefined != Swarm.whereis_name(Environment.WidgetDynSup.get_name(@env_id))
 
@@ -65,7 +71,7 @@ defmodule ApplicationRunner.Environment.WidgetDynSupTest do
                  widget_uid
                )
 
-      assert @widget == WidgetServer.get_widget(@env_id, widget_uid)
+      assert @widget == WidgetServer.fetch_widget!(@env_id, widget_uid)
     end
   end
 end

@@ -3,15 +3,15 @@ defmodule ApplicationRunner.Environment.MongoInstance do
     This module provide the config option to start the `Mongo` genserver in the environment supervisor.
   """
   @env Application.compile_env!(:application_runner, :env)
-  @mongo_url Application.compile_env!(:application_runner, :mongo_url)
 
   use SwarmNamed
 
   def config(env_id) do
     database_name = @env <> "_#{env_id}"
+    mongo_url = Application.fetch_env!(:application_runner, :mongo_url)
 
     [
-      url: "#{@mongo_url}/#{database_name}",
+      url: "#{mongo_url}/#{database_name}",
       name: get_full_name(env_id)
     ]
   end

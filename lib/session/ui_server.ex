@@ -33,9 +33,8 @@ defmodule ApplicationRunner.Session.UiServer do
         send_to_channel(session_id, :ui, ui)
         {:ok, %{session_id: session_id, ui: ui}}
 
-      err ->
-        send_to_channel(session_id, :error, err)
-        {:stop, err}
+      {:error, reason} ->
+        {:stop, reason}
     end
   end
 
@@ -111,7 +110,7 @@ defmodule ApplicationRunner.Session.UiServer do
          %Ui.Context{} = ui_context,
          %WidgetUid{} = widget_uid
        ) do
-    with {:ok, widget} <- get_widget(session_metadata, widget_uid),
+    with {:ok, widget} <- fetch_widget(session_metadata, widget_uid),
          {:ok, component, new_app_context} <-
            build_component(session_metadata, widget, ui_context, widget_uid) do
       str_widget_id = widget_id(widget_uid)
@@ -119,9 +118,9 @@ defmodule ApplicationRunner.Session.UiServer do
     end
   end
 
-  @spec get_widget(Session.Metadata.t(), WidgetUid.t()) ::
+  @spec fetch_widget(Session.Metadata.t(), WidgetUid.t()) ::
           {:ok, map()} | {:error, common_errors()}
-  defp get_widget(%Session.Metadata{} = session_metadata, %WidgetUid{} = widget_uid) do
+  defp fetch_widget(%Session.Metadata{} = session_metadata, %WidgetUid{} = widget_uid) do
     case WidgetDynSup.ensure_child_started(
            session_metadata.env_id,
            session_metadata.session_id,
@@ -129,7 +128,7 @@ defmodule ApplicationRunner.Session.UiServer do
            widget_uid
          ) do
       {:ok, _} ->
-        widget = WidgetServer.get_widget(session_metadata.env_id, widget_uid)
+        widget = WidgetServer.fetch_widget!(session_metadata.env_id, widget_uid)
         {:ok, widget}
 
       {:error, err} ->
@@ -213,7 +212,7 @@ defmodule ApplicationRunner.Session.UiServer do
           WidgetUid.t(),
           map()
         ) ::
-          {:ok, component(), Ui.Context.t()} | {:error, common_error()}
+          {:ok, component(), Ui.Context.t()} | {:error, common_errors()}
   defp handle_component(
          %Session.Metadata{} = session_metadata,
          component,
@@ -255,7 +254,7 @@ defmodule ApplicationRunner.Session.UiServer do
   # Returns the data needed for the component to build.
   # If there is a validation error, return the `{:error, build_errors}` tuple.
   @spec validate_with_error(String.t(), component(), WidgetUid.t()) ::
-          {:error, common_error()} | {:ok, map()}
+          {:error, common_errors()} | {:ok, map()}
   defp validate_with_error(schema_path, component, %WidgetUid{prefix_path: prefix_path}) do
     with {:ok, %{schema: schema} = schema_map} <- JsonSchemata.get_schema_map(schema_path),
          :ok <- ExComponentSchema.Validator.validate(schema, component) do
@@ -267,7 +266,7 @@ defmodule ApplicationRunner.Session.UiServer do
             acc, {message, "#" <> path} -> acc ++ ["#{message} at: #{prefix_path <> path}"]
           end)
 
-        {:error, Errors.BusinessError.message(err_message)}
+        {:error, [Errors.BusinessError.message(err_message)]}
     end
   end
 
@@ -281,7 +280,7 @@ defmodule ApplicationRunner.Session.UiServer do
           Ui.Context.t(),
           WidgetUid.t()
         ) ::
-          {:ok, map(), Ui.Context.t()} | {:error, common_error()}
+          {:ok, map(), Ui.Context.t()} | {:error, common_errors()}
   defp build_child_list(
          session_metadata,
          component,
@@ -366,7 +365,7 @@ defmodule ApplicationRunner.Session.UiServer do
           Ui.Context.t(),
           WidgetUid.t()
         ) ::
-          {:ok, map(), Ui.Context.t()} | {:error, common_error()}
+          {:ok, map(), Ui.Context.t()} | {:error, common_errors()}
   defp build_children_list(
          session_metadata,
          component,
