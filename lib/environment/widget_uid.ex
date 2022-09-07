@@ -2,7 +2,7 @@ defmodule ApplicationRunner.Environment.WidgetUid do
   @moduledoc """
     This identify a unique widget for a given environment.
   """
-  @enforce_keys [:name, :coll, :query, :props]
+  @enforce_keys [:name, :coll, :query, :props, :context]
   defstruct [
     :name,
     :props,

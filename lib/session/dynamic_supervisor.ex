@@ -55,8 +55,4 @@ defmodule ApplicationRunner.Session.DynamicSupervisor do
         DynamicSupervisor.terminate_child(get_full_name(env_id), pid)
     end
   end
-
-  def terminate_session(session_manager_pid) do
-    DynamicSupervisor.terminate_child(ApplicationRunner.Session.Managers, session_manager_pid)
-  end
 end
