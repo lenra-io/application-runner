@@ -47,7 +47,8 @@ defmodule ApplicationRunner.Environment.ManifestHandler do
       name: Map.get(manifest, "rootWidget", "main"),
       coll: nil,
       query: nil,
-      props: %{}
+      props: %{},
+      context: %{}
     }
 
     {:reply, widget_uid, state}

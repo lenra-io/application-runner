@@ -184,7 +184,8 @@ defmodule ApplicationRunner.Session.UiServer do
       props: props,
       prefix_path: widget_uid.prefix_path,
       query: query,
-      coll: coll
+      coll: coll,
+      context: widget_uid.context
     }
 
     case get_and_build_widget(session_metadata, ui_context, new_widget_uid) do

@@ -43,7 +43,8 @@ defmodule ApplicationRunner.Environment.WidgetServer do
              function_name,
              widget_uid.name,
              data,
-             widget_uid.props
+             widget_uid.props,
+             widget_uid.context
            ) do
       state = %{
         widget: widget,
@@ -63,7 +64,7 @@ defmodule ApplicationRunner.Environment.WidgetServer do
     fna = Map.fetch!(state, :function_name)
     wuid = Map.fetch!(state, :widget_uid)
 
-    case ApplicationServices.fetch_widget(fna, wuid.name, new_data, wuid.props) do
+    case ApplicationServices.fetch_widget(fna, wuid.name, new_data, wuid.props, wuid.context) do
       {:ok, widget} ->
         {:noreply, Map.put(state, :widget, widget), @inactivity_timeout}
 
