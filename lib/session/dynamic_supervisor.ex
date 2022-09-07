@@ -33,7 +33,7 @@ defmodule ApplicationRunner.Session.DynamicSupervisor do
              {Session.Supervisor, session_metadata}
            ) do
         {:error, {:shutdown, {:failed_to_start_child, _module, reason}}} ->
-          reason
+          {:error, reason}
 
         res ->
           res

@@ -20,8 +20,9 @@ defmodule ApplicationRunner.Environment.WidgetServer do
     Swarm.join(group, pid)
   end
 
-  def get_widget(env_id, widget_uid) do
-    GenServer.call(get_full_name({env_id, widget_uid}), :get_widget)
+  @spec fetch_widget!(any, WidgetUid.t()) :: map()
+  def fetch_widget!(env_id, widget_uid) do
+    GenServer.call(get_full_name({env_id, widget_uid}), :fetch_widget!)
   end
 
   def start_link(opts) do
@@ -74,7 +75,7 @@ defmodule ApplicationRunner.Environment.WidgetServer do
   end
 
   @impl true
-  def handle_call(:get_widget, _from, state) do
-    {:reply, Map.get(state, :widget), state, @inactivity_timeout}
+  def handle_call(:fetch_widget!, _from, state) do
+    {:reply, Map.fetch!(state, :widget), state, @inactivity_timeout}
   end
 end

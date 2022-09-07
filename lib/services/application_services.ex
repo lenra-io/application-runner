@@ -52,13 +52,6 @@ defmodule ApplicationRunner.ApplicationServices do
     Finch.build(:post, url, headers, body)
     |> Finch.request(AppHttp, receive_timeout: 5000)
     |> response(:listener)
-    |> case do
-      :ok ->
-        :ok
-
-      err ->
-        err
-    end
   end
 
   @spec fetch_widget(String.t(), String.t(), map(), map(), map()) ::
@@ -88,7 +81,7 @@ defmodule ApplicationRunner.ApplicationServices do
     end
   end
 
-  @spec fetch_manifest(String.t()) :: {:ok, map()} | {:error, any()} | :error404
+  @spec fetch_manifest(String.t()) :: {:ok, map()} | {:error, any()}
   def fetch_manifest(function_name) do
     {base_url, base_headers} = get_http_context()
 
@@ -218,25 +211,22 @@ defmodule ApplicationRunner.ApplicationServices do
          _action
        )
        when status_code not in [200, 202] do
+    Logger.error(body)
+
     case status_code do
       400 ->
-        Logger.error(body)
         TechnicalError.bad_request_tuple(body)
 
       404 ->
-        Logger.error(body)
         TechnicalError.error_404_tuple(body)
 
       500 ->
-        Logger.error(body)
         TechnicalError.error_500_tuple(body)
 
       504 ->
-        Logger.error(body)
         TechnicalError.timeout_tuple(body)
 
       _err ->
-        Logger.error(body)
         TechnicalError.unknown_error_tuple(body)
     end
   end

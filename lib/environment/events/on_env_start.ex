@@ -7,6 +7,7 @@ defmodule ApplicationRunner.Environment.Events.OnEnvStart do
 
   @on_env_start_action "onEnvStart"
 
+  @spec start_link(keyword) :: :ignore | {:error, any} | {:ok, pid}
   def start_link(opts) do
     env_id = Keyword.fetch!(opts, :env_id)
 

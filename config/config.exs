@@ -18,7 +18,7 @@ config :application_runner,
   lenra_user_table: "users",
   repo: ApplicationRunner.Repo,
   url: "localhost:4000",
-  mongo_url: "mongo://localhost:27017",
+  mongo_url: "mongodb://localhost:27017",
   env: "dev"
 
 config :application_runner, ApplicationRunner.Repo,
