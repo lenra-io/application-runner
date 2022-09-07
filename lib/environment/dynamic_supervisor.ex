@@ -5,10 +5,8 @@ defmodule ApplicationRunner.Environment.DynamicSupervisor do
   """
   use DynamicSupervisor
 
-  alias ApplicationRunner.Environments.Managers
   alias ApplicationRunner.Environment
   alias ApplicationRunner.Errors.BusinessError
-  alias LenraCommon.Errors.DevError
   alias LenraCommon.Errors.BusinessError
 
   @doc false
