@@ -62,6 +62,7 @@ defmodule ApplicationRunner.IntegrationTest do
         user_id: user.id,
         session_id: @session_id,
         function_name: @function_name,
+        context: %{},
         token: AppChannel.do_create_session_token(env.id, @session_id, user.id) |> elem(1)
       }
     }
