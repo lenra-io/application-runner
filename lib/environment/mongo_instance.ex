@@ -12,7 +12,8 @@ defmodule ApplicationRunner.Environment.MongoInstance do
 
     [
       url: "#{mongo_url}/#{database_name}",
-      name: get_full_name(env_id)
+      name: get_full_name(env_id),
+      pool_size: 10
     ]
   end
 end
