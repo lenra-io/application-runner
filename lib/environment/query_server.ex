@@ -9,21 +9,32 @@ defmodule ApplicationRunner.Environment.QueryServer do
   use GenServer
   use SwarmNamed
 
-  alias ApplicationRunner.Errors.TechnicalError
-  alias ApplicationRunner.Environment.{MongoInstance, WidgetServer}
+  alias ApplicationRunner.Environment.WidgetServer
+  alias ApplicationRunner.MongoStorage
   alias LenraCommon.Errors.DevError
-  alias QueryParser.{Exec, Parser}
+  alias QueryParser.{Exec}
 
   require Logger
 
   def start_link(opts) do
-    with {:ok, query} <- Keyword.fetch(opts, :query),
-         {:ok, coll} <- Keyword.fetch(opts, :coll),
-         {:ok, env_id} <- Keyword.fetch(opts, :env_id) do
-      GenServer.start_link(__MODULE__, opts, name: get_full_name({env_id, coll, query}))
+    with {:ok, coll} <- Keyword.fetch(opts, :coll),
+         {:ok, env_id} <- Keyword.fetch(opts, :env_id),
+         {:ok, _query_transformed} <- Keyword.fetch(opts, :query_transformed),
+         {:ok, query_parsed} <- Keyword.fetch(opts, :query_parsed) do
+      GenServer.start_link(
+        __MODULE__,
+        opts,
+        name: get_full_name({env_id, coll, query_parsed})
+      )
     else
       :error ->
-        DevError.exception(message: "QueryServer need a collection, a query and an env_id")
+        raise DevError.exception(
+                message:
+                  "QueryServer need a coll, a query_transformed, a query_parsed and an env_id"
+              )
+
+      {:error, reason} ->
+        {:error, reason}
     end
   end
 
@@ -36,8 +47,8 @@ defmodule ApplicationRunner.Environment.QueryServer do
     Swarm.join(group, pid)
   end
 
-  def get_data(env_id, coll, query) do
-    GenServer.call(get_full_name({env_id, coll, query}), :get_data)
+  def get_data(env_id, coll, query_parsed) do
+    GenServer.call(get_full_name({env_id, coll, query_parsed}), :get_data)
   end
 
   @doc """
@@ -52,18 +63,16 @@ defmodule ApplicationRunner.Environment.QueryServer do
 
   def init(opts) do
     with {:ok, env_id} <- Keyword.fetch(opts, :env_id),
-         {:ok, query} <- Keyword.fetch(opts, :query),
          {:ok, coll} <- Keyword.fetch(opts, :coll),
-         {:ok, query_map} <- decode_query(query),
-         {:ok, data} <- fetch_initial_data(env_id, coll, query_map),
-         {:ok, ast} <- parse_query(query, %{}) do
+         {:ok, query_transformed} <- Keyword.fetch(opts, :query_transformed),
+         {:ok, query_parsed} <- Keyword.fetch(opts, :query_parsed),
+         {:ok, data} <- fetch_initial_data(env_id, coll, query_transformed) do
       {:ok,
        %{
          data: data,
          map_data: to_map_data(data),
-         query_str: query,
          env_id: env_id,
-         query: ast,
+         query_parsed: query_parsed,
          coll: coll,
          latest_timestamp: Mongo.timestamp(DateTime.utc_now()),
          done_ids: MapSet.new(),
@@ -86,37 +95,21 @@ defmodule ApplicationRunner.Environment.QueryServer do
     Map.values(map_data)
   end
 
-  defp parse_query(nil, _params) do
-    {:ok, nil}
-  end
-
-  defp parse_query(query, params) do
-    Parser.parse(query, params)
-  end
-
-  defp decode_query(nil) do
-    {:ok, nil}
-  end
-
-  defp decode_query(query) do
-    Poison.decode(query)
-  end
-
-  defp fetch_initial_data(_env_id, coll, query) when is_nil(coll) or is_nil(query) do
+  defp fetch_initial_data(_env_id, coll, query_transformed)
+       when is_nil(coll) or is_nil(query_transformed) do
     {:ok, []}
   end
 
-  defp fetch_initial_data(env_id, coll, query) do
-    mongo_name = MongoInstance.get_full_name(env_id)
-
-    case Mongo.find(mongo_name, coll, query) do
-      {:error, term} -> TechnicalError.mongo_error_tuple(term)
-      cursor -> {:ok, Enum.to_list(cursor)}
-    end
+  defp fetch_initial_data(env_id, coll, query_transformed) do
+    MongoStorage.filter_docs(env_id, coll, query_transformed)
   end
 
-  def handle_call({:mongo_event, _event}, _from, %{coll: coll, query: query} = state)
-      when is_nil(coll) or is_nil(query) do
+  def handle_call(
+        {:mongo_event, _event},
+        _from,
+        %{coll: coll, query_parsed: query_parsed} = state
+      )
+      when is_nil(coll) or is_nil(query_parsed) do
     {:reply, :ok, state}
   end
 
@@ -165,7 +158,7 @@ defmodule ApplicationRunner.Environment.QueryServer do
          %{
            latest_timestamp: latest_timestamp,
            done_ids: done_ids,
-           query: query,
+           query_parsed: query_parsed,
            data: data,
            map_data: map_data,
            coll: coll
@@ -180,7 +173,7 @@ defmodule ApplicationRunner.Environment.QueryServer do
         doc_id = get_in(event, ["documentKey", "_id"])
 
         {new_map_data, new_data} =
-          change_data(op_type, full_doc, doc_id, data, map_data, query, state)
+          change_data(op_type, full_doc, doc_id, data, map_data, query_parsed, state)
 
         new_done_ids = get_new_done_ids(event_timestamp, latest_timestamp, event_id, done_ids)
 
@@ -217,13 +210,13 @@ defmodule ApplicationRunner.Environment.QueryServer do
   defp change_coll(
          "rename",
          %{"ns" => %{"coll" => old_coll}, "to" => %{"coll" => new_coll}},
-         %{query_str: query_str, env_id: env_id} = state
+         %{query_parsed: query_parsed, env_id: env_id} = state
        ) do
     # Since the genserver name depend on coll, we change the name if the coll change.
     # Unregister old name
-    Swarm.unregister_name(get_name({env_id, old_coll, query_str}))
+    Swarm.unregister_name(get_name({env_id, old_coll, query_parsed}))
     # Register new name
-    Swarm.register_name(get_name({env_id, new_coll, query_str}), self())
+    Swarm.register_name(get_name({env_id, new_coll, query_parsed}), self())
     notify_coll_changed(new_coll, state)
     {:reply, :ok, Map.put(state, :coll, new_coll)}
   end
@@ -240,8 +233,8 @@ defmodule ApplicationRunner.Environment.QueryServer do
     {:stop, :normal, state}
   end
 
-  defp change_data("insert", full_doc, doc_id, data, map_data, query, state) do
-    if Exec.match?(full_doc, query) do
+  defp change_data("insert", full_doc, doc_id, data, map_data, query_parsed, state) do
+    if Exec.match?(full_doc, query_parsed) do
       new_map_data = Map.put(map_data, doc_id, full_doc)
       new_data = from_map_data(new_map_data)
       notify_data_changed(new_data, state)
@@ -251,9 +244,9 @@ defmodule ApplicationRunner.Environment.QueryServer do
     end
   end
 
-  defp change_data(op_type, full_doc, doc_id, data, map_data, query, state)
+  defp change_data(op_type, full_doc, doc_id, data, map_data, query_parsed, state)
        when op_type in ["update", "replace"] do
-    if Exec.match?(full_doc, query) do
+    if Exec.match?(full_doc, query_parsed) do
       new_map_data = Map.put(map_data, doc_id, full_doc)
       new_data = from_map_data(new_map_data)
 
@@ -273,25 +266,33 @@ defmodule ApplicationRunner.Environment.QueryServer do
     end
   end
 
-  defp change_data("delete", _full_doc, doc_id, _data, map_data, _query, state) do
+  defp change_data("delete", _full_doc, doc_id, _data, map_data, _query_parsed, state) do
     new_map_data = Map.delete(map_data, doc_id)
     new_data = from_map_data(new_map_data)
     notify_data_changed(new_data, state)
     {new_map_data, new_data}
   end
 
-  defp change_data(op_type, _full_doc, _doc_id, _data, _map_data, _query, state) do
+  defp change_data(op_type, _full_doc, _doc_id, _data, _map_data, _query_parsed, state) do
     Logger.debug("Ingore event #{op_type}")
     {:reply, :ok, state}
   end
 
-  defp notify_data_changed(new_data, %{env_id: env_id, query_str: query_str, coll: coll}) do
-    group = WidgetServer.group_name(env_id, coll, query_str)
+  defp notify_data_changed(new_data, %{
+         env_id: env_id,
+         query_parsed: query_parsed,
+         coll: coll
+       }) do
+    group = WidgetServer.group_name(env_id, coll, query_parsed)
     Swarm.publish(group, {:data_changed, new_data})
   end
 
-  defp notify_coll_changed(new_coll, %{env_id: env_id, query_str: query_str, coll: old_coll}) do
-    group = WidgetServer.group_name(env_id, old_coll, query_str)
+  defp notify_coll_changed(new_coll, %{
+         env_id: env_id,
+         query_parsed: query_parsed,
+         coll: old_coll
+       }) do
+    group = WidgetServer.group_name(env_id, old_coll, query_parsed)
     Swarm.publish(group, {:coll_changed, new_coll})
   end
 

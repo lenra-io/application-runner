@@ -38,7 +38,7 @@ defmodule ApplicationRunner.Environment.WidgetServer do
     env_id = Keyword.fetch!(opts, :env_id)
     %WidgetUid{} = widget_uid = Keyword.fetch!(opts, :widget_uid)
 
-    with data <- QueryServer.get_data(env_id, widget_uid.coll, widget_uid.query),
+    with data <- QueryServer.get_data(env_id, widget_uid.coll, widget_uid.query_parsed),
          {:ok, widget} <-
            ApplicationServices.fetch_widget(
              function_name,

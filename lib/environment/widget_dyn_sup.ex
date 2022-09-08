@@ -21,13 +21,15 @@ defmodule ApplicationRunner.Environment.WidgetDynSup do
           {:error, any} | {:ok, pid}
   def ensure_child_started(env_id, session_id, function_name, %WidgetUid{} = widget_uid) do
     coll = widget_uid.coll
-    query = widget_uid.query
+    query_parsed = widget_uid.query_parsed
+    query_transformed = widget_uid.query_transformed
 
-    with {:ok, qs_pid} <- QueryDynSup.ensure_child_started(env_id, coll, query) do
+    with {:ok, qs_pid} <-
+           QueryDynSup.ensure_child_started(env_id, coll, query_parsed, query_transformed) do
       case start_child(env_id, function_name, widget_uid) do
         {:ok, pid} ->
           QueryServer.join_group(qs_pid, session_id)
-          WidgetServer.join_group(pid, env_id, coll, query)
+          WidgetServer.join_group(pid, env_id, coll, query_parsed)
           QueryServer.monitor(qs_pid, pid)
           {:ok, pid}
 

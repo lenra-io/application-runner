@@ -8,6 +8,7 @@ defmodule ApplicationRunner.Environment.WidgetDynSupTest do
   }
 
   alias ApplicationRunner.Environment
+  alias QueryParser.Parser
 
   @manifest %{"rootWidget" => "main"}
   @widget %{"type" => "text", "value" => "test"}
@@ -56,7 +57,8 @@ defmodule ApplicationRunner.Environment.WidgetDynSupTest do
       widget_uid = %WidgetUid{
         name: "test",
         coll: "testcoll",
-        query: "{}",
+        query_parsed: Parser.parse!("{}"),
+        query_transformed: %{},
         props: %{},
         context: %{}
       }

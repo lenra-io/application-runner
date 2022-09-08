@@ -199,7 +199,7 @@ defmodule ApplicationRunner.IntegrationTest do
     assert not MongoStorage.has_user_link?(em.env_id, sm.user_id)
 
     # Start the session and start one widget
-    Session.start_session(sm, em)
+    {:ok, _} = Session.start_session(sm, em)
 
     # The mongo_user_link should have been creating when starting session.
     assert MongoStorage.has_user_link?(em.env_id, sm.user_id)
