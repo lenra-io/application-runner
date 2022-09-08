@@ -7,7 +7,7 @@ defmodule ApplicationRunner.Environment.DynamicSupervisor do
 
   alias ApplicationRunner.Environment
   alias ApplicationRunner.Errors.BusinessError
-  alias LenraCommon.Errors.BusinessError
+  alias LenraCommon.Errors, as: LC
 
   @doc false
   def start_link(opts) do
@@ -61,12 +61,16 @@ defmodule ApplicationRunner.Environment.DynamicSupervisor do
     Stop the `EnvManager` with the given `env_id` and return `:ok`.
     If there is no `EnvManager` for the given `env_id`, then return `{:error, :not_started}`
   """
-  @spec stop_env(number()) :: :ok | {:error, BusinessError.t()}
+  @spec stop_env(number()) :: :ok | {:error, LC.BusinessError.t()}
   def stop_env(env_id) do
-    Supervisor.stop(Environment.Supervisor.get_full_name(env_id))
-  end
+    name = Environment.Supervisor.get_name(env_id)
 
-  def terminate_app(app_manager_pid) do
-    DynamicSupervisor.terminate_child(__MODULE__, app_manager_pid)
+    case Swarm.whereis_name(name) do
+      :undefined ->
+        BusinessError.env_not_started_tuple()
+
+      pid ->
+        Supervisor.stop(pid)
+    end
   end
 end

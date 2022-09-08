@@ -3,13 +3,13 @@ defmodule ApplicationRunner.DocsController do
 
   alias ApplicationRunner.{Guardian.AppGuardian, MongoStorage}
   alias ApplicationRunner.MongoStorage.MongoUserLink
-  alias QueryParser.Parser
   alias LenraCommon.Errors.DevError
+  alias QueryParser.Parser
 
   require Logger
 
   def action(conn, _) do
-    with resources <- get_resource!(conn) |> IO.inspect() do
+    with resources <- get_resource!(conn) do
       mongo_user_id = get_mongo_user_id(resources)
       args = [conn, conn.path_params, conn.body_params, resources, %{"me" => mongo_user_id}]
 
@@ -63,8 +63,6 @@ defmodule ApplicationRunner.DocsController do
   end
 
   def create(conn, %{"coll" => coll}, doc, %{environment: env}, replace_params) do
-    IO.inspect({doc, replace_params})
-
     with :ok <-
            MongoStorage.create_doc(
              env.id,

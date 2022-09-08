@@ -11,11 +11,11 @@ defmodule ApplicationRunner.Session.UiServer do
   use GenServer
   use SwarmNamed
 
-  alias ApplicationRunner.{AppChannel, Environment, JsonSchemata, Session, Ui, MongoStorage}
+  alias ApplicationRunner.{AppChannel, Environment, JsonSchemata, MongoStorage, Session, Ui}
   alias ApplicationRunner.MongoStorage.MongoUserLink
   alias ApplicationRunner.Environment.{WidgetDynSup, WidgetServer, WidgetUid}
-  alias QueryParser.Parser
   alias LenraCommon.Errors
+  alias QueryParser.Parser
 
   @type widget :: map()
   @type component :: map()
