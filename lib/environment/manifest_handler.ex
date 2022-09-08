@@ -43,14 +43,6 @@ defmodule ApplicationRunner.Environment.ManifestHandler do
   def handle_call(:get_root_widget, _from, state) do
     manifest = Map.get(state, :manifest)
 
-    widget_uid = %Environment.WidgetUid{
-      name: Map.get(manifest, "rootWidget", "main"),
-      coll: nil,
-      query: nil,
-      props: %{},
-      context: %{}
-    }
-
-    {:reply, widget_uid, state}
+    {:reply, Map.get(manifest, "rootWidget", "main"), state}
   end
 end

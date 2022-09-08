@@ -11,8 +11,10 @@ defmodule ApplicationRunner.Session.UiServer do
   use GenServer
   use SwarmNamed
 
-  alias ApplicationRunner.{AppChannel, Environment, JsonSchemata, Session, Ui}
+  alias ApplicationRunner.{AppChannel, Environment, JsonSchemata, Session, Ui, MongoStorage}
+  alias ApplicationRunner.MongoStorage.MongoUserLink
   alias ApplicationRunner.Environment.{WidgetDynSup, WidgetServer, WidgetUid}
+  alias QueryParser.Parser
   alias LenraCommon.Errors
 
   @type widget :: map()
@@ -59,20 +61,32 @@ defmodule ApplicationRunner.Session.UiServer do
 
   def load_ui(session_id) do
     session_metadata = Session.MetadataAgent.get_metadata(session_id)
-    root_widget = Environment.ManifestHandler.get_root_widget(session_metadata.env_id)
+    root_widget_name = Environment.ManifestHandler.get_root_widget(session_metadata.env_id)
 
-    case get_and_build_widget(session_metadata, Ui.Context.new(), root_widget) do
-      {:ok, ui_context} ->
-        {:ok,
-         transform_ui(%{
-           "rootWidget" => widget_id(root_widget),
-           "widgets" => ui_context.widgets_map
-         })}
-
-      {:error, errors} ->
+    with {:ok, widget_uid} <-
+           create_widget_uid(
+             session_metadata,
+             root_widget_name,
+             nil,
+             nil,
+             %{},
+             session_metadata.context,
+             ""
+           ),
+         {:ok, ui_context} <- get_and_build_widget(session_metadata, Ui.Context.new(), widget_uid) do
+      {:ok,
+       transform_ui(%{
+         "rootWidget" => widget_id(widget_uid),
+         "widgets" => ui_context.widgets_map
+       })}
+    else
+      {:error, errors} when is_list(errors) ->
         # The client cannot handle more than one error at the time.
         # We format the error list here to return only the first one.
         {:error, List.first(errors)}
+
+      {:error, error} ->
+        {:error, error}
     end
   end
 
@@ -176,28 +190,55 @@ defmodule ApplicationRunner.Session.UiServer do
     name = Map.get(component, "name")
     props = Map.get(component, "props")
     coll = Map.get(component, "coll")
-    query = Map.get(component, "query", %{}) |> Jason.encode!()
+    query = Map.get(component, "query", %{})
 
-    new_widget_uid = %WidgetUid{
-      name: name,
-      props: props,
-      prefix_path: widget_uid.prefix_path,
-      query: query,
-      coll: coll,
-      context: widget_uid.context
-    }
-
-    case get_and_build_widget(session_metadata, ui_context, new_widget_uid) do
-      {:ok, new_app_context} ->
-        {
-          :ok,
-          %{"type" => "widget", "id" => widget_id(new_widget_uid), "name" => name},
-          new_app_context
-        }
-
-      {:error, reason} ->
-        {:error, reason}
+    with {:ok, new_widget_uid} <-
+           create_widget_uid(
+             session_metadata,
+             name,
+             coll,
+             query,
+             props,
+             widget_uid.context,
+             widget_uid.prefix_path
+           ),
+         {:ok, new_app_context} <-
+           get_and_build_widget(session_metadata, ui_context, new_widget_uid) do
+      {
+        :ok,
+        %{"type" => "widget", "id" => widget_id(new_widget_uid), "name" => name},
+        new_app_context
+      }
     end
+  end
+
+  defp create_widget_uid(session_metadata, name, coll, query, props, context, prefix_path) do
+    %MongoUserLink{mongo_user_id: mongo_user_id} =
+      MongoStorage.get_mongo_user_link!(session_metadata.env_id, session_metadata.user_id)
+
+    params = %{"me" => mongo_user_id}
+    query_transformed = Parser.replace_params(query, params)
+
+    with {:ok, query_parsed} <- parse_query(query, params) do
+      {:ok,
+       %WidgetUid{
+         name: name,
+         props: props,
+         prefix_path: prefix_path,
+         query_parsed: query_parsed,
+         query_transformed: query_transformed,
+         coll: coll,
+         context: context
+       }}
+    end
+  end
+
+  defp parse_query(nil, _params) do
+    {:ok, nil}
+  end
+
+  defp parse_query(query, params) do
+    Parser.parse(Jason.encode!(query), params)
   end
 
   # Build a components means to :
@@ -490,6 +531,6 @@ defmodule ApplicationRunner.Session.UiServer do
   end
 
   defp widget_id(%WidgetUid{} = widget_uid) do
-    Crypto.hash({widget_uid.name, widget_uid.coll, widget_uid.query, widget_uid.props})
+    Crypto.hash({widget_uid.name, widget_uid.coll, widget_uid.query_parsed, widget_uid.props})
   end
 end

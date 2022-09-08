@@ -19,9 +19,10 @@ defmodule ApplicationRunner.Environment.QueryDynSup do
     DynamicSupervisor.init(strategy: :one_for_one)
   end
 
-  @spec ensure_child_started(term(), String.t(), String.t()) :: {:ok, pid()} | {:error, term()}
-  def ensure_child_started(env_id, coll, query, opts \\ []) do
-    case start_child(env_id, coll, query, opts) do
+  @spec ensure_child_started(term(), String.t(), map(), map()) ::
+          {:ok, pid()} | {:error, term()}
+  def ensure_child_started(env_id, coll, query_parsed, query_transformed) do
+    case start_child(env_id, coll, query_parsed, query_transformed) do
       {:ok, pid} ->
         {:ok, pid}
 
@@ -33,8 +34,13 @@ defmodule ApplicationRunner.Environment.QueryDynSup do
     end
   end
 
-  defp start_child(env_id, coll, query, opts) do
-    init_value = Keyword.merge(opts, query: query, coll: coll, env_id: env_id)
+  defp start_child(env_id, coll, query_parsed, query_transformed) do
+    init_value = [
+      query_parsed: query_parsed,
+      query_transformed: query_transformed,
+      coll: coll,
+      env_id: env_id
+    ]
 
     DynamicSupervisor.start_child(get_full_name(env_id), {QueryServer, init_value})
   end
