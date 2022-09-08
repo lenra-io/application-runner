@@ -12,7 +12,7 @@ defmodule ApplicationRunner.Environment.QueryServer do
   alias ApplicationRunner.Environment.WidgetServer
   alias ApplicationRunner.MongoStorage
   alias LenraCommon.Errors.DevError
-  alias QueryParser.{Exec}
+  alias QueryParser.Exec
 
   require Logger
 
