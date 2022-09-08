@@ -16,7 +16,7 @@ defmodule ApplicationRunner.Router do
         get("/colls/:coll/docs/:docId", DocsController, :get)
         put("/colls/:coll/docs/:docId", DocsController, :update)
         delete("/colls/:coll/docs/:docId", DocsController, :delete)
-        post("/colls/:coll/docs/filter", DocsController, :filter)
+        post("/colls/:coll/docs/find", DocsController, :find)
       end
     end
   end
