@@ -1,12 +1,12 @@
 # credo:disable-for-this-file Credo.Check.Refactor.LongQuoteBlocks
 defmodule ApplicationRunner.AppChannel do
-  use SwarmNamed
-
   @moduledoc """
     `ApplicationRunner.AppChannel` handle the app channel to run app and listeners and push to the user the resulted UI or Patch
   """
 
-  defmacro __using__(_opts) do
+  defmacro __using__(opts) do
+    adapter_mod = Keyword.fetch!(opts, :adapter)
+
     quote do
       use Phoenix.Channel
       use SwarmNamed
@@ -21,6 +21,8 @@ defmodule ApplicationRunner.AppChannel do
       alias LenraCommon.Errors.DevError
 
       require Logger
+
+      @adapter_mod unquote(adapter_mod)
 
       def join("app", %{"app" => app_name, "context" => context}, socket) do
         Logger.debug("Joining channel for app : #{app_name}")
@@ -52,9 +54,9 @@ defmodule ApplicationRunner.AppChannel do
         user = socket.assigns.user
 
         with {:ok, _uuid} <- Ecto.UUID.cast(app_name),
-             function_name <- get_function_name(app_name),
-             :ok <- allow(user.id, app_name),
-             env_id <- get_env(app_name),
+             function_name <- @adapter_mod.get_function_name(app_name),
+             :ok <- @adapter_mod.allow(user.id, app_name),
+             env_id <- @adapter_mod.get_env_id(app_name),
              {:ok, session_token} <- create_session_token(env_id, session_id, user.id),
              {:ok, env_token} <- create_env_token(env_id) do
           # prepare the assigns to the session/environment
@@ -85,22 +87,6 @@ defmodule ApplicationRunner.AppChannel do
 
       def join("app", _any, _socket) do
         {:error, ErrorHelpers.translate_error(BusinessError.no_app_found())}
-      end
-
-      # Override this function to allow user or not according to the server/devtools needs
-      defp allow(user_id, app_name) do
-        false
-      end
-
-      # Override this function to return the function name according to the server/devtools needs
-      @spec get_function_name(String.t()) :: String.t()
-      defp get_function_name(app_name) do
-        String.downcase("dev-#{app_name}-1")
-      end
-
-      # Override this function to return the function name according to the server/devtools needs
-      defp get_env(app_name) do
-        1
       end
 
       ########
@@ -172,8 +158,6 @@ defmodule ApplicationRunner.AppChannel do
       def get_group(session_id) do
         ApplicationRunner.AppChannel.get_group(session_id)
       end
-
-      defoverridable allow: 2, get_function_name: 1, get_env: 1
     end
   end
 
