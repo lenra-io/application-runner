@@ -107,14 +107,13 @@ defmodule ApplicationRunner.ApplicationServices do
 
   Returns an `Enum`.
   """
-  def get_app_resource(function_name, resource) do
+  def get_app_resource_stream(function_name, resource) do
     {base_url, base_headers} = get_http_context()
 
     url = "#{base_url}/function/#{function_name}"
 
     headers = [{"Content-Type", "application/json"} | base_headers]
-    params = Map.put(%{}, :resource, resource)
-    body = Jason.encode!(params)
+    body = Jason.encode!(%{resource: resource})
 
     Finch.build(:post, url, headers, body)
     |> Finch.stream(AppHttp, [], fn
@@ -154,26 +153,6 @@ defmodule ApplicationRunner.ApplicationServices do
     |> response(:deploy_app)
   end
 
-  # Unused function
-  # def delete_app_openfaas(service_name, build_number) do
-  #   {base_url, headers} = get_http_context()
-
-  #   Logger.debug("Remove Openfaas application")
-
-  #   url = "#{base_url}/system/functions"
-
-  #   Finch.build(
-  #     :delete,
-  #     url,
-  #     headers,
-  #     Jason.encode!(%{
-  #       "functionName" => AdapterHandler.get_function_name(service_name, build_number)
-  #     })
-  #   )
-  #   |> Finch.request(AppHttp, receive_timeout: 1000)
-  #   |> response(:delete_app)
-  # end
-
   defp response({:ok, %Finch.Response{status: 200, body: body}}, key)
        when key in [:manifest, :widget] do
     {:ok, Jason.decode!(body)}
@@ -187,19 +166,6 @@ defmodule ApplicationRunner.ApplicationServices do
        when status_code in [200, 202] do
     {:ok, status_code}
   end
-
-  # defp response({:ok, %Finch.Response{status: status_code}}, :delete_app)
-  #      when status_code in [200, 202] do
-  #   {:ok, status_code}
-  # end
-
-  # defp response({:ok, %Finch.Response{body: body}}, :delete_app) do
-  #   Logger.error(
-  #     "Openfaas could not delete the application. It should not happen. \n\t\t reason: #{body}"
-  #   )
-
-  #   {:error, :openfaas_delete_error}
-  # end
 
   defp response({:error, %Mint.TransportError{reason: reason}}, _action) do
     Logger.error("Openfaas could not be reached. It should not happen. \n\t\t reason: #{reason}")

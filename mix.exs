@@ -50,7 +50,7 @@ defmodule ApplicationRunner.MixProject do
         name: :query_parser,
         host: "github.com",
         project: "lenra-io/query-parser.git",
-        tag: "v1.0.0-beta.7",
+        tag: "v1.0.0-beta.8",
         credentials:
           "#{System.get_env("GITHUB_AUTH", "shiipou:#{System.get_env("GH_PERSONNAL_TOKEN")}")}"
       ),
@@ -58,7 +58,7 @@ defmodule ApplicationRunner.MixProject do
         name: :lenra_common,
         host: "github.com",
         project: "lenra-io/lenra-common.git",
-        tag: "v2.0.4",
+        tag: "v2.2.0",
         credentials:
           "#{System.get_env("GITHUB_AUTH", "shiipou:#{System.get_env("GH_PERSONNAL_TOKEN")}")}"
       )

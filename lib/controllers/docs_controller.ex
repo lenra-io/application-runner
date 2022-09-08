@@ -48,17 +48,13 @@ defmodule ApplicationRunner.DocsController do
              coll,
              doc_id
            ) do
-      conn
-      |> assign_data(doc)
-      |> reply
+      reply(conn, doc)
     end
   end
 
   def get_all(conn, %{"coll" => coll}, _body_params, %{environment: env}, _replace_params) do
     with {:ok, docs} <- MongoStorage.fetch_all_docs(env.id, coll) do
-      conn
-      |> assign_data(docs)
-      |> reply
+      reply(conn, docs)
     end
   end
 
@@ -101,18 +97,12 @@ defmodule ApplicationRunner.DocsController do
     with :ok <- MongoStorage.delete_doc(env.id, coll, doc_id) do
       reply(conn)
     end
-
-    reply(conn)
   end
 
   def filter(conn, %{"coll" => coll}, filter, %{environment: env}, replace_params) do
     with {:ok, docs} <-
            MongoStorage.filter_docs(env.id, coll, Parser.replace_params(filter, replace_params)) do
-      conn
-      |> assign_data(docs)
-      |> reply
+      reply(conn, docs)
     end
-
-    reply(conn)
   end
 end
