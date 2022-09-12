@@ -1,4 +1,8 @@
 defmodule ApplicationRunner.Adapter do
+  @moduledoc """
+  ApplicationRunner.Adapter provides a callback for a different implementation depending on the parent application
+  """
+
   @doc """
     Implement this function to allow user or not according to the server/devtools needs
   """
