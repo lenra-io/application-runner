@@ -304,10 +304,11 @@ defmodule ApplicationRunner.Session.UiServer do
       {:error, errors} ->
         err_message =
           Enum.reduce(errors, "", fn
-            acc, {message, "#" <> path} -> acc ++ ["#{message} at: #{prefix_path <> path}"]
+            {message, "#" <> path}, acc ->
+              acc <> "#{message} at: #{prefix_path <> path}"
           end)
 
-        {:error, [Errors.BusinessError.message(err_message)]}
+        {:error, %Errors.BusinessError{message: err_message, reason: :build_errors}}
     end
   end
 

@@ -47,7 +47,7 @@ defmodule ApplicationRunner.DocsControllerTest do
         |> Plug.Conn.put_req_header("authorization", "Bearer " <> token)
         |> get(Routes.docs_path(conn, :get_all, @coll))
 
-      assert %{"data" => [%{"foo" => "bar"}]} = json_response(conn, 200)
+      assert [%{"foo" => "bar"}] = json_response(conn, 200)
     end
   end
 
@@ -64,7 +64,7 @@ defmodule ApplicationRunner.DocsControllerTest do
         |> Plug.Conn.put_req_header("authorization", "Bearer " <> token)
         |> get(Routes.docs_path(conn, :get, @coll, doc_id))
 
-      assert %{"data" => %{"foo" => "bar"}} = json_response(conn, 200)
+      assert %{"foo" => "bar"} = json_response(conn, 200)
     end
   end
 
