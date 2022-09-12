@@ -24,7 +24,6 @@ defmodule ApplicationRunner.ResourcesController do
                ApplicationServices.get_app_resource_stream(function_name, resource_name) do
           Enum.reduce(stream, conn, fn
             {:data, data}, conn ->
-              IO.inspect(data)
               {:ok, conn_res} = conn |> chunk(data)
               conn_res
 
