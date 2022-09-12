@@ -54,7 +54,7 @@ defmodule ApplicationRunner.CollsControllerTest do
         |> Plug.Conn.put_req_header("authorization", "Bearer " <> token)
         |> get(Routes.docs_path(conn, :get_all, @coll))
 
-      assert %{"data" => []} = json_response(conn, 200)
+      assert [] = json_response(conn, 200)
     end
   end
 end

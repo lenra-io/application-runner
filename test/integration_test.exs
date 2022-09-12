@@ -19,6 +19,10 @@ defmodule ApplicationRunner.IntegrationTest do
     %{"type" => "text", "value" => Jason.encode!(data)}
   end
 
+  def get_name(module, identifier) do
+    {module, identifier}
+  end
+
   setup ctx do
     Application.ensure_all_started(:postgrex)
     {:ok, _} = start_supervised(ApplicationRunner.FakeEndpoint)
@@ -36,7 +40,7 @@ defmodule ApplicationRunner.IntegrationTest do
 
   def setup_genservers(%{session_metadata: sm, env_metadata: em}) do
     # Self must join AppChannel group to receive new UI
-    Swarm.register_name(AppChannel.get_name(sm.session_id), self())
+    Swarm.register_name(get_name(AppChannel, sm.session_id), self())
     Swarm.join(AppChannel.get_group(sm.session_id), self())
 
     # Start env
@@ -149,7 +153,7 @@ defmodule ApplicationRunner.IntegrationTest do
           |> Plug.Conn.put_req_header("authorization", "Bearer " <> token)
           |> get(Routes.docs_path(conn, :get_all, @coll))
 
-        assert %{"data" => [%{"_id" => doc_id}]} = json_response(conn, 200)
+        assert [%{"_id" => doc_id}] = json_response(conn, 200)
 
         conn = Phoenix.ConnTest.build_conn()
 
@@ -168,7 +172,7 @@ defmodule ApplicationRunner.IntegrationTest do
           |> Plug.Conn.put_req_header("authorization", "Bearer " <> token)
           |> get(Routes.docs_path(conn, :get_all, @coll))
 
-        assert %{"data" => [%{"_id" => doc_id}]} = json_response(conn, 200)
+        assert [%{"_id" => doc_id}] = json_response(conn, 200)
 
         conn = Phoenix.ConnTest.build_conn()
 
