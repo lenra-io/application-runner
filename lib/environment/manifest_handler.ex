@@ -5,7 +5,7 @@ defmodule ApplicationRunner.Environment.ManifestHandler do
   use GenServer
   use SwarmNamed
 
-  alias ApplicationRunner.{ApplicationServices, Environment}
+  alias ApplicationRunner.ApplicationServices
 
   def start_link(opts) do
     env_id = Keyword.fetch!(opts, :env_id)
@@ -30,7 +30,7 @@ defmodule ApplicationRunner.Environment.ManifestHandler do
     GenServer.call(get_full_name(env_id), :get_manifest)
   end
 
-  @spec get_root_widget(number()) :: Environment.WidgetUid.t()
+  @spec get_root_widget(number()) :: String.t()
   def get_root_widget(env_id) do
     GenServer.call(get_full_name(env_id), :get_root_widget)
   end

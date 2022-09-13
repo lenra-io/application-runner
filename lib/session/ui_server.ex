@@ -212,6 +212,15 @@ defmodule ApplicationRunner.Session.UiServer do
     end
   end
 
+  @spec create_widget_uid(
+          Session.Metadata.t(),
+          binary(),
+          binary() | nil,
+          map() | nil,
+          map() | nil,
+          map(),
+          binary()
+        ) :: {:ok, WidgetUid.t()} | {:error, LenraCommon.Errors.BusinessError.t()}
   defp create_widget_uid(session_metadata, name, coll, query, props, context, prefix_path) do
     %MongoUserLink{mongo_user_id: mongo_user_id} =
       MongoStorage.get_mongo_user_link!(session_metadata.env_id, session_metadata.user_id)
@@ -233,12 +242,12 @@ defmodule ApplicationRunner.Session.UiServer do
     end
   end
 
-  defp parse_query(nil, _params) do
-    {:ok, nil}
+  defp parse_query(query, params) when not is_nil(query) do
+    Parser.parse(Jason.encode!(query), params)
   end
 
-  defp parse_query(query, params) do
-    Parser.parse(Jason.encode!(query), params)
+  defp parse_query(nil, _params) do
+    {:ok, nil}
   end
 
   # Build a components means to :
