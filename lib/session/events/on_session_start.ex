@@ -23,8 +23,12 @@ defmodule ApplicationRunner.Session.Events.OnSessionStart do
       :ok ->
         {:ok, :ok, {:continue, :stop_me}}
 
-      {:error, reason} ->
+      {:error, reason} when reason.reason != :error_404 ->
         {:stop, reason}
+
+      # OnSessionstart may not be implemented
+      {:error, reason} when reason.reason == :error_404 ->
+        {:ok, :ok, {:continue, :stop_me}}
     end
   end
 

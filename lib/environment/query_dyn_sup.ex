@@ -19,7 +19,7 @@ defmodule ApplicationRunner.Environment.QueryDynSup do
     DynamicSupervisor.init(strategy: :one_for_one)
   end
 
-  @spec ensure_child_started(term(), String.t(), map(), map()) ::
+  @spec ensure_child_started(term(), String.t() | nil, map() | nil, map() | nil) ::
           {:ok, pid()} | {:error, term()}
   def ensure_child_started(env_id, coll, query_parsed, query_transformed) do
     case start_child(env_id, coll, query_parsed, query_transformed) do

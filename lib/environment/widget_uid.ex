@@ -17,7 +17,7 @@ defmodule ApplicationRunner.Environment.WidgetUid do
           name: String.t(),
           props: map() | nil,
           query_parsed: map() | nil,
-          query_parsed: map() | nil,
+          query_transformed: map() | nil,
           coll: String.t() | nil,
           context: map() | nil,
           prefix_path: String.t()
