@@ -3,7 +3,7 @@ defmodule ApplicationRunner.Repo.Migrations.Webhooks do
 
   def change do
     create table(:webhooks) do
-      add(:id, :uuid, primary_key: true)
+      add(:uuid, :uuid, primary_key: true)
       add(:environment_id, references(:environments), null: false)
       add(:action, :string, null: false)
       add(:props, :map)

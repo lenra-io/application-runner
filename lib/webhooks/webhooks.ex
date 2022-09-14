@@ -9,6 +9,7 @@ defmodule ApplicationRunner.Webhooks.Webhook do
   alias ApplicationRunner.Webhooks.Webhook
 
   @derive {Jason.Encoder, only: [:id, :action, :props]}
+  @primary_key {:uuid, :binary_id, autogenerate: true}
   schema "webhooks" do
     has_one(:env, ApplicationRunner.Contract.Environment, foreign_key: :id)
 
@@ -25,8 +26,8 @@ defmodule ApplicationRunner.Webhooks.Webhook do
     |> foreign_key_constraint(:environment_id)
   end
 
-  def new(params) do
-    %Webhook{}
+  def new(env_id, params) do
+    %Webhook{env: env_id}
     |> Webhook.changeset(params)
   end
 end
