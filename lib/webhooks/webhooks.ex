@@ -7,11 +7,12 @@ defmodule ApplicationRunner.Webhooks.Webhook do
   import Ecto.Changeset
 
   alias ApplicationRunner.Webhooks.Webhook
+  alias ApplicationRunner.Contract.Environment
 
   @derive {Jason.Encoder, only: [:uuid, :action, :props, :environment_id]}
   @primary_key {:uuid, Ecto.UUID, autogenerate: true}
   schema "webhooks" do
-    has_one(:environment, ApplicationRunner.Contract.Environment, foreign_key: :uuid)
+    belongs_to(:environment, Environment)
 
     field(:action, :string)
     field(:props, :map)
