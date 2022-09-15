@@ -11,16 +11,22 @@ defmodule ApplicationRunner.Webhooks.WebhookTest do
       ApplicationRunner.Contract.Environment.new()
       |> Repo.insert!()
 
-    webhook =
-      Webhook.new(env.id, %{
-        "action" => "test",
-        "props" => %{
-          "prop1" => "1",
-          "prop2" => "2"
-        }
-      })
-      |> Repo.insert!()
+    Webhook.new(env.id, %{
+      "action" => "test",
+      "props" => %{
+        "prop1" => "1",
+        "prop2" => "2"
+      }
+    })
+    |> Repo.insert!()
+
+    webhook = Enum.at(Repo.all(Webhook), 0)
 
     assert webhook.action == "test"
+
+    assert webhook.props == %{
+             "prop1" => "1",
+             "prop2" => "2"
+           }
   end
 end
