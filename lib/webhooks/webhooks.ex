@@ -6,8 +6,8 @@ defmodule ApplicationRunner.Webhooks.Webhook do
   use Ecto.Schema
   import Ecto.Changeset
 
-  alias ApplicationRunner.Webhooks.Webhook
   alias ApplicationRunner.Contract.Environment
+  alias ApplicationRunner.Webhooks.Webhook
 
   @derive {Jason.Encoder, only: [:uuid, :action, :props, :environment_id]}
   @primary_key {:uuid, Ecto.UUID, autogenerate: true}

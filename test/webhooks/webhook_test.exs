@@ -3,12 +3,13 @@ defmodule ApplicationRunner.Webhooks.WebhookTest do
 
   use ApplicationRunner.RepoCase
 
-  alias ApplicationRunner.Webhooks.Webhook
+  alias ApplicationRunner.Contract.Environment
   alias ApplicationRunner.Repo
+  alias ApplicationRunner.Webhooks.Webhook
 
   test "Insert Webhook into database successfully" do
     env =
-      ApplicationRunner.Contract.Environment.new()
+      Environment.new()
       |> Repo.insert!()
 
     Webhook.new(env.id, %{
