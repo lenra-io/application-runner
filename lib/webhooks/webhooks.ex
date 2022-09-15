@@ -28,7 +28,7 @@ defmodule ApplicationRunner.Webhooks.Webhook do
   end
 
   def new(env_id, params) do
-    %Webhook{environment: env_id}
+    %Webhook{environment_id: env_id}
     |> Webhook.changeset(params)
   end
 end
