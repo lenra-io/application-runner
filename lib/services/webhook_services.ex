@@ -3,9 +3,12 @@ defmodule ApplicationRunner.WebhookServices do
     The service that manages the webhooks.
   """
 
+  alias ApplicationRunner.Repo
   alias ApplicationRunner.Webhooks.Webhook
 
   def create(env_id, params) do
+    Webhook.new(env_id, params)
+    |> Repo.insert()
   end
 
   def get(env_id) do
