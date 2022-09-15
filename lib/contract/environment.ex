@@ -8,12 +8,14 @@ defmodule ApplicationRunner.Contract.Environment do
   import Ecto.Changeset
 
   alias ApplicationRunner.JsonStorage.Datastore
+  alias ApplicationRunner.Webhooks.Webhook
 
   @type t :: %__MODULE__{}
 
   @table_name Application.compile_env!(:application_runner, :lenra_environment_table)
   schema @table_name do
     has_one(:datastore, Datastore, foreign_key: :environment_id)
+    has_many(:webhooks, Webhook, foreign_key: :environment_id)
     timestamps()
   end
 
