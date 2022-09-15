@@ -11,7 +11,7 @@ defmodule ApplicationRunner.Webhooks.Webhook do
   @derive {Jason.Encoder, only: [:uuid, :action, :props, :environment_id]}
   @primary_key {:uuid, Ecto.UUID, autogenerate: true}
   schema "webhooks" do
-    has_one(:environment, ApplicationRunner.Contract.Environment, foreign_key: :id)
+    has_one(:environment, ApplicationRunner.Contract.Environment, foreign_key: :uuid)
 
     field(:action, :string)
     field(:props, :map)
