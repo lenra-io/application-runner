@@ -33,15 +33,18 @@ defmodule ApplicationRunner.AppChannel do
              {:ok, session_pid} <- Session.start_session(session_metadata, env_metadata) do
           {:ok, assign(socket, session_id: session_metadata.session_id)}
         else
+          :no ->
+            raise DevError.message("Could not register the AppChannel into swarm")
+
           # Application error
           {:error, reason} when is_bitstring(reason) ->
             {:error, %{message: reason, reason: "application_error"}}
 
-          :no ->
-            raise DevError.message("Could not register the AppChannel into swarm")
-
           {:error, reason} when is_struct(reason) ->
             {:error, ErrorHelpers.translate_error(reason)}
+
+          {:error, reason} ->
+            {:error, ErrorHelpers.translate_error(TechnicalError.unknown_error())}
         end
       end
 

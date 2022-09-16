@@ -107,8 +107,7 @@ defmodule ApplicationRunner.ApplicationServices do
 
   Returns an `Enum`.
   """
-  @spec get_app_resource_stream(String.t(), String.t()) ::
-          {:ok, acc} :: {:error, Exception.t()}
+  @spec get_app_resource_stream(String.t(), String.t()) :: {:ok, term()} | {:error, Exception.t()}
   def get_app_resource_stream(function_name, resource) do
     {base_url, base_headers} = get_http_context()
 
@@ -121,7 +120,8 @@ defmodule ApplicationRunner.ApplicationServices do
     |> Finch.stream(AppHttp, [], fn
       chunk, acc -> acc ++ [chunk]
     end)
-    |> response(:resource)
+
+    # |> response(:resource)
   end
 
   def deploy_app(image_name, function_name) do
