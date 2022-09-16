@@ -46,22 +46,8 @@ defmodule ApplicationRunner.MixProject do
       {:finch, "~> 0.12"},
       {:bypass, "~> 2.0", only: :test},
       {:mongodb_driver, "~> 0.9.1"},
-      private_git(
-        name: :query_parser,
-        host: "github.com",
-        project: "lenra-io/query-parser.git",
-        tag: "v1.0.0-beta.8",
-        credentials:
-          "#{System.get_env("GITHUB_AUTH", "shiipou:#{System.get_env("GH_PERSONNAL_TOKEN")}")}"
-      ),
-      private_git(
-        name: :lenra_common,
-        host: "github.com",
-        project: "lenra-io/lenra-common.git",
-        tag: "v2.2.0",
-        credentials:
-          "#{System.get_env("GITHUB_AUTH", "shiipou:#{System.get_env("GH_PERSONNAL_TOKEN")}")}"
-      )
+      {:query_parser, git: "https://github.com/lenra-io/query-parser.git", tag: "v1.0.0-beta.9"},
+      {:lenra_common, git: "https://github.com/lenra-io/lenra-common.git", tag: "v2.2.0"}
     ]
   end
 
@@ -82,21 +68,5 @@ defmodule ApplicationRunner.MixProject do
       "ecto.setup": ["ecto.create", "ecto.migrate"],
       "ecto.reset": ["ecto.drop", "ecto.setup"]
     ]
-  end
-
-  defp private_git(opts) do
-    name = Keyword.fetch!(opts, :name)
-    host = Keyword.fetch!(opts, :host)
-    project = Keyword.fetch!(opts, :project)
-    tag = Keyword.fetch!(opts, :tag)
-    credentials = Keyword.get(opts, :credentials)
-
-    case System.get_env("CI") do
-      "true" ->
-        {name, git: "https://#{credentials}@#{host}/#{project}", tag: tag, submodules: true}
-
-      _ ->
-        {name, git: "git@#{host}:#{project}", tag: tag, submodules: true}
-    end
   end
 end
