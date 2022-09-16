@@ -69,20 +69,4 @@ defmodule ApplicationRunner.MixProject do
       "ecto.reset": ["ecto.drop", "ecto.setup"]
     ]
   end
-
-  defp private_git(opts) do
-    name = Keyword.fetch!(opts, :name)
-    host = Keyword.fetch!(opts, :host)
-    project = Keyword.fetch!(opts, :project)
-    tag = Keyword.fetch!(opts, :tag)
-    credentials = Keyword.get(opts, :credentials)
-
-    case System.get_env("CI") do
-      "true" ->
-        {name, git: "https://#{credentials}@#{host}/#{project}", tag: tag, submodules: true}
-
-      _ ->
-        {name, git: "git@#{host}:#{project}", tag: tag, submodules: true}
-    end
-  end
 end
