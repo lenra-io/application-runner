@@ -72,22 +72,29 @@ with:
    - You also need to implement a channel using ApplicationRunner's channel
 
 ```elixir
-defmodule LenraWeb.AppChannel do
-  use ApplicationRunner.AppChannel
+defmodule __APPLICATION__.AppAdapter do
+  @behaviour ApplicationRunner.Adapter
 
-  defp allow(user_id, app_name) do
+  @impl ApplicationRunner.Adapter
+  def allow(user_id, app_name) do
     #This function authorizes a user for the following app_name
     #Return true to authorize access
     #Return false to deny access
   end
 
-  defp get_function_name(app_name) do
+  @impl ApplicationRunner.Adapter
+  def get_function_name(app_name) do
     #This fucntion return the name of the application to call
   end
 
-  defp get_env(app_name) do
+  @impl ApplicationRunner.Adapter
+  def get_env(app_name) do
     #This function return the environment of the following app_name
   end
+end
+
+defmodule __APPLICATION__.Channel do
+    use ApplicationRunner.AppChannel, adapter: __APPLICATION__.AppAdapter
 end
 ```
   - How to implement a Socket for your application that uses ApplicationRunner Socket:
