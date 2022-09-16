@@ -120,8 +120,7 @@ defmodule ApplicationRunner.ApplicationServices do
     |> Finch.stream(AppHttp, [], fn
       chunk, acc -> acc ++ [chunk]
     end)
-
-    # |> response(:resource)
+    |> response(:resource)
   end
 
   def deploy_app(image_name, function_name) do
