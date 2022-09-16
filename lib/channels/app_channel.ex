@@ -81,10 +81,10 @@ defmodule ApplicationRunner.AppChannel do
           {:ok, env_metadata, session_metadata}
         else
           {:error, :forbidden} ->
-            {:error, ErrorHelpers.translate_error(BusinessError.forbidden())}
+            {:error, BusinessError.forbidden()}
 
           err ->
-            {:error, ErrorHelpers.translate_error(BusinessError.no_app_found())}
+            {:error, BusinessError.no_app_found()}
         end
       end
 
