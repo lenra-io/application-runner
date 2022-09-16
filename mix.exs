@@ -46,22 +46,8 @@ defmodule ApplicationRunner.MixProject do
       {:finch, "~> 0.12"},
       {:bypass, "~> 2.0", only: :test},
       {:mongodb_driver, "~> 0.9.1"},
-      private_git(
-        name: :query_parser,
-        host: "github.com",
-        project: "lenra-io/query-parser.git",
-        tag: "v1.0.0-beta.8",
-        credentials:
-          "#{System.get_env("GITHUB_AUTH", "shiipou:#{System.get_env("GH_PERSONNAL_TOKEN")}")}"
-      ),
-      private_git(
-        name: :lenra_common,
-        host: "github.com",
-        project: "lenra-io/lenra-common.git",
-        tag: "v2.2.0",
-        credentials:
-          "#{System.get_env("GITHUB_AUTH", "shiipou:#{System.get_env("GH_PERSONNAL_TOKEN")}")}"
-      )
+      {:query_parser, git: "https://github.com/lenra-io/query-parser.git", tag: "v1.0.0-beta.9"},
+      {:lenra_common, git: "https://github.com/lenra-io/lenra-common.git", tag: "v2.2.0"}
     ]
   end
 
