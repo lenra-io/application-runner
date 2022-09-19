@@ -24,7 +24,7 @@ jobs:
       - prIsWip
     if: needs.prIsWip.outputs.isWip == 'false'
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     env:
       POSTGRES_HOST: localhost
       POSTGRES_USER: postgres
