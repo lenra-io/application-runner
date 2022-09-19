@@ -4,9 +4,9 @@ defmodule ApplicationRunner.WebhookServices do
   """
 
   alias ApplicationRunner.ApplicationServices
+  alias ApplicationRunner.Environment.MetadataAgent
   alias ApplicationRunner.Repo
   alias ApplicationRunner.Webhooks.Webhook
-
 
   def create(env_id, params) do
   end
@@ -17,6 +17,14 @@ defmodule ApplicationRunner.WebhookServices do
   def trigger(webhook_uuid, payload) do
     webhook = Repo.get(Webhook, webhook_uuid)
 
-    ApplicationServices.run_listener(<state>, webhook.action, payload, %{})
+    metadata = MetadataAgent.get_metadata(webhook.environment_id)
+
+    ApplicationServices.run_listener(
+      metadata.function_name,
+      webhook.action,
+      payload,
+      %{},
+      metadata.token
+    )
   end
 end
