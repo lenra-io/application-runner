@@ -20,7 +20,7 @@ defmodule ApplicationRunner.Session.UiServer do
   @type widget :: map()
   @type component :: map()
   @type common_error :: Errors.BusinessError.t() | Errors.TechnicalError.t()
-  @type common_errors :: list(common_error())
+  # @type common_errors :: list(common_error())
 
   def start_link(opts) do
     session_id = Keyword.fetch!(opts, :session_id)
@@ -80,10 +80,11 @@ defmodule ApplicationRunner.Session.UiServer do
          "widgets" => ui_context.widgets_map
        })}
     else
-      {:error, errors} when is_list(errors) ->
-        # The client cannot handle more than one error at the time.
-        # We format the error list here to return only the first one.
-        {:error, List.first(errors)}
+      # {:error, errors} when is_list(errors) ->
+      #   # The client cannot handle more than one error at the time.
+      #   # We format the error list here to return only the first one.
+      #   IO.inspect(errors)
+      #   {:error, List.first(errors)}
 
       {:error, error} ->
         {:error, error}
@@ -118,7 +119,7 @@ defmodule ApplicationRunner.Session.UiServer do
   end
 
   @spec get_and_build_widget(Session.Metadata.t(), Ui.Context.t(), WidgetUid.t()) ::
-          {:ok, Ui.Context.t()} | {:error, common_errors()}
+          {:ok, Ui.Context.t()} | {:error, common_error()}
   defp get_and_build_widget(
          %Session.Metadata{} = session_metadata,
          %Ui.Context{} = ui_context,
@@ -133,7 +134,7 @@ defmodule ApplicationRunner.Session.UiServer do
   end
 
   @spec fetch_widget(Session.Metadata.t(), WidgetUid.t()) ::
-          {:ok, map()} | {:error, common_errors()}
+          {:ok, map()} | {:error, common_error()}
   defp fetch_widget(%Session.Metadata{} = session_metadata, %WidgetUid{} = widget_uid) do
     case WidgetDynSup.ensure_child_started(
            session_metadata.env_id,
@@ -146,7 +147,7 @@ defmodule ApplicationRunner.Session.UiServer do
         {:ok, widget}
 
       {:error, err} ->
-        {:error, [err]}
+        {:error, err}
     end
   end
 
@@ -154,7 +155,7 @@ defmodule ApplicationRunner.Session.UiServer do
   # If the component type is "widget" this is considered a Widget and will be handled like one.
   # Everything else will be handled as a simple component.
   @spec build_component(Session.Metadata.t(), widget(), Ui.Context.t(), WidgetUid.t()) ::
-          {:ok, component(), Ui.Context.t()} | {:error, common_errors()}
+          {:ok, component(), Ui.Context.t()} | {:error, common_error()}
   defp build_component(
          session_metadata,
          %{"type" => comp_type} = component,
@@ -185,7 +186,7 @@ defmodule ApplicationRunner.Session.UiServer do
   # - Create a new WidgetContext corresponding to the Widget
   # - Recursively get_and_build_widget.
   @spec handle_widget(Session.Metadata.t(), widget(), Ui.Context.t(), WidgetUid.t()) ::
-          {:ok, component(), Ui.Context.t()} | {:error, common_errors()}
+          {:ok, component(), Ui.Context.t()} | {:error, common_error()}
   defp handle_widget(session_metadata, component, ui_context, widget_uid) do
     name = Map.get(component, "name")
     props = Map.get(component, "props")
@@ -233,7 +234,7 @@ defmodule ApplicationRunner.Session.UiServer do
        %WidgetUid{
          name: name,
          props: props,
-         prefix_path: prefix_path,
+         prefix_path: "#{prefix_path}\n@widget:#{name}",
          query_parsed: query_parsed,
          query_transformed: query_transformed,
          coll: coll,
@@ -262,7 +263,7 @@ defmodule ApplicationRunner.Session.UiServer do
           WidgetUid.t(),
           map()
         ) ::
-          {:ok, component(), Ui.Context.t()} | {:error, common_errors()}
+          {:ok, component(), Ui.Context.t()} | {:error, common_error()}
   defp handle_component(
          %Session.Metadata{} = session_metadata,
          component,
@@ -304,7 +305,7 @@ defmodule ApplicationRunner.Session.UiServer do
   # Returns the data needed for the component to build.
   # If there is a validation error, return the `{:error, build_errors}` tuple.
   @spec validate_with_error(String.t(), component(), WidgetUid.t()) ::
-          {:error, common_errors()} | {:ok, map()}
+          {:error, common_error()} | {:ok, map()}
   defp validate_with_error(schema_path, component, %WidgetUid{prefix_path: prefix_path}) do
     with {:ok, %{schema: schema} = schema_map} <- JsonSchemata.get_schema_map(schema_path),
          :ok <- ExComponentSchema.Validator.validate(schema, component) do
@@ -314,7 +315,7 @@ defmodule ApplicationRunner.Session.UiServer do
         err_message =
           Enum.reduce(errors, "", fn
             {message, "#" <> path}, acc ->
-              acc <> "#{message} at: #{prefix_path <> path}"
+              acc <> "#{message}#{prefix_path <> path}\n\n"
           end)
 
         {:error, %Errors.BusinessError{message: err_message, reason: :build_errors}}
@@ -331,7 +332,7 @@ defmodule ApplicationRunner.Session.UiServer do
           Ui.Context.t(),
           WidgetUid.t()
         ) ::
-          {:ok, map(), Ui.Context.t()} | {:error, common_errors()}
+          {:ok, map(), Ui.Context.t()} | {:error, common_error()}
   defp build_child_list(
          session_metadata,
          component,
@@ -340,8 +341,8 @@ defmodule ApplicationRunner.Session.UiServer do
          widget_uid
        ) do
     case reduce_child_list(session_metadata, component, child_list, ui_context, widget_uid) do
-      {comp, merged_ui_context, []} -> {:ok, comp, merged_ui_context}
-      {_, _, errors} -> {:error, errors}
+      {:error, error} -> {:error, error}
+      {comp, merged_ui_context} -> {:ok, comp, merged_ui_context}
     end
   end
 
@@ -352,23 +353,23 @@ defmodule ApplicationRunner.Session.UiServer do
          ui_context,
          %WidgetUid{prefix_path: prefix_path} = widget_uid
        ) do
-    Enum.reduce(
+    Enum.reduce_while(
       child_list,
-      {%{}, ui_context, []},
-      fn child_key, {child_map, ui_context_acc, errors} ->
+      {%{}, ui_context},
+      fn child_key, {child_map, ui_context_acc} ->
         case Map.get(component, child_key) do
           nil ->
-            {child_map, ui_context_acc, errors}
+            {:cont, {child_map, ui_context_acc}}
 
           child_comp ->
-            child_path = "#{prefix_path}/#{child_key}"
+            com_type = Map.get(component, "type")
+            child_path = "#{prefix_path}/#{com_type}##{child_key}"
 
             build_comp_and_format(
               session_metadata,
               child_map,
               child_comp,
               child_key,
-              errors,
               ui_context_acc,
               ui_context,
               Map.put(widget_uid, :prefix_path, child_path)
@@ -383,7 +384,6 @@ defmodule ApplicationRunner.Session.UiServer do
          child_map,
          child_comp,
          child_key,
-         errors,
          ui_context_acc,
          ui_context,
          widget_uid
@@ -396,13 +396,15 @@ defmodule ApplicationRunner.Session.UiServer do
          ) do
       {:ok, built_component, child_ui_context} ->
         {
-          Map.merge(child_map, %{child_key => built_component}),
-          merge_ui_context(ui_context_acc, child_ui_context),
-          errors
+          :cont,
+          {
+            Map.merge(child_map, %{child_key => built_component}),
+            merge_ui_context(ui_context_acc, child_ui_context)
+          }
         }
 
-      {:error, comp_errors} ->
-        {child_map, ui_context_acc, comp_errors ++ errors}
+      {:error, comp_error} ->
+        {:halt, {:error, comp_error}}
     end
   end
 
@@ -416,7 +418,7 @@ defmodule ApplicationRunner.Session.UiServer do
           Ui.Context.t(),
           WidgetUid.t()
         ) ::
-          {:ok, map(), Ui.Context.t()} | {:error, common_errors()}
+          {:ok, map(), Ui.Context.t()} | {:error, common_error()}
   defp build_children_list(
          session_metadata,
          component,
@@ -424,41 +426,46 @@ defmodule ApplicationRunner.Session.UiServer do
          %Ui.Context{} = ui_context,
          %WidgetUid{prefix_path: prefix_path} = widget_uid
        ) do
-    Enum.reduce(children_keys, {%{}, ui_context, []}, fn children_key,
-                                                         {children_map, app_context_acc, errors} =
-                                                           acc ->
-      if Map.has_key?(component, children_key) do
-        children_path = "#{prefix_path}/#{"children_key"}"
+    Enum.reduce_while(
+      children_keys,
+      {%{}, ui_context},
+      fn children_key, {children_map, app_context_acc} = acc ->
+        if Map.has_key?(component, children_key) do
+          comp_type = Map.get(component, "type")
+          children_path = "#{prefix_path}/#{comp_type}##{children_key}"
 
-        case build_children(
-               session_metadata,
-               component,
-               children_key,
-               ui_context,
-               Map.put(widget_uid, :prefix_path, children_path)
-             ) do
-          {:ok, built_children, children_ui_context} ->
-            {
-              Map.merge(children_map, %{children_key => built_children}),
-              merge_ui_context(app_context_acc, children_ui_context),
-              errors
-            }
+          case build_children(
+                 session_metadata,
+                 component,
+                 children_key,
+                 ui_context,
+                 Map.put(widget_uid, :prefix_path, children_path)
+               ) do
+            {:ok, built_children, children_ui_context} ->
+              {
+                :cont,
+                {
+                  Map.merge(children_map, %{children_key => built_children}),
+                  merge_ui_context(app_context_acc, children_ui_context)
+                }
+              }
 
-          {:error, children_errors} ->
-            {%{}, ui_context, children_errors ++ errors}
+            {:error, child_error} ->
+              {:halt, {:error, child_error}}
+          end
+        else
+          {:cont, acc}
         end
-      else
-        acc
       end
-    end)
+    )
     |> case do
-      {children_map, merged_app_context, []} -> {:ok, children_map, merged_app_context}
-      {_, _, errors} -> {:error, errors}
+      {:error, child_error} -> {:error, child_error}
+      {children_map, merged_app_context} -> {:ok, children_map, merged_app_context}
     end
   end
 
   @spec build_children(Session.Metadata.t(), map, String.t(), Ui.Context.t(), WidgetUid.t()) ::
-          {:error, common_errors()} | {:ok, list(component()), Ui.Context.t()}
+          {:error, common_error()} | {:ok, list(component()), Ui.Context.t()}
   defp build_children(session_metadata, component, children_key, ui_context, widget_uid) do
     case Map.get(component, children_key) do
       nil ->
@@ -488,22 +495,22 @@ defmodule ApplicationRunner.Session.UiServer do
       )
     end)
     |> Enum.reduce_while(
-      {[], ui_context, []},
-      fn builded_child, {built_components, ui_context_acc, errors} ->
+      {[], ui_context},
+      fn builded_child, {built_components, ui_context_acc} ->
         case builded_child do
           {:ok, built_component, new_ui_context} ->
             {:cont,
              {built_components ++ [built_component],
-              merge_ui_context(ui_context_acc, new_ui_context), errors}}
+              merge_ui_context(ui_context_acc, new_ui_context)}}
 
           {:error, child_error} ->
-            {:halt, {built_components, ui_context_acc, child_error}}
+            {:halt, {:error, child_error}}
         end
       end
     )
     |> case do
-      {comp, merged_app_context, []} -> {:ok, comp, merged_app_context}
-      {_, _, error} -> {:error, error}
+      {:error, error} -> {:error, error}
+      {comp, merged_app_context} -> {:ok, comp, merged_app_context}
     end
   end
 
@@ -516,7 +523,7 @@ defmodule ApplicationRunner.Session.UiServer do
   end
 
   @spec build_listeners(Session.Metadata.t(), component(), list(String.t())) ::
-          {:ok, map()} | {:error, list()}
+          {:ok, map()} | {:error, common_error()}
   defp build_listeners(session_metadata, component, listeners) do
     Enum.reduce(listeners, {:ok, %{}}, fn listener, {:ok, acc} ->
       case build_listener(session_metadata, Map.get(component, listener)) do
