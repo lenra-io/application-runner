@@ -5,8 +5,6 @@ defmodule ApplicationRunner.Session.UiBuilders.UiBuilderAdapter do
 
   alias ApplicationRunner.Environment.WidgetUid
   alias ApplicationRunner.Session
-  alias ApplicationRunner.Ui
-
   alias LenraCommon.Errors
 
   @type common_error :: Errors.BusinessError.t() | Errors.TechnicalError.t()

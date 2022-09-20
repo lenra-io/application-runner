@@ -11,13 +11,14 @@ defmodule ApplicationRunner.Session.RouteServer do
   use GenServer
   use SwarmNamed
 
-  alias ApplicationRunner.{RouteChannel, MongoStorage, Session}
   alias ApplicationRunner.MongoStorage.MongoUserLink
   alias ApplicationRunner.Environment.{WidgetDynSup, WidgetServer, WidgetUid}
   alias ApplicationRunner.Errors.BusinessError
+  alias ApplicationRunner.{MongoStorage, RouteChannel, Session}
+  alias ApplicationRunner.Session.UiBuilders.UiBuilderAdapter
+  alias ApplicationRunner.Utils
   alias LenraCommon.Errors
   alias QueryParser.Parser
-  alias ApplicationRunner.Utils
 
   def start_link(opts) do
     session_id = Keyword.fetch!(opts, :session_id)
@@ -80,7 +81,7 @@ defmodule ApplicationRunner.Session.RouteServer do
   def load_ui(session_id, mode, route) do
     session_metadata = Session.MetadataAgent.get_metadata(session_id)
     builder_mod = get_builder_mode(mode)
-    routes = apply(builder_mod, :get_routes, [session_metadata.env_id])
+    routes = builder_mod.get_routes(session_metadata.env_id)
 
     with {:ok, route_params, base_widget} <- find_route(routes, route),
          name <- Map.get(base_widget, "name"),
@@ -98,10 +99,10 @@ defmodule ApplicationRunner.Session.RouteServer do
              session_metadata.context,
              ""
            ) do
-      apply(builder_mod, :build_ui, [session_metadata, widget_uid])
+      builder_mod.build_ui(session_metadata, widget_uid)
     else
       :error ->
-        BusinessError.route_doest_not_exists_tuple(session_metadata.route)
+        BusinessError.route_doest_not_exists_tuple(route)
 
       err ->
         err

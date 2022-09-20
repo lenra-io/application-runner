@@ -7,7 +7,7 @@ defmodule ApplicationRunner.Session.RouteDynSup do
   use DynamicSupervisor
   use SwarmNamed
 
-  alias ApplicationRunner.Session.{RouteSupervisor, RouteServer}
+  alias ApplicationRunner.Session.{RouteServer, RouteSupervisor}
 
   def start_link(opts) do
     session_id = Keyword.fetch!(opts, :session_id)

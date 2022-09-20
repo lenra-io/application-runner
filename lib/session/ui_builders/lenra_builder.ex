@@ -1,8 +1,11 @@
 defmodule ApplicationRunner.Session.UiBuilders.LenraBuilder do
+  @moduledoc """
+      This module is responsible of building the Lenra view.
+  """
   @behaviour ApplicationRunner.Session.UiBuilders.UiBuilderAdapter
 
   alias ApplicationRunner.{Environment, JsonSchemata, Session, Ui}
-  alias ApplicationRunner.Environment.{WidgetUid}
+  alias ApplicationRunner.Environment.WidgetUid
   alias ApplicationRunner.Session.RouteServer
   alias ApplicationRunner.Session.UiBuilders.UiBuilderAdapter
   alias LenraCommon.Errors
@@ -454,17 +457,15 @@ defmodule ApplicationRunner.Session.UiBuilders.LenraBuilder do
       listeners_keys,
       {:ok, %{}},
       fn listener_key, {:ok, built_listeners} = acc ->
-        case Map.fetch(component, listener_key) do
-          {:ok, listener} ->
-            case RouteServer.build_listener(session_metadata, listener) do
-              {:ok, built_listener} ->
-                {:cont, {:ok, Map.put(built_listeners, listener_key, built_listener)}}
+        with {:fetch, {:ok, listener}} <- {:fetch, Map.fetch(component, listener_key)},
+             {:build, {:ok, built_listener}} <-
+               {:build, RouteServer.build_listener(session_metadata, listener)} do
+          {:cont, {:ok, Map.put(built_listeners, listener_key, built_listener)}}
+        else
+          {:build, err} ->
+            {:halt, err}
 
-              err ->
-                {:halt, err}
-            end
-
-          :error ->
+          {:fetch, :error} ->
             {:cont, acc}
         end
       end

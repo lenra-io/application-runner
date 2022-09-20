@@ -13,7 +13,7 @@ defmodule ApplicationRunner.CollsControllerTest do
 
     {:ok, env} = ApplicationRunner.Repo.insert(Contract.Environment.new(%{}))
 
-    token = ApplicationRunner.AppChannel.do_create_env_token(env.id) |> elem(1)
+    token = ApplicationRunner.AppSocket.do_create_env_token(env.id) |> elem(1)
 
     env_metadata = %Environment.Metadata{
       env_id: env.id,

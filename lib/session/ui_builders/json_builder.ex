@@ -1,4 +1,7 @@
 defmodule ApplicationRunner.Session.UiBuilders.JsonBuilder do
+  @moduledoc """
+    This module is responsible of building the JSON view.
+  """
   @behaviour ApplicationRunner.Session.UiBuilders.UiBuilderAdapter
 
   alias ApplicationRunner.Environment
@@ -14,9 +17,8 @@ defmodule ApplicationRunner.Session.UiBuilders.JsonBuilder do
 
   @impl ApplicationRunner.Session.UiBuilders.UiBuilderAdapter
   def build_ui(session_metadata, widget_uid) do
-    with {:ok, json} <- RouteServer.fetch_widget(session_metadata, widget_uid),
-         {:ok, transformed_json} <- build_listeners(session_metadata, json) do
-      {:ok, transformed_json}
+    with {:ok, json} <- RouteServer.fetch_widget(session_metadata, widget_uid) do
+      build_listeners(session_metadata, json)
     end
   end
 
@@ -31,10 +33,12 @@ defmodule ApplicationRunner.Session.UiBuilders.JsonBuilder do
   end
 
   defp do_build_listeners(session_metadata, %{"type" => "listener"} = listener) do
-    with {:ok, built_listener} <- RouteServer.build_listener(session_metadata, listener) do
-      built_listener
-    else
-      err -> raise err
+    case RouteServer.build_listener(session_metadata, listener) do
+      {:ok, built_listener} ->
+        built_listener
+
+      err ->
+        raise err
     end
   end
 

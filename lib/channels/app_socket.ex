@@ -10,8 +10,8 @@ defmodule ApplicationRunner.AppSocket do
 
       alias ApplicationRunner.Contract.User
       alias ApplicationRunner.Environment
-      alias ApplicationRunner.Session
       alias ApplicationRunner.Errors.BusinessError
+      alias ApplicationRunner.Session
 
       @adapter_mod unquote(adapter_mod)
 
@@ -62,16 +62,13 @@ defmodule ApplicationRunner.AppSocket do
       end
 
       defp extract_params(params) do
-        IO.inspect(params)
         app_name = Map.get(params, "app")
         context = Map.get(params, "context", %{})
 
-        cond do
-          is_nil(app_name) ->
-            BusinessError.no_app_found_tuple()
-
-          true ->
-            {:ok, app_name, context}
+        if is_nil(app_name) do
+          BusinessError.no_app_found_tuple()
+        else
+          {:ok, app_name, context}
         end
       end
 
