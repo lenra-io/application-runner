@@ -3,7 +3,7 @@ defmodule ApplicationRunner.Webhooks.WebhookTest do
 
   use ApplicationRunner.RepoCase
 
-  alias ApplicationRunner.Contract.Environment
+  alias ApplicationRunner.Contract.{Environment, User}
   alias ApplicationRunner.Repo
   alias ApplicationRunner.Webhooks.Webhook
 
@@ -54,7 +54,7 @@ defmodule ApplicationRunner.Webhooks.WebhookTest do
       })
 
     assert webhook.valid? == false
-    assert [action: reason] = webhook.errors
+    assert [action: _reason] = webhook.errors
   end
 
   test "Insert Webhook with no props into database successfully" do
@@ -70,5 +70,30 @@ defmodule ApplicationRunner.Webhooks.WebhookTest do
     webhook = Enum.at(Repo.all(Webhook), 0)
 
     assert webhook.action == "test"
+  end
+
+  test "Insert Webhook with user into database successfully" do
+    env =
+      Environment.new()
+      |> Repo.insert!()
+
+    user =
+      User.new(%{"email" => "test@lenra.io"})
+      |> Repo.insert!()
+
+    Webhook.new(env.id, %{
+      "user_id" => user.id,
+      "action" => "test"
+    })
+    |> Repo.insert!()
+
+    webhook = Enum.at(Repo.all(Webhook), 0)
+
+    assert webhook.action == "test"
+    assert webhook.user_id == user.id
+
+    preload_user = Repo.preload(webhook, :user)
+
+    assert preload_user.user.id == user.id
   end
 end
