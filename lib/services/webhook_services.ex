@@ -5,6 +5,7 @@ defmodule ApplicationRunner.WebhookServices do
 
   alias ApplicationRunner.ApplicationServices
   alias ApplicationRunner.Environment.MetadataAgent
+  alias ApplicationRunner.Errors.TechnicalError
   alias ApplicationRunner.Repo
   alias ApplicationRunner.Webhooks.Webhook
 
@@ -15,16 +16,20 @@ defmodule ApplicationRunner.WebhookServices do
   end
 
   def trigger(webhook_uuid, payload) do
-    webhook = Repo.get(Webhook, webhook_uuid)
+    case Repo.get(Webhook, webhook_uuid) do
+      nil ->
+        TechnicalError.error_404_tuple()
 
-    metadata = MetadataAgent.get_metadata(webhook.environment_id)
+      webhook ->
+        metadata = MetadataAgent.get_metadata(webhook.environment_id)
 
-    ApplicationServices.run_listener(
-      metadata.function_name,
-      webhook.action,
-      payload,
-      %{},
-      metadata.token
-    )
+        ApplicationServices.run_listener(
+          metadata.function_name,
+          webhook.action,
+          webhook.props,
+          payload,
+          metadata.token
+        )
+    end
   end
 end

@@ -3,7 +3,7 @@ defmodule ApplicationRunner.Webhooks.WebhookTest do
 
   use ApplicationRunner.RepoCase
 
-  alias ApplicationRunner.Contract.Environment
+  alias ApplicationRunner.Contract.{Environment, User}
   alias ApplicationRunner.Environment.{Metadata, MetadataAgent}
   alias ApplicationRunner.Repo
   alias ApplicationRunner.Webhooks.Webhook
@@ -21,10 +21,12 @@ defmodule ApplicationRunner.Webhooks.WebhookTest do
 
     {:ok, _} = start_supervised({MetadataAgent, env_metadata})
 
-    {:ok, env_id: env.id}
+    bypass = Bypass.open(port: 1234)
+
+    {:ok, %{env_id: env.id, bypass: bypass}}
   end
 
-  defp handle_request(conn) do
+  defp handle_request(conn, callback) do
     {:ok, body, conn} = Plug.Conn.read_body(conn)
 
     body_decoded =
@@ -34,6 +36,8 @@ defmodule ApplicationRunner.Webhooks.WebhookTest do
         ""
       end
 
+    callback.(body_decoded)
+
     case body_decoded do
       # Listeners "action" in body
       %{"action" => _action} ->
@@ -41,16 +45,55 @@ defmodule ApplicationRunner.Webhooks.WebhookTest do
     end
   end
 
-  test "Webhook get should properly trigger listener", %{env_id: env_id} do
+  test "Webhook should properly trigger listener", %{env_id: env_id, bypass: bypass} do
     assert {:ok, webhook} =
-             Webhook.new(env_id, %{"action" => "listener"})
+             Webhook.new(env_id, %{"action" => "listener", "props" => %{"propKey" => "propValue"}})
              |> Repo.insert()
 
-    bypass = Bypass.open(port: 1234)
-    Bypass.stub(bypass, "POST", "/function/test", &handle_request(&1))
+    Bypass.stub(
+      bypass,
+      "POST",
+      "/function/test",
+      &handle_request(&1, fn body ->
+        assert body["props"] == %{"propKey" => "propValue"}
+        assert body["action"] == "listener"
+        assert body["event"] == %{"eventPropKey" => "eventPropValue"}
+      end)
+    )
 
-    res = WebhookServices.trigger(webhook.uuid, %{})
+    assert :ok == WebhookServices.trigger(webhook.uuid, %{"eventPropKey" => "eventPropValue"})
+  end
 
-    assert res == :ok
+  test "Trigger not existing webhook should return an error", %{env_id: _env_id, bypass: _bypass} do
+    assert {:error, %LenraCommon.Errors.TechnicalError{reason: :error_404}} =
+             WebhookServices.trigger(Ecto.UUID.generate(), %{})
+  end
+
+  test "User specific Webhook should properly trigger listener", %{env_id: env_id, bypass: bypass} do
+    user =
+      %{email: "test@test.te"}
+      |> User.new()
+      |> Repo.insert!()
+
+    assert {:ok, webhook} =
+             Webhook.new(env_id, %{
+               "user_id" => user.id,
+               "action" => "listener",
+               "props" => %{"propKey" => "propValue"}
+             })
+             |> Repo.insert()
+
+    Bypass.stub(
+      bypass,
+      "POST",
+      "/function/test",
+      &handle_request(&1, fn body ->
+        assert body["props"] == %{"propKey" => "propValue"}
+        assert body["action"] == "listener"
+        assert body["event"] == %{"eventPropKey" => "eventPropValue"}
+      end)
+    )
+
+    assert :ok == WebhookServices.trigger(webhook.uuid, %{"eventPropKey" => "eventPropValue"})
   end
 end
