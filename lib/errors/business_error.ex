@@ -15,6 +15,10 @@ defmodule ApplicationRunner.Errors.BusinessError do
       {:session_not_started, "Session not started"},
       {:json_format_invalid, "JSON format invalid"},
       {:no_app_found, "No application found for the current link"},
-      {:not_an_object_id, "The given id is not a valid object id"}
+      {:not_an_object_id, "The given id is not a valid object id"},
+      {:incorrect_view_mode, "The view mode should be one of 'lenra', 'json'."},
+      {:no_action_in_listener, "Your listener doest not have the required property 'action'"},
+      {:route_doest_not_exists, "The given route does not exist. Please check your manifest."},
+      {:invalid_channel_name, "The given channel name does not exist."}
     ]
 end

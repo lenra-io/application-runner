@@ -17,4 +17,6 @@ defmodule ApplicationRunner.Adapter do
     Override this function to return the environment id from the app_name to the server/devtools needs
   """
   @callback get_env_id(String.t()) :: number()
+
+  @callback resource_from_params(map()) :: {:ok, number} | {:error, any()}
 end
