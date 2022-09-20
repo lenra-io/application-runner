@@ -1,4 +1,4 @@
-defmodule ApplicationRunner.WebhookServices do
+defmodule ApplicationRunner.Webhooks.WebhookServices do
   @moduledoc """
     The service that manages the webhooks.
   """

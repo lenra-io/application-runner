@@ -1,4 +1,4 @@
-defmodule ApplicationRunner.Webhooks.WebhookTest do
+defmodule ApplicationRunner.Webhooks.ServicesTest do
   @moduledoc false
 
   use ApplicationRunner.RepoCase
@@ -6,8 +6,7 @@ defmodule ApplicationRunner.Webhooks.WebhookTest do
   alias ApplicationRunner.Contract.{Environment, User}
   alias ApplicationRunner.Environment.{Metadata, MetadataAgent}
   alias ApplicationRunner.Repo
-  alias ApplicationRunner.Webhooks.Webhook
-  alias ApplicationRunner.WebhookServices
+  alias ApplicationRunner.Webhooks.{Webhook, WebhookServices}
 
   setup do
     {:ok, env} = Repo.insert(Environment.new())
