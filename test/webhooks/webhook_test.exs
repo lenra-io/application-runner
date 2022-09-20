@@ -54,7 +54,7 @@ defmodule ApplicationRunner.Webhooks.WebhookTest do
       })
 
     assert webhook.valid? == false
-    assert [action: reason] = webhook.errors
+    assert [action: _reason] = webhook.errors
   end
 
   test "Insert Webhook with no props into database successfully" do
@@ -91,5 +91,9 @@ defmodule ApplicationRunner.Webhooks.WebhookTest do
 
     assert webhook.action == "test"
     assert webhook.user_id == user.id
+
+    preload_user = Repo.preload(webhook, :user)
+
+    assert preload_user.user.id == user.id
   end
 end

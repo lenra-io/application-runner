@@ -9,7 +9,7 @@ defmodule ApplicationRunner.Webhooks.Webhook do
   alias ApplicationRunner.Contract.{Environment, User}
   alias ApplicationRunner.Webhooks.Webhook
 
-  @derive {Jason.Encoder, only: [:uuid, :action, :props, :environment_id]}
+  @derive {Jason.Encoder, only: [:uuid, :action, :props, :environment_id, :user_id]}
   @primary_key {:uuid, Ecto.UUID, autogenerate: true}
   schema "webhooks" do
     belongs_to(:environment, Environment)
