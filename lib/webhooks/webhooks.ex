@@ -23,7 +23,7 @@ defmodule ApplicationRunner.Webhooks.Webhook do
 
   def changeset(webhook, params \\ %{}) do
     webhook
-    |> cast(params, [:action, :props])
+    |> cast(params, [:action, :props, :user_id])
     |> validate_required([:environment_id, :action])
     |> foreign_key_constraint(:environment_id)
     |> foreign_key_constraint(:user_id)
@@ -31,11 +31,6 @@ defmodule ApplicationRunner.Webhooks.Webhook do
 
   def new(env_id, params) do
     %Webhook{environment_id: env_id}
-    |> Webhook.changeset(params)
-  end
-
-  def new(env_id, user_id, params) do
-    %Webhook{environment_id: env_id, user_id: user_id}
     |> Webhook.changeset(params)
   end
 end

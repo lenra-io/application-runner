@@ -81,7 +81,8 @@ defmodule ApplicationRunner.Webhooks.WebhookTest do
       User.new(%{"email" => "test@lenra.io"})
       |> Repo.insert!()
 
-    Webhook.new(env.id, user.id, %{
+    Webhook.new(env.id, %{
+      "user_id" => user.id,
       "action" => "test"
     })
     |> Repo.insert!()
