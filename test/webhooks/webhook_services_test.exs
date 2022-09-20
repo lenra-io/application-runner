@@ -22,6 +22,11 @@ defmodule ApplicationRunner.WebhookServicesTest do
     assert webhook.environment_id == env_id
   end
 
+  test "Webhook create with user should work", %{env_id: env_id} do
+    assert {:ok, webhook} =
+             WebhookServices.create(env_id, %{"action" => "listener", "user_id" => 1})
+  end
+
   test "Webhook create without action should not work", %{env_id: env_id} do
     assert {:error, reason} = WebhookServices.create(env_id, %{})
   end
