@@ -3,7 +3,7 @@ defmodule ApplicationRunner.Webhooks.WebhookTest do
 
   use ApplicationRunner.RepoCase
 
-  alias ApplicationRunner.Contract.Environment
+  alias ApplicationRunner.Contract.{Environment, User}
   alias ApplicationRunner.Repo
   alias ApplicationRunner.Webhooks.Webhook
 
@@ -70,5 +70,25 @@ defmodule ApplicationRunner.Webhooks.WebhookTest do
     webhook = Enum.at(Repo.all(Webhook), 0)
 
     assert webhook.action == "test"
+  end
+
+  test "Insert Webhook with user into database successfully" do
+    env =
+      Environment.new()
+      |> Repo.insert!()
+
+    user =
+      User.new(%{"email" => "test@lenra.io"})
+      |> Repo.insert!()
+
+    Webhook.new(env.id, user.id, %{
+      "action" => "test"
+    })
+    |> Repo.insert!()
+
+    webhook = Enum.at(Repo.all(Webhook), 0)
+
+    assert webhook.action == "test"
+    assert webhook.user_id == user.id
   end
 end
