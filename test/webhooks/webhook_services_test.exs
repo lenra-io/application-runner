@@ -57,7 +57,9 @@ defmodule ApplicationRunner.WebhookServicesTest do
     assert Enum.at(webhooks, 0).action == "user_specific_webhook"
   end
 
-  test "Get webhooks linked to specific user but no webhook in db should return empty array", %{env_id: env_id} do
+  test "Get webhooks linked to specific user but no webhook in db should return empty array", %{
+    env_id: env_id
+  } do
     assert [] = WebhookServices.get(env_id, 1)
   end
 end
