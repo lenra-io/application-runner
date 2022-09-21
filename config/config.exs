@@ -12,10 +12,14 @@ config :application_runner,
   session_inactivity_timeout: 1000 * 60 * 10,
   # 60 min
   env_inactivity_timeout: 1000 * 60 * 60,
+  # 10 min
+  query_inactivity_timeout: 1000 * 60 * 10,
   lenra_environment_table: "environments",
   lenra_user_table: "users",
   repo: ApplicationRunner.Repo,
-  url: "localhost:4000"
+  url: "localhost:4000",
+  mongo_url: "mongodb://localhost:27017",
+  env: "dev"
 
 config :application_runner, ApplicationRunner.Repo,
   database: "file::memory:?cache=shared",

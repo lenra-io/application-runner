@@ -24,7 +24,7 @@ jobs:
       - prIsWip
     if: needs.prIsWip.outputs.isWip == 'false'
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     env:
       POSTGRES_HOST: localhost
       POSTGRES_USER: postgres
@@ -69,6 +69,11 @@ jobs:
             _build
           key: ${{ runner.os }}-mix-${{ hashFiles('**/mix.lock') }}
           restore-keys: ${{ runner.os }}-mix-
+      - name: Start MongoDB
+        uses: supercharge/mongodb-github-action@1.7.0
+        with:
+          mongodb-version: "5.0"
+          mongodb-replica-set: test-rs
       - name: Install dependencies
         run: MIX_ENV=test mix deps.get
       - name: Compile project

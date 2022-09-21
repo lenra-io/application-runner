@@ -10,16 +10,24 @@ defmodule ApplicationRunner.Router do
       scope "/app", ApplicationRunner do
         pipe_through([:api, :ensure_auth_app])
 
-        post("/datastores", DatastoreController, :create)
-        delete("/datastores/:datastore", DatastoreController, :delete)
-        get("/datastores/user/data/@me", DataController, :get_current_user_data)
-        get("/datastores/:datastore/data/:id", DataController, :get)
-        get("/datastores/:datastore/data", DataController, :get_all)
-        post("/datastores/:datastore/data", DataController, :create)
-        delete("/datastores/:datastore/data/:id", DataController, :delete)
-        put("/datastores/:datastore/data/:id", DataController, :update)
-        post("/query", DataController, :query)
+        delete("/colls/:coll", CollsController, :delete)
+        get("/colls/:coll/docs", DocsController, :get_all)
+        post("/colls/:coll/docs", DocsController, :create)
+        get("/colls/:coll/docs/:docId", DocsController, :get)
+        put("/colls/:coll/docs/:docId", DocsController, :update)
+        delete("/colls/:coll/docs/:docId", DocsController, :delete)
+        post("/colls/:coll/docs/find", DocsController, :find)
       end
+    end
+  end
+
+  defmacro resource_route(resource_controller) do
+    quote do
+      get(
+        "/apps/:app_name/resources/:resource",
+        unquote(resource_controller),
+        :get_app_resource
+      )
     end
   end
 end

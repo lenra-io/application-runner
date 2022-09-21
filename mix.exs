@@ -35,7 +35,7 @@ defmodule ApplicationRunner.MixProject do
       {:credo, "~> 1.4", only: [:dev, :test], runtime: false},
       {:dialyxir, "~> 1.0", only: [:dev, :test], runtime: false},
       {:ex_component_schema,
-       git: "https://github.com/lenra-io/ex_component_schema", ref: "v1.0.0-beta.2"},
+       git: "https://github.com/lenra-io/ex_component_schema", ref: "v1.0.0-beta.3"},
       {:jason, "~> 1.2"},
       {:json_diff, "~> 0.1"},
       {:swarm, "~> 3.0"},
@@ -45,22 +45,9 @@ defmodule ApplicationRunner.MixProject do
       {:phoenix, "~> 1.5.9"},
       {:finch, "~> 0.12"},
       {:bypass, "~> 2.0", only: :test},
-      private_git(
-        name: :query_parser,
-        host: "github.com",
-        project: "lenra-io/query-parser.git",
-        tag: "v1.0.0-beta.3",
-        credentials:
-          "#{System.get_env("GITHUB_AUTH", "shiipou:#{System.get_env("GH_PERSONNAL_TOKEN")}")}"
-      ),
-      private_git(
-        name: :lenra_common,
-        host: "github.com",
-        project: "lenra-io/lenra-common.git",
-        tag: "v2.0.4",
-        credentials:
-          "#{System.get_env("GITHUB_AUTH", "shiipou:#{System.get_env("GH_PERSONNAL_TOKEN")}")}"
-      )
+      {:mongodb_driver, "~> 0.9.1"},
+      {:query_parser, git: "https://github.com/lenra-io/query-parser.git", tag: "v1.0.0-beta.9"},
+      {:lenra_common, git: "https://github.com/lenra-io/lenra-common.git", tag: "v2.2.0"}
     ]
   end
 
@@ -72,24 +59,14 @@ defmodule ApplicationRunner.MixProject do
         "ecto.migrate",
         "test"
       ],
+      "ecto.migrations": [
+        "ecto.migrations --migrations-path priv/repo/migrations --migrations-path priv/repo/test_migrations"
+      ],
+      "ecto.migrate": [
+        "ecto.migrate --migrations-path priv/repo/migrations --migrations-path priv/repo/test_migrations"
+      ],
       "ecto.setup": ["ecto.create", "ecto.migrate"],
       "ecto.reset": ["ecto.drop", "ecto.setup"]
     ]
-  end
-
-  defp private_git(opts) do
-    name = Keyword.fetch!(opts, :name)
-    host = Keyword.fetch!(opts, :host)
-    project = Keyword.fetch!(opts, :project)
-    tag = Keyword.fetch!(opts, :tag)
-    credentials = Keyword.get(opts, :credentials)
-
-    case System.get_env("CI") do
-      "true" ->
-        {name, git: "https://#{credentials}@#{host}/#{project}", tag: tag, submodules: true}
-
-      _ ->
-        {name, git: "git@#{host}:#{project}", tag: tag, submodules: true}
-    end
   end
 end

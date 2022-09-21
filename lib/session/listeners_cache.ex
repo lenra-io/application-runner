@@ -1,32 +1,38 @@
-defmodule ApplicationRunner.ListenersCache do
+defmodule ApplicationRunner.Session.ListenersCache do
   @moduledoc """
     This module creates a Cache for all the listeners.
     It save the listener props/action using a hash the value (sha256) as key.
     Then we can retrieve the listener (action/props) by giving the key.
   """
-  use ApplicationRunner.Cache.Macro
-
-  alias ApplicationRunner.Session.{
-    State,
-    Supervisor
-  }
+  use Agent
+  use SwarmNamed
 
   alias ApplicationRunner.Errors.BusinessError
 
-  @spec save_listener(State.t(), String.t(), map()) :: :ok
-  def save_listener(%State{} = session_state, code, listener) do
-    pid = Supervisor.fetch_module_pid!(session_state.session_supervisor_pid, __MODULE__)
-    put(pid, code, listener)
-    :ok
+  def start_link(opts) do
+    session_id = Keyword.fetch!(opts, :session_id)
+    Agent.start_link(fn -> %{} end, name: get_full_name(session_id))
   end
 
-  @spec fetch_listener(State.t(), String.t()) :: {:ok, map()} | {:error, atom()}
-  def fetch_listener(%State{} = session_state, code) do
-    pid = Supervisor.fetch_module_pid!(session_state.session_supervisor_pid, __MODULE__)
+  @spec create_code(String.t(), map()) :: String.t()
+  def create_code(action, props) do
+    Crypto.hash({action, props})
+  end
 
-    case get(pid, code) do
-      nil -> BusinessError.unknow_listener_code_tuple(code)
-      res -> {:ok, res}
-    end
+  @spec save_listener(any(), String.t(), map()) :: :ok
+  def save_listener(session_id, code, listener) do
+    Agent.update(get_full_name(session_id), fn cache ->
+      Map.put(cache, code, listener)
+    end)
+  end
+
+  @spec fetch_listener(any(), String.t()) :: {:ok, map()} | {:error, atom()}
+  def fetch_listener(session_id, code) do
+    Agent.get(get_full_name(session_id), fn cache ->
+      case Map.fetch(cache, code) do
+        :error -> BusinessError.unknow_listener_code_tuple(code)
+        res -> res
+      end
+    end)
   end
 end

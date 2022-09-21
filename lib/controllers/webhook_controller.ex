@@ -9,7 +9,6 @@ defmodule ApplicationRunner.WebhookController do
       |> assign_data(webhook)
       |> reply
     end
-  end
 
   def index(_conn, _params) do
   end
