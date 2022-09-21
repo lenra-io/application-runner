@@ -34,7 +34,7 @@ defmodule ApplicationRunner.Webhooks.ControllerTest do
     {:ok, Map.merge(ctx, %{mongo_pid: pid, token: token, doc_id: doc_id})}
   end
 
-  test "aaaaaaaaa", %{conn: conn, token: token} do
+  test "Create webhook in env should work properly", %{conn: conn, token: token} do
     conn =
       conn
       |> Plug.Conn.put_req_header("authorization", "Bearer " <> token)
@@ -42,6 +42,13 @@ defmodule ApplicationRunner.Webhooks.ControllerTest do
         "action" => "test"
       })
 
-    assert %{"action" => "test", "props" => nil} = json_response(conn, 200)
+    response = json_response(conn, 200)
+
+    assert %{"data" => %{"action" => "test", "props" => nil}} = response
+
+    assert [webhook] =
+             ApplicationRunner.Webhooks.WebhookServices.get(response["data"]["environment_id"])
+
+    assert webhook.action == "test"
   end
 end
