@@ -1,6 +1,6 @@
-defmodule ApplicationRunner.Webhook do
+defmodule ApplicationRunner.Webhooks do
   @moduledoc """
-    ApplicationRunner.Webhook manages Webhooks.
+    ApplicationRunner.Webhooks manages Webhooks.
   """
 
   alias ApplicationRunner.Webhooks
