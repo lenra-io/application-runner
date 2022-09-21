@@ -126,7 +126,7 @@ defmodule ApplicationRunner.Webhooks.ServicesTest do
     user_id: user_id,
     bypass: _bypass
   } do
-    assert {:ok, webhook} = WebhookServices.create(env_id, user_id, %{"action" => "listener"})
+    assert {:ok, webhook} = WebhookServices.create(env_id, %{"action" => "listener", "user_id" => user_id})
 
     webhook_preload = Repo.preload(webhook, :user)
 
