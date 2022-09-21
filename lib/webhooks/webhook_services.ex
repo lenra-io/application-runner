@@ -16,18 +16,18 @@ defmodule ApplicationRunner.Webhooks.WebhookServices do
     |> Repo.insert()
   end
 
-  def app_create(%{env: %ApplicationRunner.Contract.Environment{id: env_id}}, params) do
-    create(env_id, params)
-  end
-
   def app_create(
         %{
-          env: %ApplicationRunner.Contract.Environment{id: env_id},
+          environment: %ApplicationRunner.Contract.Environment{id: env_id},
           user: %ApplicationRunner.Contract.User{id: user_id}
         },
         params
       ) do
     create(env_id, Map.merge(params, %{"user_id" => user_id}))
+  end
+
+  def app_create(%{environment: %ApplicationRunner.Contract.Environment{id: env_id}}, params) do
+    create(env_id, params)
   end
 
   def get(env_id) do

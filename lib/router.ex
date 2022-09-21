@@ -17,6 +17,8 @@ defmodule ApplicationRunner.Router do
         put("/colls/:coll/docs/:docId", DocsController, :update)
         delete("/colls/:coll/docs/:docId", DocsController, :delete)
         post("/colls/:coll/docs/find", DocsController, :find)
+
+        post("/webhook", WebhookController, :create)
       end
     end
   end
