@@ -16,6 +16,11 @@ defmodule ApplicationRunner.Webhooks.WebhookServices do
     |> Repo.insert()
   end
 
+  def create(env_id, user_id, params) do
+    Webhook.new(env_id, %{params | user_id: user_id})
+    |> Repo.insert()
+  end
+
   def get(env_id) do
     Repo.all(from(w in Webhook, where: w.environment_id == ^env_id))
   end
