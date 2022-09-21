@@ -3,6 +3,8 @@ defmodule ApplicationRunner.Webhooks.WebhookServices do
     The service that manages the webhooks.
   """
 
+  import Ecto.Query, only: [from: 2]
+
   alias ApplicationRunner.ApplicationServices
   alias ApplicationRunner.Environment.MetadataAgent
   alias ApplicationRunner.Errors.TechnicalError
@@ -15,6 +17,11 @@ defmodule ApplicationRunner.Webhooks.WebhookServices do
   end
 
   def get(env_id) do
+    Repo.all(from(w in Webhook, where: w.environment_id == ^env_id))
+  end
+
+  def get(env_id, user_id) do
+    Repo.all(from(w in Webhook, where: w.environment_id == ^env_id and w.user_id == ^user_id))
   end
 
   def trigger(webhook_uuid, payload) do
