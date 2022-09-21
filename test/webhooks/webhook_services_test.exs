@@ -108,7 +108,11 @@ defmodule ApplicationRunner.Webhooks.ServicesTest do
     assert :ok == WebhookServices.trigger(webhook.uuid, %{"eventPropKey" => "eventPropValue"})
   end
 
-  test "Webhook create should work properly", %{env_id: env_id, user_id: _user_id, bypass: _bypass} do
+  test "Webhook create should work properly", %{
+    env_id: env_id,
+    user_id: _user_id,
+    bypass: _bypass
+  } do
     assert {:ok, _webhook} = WebhookServices.create(env_id, %{"action" => "listener"})
 
     webhook = Enum.at(Repo.all(Webhook), 0)
@@ -117,7 +121,11 @@ defmodule ApplicationRunner.Webhooks.ServicesTest do
     assert webhook.environment_id == env_id
   end
 
-  test "Webhook create with user should work", %{env_id: env_id, user_id: user_id, bypass: _bypass} do
+  test "Webhook create with user should work", %{
+    env_id: env_id,
+    user_id: user_id,
+    bypass: _bypass
+  } do
     assert {:ok, webhook} =
              WebhookServices.create(env_id, %{"action" => "listener", "user_id" => user_id})
 
