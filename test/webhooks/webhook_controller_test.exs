@@ -16,7 +16,7 @@ defmodule ApplicationRunner.Webhooks.ControllerTest do
     {:ok, ctx}
   end
 
-  defp setup_session_token(ctx) do
+  defp setup_session_token() do
     {:ok, env} = ApplicationRunner.Repo.insert(Contract.Environment.new(%{}))
 
     user =
@@ -24,12 +24,11 @@ defmodule ApplicationRunner.Webhooks.ControllerTest do
       |> Contract.User.new()
       |> ApplicationRunner.Repo.insert!()
 
-    user_link =
-      MongoUserLink.new(%{
-        "user_id" => user.id,
-        "environment_id" => env.id
-      })
-      |> ApplicationRunner.Repo.insert!()
+    MongoUserLink.new(%{
+      "user_id" => user.id,
+      "environment_id" => env.id
+    })
+    |> ApplicationRunner.Repo.insert!()
 
     session_uuid = Ecto.UUID.generate()
 
@@ -105,8 +104,8 @@ defmodule ApplicationRunner.Webhooks.ControllerTest do
   test "Create webhook in session should work properly",
        %{
          conn: conn
-       } = ctx do
-    {:ok, %{token: token}} = setup_session_token(ctx)
+       } do
+    {:ok, %{token: token}} = setup_session_token()
 
     conn =
       conn
