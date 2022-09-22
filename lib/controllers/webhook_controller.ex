@@ -7,8 +7,7 @@ defmodule ApplicationRunner.WebhookController do
     with {:ok, webhook} <-
            WebhookServices.app_create(Guardian.Plug.current_resource(conn), params) do
       conn
-      |> assign_data(webhook)
-      |> reply
+      |> reply(webhook)
     end
   end
 
