@@ -16,7 +16,7 @@ defmodule ApplicationRunner.Webhooks.ControllerTest do
     {:ok, ctx}
   end
 
-  defp setup_session_token() do
+  defp setup_session_token do
     {:ok, env} = ApplicationRunner.Repo.insert(Contract.Environment.new(%{}))
 
     user =
