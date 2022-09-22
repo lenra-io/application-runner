@@ -10,7 +10,7 @@ defmodule ApplicationRunner.Webhooks.ControllerTest do
     {:ok, ctx}
   end
 
-  defp setup_session_token do
+  defp setup_session_token(ctx) do
     Application.ensure_all_started(:postgrex)
     {:ok, _} = start_supervised(ApplicationRunner.FakeEndpoint)
     start_supervised(ApplicationRunner.Repo)
@@ -22,17 +22,22 @@ defmodule ApplicationRunner.Webhooks.ControllerTest do
       |> Contract.User.new()
       |> ApplicationRunner.Repo.insert!()
 
+    session_uuid = Ecto.UUID.generate()
+
     token =
-      ApplicationRunner.AppChannel.do_create_session_token(env.id, Ecto.UUID.generate(), user.id)
+      ApplicationRunner.AppChannel.do_create_session_token(env.id, session_uuid, user.id)
       |> elem(1)
 
-    env_metadata = %Environment.Metadata{
+    session_metadata = %ApplicationRunner.Session.Metadata{
       env_id: env.id,
+      session_id: session_uuid,
+      user_id: user.id,
       function_name: "",
-      token: token
+      token: token,
+      context: %{}
     }
 
-    {:ok, _} = start_supervised({Environment.MetadataAgent, env_metadata})
+    {:ok, _} = start_supervised({ApplicationRunner.Session.MetadataAgent, session_metadata})
     {:ok, pid} = start_supervised({Mongo, Environment.MongoInstance.config(env.id)})
 
     Mongo.drop_collection(pid, @coll)
@@ -94,8 +99,8 @@ defmodule ApplicationRunner.Webhooks.ControllerTest do
 
   test "Create webhook in session should work properly", %{
     conn: conn
-  } do
-    {:ok, %{token: token}} = setup_session_token()
+  } = ctx do
+    {:ok, %{token: token}} = setup_session_token(ctx)
 
     conn =
       conn
