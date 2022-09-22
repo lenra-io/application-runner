@@ -18,7 +18,7 @@ defmodule ApplicationRunner.Router do
         delete("/colls/:coll/docs/:docId", DocsController, :delete)
         post("/colls/:coll/docs/find", DocsController, :find)
 
-        post("/webhook", WebhookController, :create)
+        post("/webhooks", WebhookController, :create)
       end
     end
   end
