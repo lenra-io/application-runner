@@ -22,6 +22,13 @@ defmodule ApplicationRunner.Webhooks.ControllerTest do
       |> Contract.User.new()
       |> ApplicationRunner.Repo.insert!()
 
+    user_link =
+      ApplicationRunner.MongoStorage.MongoUserLink.new(%{
+        "user_id" => user.id,
+        "environment_id" => env.id
+      })
+      |> ApplicationRunner.Repo.insert!()
+
     session_uuid = Ecto.UUID.generate()
 
     token =
@@ -97,9 +104,10 @@ defmodule ApplicationRunner.Webhooks.ControllerTest do
     assert webhook.action == "test"
   end
 
-  test "Create webhook in session should work properly", %{
-    conn: conn
-  } = ctx do
+  test "Create webhook in session should work properly",
+       %{
+         conn: conn
+       } = ctx do
     {:ok, %{token: token}} = setup_session_token(ctx)
 
     conn =
@@ -109,12 +117,12 @@ defmodule ApplicationRunner.Webhooks.ControllerTest do
         "action" => "test"
       })
 
-    response = json_response(conn, 400)
+    response = json_response(conn, 200)
 
     assert %{"action" => "test", "props" => nil} = response
 
     assert [webhook] =
-             ApplicationRunner.Webhooks.WebhookServices.get(response["data"]["environment_id"])
+             ApplicationRunner.Webhooks.WebhookServices.get(response["environment_id"])
 
     assert webhook.action == "test"
   end
