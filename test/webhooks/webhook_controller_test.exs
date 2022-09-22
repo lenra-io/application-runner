@@ -3,18 +3,20 @@ defmodule ApplicationRunner.Webhooks.ControllerTest do
 
   alias ApplicationRunner.Contract
   alias ApplicationRunner.Environment
+  alias ApplicationRunner.MongoStorage.MongoUserLink
+  alias ApplicationRunner.Webhooks.WebhookServices
 
   @coll "controller_test"
 
   setup ctx do
-    {:ok, ctx}
-  end
-
-  defp setup_session_token(ctx) do
     Application.ensure_all_started(:postgrex)
     {:ok, _} = start_supervised(ApplicationRunner.FakeEndpoint)
     start_supervised(ApplicationRunner.Repo)
 
+    {:ok, ctx}
+  end
+
+  defp setup_session_token(ctx) do
     {:ok, env} = ApplicationRunner.Repo.insert(Contract.Environment.new(%{}))
 
     user =
@@ -23,7 +25,7 @@ defmodule ApplicationRunner.Webhooks.ControllerTest do
       |> ApplicationRunner.Repo.insert!()
 
     user_link =
-      ApplicationRunner.MongoStorage.MongoUserLink.new(%{
+      MongoUserLink.new(%{
         "user_id" => user.id,
         "environment_id" => env.id
       })
@@ -58,10 +60,6 @@ defmodule ApplicationRunner.Webhooks.ControllerTest do
   end
 
   defp setup_env_token do
-    Application.ensure_all_started(:postgrex)
-    {:ok, _} = start_supervised(ApplicationRunner.FakeEndpoint)
-    start_supervised(ApplicationRunner.Repo)
-
     {:ok, env} = ApplicationRunner.Repo.insert(Contract.Environment.new(%{}))
 
     token = ApplicationRunner.AppChannel.do_create_env_token(env.id) |> elem(1)
@@ -99,7 +97,7 @@ defmodule ApplicationRunner.Webhooks.ControllerTest do
 
     assert %{"action" => "test", "props" => nil} = response
 
-    assert [webhook] = ApplicationRunner.Webhooks.WebhookServices.get(response["environment_id"])
+    assert [webhook] = WebhookServices.get(response["environment_id"])
 
     assert webhook.action == "test"
   end
@@ -121,8 +119,7 @@ defmodule ApplicationRunner.Webhooks.ControllerTest do
 
     assert %{"action" => "test", "props" => nil} = response
 
-    assert [webhook] =
-             ApplicationRunner.Webhooks.WebhookServices.get(response["environment_id"])
+    assert [webhook] = WebhookServices.get(response["environment_id"])
 
     assert webhook.action == "test"
   end
