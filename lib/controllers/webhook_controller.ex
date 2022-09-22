@@ -5,7 +5,8 @@ defmodule ApplicationRunner.WebhookController do
 
   def create(conn, params) do
     with {:ok, webhook} <-
-           WebhookServices.app_create(Guardian.Plug.current_resource(conn), params) do
+           Guardian.Plug.current_resource(conn)
+           |> WebhookServices.app_create(params) do
       conn
       |> reply(webhook)
     end
