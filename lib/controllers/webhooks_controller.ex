@@ -12,8 +12,12 @@ defmodule ApplicationRunner.Webhooks.WebhooksController do
     end
   end
 
-  def trigger(conn, params) do
+  def trigger(conn, %{"webhook_uuid" => uuid} = _params) do
     conn
-    |> reply(WebhookServices.trigger(params["webhook_uuid"], conn.body_params))
+    |> reply(WebhookServices.trigger(uuid, conn.body_params))
+  end
+
+  def trigger(_conn, _params) do
+    {:error, :null_parameters}
   end
 end
