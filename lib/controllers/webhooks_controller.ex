@@ -13,11 +13,7 @@ defmodule ApplicationRunner.Webhooks.WebhooksController do
   end
 
   def trigger(conn, params) do
-    IO.inspect(params)
-    IO.inspect(conn.body_params)
-    IO.inspect(WebhookServices.trigger(params["webhook_uuid"], conn.body_params))
-
     conn
-    |> reply(%{})
+    |> reply(WebhookServices.trigger(params["webhook_uuid"], conn.body_params))
   end
 end

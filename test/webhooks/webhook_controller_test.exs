@@ -154,9 +154,6 @@ defmodule ApplicationRunner.Webhooks.ControllerTest do
 
     response = json_response(conn, 200)
 
-    IO.inspect(response)
-    IO.inspect(response["uuid"])
-
     bypass = Bypass.open(port: 1234)
 
     Bypass.stub(
@@ -164,7 +161,7 @@ defmodule ApplicationRunner.Webhooks.ControllerTest do
       "POST",
       "/function/test",
       &handle_request(&1, fn body ->
-        assert body["props"] == %{}
+        assert body["props"] == nil
         assert body["action"] == "test"
         assert body["event"] == %{"payloadData" => "Value"}
       end)
@@ -172,13 +169,10 @@ defmodule ApplicationRunner.Webhooks.ControllerTest do
 
     conn =
       conn
-      # |> Plug.Conn.put_req_header("authorization", "Bearer " <> token)
       |> post(Routes.webhooks_path(conn, :trigger, response["uuid"]), %{
         "payloadData" => "Value"
       })
 
-    trigger_response = json_response(conn, 200)
-
-    IO.inspect(trigger_response)
+    assert _res = json_response(conn, 200)
   end
 end

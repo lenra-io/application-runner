@@ -21,7 +21,10 @@ defmodule ApplicationRunner.Router do
         post("/webhooks", Webhooks.WebhooksController, :create)
       end
 
-      post("/webhooks/:webhook_uuid", Webhooks.WebhooksController, :trigger)
+      scope "/", ApplicationRunner do
+        pipe_through([:api])
+        post("/webhooks/:webhook_uuid", Webhooks.WebhooksController, :trigger)
+      end
     end
   end
 
