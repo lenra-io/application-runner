@@ -18,8 +18,10 @@ defmodule ApplicationRunner.Router do
         delete("/colls/:coll/docs/:docId", DocsController, :delete)
         post("/colls/:coll/docs/find", DocsController, :find)
 
-        post("/webhooks", WebhookController, :create)
+        post("/webhooks", Webhooks.WebhooksController, :create)
       end
+
+      post("/webhooks/:webhook_uuid", Webhooks.WebhooksController, :trigger)
     end
   end
 
