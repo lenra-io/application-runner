@@ -40,7 +40,7 @@ defmodule ApplicationRunner.Webhooks.ControllerTest do
       env_id: env.id,
       session_id: session_uuid,
       user_id: user.id,
-      function_name: "",
+      function_name: "test",
       token: token,
       context: %{}
     }
@@ -65,7 +65,7 @@ defmodule ApplicationRunner.Webhooks.ControllerTest do
 
     env_metadata = %Environment.Metadata{
       env_id: env.id,
-      function_name: "",
+      function_name: "test",
       token: token
     }
 
@@ -88,7 +88,7 @@ defmodule ApplicationRunner.Webhooks.ControllerTest do
     conn =
       conn
       |> Plug.Conn.put_req_header("authorization", "Bearer " <> token)
-      |> post(Routes.webhook_path(conn, :create), %{
+      |> post(Routes.webhooks_path(conn, :create), %{
         "action" => "test"
       })
 
@@ -110,7 +110,7 @@ defmodule ApplicationRunner.Webhooks.ControllerTest do
     conn =
       conn
       |> Plug.Conn.put_req_header("authorization", "Bearer " <> token)
-      |> post(Routes.webhook_path(conn, :create), %{
+      |> post(Routes.webhooks_path(conn, :create), %{
         "action" => "test"
       })
 
@@ -121,5 +121,58 @@ defmodule ApplicationRunner.Webhooks.ControllerTest do
     assert [webhook] = WebhookServices.get(response["environment_id"])
 
     assert webhook.action == "test"
+  end
+
+  defp handle_request(conn, callback) do
+    {:ok, body, conn} = Plug.Conn.read_body(conn)
+
+    body_decoded =
+      if String.length(body) != 0 do
+        Jason.decode!(body)
+      else
+        ""
+      end
+
+    callback.(body_decoded)
+
+    case body_decoded do
+      # Listeners "action" in body
+      %{"action" => _action} ->
+        Plug.Conn.resp(conn, 200, "")
+    end
+  end
+
+  test "Trigger webhook in env should work properly", %{conn: conn} do
+    {:ok, %{token: token}} = setup_env_token()
+
+    conn =
+      conn
+      |> Plug.Conn.put_req_header("authorization", "Bearer " <> token)
+      |> post(Routes.webhooks_path(conn, :create), %{
+        "action" => "test"
+      })
+
+    response = json_response(conn, 200)
+
+    bypass = Bypass.open(port: 1234)
+
+    Bypass.stub(
+      bypass,
+      "POST",
+      "/function/test",
+      &handle_request(&1, fn body ->
+        assert body["props"] == nil
+        assert body["action"] == "test"
+        assert body["event"] == %{"payloadData" => "Value"}
+      end)
+    )
+
+    conn =
+      conn
+      |> post(Routes.webhooks_path(conn, :trigger, response["uuid"]), %{
+        "payloadData" => "Value"
+      })
+
+    assert _res = json_response(conn, 200)
   end
 end
