@@ -3,6 +3,7 @@ defmodule ApplicationRunner.Utils.Routes do
     This is a utility module related to parsing and matching routes.
   """
   alias ApplicationRunner.Errors.BusinessError
+  alias LenraCommon.Errors, as: LC
 
   @doc """
     This route check if the path matches the route.
@@ -10,7 +11,7 @@ defmodule ApplicationRunner.Utils.Routes do
     /route/:id/:id2 matche with /route/42/1337 and the route_params are :
     %{"id" => 42, "id2" => 1337}
   """
-  @spec match_route(String.t(), String.t()) :: {:ok, map} | {:error, BusinessError.t()}
+  @spec match_route(String.t(), String.t()) :: {:ok, map} | {:error, LC.BusinessError.t()}
   def match_route(route, path) do
     route_parts = route |> String.trim("/") |> String.split("/")
     path_parts = path |> String.trim("/") |> String.split("/")
