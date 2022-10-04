@@ -44,7 +44,7 @@ sequenceDiagram
     User->>+Client: Open app
     Client->>+AppSocket: Open the socket
     Note over AppSocket: Check permission
-    alt Environment not started
+    opt Environment not started
         AppSocket->>+Environment: Start the Environment and deps (blue tree)
         Note over Environment: OnEnvStart is triggered now
     end
@@ -81,7 +81,20 @@ sequenceDiagram
     Client->>+RouteChannel: join route
     RouteChannel->>+RouteSupervisor: Start the Route supervisor (Yellow tree)
     RouteSupervisor->>+RouteServer: Start Route
-    loop recursively
+    alt Lenra Route
+        Note over RouteServer: RouteServer use LenraBuilder
+        loop recursively
+            RouteServer->>+WidgetServer: start(query, name, props)
+            WidgetServer->>+QueryServer: start(query)
+            QueryServer->>Mongo: getData(query)
+            Mongo-->>QueryServer: Data
+            WidgetServer->>QueryServer: getData
+            QueryServer-->>WidgetServer: data
+            RouteServer->>WidgetServer: getWidget
+            WidgetServer-->>RouteServer: widget
+        end
+    else Json Route
+        Note over RouteServer: RouteServer use JsonBuilder
         RouteServer->>+WidgetServer: start(query, name, props)
         WidgetServer->>+QueryServer: start(query)
         QueryServer->>Mongo: getData(query)
@@ -134,7 +147,7 @@ sequenceDiagram
     RouteChannel->>Session.EventHandler: send_client_event(code)
     Session.EventHandler-->>Session.EventHandler: Translate code to action/props
     Session.EventHandler->>App: Http call listener (actio, props)
-    alt if listener call data api
+    opt if listener call data api
         loop Any number of call
             App->>DataApi: HttpCall for any CRUD operation
             DataApi->>Mongo: any CRUD operation on data
@@ -187,7 +200,7 @@ sequenceDiagram
     Mongo->>ChangeStream: new change event
     ChangeStream->>ChangeEventManagers: Broadcast the event to all managers
     ChangeEventManagers->>QueryServers: Broadcast the event to all QueryServers
-    alt Event match the query and not already handled
+    opt Event match the query and not already handled
         QueryServers-->>QueryServers: Update the data
         QueryServers->>WidgetServers: data_changed(data)
         WidgetServers->>App: get widget
