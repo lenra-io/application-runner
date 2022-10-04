@@ -33,7 +33,7 @@ defmodule ApplicationRunner.Webhooks.ControllerTest do
     session_uuid = Ecto.UUID.generate()
 
     token =
-      ApplicationRunner.AppChannel.do_create_session_token(env.id, session_uuid, user.id)
+      ApplicationRunner.AppSocket.do_create_session_token(env.id, session_uuid, user.id)
       |> elem(1)
 
     session_metadata = %ApplicationRunner.Session.Metadata{
@@ -61,7 +61,7 @@ defmodule ApplicationRunner.Webhooks.ControllerTest do
   defp setup_env_token do
     {:ok, env} = ApplicationRunner.Repo.insert(Contract.Environment.new(%{}))
 
-    token = ApplicationRunner.AppChannel.do_create_env_token(env.id) |> elem(1)
+    token = ApplicationRunner.AppSocket.do_create_env_token(env.id) |> elem(1)
 
     env_metadata = %Environment.Metadata{
       env_id: env.id,
