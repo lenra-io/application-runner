@@ -1,15 +1,59 @@
 defmodule ApplicationRunner.Webhooks do
   @moduledoc """
-    ApplicationRunner.Webhooks manages Webhooks.
+    The service that manages the webhooks.
   """
 
-  alias ApplicationRunner.Webhooks
+  import Ecto.Query, only: [from: 2]
 
-  defdelegate create(env_id, params), to: Webhooks.WebhookServices
-  defdelegate app_create(token_params, params), to: Webhooks.WebhookServices
-  defdelegate get(env_id), to: Webhooks.WebhookServices
-  defdelegate get(env_id, user_id), to: Webhooks.WebhookServices
-  defdelegate trigger(webhook_uuid, payload), to: Webhooks.WebhookServices
+  alias ApplicationRunner.ApplicationServices
+  alias ApplicationRunner.Environment.MetadataAgent
+  alias ApplicationRunner.Errors.TechnicalError
+  alias ApplicationRunner.Webhooks.Webhook
 
-  defdelegate new(env_id, params), to: Webhooks.Webhook
+  @repo Application.compile_env(:application_runner, :repo)
+
+  def create(env_id, params) do
+    Webhook.new(env_id, params)
+    |> @repo.insert()
+  end
+
+  def app_create(
+        %{
+          environment: %ApplicationRunner.Contract.Environment{id: env_id},
+          user: %ApplicationRunner.Contract.User{id: user_id}
+        },
+        params
+      ) do
+    create(env_id, Map.merge(params, %{"user_id" => user_id}))
+  end
+
+  def app_create(%{environment: %ApplicationRunner.Contract.Environment{id: env_id}}, params) do
+    create(env_id, params)
+  end
+
+  def get(env_id) do
+    @repo.all(from(w in Webhook, where: w.environment_id == ^env_id))
+  end
+
+  def get(env_id, user_id) do
+    @repo.all(from(w in Webhook, where: w.environment_id == ^env_id and w.user_id == ^user_id))
+  end
+
+  def trigger(webhook_uuid, payload) do
+    case @repo.get(Webhook, webhook_uuid) do
+      nil ->
+        TechnicalError.error_404_tuple()
+
+      webhook ->
+        metadata = MetadataAgent.get_metadata(webhook.environment_id)
+
+        ApplicationServices.run_listener(
+          metadata.function_name,
+          webhook.action,
+          webhook.props,
+          payload,
+          metadata.token
+        )
+    end
+  end
 end
