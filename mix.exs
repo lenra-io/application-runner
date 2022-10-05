@@ -46,9 +46,8 @@ defmodule ApplicationRunner.MixProject do
       {:finch, "~> 0.12"},
       {:bypass, "~> 2.0", only: :test},
       {:mongodb_driver, "~> 0.9.1"},
-      {:query_parser,
-       git: "https://github.com/lenra-io/query-parser.git", tag: "update-lenra-common"},
-      {:lenra_common, git: "https://github.com/lenra-io/lenra-common.git", tag: "add-metadata"}
+      {:query_parser, git: "https://github.com/lenra-io/query-parser.git", tag: "8dbcfea"},
+      {:lenra_common, git: "https://github.com/lenra-io/lenra-common.git", tag: "8ba286a"}
     ]
   end
 
