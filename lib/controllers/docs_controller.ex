@@ -64,7 +64,8 @@ defmodule ApplicationRunner.DocsController do
              env.id,
              coll,
              Parser.replace_params(doc, replace_params)
-           ) do
+           )
+           |> IO.inspect() do
       reply(conn, docs)
     end
   end
@@ -82,7 +83,8 @@ defmodule ApplicationRunner.DocsController do
              coll,
              doc_id,
              Parser.replace_params(new_doc, replace_params)
-           ) do
+           )
+           |> IO.inspect() do
       reply(conn, docs)
     end
   end
