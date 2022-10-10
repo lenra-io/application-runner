@@ -51,6 +51,20 @@ defmodule ApplicationRunner.Crons.CronTest do
     assert cron.errors == [cron: {"Cron Expression is malformed.", []}]
   end
 
+  test "Cron with invalid env_id should not work" do
+    cron =
+      Cron.new(1, %{
+        "cron" => "* * * * *",
+        "listener_name" => "listener",
+        "props" => %{
+          "prop1" => "1",
+          "prop2" => "2"
+        }
+      })
+
+    assert_raise Ecto.InvalidChangesetError, fn -> Repo.insert!(cron) end
+  end
+
   # test "Webhook without action should not work" do
   #   webhook =
   #     Webhook.new(1, %{
