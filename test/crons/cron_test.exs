@@ -48,6 +48,7 @@ defmodule ApplicationRunner.Crons.CronTest do
         }
       })
 
+      # TODO check that error is "cron expression is malformed"
     assert_raise Ecto.InvalidChangesetError, fn -> Repo.insert!(cron) end
   end
 
