@@ -22,7 +22,7 @@ defmodule ApplicationRunner.Crons.CronTest do
     })
     |> Repo.insert!()
 
-    cron = Enum.at(Repo.all(Webhook), 0)
+    cron = Enum.at(Repo.all(Cron), 0)
 
     assert cron.cron == "* * * * *"
     assert cron.listener_name == "listener"
@@ -33,18 +33,23 @@ defmodule ApplicationRunner.Crons.CronTest do
            }
   end
 
-  # test "Webhook with invalid env_id should not work" do
-  #   webhook =
-  #     Webhook.new(1, %{
-  #       "action" => "test",
-  #       "props" => %{
-  #         "prop1" => "1",
-  #         "prop2" => "2"
-  #       }
-  #     })
+  test "Cron with invalid cron expression should not work" do
+    env =
+      Environment.new()
+      |> Repo.insert!()
 
-  #   assert_raise Ecto.InvalidChangesetError, fn -> Repo.insert!(webhook) end
-  # end
+    cron =
+      Cron.new(env.id, %{
+        "cron" => "This is not a valid cron expression",
+        "listener_name" => "listener",
+        "props" => %{
+          "prop1" => "1",
+          "prop2" => "2"
+        }
+      })
+
+    assert_raise Ecto.InvalidChangesetError, fn -> Repo.insert!(cron) end
+  end
 
   # test "Webhook without action should not work" do
   #   webhook =

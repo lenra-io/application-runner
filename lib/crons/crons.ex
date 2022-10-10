@@ -24,6 +24,13 @@ defmodule ApplicationRunner.Crons.Cron do
     webhook
     |> cast(params, [:listener_name, :cron, :props, :user_id])
     |> validate_required([:environment_id, :listener_name, :cron])
+    |> validate_change(:cron, fn :cron, cron ->
+      with {:ok, _cronExpr} <- Crontab.CronExpression.Parser.parse(cron) do
+        []
+      else
+        _ -> [cron: "Cron Expression is malformed."]
+      end
+    end)
     |> foreign_key_constraint(:environment_id)
     |> foreign_key_constraint(:user_id)
   end
