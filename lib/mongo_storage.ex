@@ -80,7 +80,7 @@ defmodule ApplicationRunner.MongoStorage do
         TechnicalError.mongo_error_tuple(err)
 
       {:ok, doc_id} ->
-        fetch_doc(env_id, coll, doc_id) |> IO.inspect()
+        fetch_doc(env_id, coll, doc_id)
     end
   end
 
@@ -141,7 +141,7 @@ defmodule ApplicationRunner.MongoStorage do
           TechnicalError.mongo_error_tuple(err)
 
         res ->
-          fetch_doc(env_id, coll, doc_id) |> IO.inspect()
+          fetch_doc(env_id, coll, doc_id)
       end
     end
   end
