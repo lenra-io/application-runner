@@ -59,13 +59,13 @@ defmodule ApplicationRunner.DocsController do
   end
 
   def create(conn, %{"coll" => coll}, doc, %{environment: env}, replace_params) do
-    with :ok <-
+    with {:ok, docs} <-
            MongoStorage.create_doc(
              env.id,
              coll,
              Parser.replace_params(doc, replace_params)
            ) do
-      reply(conn)
+      reply(conn, docs)
     end
   end
 
@@ -76,14 +76,14 @@ defmodule ApplicationRunner.DocsController do
         %{environment: env},
         replace_params
       ) do
-    with :ok <-
+    with {:ok, docs} <-
            MongoStorage.update_doc(
              env.id,
              coll,
              doc_id,
              Parser.replace_params(new_doc, replace_params)
            ) do
-      reply(conn)
+      reply(conn, docs)
     end
   end
 
