@@ -13,6 +13,7 @@ defmodule ApplicationRunner.Contract.User do
   schema @table_name do
     field(:email, :string)
     has_many(:webhooks, Webhook, foreign_key: :uuid)
+    has_many(:crons, Cron, foreign_key: :id)
     timestamps()
   end
 
