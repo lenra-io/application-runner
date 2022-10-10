@@ -79,7 +79,8 @@ defmodule ApplicationRunner.MongoStorage do
       {:error, err} ->
         TechnicalError.mongo_error_tuple(err)
 
-      _res ->
+      res ->
+        IO.inspect(res)
         :ok
     end
   end
