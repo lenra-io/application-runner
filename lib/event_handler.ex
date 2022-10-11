@@ -22,7 +22,9 @@ defmodule ApplicationRunner.EventHandler do
   end
 
   def send_session_event(session_id, action, props, event) do
-    GenServer.call(get_full_name({:session, session_id}), {:send_event, action, props, event})
+    GenServer.call(get_full_name({:session, session_id}), {:send_event, action, props, event},
+      timeout: 300_000
+    )
   end
 
   def send_client_event(session_id, code, event) do
