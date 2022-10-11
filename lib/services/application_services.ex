@@ -140,7 +140,8 @@ defmodule ApplicationRunner.ApplicationServices do
         "requests" => %{
           "memory" => "128Mi",
           "cpu" => "50m"
-        }
+        },
+        upstream_timeout: "300s"
       })
 
     Logger.debug("Deploy Openfaas application \n#{url} : \n#{body}")
