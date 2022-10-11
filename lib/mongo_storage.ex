@@ -70,7 +70,7 @@ defmodule ApplicationRunner.MongoStorage do
   # DATA #
   ########
 
-  @spec create_doc(number(), String.t(), map()) :: :ok | {:error, TechnicalErrorType.t()}
+  @spec create_doc(number(), String.t(), map()) :: {:ok, map()} | {:error, TechnicalErrorType.t()}
   def create_doc(env_id, coll, doc) do
     env_id
     |> mongo_instance()
@@ -139,7 +139,7 @@ defmodule ApplicationRunner.MongoStorage do
   end
 
   @spec update_doc(number(), String.t(), String.t(), map()) ::
-          :ok | {:error, TechnicalErrorType.t()}
+          {:ok, map()} | {:error, TechnicalErrorType.t()}
   def update_doc(env_id, coll, doc_id, new_doc) do
     with {:ok, bson_doc_id} <- BSON.ObjectId.decode(doc_id),
          {_value, filtered_doc} <- Map.pop(new_doc, "_id") do
