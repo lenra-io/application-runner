@@ -7,12 +7,15 @@ defmodule ApplicationRunner.Contract.Environment do
   use Ecto.Schema
   import Ecto.Changeset
 
+  alias ApplicationRunner.Crons.Cron
   alias ApplicationRunner.Webhooks.Webhook
+
   @type t :: %__MODULE__{}
 
   @table_name Application.compile_env!(:application_runner, :lenra_environment_table)
   schema @table_name do
     has_many(:webhooks, Webhook, foreign_key: :environment_id)
+    has_many(:crons, Cron, foreign_key: :environment_id)
     timestamps()
   end
 
