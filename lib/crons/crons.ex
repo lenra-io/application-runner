@@ -13,7 +13,7 @@ defmodule ApplicationRunner.Crons.Cron do
            only: [
              :id,
              :listener_name,
-             :cron,
+             :cron_expression,
              :props,
              :should_run_missed_steps,
              :last_run_date,
@@ -25,7 +25,7 @@ defmodule ApplicationRunner.Crons.Cron do
     belongs_to(:user, User)
 
     field(:listener_name, :string)
-    field(:cron, :string)
+    field(:cron_expression, :string)
     field(:props, :map)
 
     field(:should_run_missed_steps, :boolean, default: false)
@@ -38,17 +38,17 @@ defmodule ApplicationRunner.Crons.Cron do
     webhook
     |> cast(params, [
       :listener_name,
-      :cron,
+      :cron_expression,
       :props,
       :should_run_missed_steps,
       :last_run_date,
       :user_id
     ])
-    |> validate_required([:environment_id, :listener_name, :cron])
-    |> validate_change(:cron, fn :cron, cron ->
+    |> validate_required([:environment_id, :listener_name, :cron_expression])
+    |> validate_change(:cron_expression, fn :cron_expression, cron ->
       case Parser.parse(cron) do
         {:ok, _cron_expr} -> []
-        _ -> [cron: "Cron Expression is malformed."]
+        _ -> [cron_expression: "Cron Expression is malformed."]
       end
     end)
     |> foreign_key_constraint(:environment_id)
