@@ -7,6 +7,7 @@ defmodule ApplicationRunner.Crons.Cron do
   import Ecto.Changeset
 
   alias ApplicationRunner.Contract.{Environment, User}
+  alias Crontab.CronExpression.Parser
 
   @derive {Jason.Encoder, only: [:id, :listener_name, :cron, :props, :environment_id, :user_id]}
   schema "crons" do
@@ -25,9 +26,8 @@ defmodule ApplicationRunner.Crons.Cron do
     |> cast(params, [:listener_name, :cron, :props, :user_id])
     |> validate_required([:environment_id, :listener_name, :cron])
     |> validate_change(:cron, fn :cron, cron ->
-      with {:ok, _cronExpr} <- Crontab.CronExpression.Parser.parse(cron) do
-        []
-      else
+      case Parser.parse(cron) do
+        {:ok, _cron_expr} -> []
         _ -> [cron: "Cron Expression is malformed."]
       end
     end)

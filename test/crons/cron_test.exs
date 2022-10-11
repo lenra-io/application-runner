@@ -4,8 +4,8 @@ defmodule ApplicationRunner.Crons.CronTest do
   use ApplicationRunner.RepoCase
 
   alias ApplicationRunner.Contract.{Environment, User}
-  alias ApplicationRunner.Repo
   alias ApplicationRunner.Crons.Cron
+  alias ApplicationRunner.Repo
 
   test "Insert Cron into database successfully" do
     env =
