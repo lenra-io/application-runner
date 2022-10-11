@@ -79,8 +79,15 @@ defmodule ApplicationRunner.MongoStorage do
       {:error, err} ->
         TechnicalError.mongo_error_tuple(err)
 
-      {:ok, doc_id} ->
-        fetch_doc(env_id, coll, doc_id)
+      {:ok, res} ->
+        BSON.ObjectId.encode(res.inserted_id)
+        |> case do
+          {:ok, doc_id} ->
+            fetch_doc(env_id, coll, doc_id)
+
+          err ->
+            err
+        end
     end
   end
 
@@ -92,8 +99,11 @@ defmodule ApplicationRunner.MongoStorage do
       |> mongo_instance()
       |> Mongo.find_one(coll, %{"_id" => bson_doc_id})
       |> case do
-        {:error, err} -> TechnicalError.mongo_error_tuple(err)
-        res -> {:ok, res}
+        {:error, err} ->
+          TechnicalError.mongo_error_tuple(err)
+
+        res ->
+          {:ok, res}
       end
     end
   end
