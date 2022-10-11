@@ -65,56 +65,59 @@ defmodule ApplicationRunner.Crons.CronTest do
     assert_raise Ecto.InvalidChangesetError, fn -> Repo.insert!(cron) end
   end
 
-  # test "Webhook without action should not work" do
-  #   webhook =
-  #     Webhook.new(1, %{
-  #       "props" => %{
-  #         "prop1" => "1",
-  #         "prop2" => "2"
-  #       }
-  #     })
+  test "Cron without required parameters should not work" do
+    cron =
+      Cron.new(1, %{
+        "props" => %{
+          "prop1" => "1",
+          "prop2" => "2"
+        }
+      })
 
-  #   assert webhook.valid? == false
-  #   assert [action: _reason] = webhook.errors
-  # end
+    assert cron.valid? == false
+    assert [{:listener_name, _err}, {:cron, _error}] = cron.errors
+  end
 
-  # test "Insert Webhook with no props into database successfully" do
-  #   env =
-  #     Environment.new()
-  #     |> Repo.insert!()
+  test "Insert Cron with no props into database successfully" do
+    env =
+      Environment.new()
+      |> Repo.insert!()
 
-  #   Webhook.new(env.id, %{
-  #     "action" => "test"
-  #   })
-  #   |> Repo.insert!()
+    Cron.new(env.id, %{
+      "cron" => "* * * * *",
+      "listener_name" => "listener"
+    })
+    |> Repo.insert!()
 
-  #   webhook = Enum.at(Repo.all(Webhook), 0)
+    cron = Enum.at(Repo.all(Cron), 0)
 
-  #   assert webhook.action == "test"
-  # end
+    assert cron.cron == "* * * * *"
+    assert cron.listener_name == "listener"
+  end
 
-  # test "Insert Webhook with user into database successfully" do
-  #   env =
-  #     Environment.new()
-  #     |> Repo.insert!()
+  test "Insert Cron with user into database successfully" do
+    env =
+      Environment.new()
+      |> Repo.insert!()
 
-  #   user =
-  #     User.new(%{"email" => "test@lenra.io"})
-  #     |> Repo.insert!()
+    user =
+      User.new(%{"email" => "test@lenra.io"})
+      |> Repo.insert!()
 
-  #   Webhook.new(env.id, %{
-  #     "user_id" => user.id,
-  #     "action" => "test"
-  #   })
-  #   |> Repo.insert!()
+    Cron.new(env.id, %{
+      "cron" => "* * * * *",
+      "listener_name" => "listener",
+      "user_id" => user.id
+    })
+    |> Repo.insert!()
 
-  #   webhook = Enum.at(Repo.all(Webhook), 0)
+    cron = Enum.at(Repo.all(Cron), 0)
 
-  #   assert webhook.action == "test"
-  #   assert webhook.user_id == user.id
+    assert cron.cron == "* * * * *"
+    assert cron.user_id == user.id
 
-  #   preload_user = Repo.preload(webhook, :user)
+    preload_user = Repo.preload(cron, :user)
 
-  #   assert preload_user.user.id == user.id
-  # end
+    assert preload_user.user.id == user.id
+  end
 end

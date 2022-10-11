@@ -7,6 +7,7 @@ defmodule ApplicationRunner.Contract.User do
   use Ecto.Schema
   import Ecto.Changeset
 
+  alias ApplicationRunner.Crons.Cron
   alias ApplicationRunner.Webhooks.Webhook
 
   @table_name Application.compile_env!(:application_runner, :lenra_user_table)
