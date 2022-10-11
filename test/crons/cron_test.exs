@@ -12,13 +12,16 @@ defmodule ApplicationRunner.Crons.CronTest do
       Environment.new()
       |> Repo.insert!()
 
+    date = Date.utc_today()
+
     Cron.new(env.id, %{
       "cron" => "* * * * *",
       "listener_name" => "listener",
       "props" => %{
         "prop1" => "1",
         "prop2" => "2"
-      }
+      },
+      "last_run_date" => date
     })
     |> Repo.insert!()
 
@@ -31,6 +34,29 @@ defmodule ApplicationRunner.Crons.CronTest do
              "prop1" => "1",
              "prop2" => "2"
            }
+
+    assert cron.last_run_date == date
+    assert cron.should_run_missed_steps == false
+  end
+
+  test "Insert Cron into database successfully (should run missed steps)" do
+    env =
+      Environment.new()
+      |> Repo.insert!()
+
+    Cron.new(env.id, %{
+      "cron" => "* * * * *",
+      "listener_name" => "listener",
+      "should_run_missed_steps" => true
+    })
+    |> Repo.insert!()
+
+    cron = Enum.at(Repo.all(Cron), 0)
+
+    assert cron.cron == "* * * * *"
+    assert cron.listener_name == "listener"
+
+    assert cron.should_run_missed_steps == true
   end
 
   test "Cron with invalid cron expression should not work" do

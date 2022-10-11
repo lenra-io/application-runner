@@ -9,6 +9,9 @@ defmodule ApplicationRunner.Repo.Migrations.AddCronTable do
       add(:cron, :string, null: false)
       add(:props, :map)
 
+      add(:should_run_missed_steps, :boolean, default: false)
+      add(:last_run_date, :date)
+
       timestamps()
     end
   end

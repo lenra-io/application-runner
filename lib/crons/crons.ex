@@ -9,7 +9,17 @@ defmodule ApplicationRunner.Crons.Cron do
   alias ApplicationRunner.Contract.{Environment, User}
   alias Crontab.CronExpression.Parser
 
-  @derive {Jason.Encoder, only: [:id, :listener_name, :cron, :props, :environment_id, :user_id]}
+  @derive {Jason.Encoder,
+           only: [
+             :id,
+             :listener_name,
+             :cron,
+             :props,
+             :should_run_missed_steps,
+             :last_run_date,
+             :environment_id,
+             :user_id
+           ]}
   schema "crons" do
     belongs_to(:environment, Environment)
     belongs_to(:user, User)
@@ -18,12 +28,22 @@ defmodule ApplicationRunner.Crons.Cron do
     field(:cron, :string)
     field(:props, :map)
 
+    field(:should_run_missed_steps, :boolean, default: false)
+    field(:last_run_date, :date)
+
     timestamps()
   end
 
   def changeset(webhook, params \\ %{}) do
     webhook
-    |> cast(params, [:listener_name, :cron, :props, :user_id])
+    |> cast(params, [
+      :listener_name,
+      :cron,
+      :props,
+      :should_run_missed_steps,
+      :last_run_date,
+      :user_id
+    ])
     |> validate_required([:environment_id, :listener_name, :cron])
     |> validate_change(:cron, fn :cron, cron ->
       case Parser.parse(cron) do
