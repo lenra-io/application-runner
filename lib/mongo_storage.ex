@@ -70,7 +70,7 @@ defmodule ApplicationRunner.MongoStorage do
   # DATA #
   ########
 
-  @spec create_doc(number(), String.t(), map()) :: :ok | {:error, TechnicalErrorType.t()}
+  @spec create_doc(number(), String.t(), map()) :: {:ok, map()} | {:error, TechnicalErrorType.t()}
   def create_doc(env_id, coll, doc) do
     env_id
     |> mongo_instance()
@@ -79,8 +79,15 @@ defmodule ApplicationRunner.MongoStorage do
       {:error, err} ->
         TechnicalError.mongo_error_tuple(err)
 
-      _res ->
-        :ok
+      {:ok, res} ->
+        BSON.ObjectId.encode(res.inserted_id)
+        |> case do
+          {:ok, doc_id} ->
+            fetch_doc(env_id, coll, doc_id)
+
+          err ->
+            err
+        end
     end
   end
 
@@ -92,8 +99,11 @@ defmodule ApplicationRunner.MongoStorage do
       |> mongo_instance()
       |> Mongo.find_one(coll, %{"_id" => bson_doc_id})
       |> case do
-        {:error, err} -> TechnicalError.mongo_error_tuple(err)
-        res -> {:ok, res}
+        {:error, err} ->
+          TechnicalError.mongo_error_tuple(err)
+
+        res ->
+          {:ok, res}
       end
     end
   end
@@ -129,7 +139,7 @@ defmodule ApplicationRunner.MongoStorage do
   end
 
   @spec update_doc(number(), String.t(), String.t(), map()) ::
-          :ok | {:error, TechnicalErrorType.t()}
+          {:ok, map()} | {:error, TechnicalErrorType.t()}
   def update_doc(env_id, coll, doc_id, new_doc) do
     with {:ok, bson_doc_id} <- BSON.ObjectId.decode(doc_id),
          {_value, filtered_doc} <- Map.pop(new_doc, "_id") do
@@ -140,8 +150,8 @@ defmodule ApplicationRunner.MongoStorage do
         {:error, err} ->
           TechnicalError.mongo_error_tuple(err)
 
-        _res ->
-          :ok
+        res ->
+          fetch_doc(env_id, coll, doc_id)
       end
     end
   end
