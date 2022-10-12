@@ -14,6 +14,7 @@ defmodule ApplicationRunner.Errors.BusinessError do
       {:unknow_listener_code, "No listeners found for the given code"},
       {:session_not_started, "Session not started"},
       {:json_format_invalid, "JSON format invalid"},
-      {:no_app_found, "No application found for the current link"}
+      {:no_app_found, "No application found for the current link"},
+      {:not_an_object_id, "The given id is not a valid object id"}
     ]
 end

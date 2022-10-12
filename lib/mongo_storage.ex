@@ -7,6 +7,7 @@ defmodule ApplicationRunner.MongoStorage do
 
   alias ApplicationRunner.Contract
   alias ApplicationRunner.Environment
+  alias ApplicationRunner.Errors.BusinessError
   alias ApplicationRunner.Errors.TechnicalError
   alias ApplicationRunner.MongoStorage.MongoUserLink
   alias LenraCommon.Errors.TechnicalError, as: TechnicalErrorType
@@ -86,7 +87,7 @@ defmodule ApplicationRunner.MongoStorage do
 
   @spec fetch_doc(number(), String.t(), term()) :: {:ok, map()} | {:error, TechnicalErrorType.t()}
   def fetch_doc(env_id, coll, doc_id) when is_bitstring(doc_id) do
-    with {:ok, bson_doc_id} <- BSON.ObjectId.decode(doc_id) do
+    with {:ok, bson_doc_id} <- decode_object_id(doc_id) do
       fetch_doc(env_id, coll, bson_doc_id)
     end
   end
@@ -139,7 +140,7 @@ defmodule ApplicationRunner.MongoStorage do
   @spec update_doc(number(), String.t(), String.t(), map()) ::
           {:ok, map()} | {:error, TechnicalErrorType.t()}
   def update_doc(env_id, coll, doc_id, new_doc) do
-    with {:ok, bson_doc_id} <- BSON.ObjectId.decode(doc_id),
+    with {:ok, bson_doc_id} <- decode_object_id(doc_id),
          {_value, filtered_doc} <- Map.pop(new_doc, "_id") do
       env_id
       |> mongo_instance()
@@ -156,7 +157,7 @@ defmodule ApplicationRunner.MongoStorage do
 
   @spec delete_doc(number(), String.t(), String.t()) :: :ok | {:error, TechnicalErrorType.t()}
   def delete_doc(env_id, coll, doc_id) do
-    with {:ok, bson_doc_id} <- BSON.ObjectId.decode(doc_id) do
+    with {:ok, bson_doc_id} <- decode_object_id(doc_id) do
       env_id
       |> mongo_instance()
       |> Mongo.delete_one(coll, %{"_id" => bson_doc_id})
@@ -170,13 +171,29 @@ defmodule ApplicationRunner.MongoStorage do
     end
   end
 
-  @spec decode_ids(term()) :: term()
-  def decode_ids("ObjectId(" <> str = original) do
-    id = str <> ")"
+  @object_id_regex ~r/^ObjectId\(([[:xdigit:]]{24})\)$/
 
-    case BSON.ObjectId.decode(id) do
+  def decode_object_id(str) do
+    case Regex.run(@object_id_regex, str) do
+      nil ->
+        BusinessError.not_an_object_id_tuple()
+
+      [_, hex_id] ->
+        case BSON.ObjectId.decode(hex_id) do
+          :error ->
+            BusinessError.not_an_object_id_tuple()
+
+          res ->
+            res
+        end
+    end
+  end
+
+  @spec decode_ids(term()) :: term()
+  def decode_ids(str) when is_bitstring(str) do
+    case decode_object_id(str) do
       {:ok, id} -> id
-      {:error, _} -> original
+      _err -> str
     end
   end
 
