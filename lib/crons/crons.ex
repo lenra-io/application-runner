@@ -55,6 +55,10 @@ defmodule ApplicationRunner.Crons.Cron do
     |> foreign_key_constraint(:user_id)
   end
 
+  def update(%__MODULE__{} = cron, params) do
+    changeset(cron, params)
+  end
+
   def new(env_id, params) do
     %__MODULE__{environment_id: env_id}
     |> __MODULE__.changeset(params)

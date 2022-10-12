@@ -31,7 +31,8 @@ defmodule ApplicationRunner.Crons.CronServices do
   end
 
   def update(cron, params) do
-    @repo.update(Ecto.Changeset.change(cron, params))
+    Cron.update(cron, params)
+    |> @repo.update()
   end
 
   def delete(cron) do
