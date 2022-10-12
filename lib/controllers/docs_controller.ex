@@ -100,6 +100,8 @@ defmodule ApplicationRunner.DocsController do
   end
 
   def find(conn, %{"coll" => coll}, filter, %{environment: env}, replace_params) do
+    IO.inspect(filter)
+
     with {:ok, docs} <-
            MongoStorage.filter_docs(env.id, coll, Parser.replace_params(filter, replace_params)) do
       reply(conn, docs)

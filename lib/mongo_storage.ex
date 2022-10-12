@@ -80,31 +80,27 @@ defmodule ApplicationRunner.MongoStorage do
         TechnicalError.mongo_error_tuple(err)
 
       {:ok, res} ->
-        BSON.ObjectId.encode(res.inserted_id)
-        |> case do
-          {:ok, doc_id} ->
-            fetch_doc(env_id, coll, doc_id)
-
-          err ->
-            err
-        end
+        {:ok, Map.put(doc, "_id", res.inserted_id)}
     end
   end
 
-  @spec fetch_doc(number(), String.t(), String.t()) ::
-          {:ok, map()} | {:error, TechnicalErrorType.t()}
-  def fetch_doc(env_id, coll, doc_id) do
+  @spec fetch_doc(number(), String.t(), term()) :: {:ok, map()} | {:error, TechnicalErrorType.t()}
+  def fetch_doc(env_id, coll, doc_id) when is_bitstring(doc_id) do
     with {:ok, bson_doc_id} <- BSON.ObjectId.decode(doc_id) do
-      env_id
-      |> mongo_instance()
-      |> Mongo.find_one(coll, %{"_id" => bson_doc_id})
-      |> case do
-        {:error, err} ->
-          TechnicalError.mongo_error_tuple(err)
+      fetch_doc(env_id, coll, bson_doc_id)
+    end
+  end
 
-        res ->
-          {:ok, res}
-      end
+  def fetch_doc(env_id, coll, bson_doc_id) when is_struct(bson_doc_id, BSON.ObjectId) do
+    env_id
+    |> mongo_instance()
+    |> Mongo.find_one(coll, %{"_id" => bson_doc_id})
+    |> case do
+      {:error, err} ->
+        TechnicalError.mongo_error_tuple(err)
+
+      res ->
+        {:ok, res}
     end
   end
 
@@ -126,9 +122,12 @@ defmodule ApplicationRunner.MongoStorage do
   @spec filter_docs(number(), String.t(), map()) ::
           {:ok, list(map())} | {:error, TechnicalErrorType.t()}
   def filter_docs(env_id, coll, filter) do
+    IO.inspect(filter)
+    clean_filter = decode_ids(filter) |> IO.inspect()
+
     env_id
     |> mongo_instance()
-    |> Mongo.find(coll, filter)
+    |> Mongo.find(coll, clean_filter)
     |> case do
       {:error, err} ->
         TechnicalError.mongo_error_tuple(err)
@@ -150,8 +149,8 @@ defmodule ApplicationRunner.MongoStorage do
         {:error, err} ->
           TechnicalError.mongo_error_tuple(err)
 
-        res ->
-          fetch_doc(env_id, coll, doc_id)
+        _res ->
+          {:ok, Map.put(new_doc, "_id", bson_doc_id)}
       end
     end
   end
@@ -172,8 +171,32 @@ defmodule ApplicationRunner.MongoStorage do
     end
   end
 
+  @spec decode_ids(term()) :: term()
+  def decode_ids("ObjectId(" <> str = original) do
+    id = str <> ")"
+
+    case BSON.ObjectId.decode(id) do
+      {:ok, id} -> id
+      {:error, _} -> original
+    end
+  end
+
+  def decode_ids(query) when is_list(query) do
+    Enum.map(query, &decode_ids(&1))
+  end
+
+  def decode_ids(query) when is_map(query) do
+    query
+    |> Enum.map(fn {k, v} -> {k, decode_ids(v)} end)
+    |> Map.new()
+  end
+
+  def decode_ids(query) do
+    query
+  end
+
   #############
-  # DATASTORE #
+  # Coll      #
   #############
 
   @spec delete_coll(number(), String.t()) :: :ok | TechnicalErrorType.t()
