@@ -181,5 +181,21 @@ defmodule ApplicationRunner.Webhooks.ServicesTest do
   end
 
   describe "delete" do
+    test "delete Cron should work properly", %{
+      env_id: env_id
+    } do
+      assert {:ok, cron} =
+               Cron.new(env_id, %{
+                 "listener_name" => "listener",
+                 "cron_expression" => "* * * * *"
+               })
+               |> Repo.insert()
+
+      assert {:ok, _cron} = CronServices.get(cron.id)
+
+      CronServices.delete(cron)
+
+      assert {:error, %{reason: :error_404}} = CronServices.get(cron.id)
+    end
   end
 end
