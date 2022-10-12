@@ -77,8 +77,6 @@ defmodule ApplicationRunner.DocsControllerTest do
     end
 
     test "Should return the correct doc", %{conn: conn, token: token, doc_id: doc_id} do
-      IO.inspect(doc_id)
-
       conn =
         conn
         |> Plug.Conn.put_req_header("authorization", "Bearer " <> token)

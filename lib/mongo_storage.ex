@@ -122,8 +122,7 @@ defmodule ApplicationRunner.MongoStorage do
   @spec filter_docs(number(), String.t(), map()) ::
           {:ok, list(map())} | {:error, TechnicalErrorType.t()}
   def filter_docs(env_id, coll, filter) do
-    IO.inspect(filter)
-    clean_filter = decode_ids(filter) |> IO.inspect()
+    clean_filter = decode_ids(filter)
 
     env_id
     |> mongo_instance()
