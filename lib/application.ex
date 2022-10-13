@@ -10,11 +10,12 @@ defmodule ApplicationRunner.Application do
     children = [
       # Start the json validator server for the UI
       ApplicationRunner.JsonSchemata,
+      ApplicationRunner.Scheduler,
       ApplicationRunner.Environment.DynamicSupervisor,
       {Finch,
        name: AppHttp,
        pools: %{
-         Application.fetch_env!(:application_runner, :faas_url) => [size: 32, count: 8]
+         "http://localhost:8888" => [size: 32, count: 8]
        }}
     ]
 
