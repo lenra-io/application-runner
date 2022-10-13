@@ -232,8 +232,6 @@ defmodule ApplicationRunner.Session.UiServer do
     query_transformed = Parser.replace_params(query, params)
 
     with {:ok, query_parsed} <- parse_query(query, params) do
-      Logger.error(inspect(query_parsed))
-
       {:ok,
        %WidgetUid{
          name: name,
@@ -251,7 +249,13 @@ defmodule ApplicationRunner.Session.UiServer do
     query
     |> Jason.encode!()
     |> Parser.parse(params)
-    |> MongoStorage.decode_ids()
+    |> case do
+      {:ok, res} ->
+        {:ok, MongoStorage.decode_ids(res)}
+
+      err ->
+        err
+    end
   end
 
   defp parse_query(nil, _params) do
