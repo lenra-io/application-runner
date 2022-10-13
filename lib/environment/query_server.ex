@@ -102,7 +102,7 @@ defmodule ApplicationRunner.Environment.QueryServer do
 
   defp fetch_initial_data(env_id, coll, query_transformed) do
     res = MongoStorage.filter_docs(env_id, coll, query_transformed)
-    Logger.warn(inspect(res))
+    Logger.error(inspect(res))
     res
   end
 
@@ -166,7 +166,7 @@ defmodule ApplicationRunner.Environment.QueryServer do
            coll: coll
          } = state
        ) do
-    Logger.warn(inspect({"handle event", data, query_parsed}))
+    Logger.error(inspect({"handle event", data, query_parsed}))
 
     event_coll = get_in(event, ["ns", "coll"])
     op_type = get_in(event, ["operationType"])
