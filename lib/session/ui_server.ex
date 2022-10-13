@@ -230,6 +230,8 @@ defmodule ApplicationRunner.Session.UiServer do
     query_transformed = Parser.replace_params(query, params)
 
     with {:ok, query_parsed} <- parse_query(query, params) do
+      IO.inspect(query_parsed)
+
       {:ok,
        %WidgetUid{
          name: name,
