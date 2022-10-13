@@ -11,6 +11,8 @@ defmodule ApplicationRunner.Session.UiServer do
   use GenServer
   use SwarmNamed
 
+  require Logger
+
   alias ApplicationRunner.{AppChannel, Environment, JsonSchemata, MongoStorage, Session, Ui}
   alias ApplicationRunner.MongoStorage.MongoUserLink
   alias ApplicationRunner.Environment.{WidgetDynSup, WidgetServer, WidgetUid}
@@ -230,7 +232,7 @@ defmodule ApplicationRunner.Session.UiServer do
     query_transformed = Parser.replace_params(query, params)
 
     with {:ok, query_parsed} <- parse_query(query, params) do
-      IO.inspect(query_parsed)
+      Logger.warn(inspect(query_parsed))
 
       {:ok,
        %WidgetUid{
