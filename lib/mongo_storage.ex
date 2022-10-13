@@ -73,9 +73,11 @@ defmodule ApplicationRunner.MongoStorage do
 
   @spec create_doc(number(), String.t(), map()) :: {:ok, map()} | {:error, TechnicalErrorType.t()}
   def create_doc(env_id, coll, doc) do
+    decoded_doc = decode_ids(doc)
+
     env_id
     |> mongo_instance()
-    |> Mongo.insert_one(coll, doc)
+    |> Mongo.insert_one(coll, decoded_doc)
     |> case do
       {:error, err} ->
         TechnicalError.mongo_error_tuple(err)
@@ -141,7 +143,8 @@ defmodule ApplicationRunner.MongoStorage do
           {:ok, map()} | {:error, TechnicalErrorType.t()}
   def update_doc(env_id, coll, doc_id, new_doc) do
     with {:ok, bson_doc_id} <- decode_object_id(doc_id),
-         {_value, filtered_doc} <- Map.pop(new_doc, "_id") do
+         decoded_doc <- decode_ids(new_doc),
+         {_value, filtered_doc} <- Map.pop(decoded_doc, "_id") do
       env_id
       |> mongo_instance()
       |> Mongo.replace_one(coll, %{"_id" => bson_doc_id}, filtered_doc)
@@ -150,7 +153,7 @@ defmodule ApplicationRunner.MongoStorage do
           TechnicalError.mongo_error_tuple(err)
 
         _res ->
-          {:ok, Map.put(new_doc, "_id", bson_doc_id)}
+          {:ok, Map.put(decoded_doc, "_id", bson_doc_id)}
       end
     end
   end
