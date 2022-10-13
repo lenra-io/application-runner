@@ -12,6 +12,7 @@ defmodule ApplicationRunner.AppSocket do
       alias ApplicationRunner.Environment
       alias ApplicationRunner.Errors.BusinessError
       alias ApplicationRunner.Session
+      alias LenraCommonWeb.ErrorHelpers
 
       @adapter_mod unquote(adapter_mod)
 
@@ -33,6 +34,7 @@ defmodule ApplicationRunner.AppSocket do
       def connect(params, socket, _connect_info) do
         with {:ok, app_name, context} <- extract_params(params),
              {:ok, user_id} <- @adapter_mod.resource_from_params(params),
+             :ok <- @adapter_mod.allow(user_id, app_name),
              {:ok, env_metadata, session_metadata} <-
                create_metadatas(user_id, app_name, context),
              {:ok, session_pid} <- Session.start_session(session_metadata, env_metadata) do
@@ -52,7 +54,7 @@ defmodule ApplicationRunner.AppSocket do
             {:error, ErrorHelpers.translate_error(reason)}
 
           {:error, reason} ->
-            Logger.error(err)
+            Logger.error(reason)
             {:error, ErrorHelpers.translate_error(TechnicalError.unknown_error())}
         end
       end
@@ -72,7 +74,6 @@ defmodule ApplicationRunner.AppSocket do
         session_id = Ecto.UUID.generate()
 
         with function_name <- @adapter_mod.get_function_name(app_name),
-             :ok <- @adapter_mod.allow(user_id, app_name),
              env_id <- @adapter_mod.get_env_id(app_name),
              {:ok, session_token} <- create_session_token(env_id, session_id, user_id),
              {:ok, env_token} <- create_env_token(env_id) do
