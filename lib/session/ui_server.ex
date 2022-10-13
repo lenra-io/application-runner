@@ -11,8 +11,6 @@ defmodule ApplicationRunner.Session.UiServer do
   use GenServer
   use SwarmNamed
 
-  require Logger
-
   alias ApplicationRunner.{AppChannel, Environment, JsonSchemata, MongoStorage, Session, Ui}
   alias ApplicationRunner.MongoStorage.MongoUserLink
   alias ApplicationRunner.Environment.{WidgetDynSup, WidgetServer, WidgetUid}
