@@ -144,7 +144,7 @@ defmodule ApplicationRunner.MongoStorage do
   def update_doc(env_id, coll, doc_id, new_doc) do
     with {:ok, bson_doc_id} <- decode_object_id(doc_id),
          decoded_doc <- decode_ids(new_doc),
-         {_value, filtered_doc} <- Map.pop(new_doc, "_id") do
+         {_value, filtered_doc} <- Map.pop(decoded_doc, "_id") do
       env_id
       |> mongo_instance()
       |> Mongo.replace_one(coll, %{"_id" => bson_doc_id}, filtered_doc)
@@ -153,7 +153,7 @@ defmodule ApplicationRunner.MongoStorage do
           TechnicalError.mongo_error_tuple(err)
 
         _res ->
-          {:ok, Map.put(new_doc, "_id", bson_doc_id)}
+          {:ok, Map.put(decoded_doc, "_id", bson_doc_id)}
       end
     end
   end
