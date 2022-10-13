@@ -86,7 +86,7 @@ defmodule ApplicationRunner.ApplicationServices do
   @spec fetch_manifest(String.t()) :: {:ok, map()} | {:error, any()}
   def fetch_manifest(function_name) do
     {base_url, base_headers} = get_http_context()
-
+    IO.inspect(base_url)
     url = "#{base_url}/function/#{function_name}"
     url = base_url
     headers = [{"Content-Type", "application/json"} | base_headers]
