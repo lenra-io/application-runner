@@ -244,7 +244,10 @@ defmodule ApplicationRunner.Session.UiServer do
   end
 
   defp parse_query(query, params) when not is_nil(query) do
-    Parser.parse(Jason.encode!(query), params)
+    query
+    |> Jason.encode!()
+    |> Parser.parse(params)
+    |> MongoStorage.decode_ids()
   end
 
   defp parse_query(nil, _params) do
