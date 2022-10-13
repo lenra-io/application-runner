@@ -50,7 +50,7 @@ defmodule ApplicationRunner.ApplicationServices do
     Logger.debug("Run app #{function_name} with action #{action}")
 
     Finch.build(:post, url, headers, body)
-    |> Finch.request(AppHttp, receive_timeout: 300_000)
+    |> Finch.request(AppHttp, receive_timeout: 0)
     |> IO.inspect()
     |> response(:listener)
   end
@@ -141,8 +141,7 @@ defmodule ApplicationRunner.ApplicationServices do
         "requests" => %{
           "memory" => "128Mi",
           "cpu" => "50m"
-        },
-        upstream_timeout: "5m"
+        }
       })
 
     Logger.debug("Deploy Openfaas application \n#{url} : \n#{body}")
