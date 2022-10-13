@@ -7,6 +7,7 @@ defmodule ApplicationRunner.AppSocket do
       require Logger
       use Phoenix.Socket
 
+      alias ApplicationRunner.AppSocket
       alias ApplicationRunner.Contract.User
       alias ApplicationRunner.Environment
       alias ApplicationRunner.Errors.BusinessError
@@ -44,18 +45,15 @@ defmodule ApplicationRunner.AppSocket do
 
           {:ok, socket}
         else
-          {:error, err} ->
+          {:error, reason} when is_bitstring(reason) ->
+            {:error, %{message: reason, reason: "application_error"}}
+
+          {:error, reason} when is_struct(reason) ->
+            {:error, ErrorHelpers.translate_error(reason)}
+
+          {:error, reason} ->
             Logger.error(err)
-            :error
-            # Application error
-            # {:error, reason} when is_bitstring(reason) ->
-            #   {:error, %{message: reason, reason: "application_error"}}
-
-            # {:error, reason} when is_struct(reason) ->
-            #   {:error, ErrorHelpers.translate_error(reason)}
-
-            # {:error, reason} ->
-            #   {:error, ErrorHelpers.translate_error(TechnicalError.unknown_error())}
+            {:error, ErrorHelpers.translate_error(TechnicalError.unknown_error())}
         end
       end
 
@@ -105,11 +103,11 @@ defmodule ApplicationRunner.AppSocket do
       end
 
       def create_env_token(env_id) do
-        ApplicationRunner.AppSocket.do_create_env_token(env_id)
+        AppSocket.do_create_env_token(env_id)
       end
 
       def create_session_token(env_id, session_id, user_id) do
-        ApplicationRunner.AppSocket.do_create_session_token(env_id, session_id, user_id)
+        AppSocket.do_create_session_token(env_id, session_id, user_id)
       end
 
       # Socket id's are topics that allow you to identify all sockets for a given user:

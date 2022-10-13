@@ -19,7 +19,7 @@ defmodule ApplicationRunner.Utils.Routes do
     if Enum.count(route_parts) == Enum.count(path_parts) do
       extract_route_params(route_parts, path_parts)
     else
-      BusinessError.route_doest_not_exists_tuple(path)
+      BusinessError.route_does_not_exist_tuple(path)
     end
   end
 
@@ -33,7 +33,7 @@ defmodule ApplicationRunner.Utils.Routes do
         {:cont, res}
 
       {_route_part, _path_part}, _route_params ->
-        {:halt, BusinessError.route_doest_not_exists_tuple()}
+        {:halt, BusinessError.route_does_not_exist_tuple()}
     end)
   end
 

@@ -102,7 +102,7 @@ defmodule ApplicationRunner.Session.RouteServer do
       builder_mod.build_ui(session_metadata, widget_uid)
     else
       :error ->
-        BusinessError.route_doest_not_exists_tuple(route)
+        BusinessError.route_does_not_exist_tuple(route)
 
       err ->
         err
@@ -135,7 +135,7 @@ defmodule ApplicationRunner.Session.RouteServer do
 
   defp get_builder_mode(mode) do
     raise Errors.DevError.exception(
-            "The view mode '#{mode}' is correct. No UI Builder module can be found."
+            "The view mode '#{mode}' is incorrect. No UI Builder module can be found."
           )
   end
 
