@@ -7,10 +7,12 @@ defmodule ApplicationRunner.Storage do
 
   @impl GenServer
   def init(args) do
-    GenServer.start_link(__MODULE__, args, args)
+    Supervisor.init([])
   end
 
-  def start_link(_opts), do: :ignore
+  def start_link(arg) do
+    Supervisor.start_link(__MODULE__, arg, name: __MODULE__)
+  end
 
   @impl Storage
   def add_job(storage_pid, job) do
