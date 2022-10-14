@@ -6,6 +6,8 @@ defmodule ApplicationRunner.ApplicationServices do
   alias ApplicationRunner.Errors.TechnicalError
   require Logger
 
+  @listeners_timeout 1 * 60 * 60 * 1000
+
   defp get_http_context do
     base_url = Application.fetch_env!(:application_runner, :faas_url)
     auth = Application.fetch_env!(:application_runner, :faas_auth)
@@ -50,7 +52,7 @@ defmodule ApplicationRunner.ApplicationServices do
     Logger.debug("Run app #{function_name} with action #{action}")
 
     Finch.build(:post, url, headers, body)
-    |> Finch.request(AppHttp, receive_timeout: 5000)
+    |> Finch.request(AppHttp, receive_timeout: @listeners_timeout)
     |> IO.inspect()
     |> response(:listener)
   end
