@@ -53,7 +53,6 @@ defmodule ApplicationRunner.ApplicationServices do
 
     Finch.build(:post, url, headers, body)
     |> Finch.request(AppHttp, receive_timeout: @listeners_timeout)
-    |> IO.inspect()
     |> response(:listener)
   end
 
