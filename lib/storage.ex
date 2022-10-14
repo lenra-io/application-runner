@@ -6,8 +6,8 @@ defmodule ApplicationRunner.Storage do
   use GenServer
 
   @impl GenServer
-  def init(args) do
-    Supervisor.init([])
+  def init(_args) do
+    Supervisor.init([], strategy: :one_for_one)
   end
 
   def start_link(arg) do
