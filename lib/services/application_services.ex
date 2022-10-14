@@ -6,7 +6,7 @@ defmodule ApplicationRunner.ApplicationServices do
   alias ApplicationRunner.Errors.TechnicalError
   require Logger
 
-  @listeners_timeout 1 * 60 * 60 * 1000
+  @listeners_timeout Application.fetch_env!(:application_runner, :listeners_timeout)
 
   defp get_http_context do
     base_url = Application.fetch_env!(:application_runner, :faas_url)

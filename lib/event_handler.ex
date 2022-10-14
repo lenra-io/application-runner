@@ -9,6 +9,8 @@ defmodule ApplicationRunner.EventHandler do
   alias ApplicationRunner.Environment
   alias ApplicationRunner.Session
 
+  @listeners_timeout Application.fetch_env!(:application_runner, :listeners_timeout)
+
   #########
   ## API ##
   #########
@@ -18,14 +20,18 @@ defmodule ApplicationRunner.EventHandler do
     the call will run listeners with the given `action` `props` `event`
   """
   def send_env_event(env_id, action, props, event) do
-    GenServer.call(get_full_name({:env, env_id}), {:send_event, action, props, event})
+    GenServer.call(
+      get_full_name({:env, env_id}),
+      {:send_event, action, props, event},
+      @listeners_timeout
+    )
   end
 
   def send_session_event(session_id, action, props, event) do
     GenServer.call(
       get_full_name({:session, session_id}),
       {:send_event, action, props, event},
-      300_000
+      @listeners_timeout
     )
   end
 
