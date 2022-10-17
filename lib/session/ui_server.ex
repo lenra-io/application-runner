@@ -243,8 +243,21 @@ defmodule ApplicationRunner.Session.UiServer do
     end
   end
 
+  # The Parser.parse function propagate a wrong warning.
+  # Probably due to a bug in the parser grammar.
+  # I don't know how to fix this so i just ignore the error...
+  @dialyzer {:nowarn_function, parse_query: 2}
   defp parse_query(query, params) when not is_nil(query) do
-    Parser.parse(Jason.encode!(query), params)
+    query
+    |> Jason.encode!()
+    |> Parser.parse(params)
+    |> case do
+      {:ok, res} ->
+        {:ok, MongoStorage.decode_ids(res)}
+
+      {:error, reason} ->
+        {:error, reason}
+    end
   end
 
   defp parse_query(nil, _params) do
