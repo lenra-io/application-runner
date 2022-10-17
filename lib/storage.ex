@@ -1,4 +1,5 @@
 defmodule ApplicationRunner.Storage do
+  alias ApplicationRunner.Crons.CronServices
   alias Quantum.Storage
 
   @behaviour Storage
@@ -50,7 +51,9 @@ defmodule ApplicationRunner.Storage do
   end
 
   @impl GenServer
-  def handle_cast({:add_job, _job}, state) do
+  def handle_cast({:add_job, job}, state) do
+    # TODO properly handle this create
+    CronServices.create(1, job)
     {:noreply, state}
   end
 
