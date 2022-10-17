@@ -7,6 +7,17 @@ defmodule ApplicationRunner.Storage do
   use GenServer
 
   @impl GenServer
+  @doc """
+  Maybe create a new table
+  (
+    env_id
+    last_execution_time
+  )
+  This can ensure that if a Storage GenServer crashes, it will keep track of what needs to be done when coming back up online
+
+  If this time is kept globally for the Storage GenServers, this would mean that if all GenServers crash but one remain, this last one will keep updating
+  the last_execution_time and the others will think that they forgot nothing when coming back up online
+  """
   def init(_args) do
     # TODO Find a way to define the env_id in this genserver
     Supervisor.init([], strategy: :one_for_one)
@@ -24,6 +35,11 @@ defmodule ApplicationRunner.Storage do
   @impl Storage
   def delete_job(storage_pid, job_name) do
     GenServer.cast(storage_pid, {:delete_job, job_name})
+  end
+
+  @impl Storage
+  def update_job(storage_pid, job) do
+    GenServer.cast(storage_pid, {:update_job, job})
   end
 
   @impl Storage
@@ -56,11 +72,27 @@ defmodule ApplicationRunner.Storage do
     {:noreply, state}
   end
 
-  def handle_cast({:delete_job, _job_name}, state) do
+  def handle_cast({:delete_job, job_name}, state) do
+    with {:ok, cron} = CronServices.get_by_name(job_name) do
+      CronServices.delete(cron)
+    end
+
     {:noreply, state}
   end
 
-  def handle_cast({:update_job_state, _job_name, _job_state}, state) do
+  def handle_cast({:update_job, job}, state) do
+    with {:ok, cron} = CronServices.get_by_name(job.name) do
+      CronServices.update(cron, job)
+    end
+
+    {:noreply, state}
+  end
+
+  def handle_cast({:update_job_state, job_name, job_state}, state) do
+    with {:ok, cron} = CronServices.get_by_name(job_name) do
+      CronServices.update(cron, %{"state" => job_state})
+    end
+
     {:noreply, state}
   end
 

@@ -28,6 +28,13 @@ defmodule ApplicationRunner.Crons.CronServices do
     end
   end
 
+  def get_by_name(name) do
+    case @repo.get_by(Cron, name: name) do
+      nil -> TechnicalError.error_404_tuple()
+      cron -> {:ok, cron}
+    end
+  end
+
   def get_all(env_id) do
     @repo.all(from(c in Cron, where: c.environment_id == ^env_id))
   end
