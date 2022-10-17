@@ -10,6 +10,7 @@ defmodule ApplicationRunner.Application do
     children = [
       # Start the json validator server for the UI
       ApplicationRunner.JsonSchemata,
+      ApplicationRunner.Scheduler,
       ApplicationRunner.Environment.DynamicSupervisor,
       {Finch,
        name: AppHttp,

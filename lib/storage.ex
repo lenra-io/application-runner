@@ -8,6 +8,7 @@ defmodule ApplicationRunner.Storage do
 
   @impl GenServer
   def init(_args) do
+    # TODO Find a way to define the env_id in this genserver
     Supervisor.init([], strategy: :one_for_one)
   end
 
@@ -51,9 +52,7 @@ defmodule ApplicationRunner.Storage do
   end
 
   @impl GenServer
-  def handle_cast({:add_job, job}, state) do
-    # TODO properly handle this create
-    CronServices.create(1, job)
+  def handle_cast({:add_job, _job}, state) do
     {:noreply, state}
   end
 
@@ -78,7 +77,8 @@ defmodule ApplicationRunner.Storage do
 
   @impl GenServer
   def handle_call(:jobs, _from, state) do
-    {:reply, [], state}
+    # TODO: Find a way to get env_id from storage genserver parameters
+    {:reply, CronServices.get_all(1), state}
   end
 
   def handle_call(:last_execution_date, _from, state) do

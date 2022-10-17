@@ -13,6 +13,12 @@ defmodule ApplicationRunner.Crons.CronServices do
   def create(env_id, params) do
     Cron.new(env_id, params)
     |> @repo.insert()
+
+    ApplicationRunner.Scheduler.new_job(
+      # Map to keyword list
+      Enum.map(params, fn {key, value} -> {String.to_existing_atom(key), value} end)
+    )
+    |> ApplicationRunner.Scheduler.add_job()
   end
 
   def get(id) do

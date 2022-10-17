@@ -13,23 +13,30 @@ defmodule ApplicationRunner.Crons.Cron do
            only: [
              :id,
              :listener_name,
-             :cron_expression,
+             :schedule,
              :props,
              :should_run_missed_steps,
-             :last_run_date,
              :environment_id,
-             :user_id
+             :user_id,
+             :name,
+             :overlap,
+             :state,
+             :timezone
            ]}
   schema "crons" do
     belongs_to(:environment, Environment)
     belongs_to(:user, User)
 
     field(:listener_name, :string)
-    field(:cron_expression, :string)
+    field(:schedule, :string)
     field(:props, :map)
 
+    field(:name, ApplicationRunner.Ecto.Reference)
+    field(:overlap, :boolean)
+    field(:state, :string)
+    field(:timezone, :date)
+
     field(:should_run_missed_steps, :boolean, default: false)
-    field(:last_run_date, :date)
 
     timestamps()
   end
@@ -38,17 +45,20 @@ defmodule ApplicationRunner.Crons.Cron do
     webhook
     |> cast(params, [
       :listener_name,
-      :cron_expression,
+      :schedule,
       :props,
       :should_run_missed_steps,
-      :last_run_date,
-      :user_id
+      :user_id,
+      :name,
+      :overlap,
+      :state,
+      :timezone
     ])
-    |> validate_required([:environment_id, :listener_name, :cron_expression])
-    |> validate_change(:cron_expression, fn :cron_expression, cron ->
+    |> validate_required([:environment_id, :listener_name, :schedule])
+    |> validate_change(:schedule, fn :schedule, cron ->
       case Parser.parse(cron) do
         {:ok, _cron_expr} -> []
-        _ -> [cron_expression: "Cron Expression is malformed."]
+        _ -> [schedule: "Cron Expression is malformed."]
       end
     end)
     |> foreign_key_constraint(:environment_id)
