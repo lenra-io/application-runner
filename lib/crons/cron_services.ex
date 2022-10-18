@@ -37,7 +37,7 @@ defmodule ApplicationRunner.Crons.CronServices do
       # Map to keyword list
       Enum.map(params, fn {key, value} -> {String.to_existing_atom(key), value} end)
     )
-    |> Quantum.Job.set_task({ApplicationRunner.ApplicationServices, :run_listener, []})
+    |> Quantum.Job.set_task({ApplicationRunner.Crons.CronServices, :run_cron, ["name", #TODO]})
     |> ApplicationRunner.Scheduler.add_job()
   end
 
