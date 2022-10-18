@@ -7,8 +7,24 @@ defmodule ApplicationRunner.Crons.CronServices do
 
   alias ApplicationRunner.Crons.Cron
   alias ApplicationRunner.Errors.TechnicalError
+  alias ApplicationRunner.Guardian.AppGuardian
 
   @repo Application.compile_env(:application_runner, :repo)
+
+  def run_cron(
+        function_name,
+        action,
+        props,
+        event,
+        env_id
+        # token
+      ) do
+    {:ok, token, _claims} =
+      AppGuardian.resource_from_claims(%{"env_id" => env_id})
+      |> AppGuardian.encode_and_sign(%{"env_id" => env_id})
+
+    ApplicationRunner.ApplicationServices.run_listener(function_name, action, props, event, token)
+  end
 
   def create(env_id, params) do
     Cron.new(env_id, params)
@@ -18,6 +34,7 @@ defmodule ApplicationRunner.Crons.CronServices do
       # Map to keyword list
       Enum.map(params, fn {key, value} -> {String.to_existing_atom(key), value} end)
     )
+    |> Quantum.Job.set_task({ApplicationRunner.ApplicationServices, :run_listener, []})
     |> ApplicationRunner.Scheduler.add_job()
   end
 

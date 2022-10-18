@@ -7,8 +7,8 @@ defmodule ApplicationRunner.Crons do
 
   defdelegate create(env_id, params), to: Crons.CronServices
   defdelegate get(id), to: Crons.CronServices
-  defdelegate get_all(env_id), to: Crons.CronServices
-  defdelegate get_all(env_id, user_id), to: Crons.CronServices
+  defdelegate all(env_id), to: Crons.CronServices
+  defdelegate all(env_id, user_id), to: Crons.CronServices
   defdelegate update(cron, params), to: Crons.CronServices
   defdelegate delete(cron), to: Crons.CronServices
 
