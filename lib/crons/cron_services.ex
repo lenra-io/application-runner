@@ -3,7 +3,7 @@ defmodule ApplicationRunner.Crons.CronServices do
     The service that manages the crons.
   """
 
-  import Ecto.Query, only: [from: 2]
+  import Ecto.Query, only: [from: 2, from: 1]
 
   alias ApplicationRunner.Crons.Cron
   alias ApplicationRunner.Errors.TechnicalError
@@ -35,11 +35,15 @@ defmodule ApplicationRunner.Crons.CronServices do
     end
   end
 
-  def get_all(env_id) do
+  def all() do
+    @repo.all(from(c in Cron))
+  end
+
+  def all(env_id) do
     @repo.all(from(c in Cron, where: c.environment_id == ^env_id))
   end
 
-  def get_all(env_id, user_id) do
+  def all(env_id, user_id) do
     @repo.all(from(c in Cron, where: c.environment_id == ^env_id and c.user_id == ^user_id))
   end
 

@@ -68,6 +68,13 @@ defmodule ApplicationRunner.Storage do
   end
 
   @impl GenServer
+  @doc """
+    This is handled by the CronServices, it should not be implemented
+    because some parameters cannot be passed to this handle_cast
+    such as `env_id`, `props`, `listener_name`, etc...
+
+    Quantum can work without it thanks to the `update_job` method.
+  """
   def handle_cast({:add_job, _job}, state) do
     {:noreply, state}
   end
@@ -109,8 +116,7 @@ defmodule ApplicationRunner.Storage do
 
   @impl GenServer
   def handle_call(:jobs, _from, state) do
-    # TODO: Find a way to get env_id from storage genserver parameters
-    {:reply, CronServices.get_all(1), state}
+    {:reply, CronServices.all(), state}
   end
 
   def handle_call(:last_execution_date, _from, state) do
