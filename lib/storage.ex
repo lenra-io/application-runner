@@ -6,20 +6,10 @@ defmodule ApplicationRunner.Storage do
 
   use GenServer
 
-  @impl GenServer
-  @doc """
-  Maybe create a new table
-  (
-    env_id
-    last_execution_time
-  )
-  This can ensure that if a Storage GenServer crashes, it will keep track of what needs to be done when coming back up online
+  @repo Application.compile_env(:application_runner, :repo)
 
-  If this time is kept globally for the Storage GenServers, this would mean that if all GenServers crash but one remain, this last one will keep updating
-  the last_execution_time and the others will think that they forgot nothing when coming back up online
-  """
+  @impl GenServer
   def init(_args) do
-    # TODO Find a way to define the env_id in this genserver
     Supervisor.init([], strategy: :one_for_one)
   end
 
@@ -80,7 +70,7 @@ defmodule ApplicationRunner.Storage do
   end
 
   def handle_cast({:delete_job, job_name}, state) do
-    with {:ok, cron} = CronServices.get_by_name(job_name) do
+    with {:ok, cron} <- CronServices.get_by_name(job_name) do
       CronServices.delete(cron)
     end
 
@@ -88,7 +78,7 @@ defmodule ApplicationRunner.Storage do
   end
 
   def handle_cast({:update_job, job}, state) do
-    with {:ok, cron} = CronServices.get_by_name(job.name) do
+    with {:ok, cron} <- CronServices.get_by_name(job.name) do
       CronServices.update(cron, job)
     end
 
@@ -96,7 +86,7 @@ defmodule ApplicationRunner.Storage do
   end
 
   def handle_cast({:update_job_state, job_name, job_state}, state) do
-    with {:ok, cron} = CronServices.get_by_name(job_name) do
+    with {:ok, cron} <- CronServices.get_by_name(job_name) do
       CronServices.update(cron, %{"state" => job_state})
     end
 
@@ -104,13 +94,16 @@ defmodule ApplicationRunner.Storage do
   end
 
   def handle_cast(
-        {:update_last_execution_date, _last_execution_date},
+        {:update_last_execution_date, last_execution_date},
         state
       ) do
+    @repo.update(ApplicationRunner.Quantum.update(last_execution_date))
+
     {:noreply, state}
   end
 
   def handle_cast(:purge, state) do
+    # TODO: What do we want to purge ? Remove all crons ? Reset all dates (what does it mean) ?
     {:noreply, state}
   end
 
@@ -120,6 +113,6 @@ defmodule ApplicationRunner.Storage do
   end
 
   def handle_call(:last_execution_date, _from, state) do
-    {:reply, "", state}
+    {:reply, @repo.get(ApplicationRunner.Quantum, 1), state}
   end
 end

@@ -35,7 +35,7 @@ defmodule ApplicationRunner.Crons.CronServices do
     end
   end
 
-  def all() do
+  def all do
     @repo.all(from(c in Cron))
   end
 
