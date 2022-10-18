@@ -144,10 +144,12 @@ defmodule ApplicationRunner.AppChannel do
 
       def handle_in("run", %{"code" => code, "event" => event}, socket) do
         ApplicationRunner.AppChannel.handle_run(socket, code, event)
+        {:reply, {:ok, %{}}, socket}
       end
 
       def handle_in("run", %{"code" => code}, socket) do
         ApplicationRunner.AppChannel.handle_run(socket, code)
+        {:reply, {:ok, %{}}, socket}
       end
 
       def create_env_token(env_id) do
