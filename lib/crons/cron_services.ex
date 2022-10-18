@@ -17,13 +17,16 @@ defmodule ApplicationRunner.Crons.CronServices do
         props,
         event,
         env_id
-        # token
       ) do
-    {:ok, token, _claims} =
-      AppGuardian.resource_from_claims(%{"env_id" => env_id})
-      |> AppGuardian.encode_and_sign(%{"env_id" => env_id})
-
-    ApplicationRunner.ApplicationServices.run_listener(function_name, action, props, event, token)
+    with {:ok, token, _claims} <- AppGuardian.encode_and_sign(env_id, %{"env_id" => env_id}) do
+      ApplicationRunner.ApplicationServices.run_listener(
+        function_name,
+        action,
+        props,
+        event,
+        token
+      )
+    end
   end
 
   def create(env_id, params) do
