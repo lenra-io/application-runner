@@ -29,16 +29,21 @@ defmodule ApplicationRunner.Crons.CronServices do
     end
   end
 
-  def create(env_id, params) do
-    Cron.new(env_id, params)
-    |> @repo.insert()
+  def create(env_id, %{"listener_name" => action, "props" => props} = params) do
+    res =
+      Cron.new(env_id, params)
+      |> @repo.insert()
 
     ApplicationRunner.Scheduler.new_job(
       # Map to keyword list
       Enum.map(params, fn {key, value} -> {String.to_existing_atom(key), value} end)
     )
-    |> Quantum.Job.set_task({ApplicationRunner.Crons.CronServices, :run_cron, ["name", #TODO]})
+    |> Quantum.Job.set_task(
+      {ApplicationRunner.Crons.CronServices, :run_cron, ["name", action, props, %{}, env_id]}
+    )
     |> ApplicationRunner.Scheduler.add_job()
+
+    res
   end
 
   def get(id) do

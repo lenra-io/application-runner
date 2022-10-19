@@ -20,21 +20,20 @@ defmodule ApplicationRunner.Crons.CronController do
     end
   end
 
-  def get_all(conn, %{"user_id" => user_id}) do
-    with {:ok, cron} <-
+  def all(conn, %{"user_id" => user_id}) do
+    with {:ok, crons} <-
            Guardian.Plug.current_resource(conn)
-           |> CronServices.get_all(user_id) do
+           |> CronServices.all(user_id) do
       conn
-      |> reply(cron)
+      |> reply(crons)
     end
   end
 
-  def get_all(conn, _params) do
-    with {:ok, cron} <-
-           Guardian.Plug.current_resource(conn)
-           |> CronServices.get_all() do
+  def all(conn, _params) do
+    with {:ok, crons} <-
+           CronServices.all() do
       conn
-      |> reply(cron)
+      |> reply(crons)
     end
   end
 
