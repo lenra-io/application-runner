@@ -8,6 +8,7 @@ defmodule ApplicationRunner.Session.UiBuilders.LenraBuilder do
   alias ApplicationRunner.Environment.WidgetUid
   alias ApplicationRunner.Session.RouteServer
   alias ApplicationRunner.Session.UiBuilders.UiBuilderAdapter
+  alias ApplicationRunner.MongoStorage.MongoUserLink
   alias LenraCommon.Errors
 
   @type widget :: map()
@@ -161,7 +162,7 @@ defmodule ApplicationRunner.Session.UiBuilders.LenraBuilder do
   # The Parser.parse function propagate a wrong warning.
   # Probably due to a bug in the parser grammar.
   # I don't know how to fix this so i just ignore the error...
-  @dialyzer {:nowarn_function, parse_query: 2}
+  # @dialyzer {:nowarn_function, parse_query: 2}
   defp parse_query(query, params) when not is_nil(query) do
     query
     |> Jason.encode!()
