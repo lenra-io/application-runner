@@ -17,8 +17,7 @@ defmodule ApplicationRunner.AppChannel do
 
       alias LenraCommonWeb.ErrorHelpers
 
-      alias ApplicationRunner.Errors.{BusinessError, TechnicalError}
-      alias LenraCommon.Errors.DevError
+      alias ApplicationRunner.Errors.{BusinessError, DevError, TechnicalError}
 
       require Logger
 
@@ -57,7 +56,8 @@ defmodule ApplicationRunner.AppChannel do
         user = socket.assigns.user
 
         with {:ok, _uuid} <- Ecto.UUID.cast(app_name),
-             function_name <- @adapter_mod.get_function_name(app_name),
+             function_name when is_bitstring(function_name) <-
+               @adapter_mod.get_function_name(app_name),
              :ok <- @adapter_mod.allow(user.id, app_name),
              env_id <- @adapter_mod.get_env_id(app_name),
              {:ok, session_token} <- create_session_token(env_id, session_id, user.id),
@@ -84,7 +84,7 @@ defmodule ApplicationRunner.AppChannel do
             {:error, BusinessError.forbidden()}
 
           err ->
-            {:error, BusinessError.no_app_found()}
+            err
         end
       end
 
@@ -144,12 +144,10 @@ defmodule ApplicationRunner.AppChannel do
 
       def handle_in("run", %{"code" => code, "event" => event}, socket) do
         ApplicationRunner.AppChannel.handle_run(socket, code, event)
-        {:reply, {:ok, %{}}, socket}
       end
 
       def handle_in("run", %{"code" => code}, socket) do
         ApplicationRunner.AppChannel.handle_run(socket, code)
-        {:reply, {:ok, %{}}, socket}
       end
 
       def create_env_token(env_id) do
@@ -180,12 +178,11 @@ defmodule ApplicationRunner.AppChannel do
     case Session.send_client_event(session_id, code, event) do
       {:error, err} ->
         Phoenix.Channel.push(socket, "error", ErrorHelpers.translate_error(err))
+        {:reply, {:error, %{"error" => err}}, socket}
 
       _ ->
-        :ok
+        {:reply, {:ok, %{}}, socket}
     end
-
-    {:noreply, socket}
   end
 
   def do_create_env_token(env_id) do
