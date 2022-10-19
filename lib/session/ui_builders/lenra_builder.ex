@@ -6,9 +6,9 @@ defmodule ApplicationRunner.Session.UiBuilders.LenraBuilder do
 
   alias ApplicationRunner.{Environment, JsonSchemata, Session, Ui}
   alias ApplicationRunner.Environment.WidgetUid
+  alias ApplicationRunner.MongoStorage.MongoUserLink
   alias ApplicationRunner.Session.RouteServer
   alias ApplicationRunner.Session.UiBuilders.UiBuilderAdapter
-  alias ApplicationRunner.MongoStorage.MongoUserLink
   alias LenraCommon.Errors
 
   @type widget :: map()
