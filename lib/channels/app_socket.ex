@@ -73,7 +73,8 @@ defmodule ApplicationRunner.AppSocket do
       defp create_metadatas(user_id, app_name, context) do
         session_id = Ecto.UUID.generate()
 
-        with function_name <- @adapter_mod.get_function_name(app_name),
+        with function_name when is_bitstring(function_name) <-
+               @adapter_mod.get_function_name(app_name),
              env_id <- @adapter_mod.get_env_id(app_name),
              {:ok, session_token} <- create_session_token(env_id, session_id, user_id),
              {:ok, env_token} <- create_env_token(env_id) do
@@ -99,7 +100,7 @@ defmodule ApplicationRunner.AppSocket do
             {:error, BusinessError.forbidden()}
 
           err ->
-            {:error, BusinessError.no_app_found()}
+            err
         end
       end
 
