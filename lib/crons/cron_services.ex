@@ -34,11 +34,13 @@ defmodule ApplicationRunner.Crons.CronServices do
       Cron.new(env_id, params)
       |> @repo.insert()
 
+    schedule = Crontab.CronExpression.Parser.parse(Map.get(params, "schedule"))
+
+    # Map to keyword list
+    job_params = Enum.map(params, fn {key, value} -> {String.to_existing_atom(key), value} end)
+
     # TODO: Get Function name from env_id
-    ApplicationRunner.Scheduler.new_job(
-      # Map to keyword list
-      Enum.map(params, fn {key, value} -> {String.to_existing_atom(key), value} end)
-    )
+    ApplicationRunner.Scheduler.new_job(job_params ++ [schedule: schedule])
     |> Quantum.Job.set_task(
       {ApplicationRunner.Crons.CronServices, :run_cron,
        ["name", action, Map.get(params, "props"), %{}, env_id]}
