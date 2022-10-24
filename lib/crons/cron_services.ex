@@ -34,6 +34,7 @@ defmodule ApplicationRunner.Crons.CronServices do
       Cron.new(env_id, params)
       |> @repo.insert()
 
+    # TODO: Get Function name from env_id
     ApplicationRunner.Scheduler.new_job(
       # Map to keyword list
       Enum.map(params, fn {key, value} -> {String.to_existing_atom(key), value} end)
