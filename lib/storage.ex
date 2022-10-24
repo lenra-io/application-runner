@@ -14,7 +14,7 @@ defmodule ApplicationRunner.Storage do
   end
 
   def start_link(arg) do
-    Supervisor.start_link(__MODULE__, arg, name: __MODULE__)
+    GenServer.start_link(__MODULE__, arg, arg)
   end
 
   @impl Storage
