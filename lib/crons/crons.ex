@@ -54,7 +54,7 @@ defmodule ApplicationRunner.Crons.Cron do
       :state,
       :timezone
     ])
-    |> validate_required([:environment_id, :listener_name, :schedule])
+    |> validate_required([:environment_id, :listener_name, :schedule, :name])
     |> validate_change(:schedule, fn :schedule, cron ->
       case Parser.parse(cron) do
         {:ok, _cron_expr} -> []
