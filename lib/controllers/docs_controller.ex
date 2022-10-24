@@ -17,11 +17,8 @@ defmodule ApplicationRunner.DocsController do
     end
   end
 
-  defp get_mongo_user_id(%{environment: env, user: user}) do
-    %MongoUserLink{mongo_user_id: mongo_user_id} =
-      MongoStorage.get_mongo_user_link!(env.id, user.id)
-
-    mongo_user_id
+  defp get_mongo_user_id(%{mongo_user_link: mongo_user_link}) do
+    mongo_user_link.mongo_user_id
   end
 
   defp get_mongo_user_id(_res) do
