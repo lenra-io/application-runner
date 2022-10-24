@@ -10,6 +10,7 @@ defmodule ApplicationRunner.DocsController do
 
   def action(conn, _) do
     with resources <- get_resource!(conn) do
+      mongo_user_id = get_mongo_user_id(resources)
       args = [conn, conn.path_params, conn.body_params, resources, %{"me" => mongo_user_id}]
 
       apply(__MODULE__, action_name(conn), args)
