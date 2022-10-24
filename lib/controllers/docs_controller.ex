@@ -18,6 +18,7 @@ defmodule ApplicationRunner.DocsController do
   end
 
   defp get_mongo_user_id(%{mongo_user_link: mongo_user_link}) do
+    IO.inspect(mongo_user_link)
     mongo_user_link.mongo_user_id
   end
 
