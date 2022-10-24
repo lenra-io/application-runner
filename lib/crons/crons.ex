@@ -18,7 +18,8 @@ defmodule ApplicationRunner.Crons.Cron do
              :should_run_missed_steps,
              :environment_id,
              :user_id,
-             :name,
+             # TODO: Find why the jason encoder cannot encode the name (ref)
+            #  :name,
              :overlap,
              :state,
              :timezone

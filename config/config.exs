@@ -26,7 +26,8 @@ config :application_runner, ApplicationRunner.Repo,
   log: false
 
 config :application_runner, ApplicationRunner.Scheduler,
-  storage: ApplicationRunner.Storage
+  storage: ApplicationRunner.Storage,
+  otp_app: :application_runner
 
 config :swarm,
   debug: false
