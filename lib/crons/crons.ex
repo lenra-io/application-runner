@@ -70,7 +70,7 @@ defmodule ApplicationRunner.Crons.Cron do
   end
 
   def new(env_id, params) do
-    %__MODULE__{environment_id: env_id}
+    %__MODULE__{environment_id: env_id, name: make_ref()}
     |> __MODULE__.changeset(params)
   end
 end
