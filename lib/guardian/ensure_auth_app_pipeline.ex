@@ -3,7 +3,7 @@ defmodule ApplicationRunner.Guardian.EnsureAuthenticatedAppPipeline do
     This pipeline ensure that the user is authenticated with an access_token and load the resource associated.
   """
   use Guardian.Plug.Pipeline,
-    otp_app: :application_runner,
+    otp_app: :lenra,
     error_handler: ApplicationRunner.Guardian.ErrorHandler,
     module: ApplicationRunner.Guardian.AppGuardian
 

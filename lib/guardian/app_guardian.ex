@@ -3,13 +3,15 @@ defmodule ApplicationRunner.Guardian.AppGuardian do
     ApplicationRunner.Guardian.AppGuardian handle the callback operations to generate and verify the token.
   """
 
-  use Guardian, otp_app: :application_runner
+  use Guardian, otp_app: :lenra
 
   alias ApplicationRunner.{
     Environment,
     MongoStorage,
     Session
   }
+
+  require Logger
 
   alias ApplicationRunner.Errors.{BusinessError, TechnicalError}
 
@@ -51,6 +53,8 @@ defmodule ApplicationRunner.Guardian.AppGuardian do
         Environment.fetch_token(String.to_integer(claims["sub"]))
 
       _err ->
+        Logger.error("ERROR IN APP GUARDIAN")
+        Logger.error(_err)
         TechnicalError.unknown_error_tuple()
     end
   end
