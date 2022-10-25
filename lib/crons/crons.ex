@@ -10,31 +10,31 @@ defmodule ApplicationRunner.Crons.Cron do
   alias Crontab.CronExpression.Parser
 
   @derive {Jason.Encoder,
-           only: [
-             :id,
-             :listener_name,
-             :schedule,
-             :props,
-             :should_run_missed_steps,
-             :environment_id,
-             :user_id,
-             # TODO: Find why the jason encoder cannot encode the name (ref)
-            #  :name,
-             :overlap,
-             :state,
-             :timezone
-           ]}
+   only: [
+     :id,
+     :listener_name,
+     :schedule,
+     :props,
+     :should_run_missed_steps,
+     :environment_id,
+     :user_id,
+     # TODO: Find why the jason encoder cannot encode the name (ref)
+     #  :name,
+     :overlap,
+     :state,
+     :timezone
+   ]}
   schema "crons" do
     belongs_to(:environment, Environment)
     belongs_to(:user, User)
 
     field(:listener_name, :string)
     field(:schedule, :string)
-    field(:props, :map)
+    field(:props, :map, default: %{})
 
     field(:name, ApplicationRunner.Ecto.Reference)
-    field(:overlap, :boolean)
-    field(:state, :string)
+    field(:overlap, :boolean, default: false)
+    field(:state, :string, default: "active")
     field(:timezone, :date)
 
     field(:should_run_missed_steps, :boolean, default: false)
