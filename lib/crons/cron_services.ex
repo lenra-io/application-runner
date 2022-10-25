@@ -42,11 +42,10 @@ defmodule ApplicationRunner.Crons.CronServices do
       |> Map.take(["name", "overlap", "state", "timezone"])
       |> Enum.map(fn {key, value} -> {String.to_atom(key), value} end)
 
-    # TODO: Get Function name from env_id
     ApplicationRunner.Scheduler.new_job(job_params ++ [schedule: schedule])
     |> Quantum.Job.set_task(
       {ApplicationRunner.Crons.CronServices, :run_cron,
-       ["name", action, Map.get(params, "props"), %{}, env_id]}
+       [Map.get(params, "function_name"), action, Map.get(params, "props"), %{}, env_id]}
     )
     |> ApplicationRunner.Scheduler.add_job()
 
