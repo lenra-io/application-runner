@@ -17,7 +17,8 @@ defmodule ApplicationRunner.AppChannel do
 
       alias LenraCommonWeb.ErrorHelpers
 
-      alias ApplicationRunner.Errors.{BusinessError, DevError, TechnicalError}
+      alias ApplicationRunner.Errors.{BusinessError, TechnicalError}
+      alias LenraCommon.Errors.DevError
 
       require Logger
 
