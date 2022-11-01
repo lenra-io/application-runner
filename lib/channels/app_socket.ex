@@ -43,6 +43,7 @@ defmodule ApplicationRunner.AppSocket do
           socket =
             socket
             |> assign(session_id: session_metadata.session_id)
+            |> assign(env_id: env_metadata.env_id)
             |> assign(user_id: user_id)
 
           {:ok, socket}
