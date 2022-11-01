@@ -30,9 +30,14 @@ defmodule ApplicationRunner.Environment.ManifestHandler do
     GenServer.call(get_full_name(env_id), :get_manifest)
   end
 
-  @spec get_root_widget(number()) :: String.t()
-  def get_root_widget(env_id) do
-    GenServer.call(get_full_name(env_id), :get_root_widget)
+  @spec get_lenra_routes(number()) :: map()
+  def get_lenra_routes(env_id) do
+    GenServer.call(get_full_name(env_id), :get_lenra_routes)
+  end
+
+  @spec get_json_routes(number()) :: map()
+  def get_json_routes(env_id) do
+    GenServer.call(get_full_name(env_id), :get_json_routes)
   end
 
   @impl true
@@ -40,9 +45,16 @@ defmodule ApplicationRunner.Environment.ManifestHandler do
     {:reply, Map.get(state, :manifest), state}
   end
 
-  def handle_call(:get_root_widget, _from, state) do
+  @default_route %{"/" => %{"type" => "widget", "name" => "main"}}
+  def handle_call(:get_lenra_routes, _from, state) do
     manifest = Map.get(state, :manifest)
 
-    {:reply, Map.get(manifest, "rootWidget", "main"), state}
+    {:reply, Map.get(manifest, "lenraRoutes", @default_route), state}
+  end
+
+  def handle_call(:get_json_routes, _from, state) do
+    manifest = Map.get(state, :manifest)
+
+    {:reply, Map.get(manifest, "jsonRoutes", @default_route), state}
   end
 end

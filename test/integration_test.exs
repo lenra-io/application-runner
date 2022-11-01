@@ -1,11 +1,14 @@
 defmodule ApplicationRunner.IntegrationTest do
   use ApplicationRunner.ConnCase, async: false
 
-  alias ApplicationRunner.{AppChannel, Contract, Environment, MongoStorage, Session}
+  alias ApplicationRunner.{AppSocket, Contract, Environment, MongoStorage, RouteChannel, Session}
 
   @session_id Ecto.UUID.generate()
   @function_name Ecto.UUID.generate()
   @url "/function/#{@function_name}"
+
+  @mode "lenra"
+  @route "/"
   @coll "test_integration"
   @query %{"foo" => "bar"}
 
@@ -39,9 +42,9 @@ defmodule ApplicationRunner.IntegrationTest do
   end
 
   def setup_genservers(%{session_metadata: sm, env_metadata: em}) do
-    # Self must join AppChannel group to receive new UI
-    Swarm.register_name(get_name(AppChannel, sm.session_id), self())
-    Swarm.join(AppChannel.get_group(sm.session_id), self())
+    # Self must join AppSocket group to receive new UI
+    Swarm.register_name(get_name(RouteChannel, {sm.session_id, @mode, @route}), self())
+    Swarm.join(RouteChannel.get_group(sm.session_id, @mode, @route), self())
 
     # Start env
     Environment.DynamicSupervisor.ensure_env_started(em)
@@ -67,7 +70,7 @@ defmodule ApplicationRunner.IntegrationTest do
         session_id: @session_id,
         function_name: @function_name,
         context: %{},
-        token: AppChannel.do_create_session_token(env.id, @session_id, user.id) |> elem(1)
+        token: AppSocket.do_create_session_token(env.id, @session_id, user.id) |> elem(1)
       }
     }
   end
@@ -77,7 +80,7 @@ defmodule ApplicationRunner.IntegrationTest do
       env_metadata: %Environment.Metadata{
         env_id: env.id,
         function_name: @function_name,
-        token: AppChannel.do_create_env_token(env.id) |> elem(1)
+        token: AppSocket.do_create_env_token(env.id) |> elem(1)
       }
     }
   end
@@ -204,6 +207,7 @@ defmodule ApplicationRunner.IntegrationTest do
 
     # Start the session and start one widget
     {:ok, _} = Session.start_session(sm, em)
+    {:ok, _} = Session.RouteDynSup.ensure_child_started(sm.env_id, sm.session_id, @mode, @route)
 
     # The mongo_user_link should have been creating when starting session.
     assert MongoStorage.has_user_link?(em.env_id, sm.user_id)

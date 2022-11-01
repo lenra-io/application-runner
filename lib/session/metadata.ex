@@ -9,8 +9,7 @@ defmodule ApplicationRunner.Session.Metadata do
     :user_id,
     :function_name,
     :token,
-    :context,
-    :session_supervisor_pid
+    :context
   ]
 
   @type t :: %__MODULE__{
@@ -19,7 +18,6 @@ defmodule ApplicationRunner.Session.Metadata do
           user_id: term(),
           function_name: String.t(),
           token: String.t(),
-          context: map(),
-          session_supervisor_pid: pid()
+          context: map()
         }
 end

@@ -24,8 +24,7 @@ defmodule ApplicationRunner.Session.Supervisor do
        session_id: sm.session_id, env_id: sm.env_id, user_id: sm.user_id},
       {Session.Events.OnSessionStart, session_id: sm.session_id},
       {Session.ListenersCache, session_id: sm.session_id},
-      {Session.ChangeEventManager, env_id: sm.env_id, session_id: sm.session_id},
-      {Session.UiServer, session_id: sm.session_id}
+      {Session.RouteDynSup, session_id: sm.session_id}
     ]
 
     Supervisor.init(children, strategy: :one_for_one)
