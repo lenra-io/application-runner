@@ -11,6 +11,8 @@ defmodule ApplicationRunner.Session.UiBuilders.LenraBuilder do
   alias ApplicationRunner.Session.UiBuilders.UiBuilderAdapter
   alias LenraCommon.Errors
 
+  require Logger
+
   @type widget :: map()
   @type component :: map()
 

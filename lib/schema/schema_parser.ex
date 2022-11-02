@@ -2,6 +2,7 @@ defmodule ApplicationRunner.SchemaParser do
   @moduledoc """
   ApplicationRunner's Schema Parser
   """
+  require Logger
 
   def parse(schema) do
     properties = Map.get(Map.get(schema, :schema), "properties", %{})
@@ -40,6 +41,14 @@ defmodule ApplicationRunner.SchemaParser do
       %{"$ref" => ref} ->
         fragment = ExComponentSchema.Schema.get_fragment!(schema, ref)
         parse_property(schema, key, fragment)
+
+      %{"oneOf" => list} ->
+        Enum.reduce_while(list, :none, fn e, _acc ->
+          case parse_property(schema, key, e) do
+            :none -> {:cont, :none}
+            res -> {:halt, res}
+          end
+        end)
 
       %{"type" => "listener"} ->
         {:listener, key}

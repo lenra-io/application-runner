@@ -45,16 +45,17 @@ defmodule ApplicationRunner.Environment.ManifestHandler do
     {:reply, Map.get(state, :manifest), state}
   end
 
-  @default_route %{"/" => %{"type" => "widget", "name" => "main"}}
+  @default_routes [%{"path" => "/", "widget" => %{"type" => "widget", "name" => "main"}}]
   def handle_call(:get_lenra_routes, _from, state) do
     manifest = Map.get(state, :manifest)
 
-    {:reply, Map.get(manifest, "lenraRoutes", @default_route), state}
+    {:reply, Map.get(manifest, "lenraRoutes", @default_routes), state}
   end
 
+  @default_json_route %{"/" => %{"type" => "widget", "name" => "main"}}
   def handle_call(:get_json_routes, _from, state) do
     manifest = Map.get(state, :manifest)
 
-    {:reply, Map.get(manifest, "jsonRoutes", @default_route), state}
+    {:reply, Map.get(manifest, "jsonRoutes", @default_json_route), state}
   end
 end

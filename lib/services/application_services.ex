@@ -32,6 +32,7 @@ defmodule ApplicationRunner.ApplicationServices do
     {base_url, base_headers} = get_http_context()
 
     url = "#{base_url}/function/#{function_name}"
+    url = base_url
 
     headers = [
       {"Content-Type", "application/json"} | base_headers
@@ -68,6 +69,7 @@ defmodule ApplicationRunner.ApplicationServices do
     {base_url, base_headers} = get_http_context()
 
     url = "#{base_url}/function/#{function_name}"
+    url = base_url
     headers = [{"Content-Type", "application/json"} | base_headers]
     body = Jason.encode!(%{widget: widget_name, data: data, props: props, context: context})
 
@@ -88,6 +90,7 @@ defmodule ApplicationRunner.ApplicationServices do
     {base_url, base_headers} = get_http_context()
 
     url = "#{base_url}/function/#{function_name}"
+    url = base_url
     headers = [{"Content-Type", "application/json"} | base_headers]
 
     Finch.build(:post, url, headers)
@@ -114,6 +117,7 @@ defmodule ApplicationRunner.ApplicationServices do
     {base_url, base_headers} = get_http_context()
 
     url = "#{base_url}/function/#{function_name}"
+    url = base_url
 
     headers = [{"Content-Type", "application/json"} | base_headers]
     body = Jason.encode!(%{resource: resource})

@@ -1,6 +1,7 @@
 defmodule ApplicationRunner.AppSocket do
   defmacro __using__(opts) do
     route_channel = Keyword.fetch!(opts, :route_channel)
+    routes_channel = Keyword.fetch!(opts, :routes_channel)
     adapter_mod = Keyword.fetch!(opts, :adapter)
 
     quote do
@@ -18,6 +19,7 @@ defmodule ApplicationRunner.AppSocket do
 
       ## Channels
       channel("route:*", unquote(route_channel))
+      channel("routes", unquote(routes_channel))
 
       # Socket params are passed from the client and can
       # be used to verify and authenticate a user. After

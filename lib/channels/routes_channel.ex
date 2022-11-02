@@ -18,18 +18,22 @@ defmodule ApplicationRunner.RoutesChannel do
 
       require Logger
 
-      def join("routes:lenra", _params, socket) do
+      def join("routes", %{"mode" => "lenra"}, socket) do
         env_id = socket.assigns.env_id
         manifest = Environment.ManifestHandler.get_manifest(env_id)
 
-        {:ok, Map.get(manifest, "lenraRoutes"), socket}
+        res = %{"lenraRoutes" => Map.get(manifest, "lenraRoutes")}
+
+        {:ok, res, socket}
       end
 
-      def join("routes:json", _params, socket) do
+      def join("routes", %{"mode" => "json"}, socket) do
         env_id = socket.assigns.env_id
         manifest = Environment.ManifestHandler.get_manifest(env_id)
 
-        {:ok, Map.get(manifest, "jsonRoutes"), socket}
+        res = %{"jsonRoutes" => Map.get(manifest, "jsonRoutes")}
+
+        {:ok, res, socket}
       end
 
       def join(_, _any, _socket) do
