@@ -39,6 +39,7 @@ defmodule ApplicationRunner.AppSocket do
                create_metadatas(user_id, app_name, context),
              {:ok, session_pid} <- Session.start_session(session_metadata, env_metadata) do
           Logger.info("joined app #{app_name} with params #{inspect(params)}")
+          ApplicationRunner.Monitor.SessionMonitor.monitor(this, session_metadata)
 
           socket =
             socket

@@ -8,6 +8,7 @@ defmodule ApplicationRunner.Application do
 
   def start(_type, _args) do
     children = [
+      ApplicationRunner.Monitor.SessionMonitor,
       # Start the json validator server for the UI
       ApplicationRunner.JsonSchemata,
       ApplicationRunner.Environment.DynamicSupervisor,
