@@ -26,14 +26,20 @@ defmodule ApplicationRunner.Monitor do
       [:application_runner, :app_session, :stop]
     ]
 
-    :telemetry.attach_many("lenra.monitor", events, &Lenra.Monitor.handle_event/4, nil)
+    :telemetry.attach_many(
+      "application_runner.monitor",
+      events,
+      &ApplicationRunner.Monitor.handle_event/4,
+      nil
+    )
   end
 
   def handle_event([:application_runner, :app_session, :start], measurements, metadata, _config) do
     env_id = Map.get(metadata, :env_id)
     user_id = Map.get(metadata, :user_id)
+    IO.inspect({:event, measurements, metadata})
 
-    @repo.insert(SessionMeasurement.new(env_id, user_id, measurements))
+    @repo.insert(SessionMeasurement.new(env_id, user_id, measurements)) |> IO.inspect()
   end
 
   def handle_event([:application_runner, :app_session, :stop], measurements, metadata, _config) do

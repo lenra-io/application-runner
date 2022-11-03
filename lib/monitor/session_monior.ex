@@ -9,6 +9,7 @@ defmodule ApplicationRunner.Monitor.SessionMonitor do
   alias ApplicationRunner.Telemetry
 
   def monitor(pid, metadata) do
+    IO.inspect({:monitor, pid, metadata})
     GenServer.call({:via, :swarm, __MODULE__}, {:monitor, pid, metadata})
   end
 
@@ -21,6 +22,8 @@ defmodule ApplicationRunner.Monitor.SessionMonitor do
   end
 
   def handle_call({:monitor, pid, metadata}, _from, state) do
+    IO.inspect({:handle_monitor, pid, metadata})
+
     Process.monitor(pid)
 
     start_time = Telemetry.start(:app_session, metadata)
