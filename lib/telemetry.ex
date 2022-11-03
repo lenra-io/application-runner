@@ -16,6 +16,7 @@ defmodule ApplicationRunner.Telemetry do
       Map.merge(extra_mesurements, %{system_time: System.system_time(), start_time: start_time}),
       meta
     )
+    |> IO.inspect()
 
     start_time
   end
