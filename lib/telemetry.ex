@@ -7,7 +7,7 @@ defmodule ApplicationRunner.Telemetry do
     Returns `start_time` which is the monotonic time of the system, in the `:native` type, when calling this function.
   """
   def start(event, meta \\ %{}, extra_mesurements \\ %{}) do
-    start_time = System.monotonic_time()
+    start_time = DateTime.utc_now()
 
     IO.inspect({:telemetry, event, meta, extra_mesurements})
 
@@ -27,11 +27,14 @@ defmodule ApplicationRunner.Telemetry do
         * app_name: :string
   """
   def stop(event, start_time, meta \\ %{}, extra_measurements \\ %{}) do
-    end_time = System.monotonic_time()
+    end_time = DateTime.utc_now()
 
     :telemetry.execute(
       [:application_runner, event, :stop],
-      Map.merge(extra_measurements, %{duration: end_time - start_time}),
+      Map.merge(extra_measurements, %{
+        duration: DateTime.diff(end_time, start_time),
+        end_time: end_time
+      }),
       meta
     )
   end

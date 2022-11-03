@@ -39,7 +39,8 @@ defmodule ApplicationRunner.Monitor do
     user_id = Map.get(metadata, :user_id)
     IO.inspect({:event, measurements, metadata})
 
-    @repo.insert(SessionMeasurement.new(env_id, user_id, measurements)) |> IO.inspect()
+    @repo.insert(SessionMeasurement.new(env_id, user_id, measurements) |> IO.inspect())
+    |> IO.inspect()
   end
 
   def handle_event([:application_runner, :app_session, :stop], measurements, metadata, _config) do
