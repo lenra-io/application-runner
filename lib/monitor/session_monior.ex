@@ -12,7 +12,7 @@ defmodule ApplicationRunner.Monitor.SessionMonitor do
     GenServer.call({:via, :swarm, __MODULE__}, {:monitor, pid, metadata})
   end
 
-  def start_link() do
+  def start_link(_opts) do
     GenServer.start_link(__MODULE__, [], name: {:via, :swarm, __MODULE__})
   end
 
