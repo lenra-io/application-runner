@@ -18,7 +18,8 @@ defmodule ApplicationRunner.Crons.CronServices do
         event,
         env_id
       ) do
-    with {:ok, token, _claims} <- AppGuardian.encode_and_sign(env_id, %{"env_id" => env_id}) do
+    with {:ok, token, _claims} <-
+           AppGuardian.encode_and_sign(env_id, %{type: "env", env_id: env_id}) do
       ApplicationRunner.ApplicationServices.run_listener(
         function_name,
         action,
