@@ -2,9 +2,7 @@ defmodule ApplicationRunner.Guardian.AppGuardian do
   @moduledoc """
     ApplicationRunner.Guardian.AppGuardian handle the callback operations to generate and verify the token.
   """
-  @otp_app Application.compile_env(:application_runner, :otp_app)
-  # TODO change otp app to fetch from config
-  use Guardian, otp_app: @otp_app
+  use Guardian, otp_app: :application_runner
 
   alias ApplicationRunner.{
     Environment,
@@ -54,8 +52,6 @@ defmodule ApplicationRunner.Guardian.AppGuardian do
         Environment.fetch_token(String.to_integer(claims["sub"]))
 
       _err ->
-        Logger.error("ERROR IN APP GUARDIAN")
-        Logger.error(_err)
         TechnicalError.unknown_error_tuple()
     end
   end

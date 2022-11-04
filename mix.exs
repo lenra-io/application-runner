@@ -45,6 +45,13 @@ defmodule ApplicationRunner.MixProject do
     ]
   end
 
+  def application do
+    [
+      mod: {ApplicationRunner.Application, []},
+      extra_applications: [:logger, :runtime_tools]
+    ]
+  end
+
   defp aliases do
     [
       test: [

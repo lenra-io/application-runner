@@ -4,14 +4,9 @@ defmodule ApplicationRunner.Application do
   @moduledoc false
 
   require Logger
-  use Supervisor
+  use Application
 
-  def start_link(opts) do
-    Supervisor.start_link(__MODULE__, :ok, opts)
-  end
-
-  @impl true
-  def init(:ok) do
+  def start(_type, _args) do
     children = [
       # Start the json validator server for the UI
       ApplicationRunner.JsonSchemata,
@@ -28,6 +23,6 @@ defmodule ApplicationRunner.Application do
     # for other strategies and supported options
     opts = [strategy: :one_for_one, name: ApplicationRunner.Supervisor]
 
-    Supervisor.init(children, opts)
+    Supervisor.start_link(children, opts) |> IO.inspect()
   end
 end
