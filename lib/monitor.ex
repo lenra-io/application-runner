@@ -1,18 +1,17 @@
 defmodule ApplicationRunner.Monitor do
   @moduledoc """
   This module is monitoring requests at different places
-  Lenra's monitor executes the following events:
-  * `[:lenra, :openfaas_action, :start]` - Executed before an openfaas action.
+  ApplicationRunner's monitor executes the following events:
+  * `[:ApplicationRunner, :app_session, :start]` - Executed on socket open.
     #### Measurements
-      * No need for any measurement.
-    #### Metadata
-      * No need for any metadata.
-  * `[:lenra, :openfaas_action, :stop]` - Executed after an openfaas action.
-    #### Measurements
-      * `:duration` - The time took by the openfaas action in `:native` unit of time.
+      * start_time.
     #### Metadata
       * `:user_id` - The id of the user who executed the action.
-      * `:application_name` - The name of the application from which the action was executed.
+      * `:env_id` - The name of the application from which the action was executed.
+  * `[:ApplicationRunner, :app_session, :stop]` - Executed after socket closed.
+    #### Measurements
+      * end_time.
+      * `:duration` - The time took by the openfaas action in `:native` unit of time.
   """
   import Ecto.Query, only: [from: 2]
 

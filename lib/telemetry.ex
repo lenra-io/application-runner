@@ -1,10 +1,13 @@
 defmodule ApplicationRunner.Telemetry do
   @moduledoc """
-    The module for Lenra Telemetry
+    The module for ApplicationRunner Telemetry
   """
   @doc """
     Sends a `:start` event with Telemetry.
     Returns `start_time` which is the monotonic time of the system, in the `:native` type, when calling this function.
+    These parameters should be passed in metadata:
+        * user_id: :integer
+        * env_id: :integer
   """
   def start(event, meta \\ %{}, extra_mesurements \\ %{}) do
     start_time = DateTime.utc_now()
@@ -19,9 +22,7 @@ defmodule ApplicationRunner.Telemetry do
   end
 
   @doc """
-    Sends a `:stop` event with Telemetry. These parameters should be passed in metadata:
-        * user_id: :integer
-        * app_name: :string
+    Sends a `:stop` event with Telemetry.
   """
   def stop(event, start_time, meta \\ %{}, extra_measurements \\ %{}) do
     end_time = DateTime.utc_now()

@@ -17,8 +17,8 @@ defmodule ApplicationRunner.Monitor.SessionMeasurement do
     timestamps()
   end
 
-  def changeset(user_env_access, params \\ %{}) do
-    user_env_access
+  def changeset(session_mesureament, params \\ %{}) do
+    session_mesureament
     |> cast(params, [:start_time, :end_time, :duration])
     |> validate_required([:start_time, :environment_id, :user_id])
     |> foreign_key_constraint(:user_id)
@@ -30,8 +30,8 @@ defmodule ApplicationRunner.Monitor.SessionMeasurement do
     |> __MODULE__.changeset(params)
   end
 
-  def update(app, params) do
-    app
+  def update(session_mesureament, params) do
+    session_mesureament
     |> changeset(params)
   end
 end
