@@ -31,7 +31,7 @@ defmodule ApplicationRunner.AppChannel do
              :yes <- Swarm.register_name(get_name(session_metadata.session_id), self()),
              :ok <- Swarm.join(get_group(session_metadata.session_id), self()),
              {:ok, session_pid} <-
-               Session.start_session(session_metadata, env_metadata) |> IO.inspect() do
+               Session.start_session(session_metadata, env_metadata) do
           {:ok, assign(socket, session_id: session_metadata.session_id)}
         else
           :no ->
