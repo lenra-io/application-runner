@@ -16,8 +16,17 @@ defmodule ApplicationRunner.AppSocket do
 
       @adapter_mod unquote(adapter_mod)
 
+      defoverridable init: 1
+
       ## Channels
       channel("route:*", unquote(route_channel))
+
+      @impl true
+      def init(state) do
+        res = {:ok, {_, socket}} = super(state)
+        ApplicationRunner.Monitor.SessionMonitor.monitor(self(), socket.assigns)
+        res
+      end
 
       # Socket params are passed from the client and can
       # be used to verify and authenticate a user. After
@@ -39,10 +48,10 @@ defmodule ApplicationRunner.AppSocket do
                create_metadatas(user_id, app_name, context),
              {:ok, session_pid} <- Session.start_session(session_metadata, env_metadata) do
           Logger.info("joined app #{app_name} with params #{inspect(params)}")
-          ApplicationRunner.Monitor.SessionMonitor.monitor(self(), session_metadata)
 
           socket =
             socket
+            |> assign(env_id: session_metadata.env_id)
             |> assign(session_id: session_metadata.session_id)
             |> assign(user_id: user_id)
 

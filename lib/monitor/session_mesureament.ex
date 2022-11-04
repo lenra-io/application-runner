@@ -9,10 +9,10 @@ defmodule ApplicationRunner.Monitor.SessionMeasurement do
     belongs_to(:user, User)
     belongs_to(:environment, Environment)
 
-    field(:start_time, :date)
-    field(:end_time, :date)
+    field(:start_time, :utc_datetime)
+    field(:end_time, :utc_datetime)
 
-    field(:duration, :string)
+    field(:duration, :integer)
 
     timestamps()
   end
@@ -28,5 +28,10 @@ defmodule ApplicationRunner.Monitor.SessionMeasurement do
   def new(env_id, user_id, params \\ %{}) do
     %__MODULE__{environment_id: env_id, user_id: user_id}
     |> __MODULE__.changeset(params)
+  end
+
+  def update(app, params) do
+    app
+    |> changeset(params)
   end
 end

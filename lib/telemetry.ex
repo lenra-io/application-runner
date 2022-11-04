@@ -9,14 +9,11 @@ defmodule ApplicationRunner.Telemetry do
   def start(event, meta \\ %{}, extra_mesurements \\ %{}) do
     start_time = DateTime.utc_now()
 
-    IO.inspect({:telemetry, event, meta, extra_mesurements})
-
     :telemetry.execute(
       [:application_runner, event, :start],
       Map.merge(extra_mesurements, %{system_time: System.system_time(), start_time: start_time}),
       meta
     )
-    |> IO.inspect()
 
     start_time
   end

@@ -37,10 +37,8 @@ defmodule ApplicationRunner.Monitor do
   def handle_event([:application_runner, :app_session, :start], measurements, metadata, _config) do
     env_id = Map.get(metadata, :env_id)
     user_id = Map.get(metadata, :user_id)
-    IO.inspect({:event, measurements, metadata})
 
-    @repo.insert(SessionMeasurement.new(env_id, user_id, measurements) |> IO.inspect())
-    |> IO.inspect()
+    @repo.insert(SessionMeasurement.new(env_id, user_id, measurements))
   end
 
   def handle_event([:application_runner, :app_session, :stop], measurements, metadata, _config) do
@@ -50,11 +48,11 @@ defmodule ApplicationRunner.Monitor do
     @repo.one!(
       from(sm in SessionMeasurement,
         where: sm.user_id == ^user_id and sm.environment_id == ^env_id,
-        order_by: sm.inserted_at,
+        order_by: [desc: sm.inserted_at],
         limit: 1
       )
     )
-    |> Ecto.Changeset.change(measurements)
+    |> SessionMeasurement.update(measurements)
     |> @repo.update()
   end
 end
