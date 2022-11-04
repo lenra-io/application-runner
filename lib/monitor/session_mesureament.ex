@@ -1,8 +1,11 @@
 defmodule ApplicationRunner.Monitor.SessionMeasurement do
+  @moduledoc """
+    ApplicationRunner.Monitor.SessionMeasurement is a ecto schema
+  """
   use Ecto.Schema
   import Ecto.Changeset
 
-  alias ApplicationRunner.Contract.{User, Environment}
+  alias ApplicationRunner.Contract.{Environment, User}
 
   @primary_key {:uuid, Ecto.UUID, autogenerate: true}
   schema "session_measurement" do
