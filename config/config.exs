@@ -25,8 +25,7 @@ config :application_runner, ApplicationRunner.Repo,
   database: "file::memory:?cache=shared",
   log: false
 
-config :application_runner, ApplicationRunner.Scheduler,
-  storage: ApplicationRunner.Storage,
+config :application_runner, ApplicationRunner.Scheduler, storage: ApplicationRunner.Storage
 
 config :swarm,
   debug: false
