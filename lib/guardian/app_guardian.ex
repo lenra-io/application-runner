@@ -2,8 +2,9 @@ defmodule ApplicationRunner.Guardian.AppGuardian do
   @moduledoc """
     ApplicationRunner.Guardian.AppGuardian handle the callback operations to generate and verify the token.
   """
-
-  use Guardian, otp_app: :lenra
+  @otp_app Application.compile_env(:application_runner, :otp_app)
+  # TODO change otp app to fetch from config
+  use Guardian, otp_app: @otp_app
 
   alias ApplicationRunner.{
     Environment,

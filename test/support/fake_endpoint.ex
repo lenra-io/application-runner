@@ -2,7 +2,7 @@ defmodule ApplicationRunner.FakeEndpoint do
   @moduledoc """
     This is a stub endpoint for unit test only.
   """
-  use Phoenix.Endpoint, otp_app: :lenra
+  use Phoenix.Endpoint, otp_app: :application_runner
 
   # The session will be stored in the cookie and signed,
   # this means its contents can be read but not tampered with.
