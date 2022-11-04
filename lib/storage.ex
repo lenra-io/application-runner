@@ -97,7 +97,10 @@ defmodule ApplicationRunner.Storage do
         {:update_last_execution_date, last_execution_date},
         state
       ) do
-    @repo.update(ApplicationRunner.Quantum.update(last_execution_date))
+    @repo.insert(ApplicationRunner.Quantum.update(last_execution_date),
+      on_conflict: [set: [last_execution_date: last_execution_date]],
+      conflict_target: :id
+    )
 
     {:noreply, state}
   end
