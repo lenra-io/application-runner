@@ -7,6 +7,7 @@ defmodule ApplicationRunner.Crons.CronServices do
 
   alias ApplicationRunner.Crons.Cron
   alias ApplicationRunner.Environment
+  alias ApplicationRunner.Errors.BusinessError
   alias ApplicationRunner.Errors.TechnicalError
   alias Crontab.CronExpression.Parser
 
@@ -52,7 +53,7 @@ defmodule ApplicationRunner.Crons.CronServices do
   end
 
   def create(_env_id, _params) do
-    ApplicationRunner.Errors.BusinessError.invalid_params_tuple()
+    BusinessError.invalid_params_tuple()
   end
 
   def get(id) do

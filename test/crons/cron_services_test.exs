@@ -153,7 +153,7 @@ defmodule ApplicationRunner.Crons.ServicesTest do
     end
 
     test "get not existing cron should return error", %{
-      env_id: env_id
+      env_id: _env_id
     } do
       assert {:error, %{reason: :error_404}} = CronServices.get(1)
     end

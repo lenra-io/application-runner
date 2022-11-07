@@ -199,8 +199,6 @@ defmodule ApplicationRunner.ApplicationServices do
         TechnicalError.timeout_tuple(body)
 
       _err ->
-        Logger.error("ERROR IN APP GUARDIAN")
-        Logger.error(_err)
         TechnicalError.unknown_error_tuple(body)
     end
   end
