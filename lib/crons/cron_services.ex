@@ -9,6 +9,7 @@ defmodule ApplicationRunner.Crons.CronServices do
   alias ApplicationRunner.Environment
   alias ApplicationRunner.Errors.BusinessError
   alias ApplicationRunner.Errors.TechnicalError
+  alias ApplicationRunner.Guardian.AppGuardian
   alias Crontab.CronExpression.Parser
 
   @repo Application.compile_env(:application_runner, :repo)
@@ -20,13 +21,22 @@ defmodule ApplicationRunner.Crons.CronServices do
         event,
         env_id
       ) do
-    ApplicationRunner.ApplicationServices.run_listener(
-      function_name,
-      action,
-      props,
-      event,
-      Environment.fetch_token(env_id)
-    )
+    with {:ok, token, _claims} <-
+           AppGuardian.encode_and_sign(env_id, %{type: "env", env_id: env_id}),
+         {:ok, _pid} <-
+           Environment.ensure_env_started(%Environment.Metadata{
+             env_id: env_id,
+             function_name: function_name,
+             token: token
+           }) do
+      ApplicationRunner.ApplicationServices.run_listener(
+        function_name,
+        action,
+        props,
+        event,
+        Environment.fetch_token(env_id)
+      )
+    end
   end
 
   def create(env_id, %{"listener_name" => action} = params) do
