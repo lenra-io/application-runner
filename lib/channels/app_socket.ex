@@ -10,7 +10,7 @@ defmodule ApplicationRunner.AppSocket do
       alias ApplicationRunner.AppSocket
       alias ApplicationRunner.Contract.User
       alias ApplicationRunner.Environment
-      alias ApplicationRunner.Errors.BusinessError
+      alias ApplicationRunner.Errors.{BusinessError, TechnicalError}
       alias ApplicationRunner.Session
       alias LenraCommonWeb.ErrorHelpers
 
