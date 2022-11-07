@@ -8,6 +8,7 @@ defmodule ApplicationRunner.Crons.CronServices do
   alias ApplicationRunner.Crons.Cron
   alias ApplicationRunner.Environment
   alias ApplicationRunner.Errors.TechnicalError
+  alias Crontab.CronExpression.Parser
 
   @repo Application.compile_env(:application_runner, :repo)
 
@@ -32,7 +33,7 @@ defmodule ApplicationRunner.Crons.CronServices do
       Cron.new(env_id, params)
       |> @repo.insert()
 
-    {:ok, schedule} = Crontab.CronExpression.Parser.parse(Map.get(params, "schedule"))
+    {:ok, schedule} = Parser.parse(Map.get(params, "schedule"))
 
     # Map to keyword list
     job_params =

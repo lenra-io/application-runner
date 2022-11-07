@@ -1,4 +1,7 @@
 defmodule ApplicationRunner.Storage do
+  @moduledoc """
+    ApplicationRunner.Storage implements everything needed for the crons to run properly.
+  """
   alias ApplicationRunner.Crons.CronServices
   alias Quantum.Storage
 

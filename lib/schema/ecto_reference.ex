@@ -1,4 +1,7 @@
 defmodule ApplicationRunner.Ecto.Reference do
+  @moduledoc """
+   ApplicationRunner.Ecto.Reference implements methods to properly parse an erlang reference to a String.
+  """
   use Ecto.Type
   def type, do: :string
 
