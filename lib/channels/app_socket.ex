@@ -11,6 +11,7 @@ defmodule ApplicationRunner.AppSocket do
       alias ApplicationRunner.Contract.User
       alias ApplicationRunner.Environment
       alias ApplicationRunner.Errors.{BusinessError, TechnicalError}
+      alias ApplicationRunner.Monitor
       alias ApplicationRunner.Session
       alias LenraCommonWeb.ErrorHelpers
 
@@ -24,7 +25,7 @@ defmodule ApplicationRunner.AppSocket do
       @impl true
       def init(state) do
         res = {:ok, {_, socket}} = super(state)
-        ApplicationRunner.Monitor.SessionMonitor.monitor(self(), socket.assigns)
+        Monitor.SessionMonitor.monitor(self(), socket.assigns)
         res
       end
 
