@@ -12,22 +12,19 @@ defmodule ApplicationRunner.Crons.CronTest do
       Environment.new()
       |> Repo.insert!()
 
-    date = Date.utc_today()
-
     Cron.new(env.id, %{
-      "cron_expression" => "* * * * *",
+      "schedule" => "* * * * *",
       "listener_name" => "listener",
       "props" => %{
         "prop1" => "1",
         "prop2" => "2"
-      },
-      "last_run_date" => date
+      }
     })
     |> Repo.insert!()
 
     cron = Enum.at(Repo.all(Cron), 0)
 
-    assert cron.cron_expression == "* * * * *"
+    assert cron.schedule == "* * * * *"
     assert cron.listener_name == "listener"
 
     assert cron.props == %{
@@ -35,7 +32,6 @@ defmodule ApplicationRunner.Crons.CronTest do
              "prop2" => "2"
            }
 
-    assert cron.last_run_date == date
     assert cron.should_run_missed_steps == false
   end
 
@@ -45,7 +41,7 @@ defmodule ApplicationRunner.Crons.CronTest do
       |> Repo.insert!()
 
     Cron.new(env.id, %{
-      "cron_expression" => "* * * * *",
+      "schedule" => "* * * * *",
       "listener_name" => "listener",
       "should_run_missed_steps" => true
     })
@@ -53,20 +49,20 @@ defmodule ApplicationRunner.Crons.CronTest do
 
     cron = Enum.at(Repo.all(Cron), 0)
 
-    assert cron.cron_expression == "* * * * *"
+    assert cron.schedule == "* * * * *"
     assert cron.listener_name == "listener"
 
     assert cron.should_run_missed_steps == true
   end
 
-  test "Cron with invalid cron expression should not work" do
+  test "Cron with invalid schedule should not work" do
     env =
       Environment.new()
       |> Repo.insert!()
 
     cron =
       Cron.new(env.id, %{
-        "cron_expression" => "This is not a valid cron expression",
+        "schedule" => "This is not a valid schedule",
         "listener_name" => "listener",
         "props" => %{
           "prop1" => "1",
@@ -74,13 +70,13 @@ defmodule ApplicationRunner.Crons.CronTest do
         }
       })
 
-    assert cron.errors == [cron_expression: {"Cron Expression is malformed.", []}]
+    assert cron.errors == [schedule: {"Schedule is malformed.", []}]
   end
 
   test "Cron with invalid env_id should not work" do
     cron =
       Cron.new(1, %{
-        "cron_expression" => "* * * * *",
+        "schedule" => "* * * * *",
         "listener_name" => "listener",
         "props" => %{
           "prop1" => "1",
@@ -101,7 +97,7 @@ defmodule ApplicationRunner.Crons.CronTest do
       })
 
     assert cron.valid? == false
-    assert [{:listener_name, _err}, {:cron_expression, _error}] = cron.errors
+    assert [{:listener_name, _err}, {:schedule, _error}] = cron.errors
   end
 
   test "Insert Cron with no props into database successfully" do
@@ -110,14 +106,14 @@ defmodule ApplicationRunner.Crons.CronTest do
       |> Repo.insert!()
 
     Cron.new(env.id, %{
-      "cron_expression" => "* * * * *",
+      "schedule" => "* * * * *",
       "listener_name" => "listener"
     })
     |> Repo.insert!()
 
     cron = Enum.at(Repo.all(Cron), 0)
 
-    assert cron.cron_expression == "* * * * *"
+    assert cron.schedule == "* * * * *"
     assert cron.listener_name == "listener"
   end
 
@@ -131,7 +127,7 @@ defmodule ApplicationRunner.Crons.CronTest do
       |> Repo.insert!()
 
     Cron.new(env.id, %{
-      "cron_expression" => "* * * * *",
+      "schedule" => "* * * * *",
       "listener_name" => "listener",
       "user_id" => user.id
     })
@@ -139,7 +135,7 @@ defmodule ApplicationRunner.Crons.CronTest do
 
     cron = Enum.at(Repo.all(Cron), 0)
 
-    assert cron.cron_expression == "* * * * *"
+    assert cron.schedule == "* * * * *"
     assert cron.user_id == user.id
 
     preload_user = Repo.preload(cron, :user)

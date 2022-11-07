@@ -51,6 +51,10 @@ defmodule ApplicationRunner.Crons.CronServices do
     res
   end
 
+  def create(_env_id, _params) do
+    ApplicationRunner.Errors.BusinessError.invalid_params_tuple()
+  end
+
   def get(id) do
     case @repo.get(Cron, id) do
       nil -> TechnicalError.error_404_tuple()

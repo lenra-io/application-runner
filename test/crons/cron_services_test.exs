@@ -1,4 +1,4 @@
-defmodule ApplicationRunner.Webhooks.ServicesTest do
+defmodule ApplicationRunner.Crons.ServicesTest do
   @moduledoc false
 
   use ApplicationRunner.RepoCase
@@ -35,13 +35,13 @@ defmodule ApplicationRunner.Webhooks.ServicesTest do
       assert {:ok, _cron} =
                CronServices.create(env_id, %{
                  "listener_name" => "listener",
-                 "cron_expression" => "* * * * *"
+                 "schedule" => "* * * * *"
                })
 
       cron = Enum.at(Repo.all(Cron), 0)
 
       assert cron.listener_name == "listener"
-      assert cron.cron_expression == "* * * * *"
+      assert cron.schedule == "* * * * *"
       assert cron.environment_id == env_id
     end
 
@@ -52,7 +52,7 @@ defmodule ApplicationRunner.Webhooks.ServicesTest do
       assert {:ok, cron} =
                CronServices.create(env_id, %{
                  "listener_name" => "listener",
-                 "cron_expression" => "* * * * *",
+                 "schedule" => "* * * * *",
                  "user_id" => user_id
                })
 
@@ -61,7 +61,7 @@ defmodule ApplicationRunner.Webhooks.ServicesTest do
       assert cron_preload.user.id == user_id
     end
 
-    test "Cron create without listener_name and cron_expression should not work", %{
+    test "Cron create without listener_name and schedule should not work", %{
       env_id: env_id
     } do
       assert {:error, _reason} = CronServices.create(env_id, %{})
@@ -71,7 +71,7 @@ defmodule ApplicationRunner.Webhooks.ServicesTest do
       assert {:error, _reason} =
                CronServices.create(-1, %{
                  "listener_name" => "listener",
-                 "cron_expression" => "* * * * *"
+                 "schedule" => "* * * * *"
                })
     end
   end
@@ -81,29 +81,29 @@ defmodule ApplicationRunner.Webhooks.ServicesTest do
       assert {:ok, _cron} =
                Cron.new(env_id, %{
                  "listener_name" => "listener",
-                 "cron_expression" => "* * * * *"
+                 "schedule" => "* * * * *"
                })
                |> Repo.insert()
 
-      crons = CronServices.get_all(env_id)
+      crons = CronServices.all(env_id)
 
       assert Enum.at(crons, 0).listener_name == "listener"
     end
 
     test "Cron get_all with no Cron in db should return an empty array", %{env_id: env_id} do
-      assert [] == CronServices.get_all(env_id)
+      assert [] == CronServices.all(env_id)
     end
 
     test "Cron get_all should work properly with multiple Crons", %{env_id: env_id} do
       assert {:ok, _first} =
-               Cron.new(env_id, %{"listener_name" => "1", "cron_expression" => "* * * * *"})
+               Cron.new(env_id, %{"listener_name" => "1", "schedule" => "* * * * *"})
                |> Repo.insert()
 
       assert {:ok, _second} =
-               Cron.new(env_id, %{"listener_name" => "2", "cron_expression" => "* * * * *"})
+               Cron.new(env_id, %{"listener_name" => "2", "schedule" => "* * * * *"})
                |> Repo.insert()
 
-      crons = CronServices.get_all(env_id)
+      crons = CronServices.all(env_id)
 
       assert Enum.at(crons, 0).listener_name == "1"
       assert Enum.at(crons, 1).listener_name == "2"
@@ -118,12 +118,12 @@ defmodule ApplicationRunner.Webhooks.ServicesTest do
       assert {:ok, _cron} =
                Cron.new(env_id, %{
                  "listener_name" => "user_specific",
-                 "cron_expression" => "* * * * *",
+                 "schedule" => "* * * * *",
                  "user_id" => user.id
                })
                |> Repo.insert()
 
-      crons = CronServices.get_all(env_id, user.id)
+      crons = CronServices.all(env_id, user.id)
 
       assert Enum.at(crons, 0).listener_name == "user_specific"
     end
@@ -131,7 +131,7 @@ defmodule ApplicationRunner.Webhooks.ServicesTest do
     test "get_all Crons linked to specific user but no Crons in db should return empty array", %{
       env_id: env_id
     } do
-      assert [] = CronServices.get_all(env_id, 1)
+      assert [] = CronServices.all(env_id, 1)
     end
   end
 
@@ -142,14 +142,14 @@ defmodule ApplicationRunner.Webhooks.ServicesTest do
       assert {:ok, cron} =
                Cron.new(env_id, %{
                  "listener_name" => "listener",
-                 "cron_expression" => "* * * * *"
+                 "schedule" => "* * * * *"
                })
                |> Repo.insert()
 
       assert {:ok, cron_res} = CronServices.get(cron.id)
 
       assert cron_res.listener_name == "listener"
-      assert cron_res.cron_expression == "* * * * *"
+      assert cron_res.schedule == "* * * * *"
     end
 
     test "get not existing cron should return error", %{
@@ -166,7 +166,7 @@ defmodule ApplicationRunner.Webhooks.ServicesTest do
       assert {:ok, cron} =
                Cron.new(env_id, %{
                  "listener_name" => "listener",
-                 "cron_expression" => "* * * * *"
+                 "schedule" => "* * * * *"
                })
                |> Repo.insert()
 
@@ -187,7 +187,7 @@ defmodule ApplicationRunner.Webhooks.ServicesTest do
       assert {:ok, cron} =
                Cron.new(env_id, %{
                  "listener_name" => "listener",
-                 "cron_expression" => "* * * * *"
+                 "schedule" => "* * * * *"
                })
                |> Repo.insert()
 

@@ -57,7 +57,7 @@ defmodule ApplicationRunner.Crons.Cron do
     |> validate_change(:schedule, fn :schedule, cron ->
       case Parser.parse(cron) do
         {:ok, _cron_expr} -> []
-        _ -> [schedule: "Cron Expression is malformed."]
+        _ -> [schedule: "Schedule is malformed."]
       end
     end)
     |> foreign_key_constraint(:environment_id)

@@ -58,7 +58,7 @@ defmodule ApplicationRunner.MixProject do
         "ecto.drop --repo ApplicationRunner.Repo",
         "ecto.create --quiet",
         "ecto.migrate",
-        "test"
+        "test --no-start"
       ],
       "ecto.migrations": [
         "ecto.migrations --migrations-path priv/repo/migrations --migrations-path priv/repo/test_migrations"
