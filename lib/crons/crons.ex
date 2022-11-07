@@ -10,20 +10,18 @@ defmodule ApplicationRunner.Crons.Cron do
   alias Crontab.CronExpression.Parser
 
   @derive {Jason.Encoder,
-   only: [
-     :id,
-     :listener_name,
-     :schedule,
-     :props,
-     :should_run_missed_steps,
-     :environment_id,
-     :user_id,
-     # TODO: Find why the jason encoder cannot encode the name (ref)
-     #  :name,
-     :overlap,
-     :state,
-     :timezone
-   ]}
+           only: [
+             :id,
+             :listener_name,
+             :schedule,
+             :props,
+             :should_run_missed_steps,
+             :environment_id,
+             :user_id,
+             :overlap,
+             :state,
+             :timezone
+           ]}
   schema "crons" do
     belongs_to(:environment, Environment)
     belongs_to(:user, User)
