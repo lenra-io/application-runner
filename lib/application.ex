@@ -23,6 +23,6 @@ defmodule ApplicationRunner.Application do
     # for other strategies and supported options
     opts = [strategy: :one_for_one, name: ApplicationRunner.Supervisor]
 
-    Supervisor.start_link(children, opts) |> IO.inspect()
+    Supervisor.start_link(children, opts)
   end
 end
