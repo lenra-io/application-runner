@@ -7,7 +7,10 @@ defmodule ApplicationRunner.Application do
   use Application
 
   def start(_type, _args) do
+    ApplicationRunner.Monitor.setup()
+
     children = [
+      ApplicationRunner.Monitor.SessionMonitor,
       # Start the json validator server for the UI
       ApplicationRunner.JsonSchemata,
       ApplicationRunner.Scheduler,

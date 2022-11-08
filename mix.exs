@@ -30,6 +30,7 @@ defmodule ApplicationRunner.MixProject do
        git: "https://github.com/lenra-io/ex_component_schema", tag: "v1.0.0-beta.4"},
       {:jason, "~> 1.2"},
       {:json_diff, "~> 0.1"},
+      {:telemetry, "~> 1.1.0"},
       {:swarm, "~> 3.0"},
       {:ecto_sql, "~> 3.4"},
       {:postgrex, "~> 0.15.8", only: [:test], runtime: false},

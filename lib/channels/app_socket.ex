@@ -11,13 +11,23 @@ defmodule ApplicationRunner.AppSocket do
       alias ApplicationRunner.Contract.User
       alias ApplicationRunner.Environment
       alias ApplicationRunner.Errors.{BusinessError, TechnicalError}
+      alias ApplicationRunner.Monitor
       alias ApplicationRunner.Session
       alias LenraCommonWeb.ErrorHelpers
 
       @adapter_mod unquote(adapter_mod)
 
+      defoverridable init: 1
+
       ## Channels
       channel("route:*", unquote(route_channel))
+
+      @impl true
+      def init(state) do
+        res = {:ok, {_, socket}} = super(state)
+        Monitor.SessionMonitor.monitor(self(), socket.assigns)
+        res
+      end
 
       # Socket params are passed from the client and can
       # be used to verify and authenticate a user. After
@@ -42,6 +52,7 @@ defmodule ApplicationRunner.AppSocket do
 
           socket =
             socket
+            |> assign(env_id: session_metadata.env_id)
             |> assign(session_id: session_metadata.session_id)
             |> assign(user_id: user_id)
 
