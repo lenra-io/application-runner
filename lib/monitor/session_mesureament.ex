@@ -6,6 +6,7 @@ defmodule ApplicationRunner.Monitor.SessionMeasurement do
   import Ecto.Changeset
 
   alias ApplicationRunner.Contract.{Environment, User}
+  alias ApplicationRunner.Monitor.SessionListenerMesureament
 
   @primary_key {:uuid, Ecto.UUID, autogenerate: true}
   schema "session_measurement" do
@@ -16,6 +17,10 @@ defmodule ApplicationRunner.Monitor.SessionMeasurement do
     field(:end_time, :utc_datetime)
 
     field(:duration, :integer)
+
+    has_many(:listener_measurement, SessionListenerMesureament,
+      foreign_key: :session_mesureament_uuid
+    )
 
     timestamps()
   end

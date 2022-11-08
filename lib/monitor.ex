@@ -15,14 +15,16 @@ defmodule ApplicationRunner.Monitor do
   """
   import Ecto.Query, only: [from: 2]
 
-  alias ApplicationRunner.Monitor.SessionMeasurement
+  alias ApplicationRunner.Monitor.{ListenerMesureament, SessionMeasurement}
 
   @repo Application.compile_env(:application_runner, :repo)
 
   def setup do
     events = [
       [:application_runner, :app_session, :start],
-      [:application_runner, :app_session, :stop]
+      [:application_runner, :app_session, :stop],
+      [:application_runner, :app_listener, :start],
+      [:application_runner, :app_listener, :stop]
     ]
 
     :telemetry.attach_many(
@@ -52,6 +54,46 @@ defmodule ApplicationRunner.Monitor do
       )
     )
     |> SessionMeasurement.update(measurements)
+    |> @repo.update()
+  end
+
+  def handle_event([:application_runner, :app_listener, :start], measurements, metadata, _config) do
+    env_id = Map.get(metadata, :env_id)
+    user_id = Map.get(metadata, :user_id)
+
+    session_mesureament =
+      @repo.one!(
+        from(sm in SessionMeasurement,
+          where: sm.user_id == ^user_id and sm.environment_id == ^env_id,
+          order_by: [desc: sm.inserted_at],
+          limit: 1
+        )
+      )
+
+    @repo.insert(ListenerMesureament.new(session_mesureament.uuid, measurements))
+  end
+
+  def handle_event([:application_runner, :app_listener, :stop], measurements, metadata, _config) do
+    env_id = Map.get(metadata, :env_id)
+    user_id = Map.get(metadata, :user_id)
+
+    session_mesureament =
+      @repo.one!(
+        from(sm in SessionMeasurement,
+          where: sm.user_id == ^user_id and sm.environment_id == ^env_id,
+          order_by: [desc: sm.inserted_at],
+          limit: 1
+        )
+      )
+
+    @repo.one!(
+      from(sm in ListenerMesureament,
+        where: sm.session_mesureament_uuid == ^session_mesureament.uuid,
+        order_by: [desc: sm.inserted_at],
+        limit: 1
+      )
+    )
+    |> ListenerMesureament.update(measurements)
     |> @repo.update()
   end
 end
