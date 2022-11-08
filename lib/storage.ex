@@ -121,7 +121,7 @@ defmodule ApplicationRunner.Storage do
   def handle_call(:last_execution_date, _from, state) do
     case @repo.get(ApplicationRunner.Quantum, 1) do
       nil -> {:reply, NaiveDateTime.utc_now(), state}
-      date -> {:reply, date, state}
+      quantum_response -> {:reply, quantum_response.last_execution_date, state}
     end
   end
 end
