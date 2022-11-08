@@ -10,7 +10,7 @@ defmodule ApplicationRunner.Crons.ServicesTest do
 
   setup do
     {:ok, env} = Repo.insert(Environment.new())
-    token = ApplicationRunner.AppChannel.do_create_env_token(env.id) |> elem(1)
+    token = ApplicationRunner.AppSocket.do_create_env_token(env.id) |> elem(1)
 
     env_metadata = %Metadata{
       env_id: env.id,
@@ -24,6 +24,8 @@ defmodule ApplicationRunner.Crons.ServicesTest do
       %{email: "test@test.te"}
       |> User.new()
       |> Repo.insert!()
+
+    on_exit(fn -> ApplicationRunner.Scheduler.delete_all_jobs() end)
 
     {:ok, %{env_id: env.id, user_id: user.id}}
   end
