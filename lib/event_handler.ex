@@ -18,11 +18,19 @@ defmodule ApplicationRunner.EventHandler do
     the call will run listeners with the given `action` `props` `event`
   """
   def send_env_event(env_id, action, props, event) do
-    GenServer.call(get_full_name({:env, env_id}), {:send_event, action, props, event})
+    GenServer.call(
+      get_full_name({:env, env_id}),
+      {:send_event, action, props, event},
+      Application.fetch_env!(:application_runner, :listeners_timeout)
+    )
   end
 
   def send_session_event(session_id, action, props, event) do
-    GenServer.call(get_full_name({:session, session_id}), {:send_event, action, props, event})
+    GenServer.call(
+      get_full_name({:session, session_id}),
+      {:send_event, action, props, event},
+      Application.fetch_env!(:application_runner, :listeners_timeout)
+    )
   end
 
   def send_client_event(session_id, code, event) do

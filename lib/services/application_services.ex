@@ -50,7 +50,9 @@ defmodule ApplicationRunner.ApplicationServices do
     Logger.debug("Run app #{function_name} with action #{action}")
 
     Finch.build(:post, url, headers, body)
-    |> Finch.request(AppHttp, receive_timeout: 5000)
+    |> Finch.request(AppHttp,
+      receive_timeout: Application.fetch_env!(:application_runner, :listeners_timeout)
+    )
     |> response(:listener)
   end
 

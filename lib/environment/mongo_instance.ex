@@ -22,6 +22,11 @@ defimpl Jason.Encoder, for: BSON.ObjectId do
   def encode(val, _opts \\ []) do
     val
     |> BSON.ObjectId.encode!()
+    |> to_object_id_str()
     |> Jason.encode!()
+  end
+
+  defp to_object_id_str(str) do
+    "ObjectId(#{str})"
   end
 end

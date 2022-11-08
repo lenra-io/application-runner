@@ -1,93 +1,30 @@
-defmodule ApplicationRunner.Session.UiServer do
+defmodule ApplicationRunner.Session.UiBuilders.LenraBuilder do
   @moduledoc """
-    This module is started once per session and is responsible for the UI Rebuild.
-    When a ChangeEventManager did notify all the QueryServer
-    AND all the QueryServer did notify all the WidgetServer,
-    THEN the ChangeEventManager notify the UiServer.
-
-    The UiServer then rebuild the entire UI using the WidgetServer, store the new UI
-    and create a diff between the old and the new UI to send it to the AppChannel.
+      This module is responsible of building the Lenra view.
   """
-  use GenServer
-  use SwarmNamed
+  @behaviour ApplicationRunner.Session.UiBuilders.UiBuilderAdapter
 
-  alias ApplicationRunner.{AppChannel, Environment, JsonSchemata, MongoStorage, Session, Ui}
+  alias ApplicationRunner.{Environment, JsonSchemata, Session, Ui}
+  alias ApplicationRunner.Environment.WidgetUid
   alias ApplicationRunner.MongoStorage.MongoUserLink
-  alias ApplicationRunner.Environment.{WidgetDynSup, WidgetServer, WidgetUid}
+  alias ApplicationRunner.Session.RouteServer
+  alias ApplicationRunner.Session.UiBuilders.UiBuilderAdapter
   alias LenraCommon.Errors
-  alias QueryParser.Parser
 
   @type widget :: map()
   @type component :: map()
-  @type common_error :: Errors.BusinessError.t() | Errors.TechnicalError.t()
-  # @type common_errors :: list(common_error())
 
-  def start_link(opts) do
-    session_id = Keyword.fetch!(opts, :session_id)
-    GenServer.start_link(__MODULE__, opts, name: get_full_name(session_id))
+  def get_routes(env_id) do
+    Environment.ManifestHandler.get_lenra_routes(env_id)
   end
 
-  def init(opts) do
-    session_id = Keyword.fetch!(opts, :session_id)
-
-    case load_ui(session_id) do
-      {:ok, ui} ->
-        send_to_channel(session_id, :ui, ui)
-        {:ok, %{session_id: session_id, ui: ui}}
-
-      {:error, reason} ->
-        {:stop, reason}
-    end
-  end
-
-  def handle_cast(:rebuild, %{session_id: session_id, ui: old_ui} = state) do
-    case load_ui(session_id) do
-      {:ok, ui} ->
-        case JSONDiff.diff(old_ui, ui) do
-          [] ->
-            :ok
-
-          patches ->
-            send_to_channel(session_id, :patches, patches)
-        end
-
-        {:noreply, Map.put(state, :ui, ui)}
-
-      err ->
-        send_to_channel(session_id, :error, err)
-        {:noreply, state}
-    end
-  end
-
-  def load_ui(session_id) do
-    session_metadata = Session.MetadataAgent.get_metadata(session_id)
-    root_widget_name = Environment.ManifestHandler.get_root_widget(session_metadata.env_id)
-
-    with {:ok, widget_uid} <-
-           create_widget_uid(
-             session_metadata,
-             root_widget_name,
-             nil,
-             nil,
-             %{},
-             session_metadata.context,
-             ""
-           ),
-         {:ok, ui_context} <- get_and_build_widget(session_metadata, Ui.Context.new(), widget_uid) do
+  def build_ui(session_metadata, widget_uid) do
+    with {:ok, ui_context} <- get_and_build_widget(session_metadata, Ui.Context.new(), widget_uid) do
       {:ok,
        transform_ui(%{
          "rootWidget" => widget_id(widget_uid),
          "widgets" => ui_context.widgets_map
        })}
-    else
-      # {:error, errors} when is_list(errors) ->
-      #   # The client cannot handle more than one error at the time.
-      #   # We format the error list here to return only the first one.
-      #   IO.inspect(errors)
-      #   {:error, List.first(errors)}
-
-      {:error, error} ->
-        {:error, error}
     end
   end
 
@@ -114,18 +51,14 @@ defmodule ApplicationRunner.Session.UiServer do
     widget
   end
 
-  defp send_to_channel(session_id, atom, stuff) do
-    Swarm.publish(AppChannel.get_group(session_id), {:send, atom, stuff})
-  end
-
   @spec get_and_build_widget(Session.Metadata.t(), Ui.Context.t(), WidgetUid.t()) ::
-          {:ok, Ui.Context.t()} | {:error, common_error()}
+          {:ok, Ui.Context.t()} | {:error, UiBuilderAdapter.common_error()}
   defp get_and_build_widget(
          %Session.Metadata{} = session_metadata,
          %Ui.Context{} = ui_context,
          %WidgetUid{} = widget_uid
        ) do
-    with {:ok, widget} <- fetch_widget(session_metadata, widget_uid),
+    with {:ok, widget} <- RouteServer.fetch_widget(session_metadata, widget_uid),
          {:ok, component, new_app_context} <-
            build_component(session_metadata, widget, ui_context, widget_uid) do
       str_widget_id = widget_id(widget_uid)
@@ -133,29 +66,11 @@ defmodule ApplicationRunner.Session.UiServer do
     end
   end
 
-  @spec fetch_widget(Session.Metadata.t(), WidgetUid.t()) ::
-          {:ok, map()} | {:error, common_error()}
-  defp fetch_widget(%Session.Metadata{} = session_metadata, %WidgetUid{} = widget_uid) do
-    case WidgetDynSup.ensure_child_started(
-           session_metadata.env_id,
-           session_metadata.session_id,
-           session_metadata.function_name,
-           widget_uid
-         ) do
-      {:ok, _} ->
-        widget = WidgetServer.fetch_widget!(session_metadata.env_id, widget_uid)
-        {:ok, widget}
-
-      {:error, err} ->
-        {:error, err}
-    end
-  end
-
   # Build a component.
   # If the component type is "widget" this is considered a Widget and will be handled like one.
   # Everything else will be handled as a simple component.
   @spec build_component(Session.Metadata.t(), widget(), Ui.Context.t(), WidgetUid.t()) ::
-          {:ok, component(), Ui.Context.t()} | {:error, common_error()}
+          {:ok, component(), Ui.Context.t()} | {:error, UiBuilderAdapter.common_error()}
   defp build_component(
          session_metadata,
          %{"type" => comp_type} = component,
@@ -186,7 +101,7 @@ defmodule ApplicationRunner.Session.UiServer do
   # - Create a new WidgetContext corresponding to the Widget
   # - Recursively get_and_build_widget.
   @spec handle_widget(Session.Metadata.t(), widget(), Ui.Context.t(), WidgetUid.t()) ::
-          {:ok, component(), Ui.Context.t()} | {:error, common_error()}
+          {:ok, component(), Ui.Context.t()} | {:error, UiBuilderAdapter.common_error()}
   defp handle_widget(session_metadata, component, ui_context, widget_uid) do
     name = Map.get(component, "name")
     props = Map.get(component, "props")
@@ -194,11 +109,12 @@ defmodule ApplicationRunner.Session.UiServer do
     query = Map.get(component, "query", %{})
 
     with {:ok, new_widget_uid} <-
-           create_widget_uid(
+           RouteServer.create_widget_uid(
              session_metadata,
              name,
              coll,
              query,
+             %{},
              props,
              widget_uid.context,
              widget_uid.prefix_path
@@ -243,8 +159,21 @@ defmodule ApplicationRunner.Session.UiServer do
     end
   end
 
+  # The Parser.parse function propagate a wrong warning.
+  # Probably due to a bug in the parser grammar.
+  # I don't know how to fix this so i just ignore the error...
+  # @dialyzer {:nowarn_function, parse_query: 2}
   defp parse_query(query, params) when not is_nil(query) do
-    Parser.parse(Jason.encode!(query), params)
+    query
+    |> Jason.encode!()
+    |> Parser.parse(params)
+    |> case do
+      {:ok, res} ->
+        {:ok, MongoStorage.decode_ids(res)}
+
+      {:error, reason} ->
+        {:error, reason}
+    end
   end
 
   defp parse_query(nil, _params) do
@@ -263,7 +192,7 @@ defmodule ApplicationRunner.Session.UiServer do
           WidgetUid.t(),
           map()
         ) ::
-          {:ok, component(), Ui.Context.t()} | {:error, common_error()}
+          {:ok, component(), Ui.Context.t()} | {:error, UiBuilderAdapter.common_error()}
   defp handle_component(
          %Session.Metadata{} = session_metadata,
          component,
@@ -305,7 +234,7 @@ defmodule ApplicationRunner.Session.UiServer do
   # Returns the data needed for the component to build.
   # If there is a validation error, return the `{:error, build_errors}` tuple.
   @spec validate_with_error(String.t(), component(), WidgetUid.t()) ::
-          {:error, common_error()} | {:ok, map()}
+          {:error, UiBuilderAdapter.common_error()} | {:ok, map()}
   defp validate_with_error(schema_path, component, %WidgetUid{prefix_path: prefix_path}) do
     with {:ok, %{schema: schema} = schema_map} <- JsonSchemata.get_schema_map(schema_path),
          :ok <- ExComponentSchema.Validator.validate(schema, component) do
@@ -332,7 +261,7 @@ defmodule ApplicationRunner.Session.UiServer do
           Ui.Context.t(),
           WidgetUid.t()
         ) ::
-          {:ok, map(), Ui.Context.t()} | {:error, common_error()}
+          {:ok, map(), Ui.Context.t()} | {:error, UiBuilderAdapter.common_error()}
   defp build_child_list(
          session_metadata,
          component,
@@ -418,7 +347,7 @@ defmodule ApplicationRunner.Session.UiServer do
           Ui.Context.t(),
           WidgetUid.t()
         ) ::
-          {:ok, map(), Ui.Context.t()} | {:error, common_error()}
+          {:ok, map(), Ui.Context.t()} | {:error, UiBuilderAdapter.common_error()}
   defp build_children_list(
          session_metadata,
          component,
@@ -465,7 +394,7 @@ defmodule ApplicationRunner.Session.UiServer do
   end
 
   @spec build_children(Session.Metadata.t(), map, String.t(), Ui.Context.t(), WidgetUid.t()) ::
-          {:error, common_error()} | {:ok, list(component()), Ui.Context.t()}
+          {:error, UiBuilderAdapter.common_error()} | {:ok, list(component()), Ui.Context.t()}
   defp build_children(session_metadata, component, children_key, ui_context, widget_uid) do
     case Map.get(component, children_key) do
       nil ->
@@ -523,28 +452,25 @@ defmodule ApplicationRunner.Session.UiServer do
   end
 
   @spec build_listeners(Session.Metadata.t(), component(), list(String.t())) ::
-          {:ok, map()} | {:error, common_error()}
-  defp build_listeners(session_metadata, component, listeners) do
-    Enum.reduce(listeners, {:ok, %{}}, fn listener, {:ok, acc} ->
-      case build_listener(session_metadata, Map.get(component, listener)) do
-        {:ok, %{"code" => _} = built_listener} -> {:ok, Map.put(acc, listener, built_listener)}
-        {:ok, %{}} -> {:ok, acc}
+          {:ok, map()} | {:error, UiBuilderAdapter.common_error()}
+  defp build_listeners(session_metadata, component, listeners_keys) do
+    Enum.reduce_while(
+      listeners_keys,
+      {:ok, %{}},
+      fn listener_key, {:ok, built_listeners} = acc ->
+        with {:fetch, {:ok, listener}} <- {:fetch, Map.fetch(component, listener_key)},
+             {:build, {:ok, built_listener}} <-
+               {:build, RouteServer.build_listener(session_metadata, listener)} do
+          {:cont, {:ok, Map.put(built_listeners, listener_key, built_listener)}}
+        else
+          {:build, err} ->
+            {:halt, err}
+
+          {:fetch, :error} ->
+            {:cont, acc}
+        end
       end
-    end)
-  end
-
-  @spec build_listener(Session.Metadata.t(), map()) :: {:ok, map()}
-  defp build_listener(session_metadata, listener) do
-    case listener do
-      %{"action" => action} ->
-        props = Map.get(listener, "props", %{})
-        code = Session.ListenersCache.create_code(action, props)
-        Session.ListenersCache.save_listener(session_metadata.session_id, code, listener)
-        {:ok, listener |> Map.drop(["action", "props"]) |> Map.put("code", code)}
-
-      _ ->
-        {:ok, %{}}
-    end
+    )
   end
 
   defp widget_id(%WidgetUid{} = widget_uid) do

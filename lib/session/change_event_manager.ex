@@ -7,15 +7,16 @@ defmodule ApplicationRunner.Session.ChangeEventManager do
   use SwarmNamed
 
   alias ApplicationRunner.Environment.QueryServer
-
-  alias ApplicationRunner.Session.UiServer
+  alias ApplicationRunner.Session.RouteServer
 
   def start_link(opts) do
     session_id = Keyword.fetch!(opts, :session_id)
     env_id = Keyword.fetch!(opts, :env_id)
+    mode = Keyword.fetch!(opts, :mode)
+    route = Keyword.fetch!(opts, :route)
 
     with {:ok, pid} <-
-           GenServer.start_link(__MODULE__, opts, name: get_full_name(session_id)) do
+           GenServer.start_link(__MODULE__, opts, name: get_full_name({session_id, mode, route})) do
       Swarm.join(get_group(env_id), pid)
       {:ok, pid}
     end
@@ -27,11 +28,16 @@ defmodule ApplicationRunner.Session.ChangeEventManager do
 
   def init(opts) do
     session_id = Keyword.fetch!(opts, :session_id)
+    mode = Keyword.fetch!(opts, :mode)
+    route = Keyword.fetch!(opts, :route)
 
-    {:ok, %{session_id: session_id}}
+    {:ok, %{session_id: session_id, mode: mode, route: route}}
   end
 
-  def handle_info({:mongo_event, doc}, %{session_id: session_id} = state) do
+  def handle_info(
+        {:mongo_event, doc},
+        %{session_id: session_id, mode: mode, route: route} = state
+      ) do
     session_id
     |> QueryServer.group_name()
     |> Swarm.multi_call({:mongo_event, doc})
@@ -44,10 +50,10 @@ defmodule ApplicationRunner.Session.ChangeEventManager do
     )
     |> case do
       :ok ->
-        GenServer.cast(UiServer.get_full_name(session_id), :rebuild)
+        GenServer.cast(RouteServer.get_full_name({session_id, mode, route}), :rebuild)
 
       {:error, err} ->
-        GenServer.cast(UiServer.get_full_name(session_id), {:data_error, err})
+        GenServer.cast(RouteServer.get_full_name({session_id, mode, route}), {:data_error, err})
     end
 
     {:noreply, state}

@@ -13,7 +13,7 @@ defmodule ApplicationRunner.DocsControllerTest do
 
     {:ok, env} = ApplicationRunner.Repo.insert(Contract.Environment.new(%{}))
 
-    token = ApplicationRunner.AppChannel.do_create_env_token(env.id) |> elem(1)
+    token = ApplicationRunner.AppSocket.do_create_env_token(env.id) |> elem(1)
 
     env_metadata = %Environment.Metadata{
       env_id: env.id,
@@ -29,7 +29,8 @@ defmodule ApplicationRunner.DocsControllerTest do
     doc_id =
       Mongo.insert_one!(pid, @coll, %{"foo" => "bar"})
       |> Map.get(:inserted_id)
-      |> BSON.ObjectId.encode!()
+      |> Jason.encode!()
+      |> Jason.decode!()
 
     {:ok, Map.merge(ctx, %{mongo_pid: pid, token: token, doc_id: doc_id})}
   end
@@ -65,6 +66,23 @@ defmodule ApplicationRunner.DocsControllerTest do
         |> get(Routes.docs_path(conn, :get, @coll, doc_id))
 
       assert %{"foo" => "bar"} = json_response(conn, 200)
+    end
+  end
+
+  describe "ApplicationRunner.DocsController.find" do
+    test "should be protected with a token", %{conn: conn, doc_id: doc_id} do
+      conn = post(conn, Routes.docs_path(conn, :find, @coll), %{"_id" => doc_id})
+
+      assert %{"message" => _, "reason" => "unauthenticated"} = json_response(conn, 401)
+    end
+
+    test "Should return the correct doc", %{conn: conn, token: token, doc_id: doc_id} do
+      conn =
+        conn
+        |> Plug.Conn.put_req_header("authorization", "Bearer " <> token)
+        |> post(Routes.docs_path(conn, :find, @coll), %{"_id" => doc_id})
+
+      assert [%{"foo" => "bar"}] = json_response(conn, 200)
     end
   end
 
