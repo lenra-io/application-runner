@@ -52,7 +52,6 @@ defmodule ApplicationRunner.ApplicationServices do
 
     Logger.debug("Run app #{function_name} with action #{action}")
 
-    IO.inspect(AppGuardian.peek(token))
     peeked_token = AppGuardian.peek(token)
     start_time = Telemetry.start(:app_listener, peeked_token.claims)
 
