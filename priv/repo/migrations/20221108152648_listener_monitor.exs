@@ -14,7 +14,7 @@ defmodule ApplicationRunner.Repo.Migrations.ListenerMonitor do
 
     create table(:env_listener_measurement, primary_key: false) do
       add(:uuid, :uuid, primary_key: true)
-      add(:environment_id, references(:environment), null: false)
+      add(:environment_id, references(:environments), null: false)
       add(:start_time, :timestamp, null: false)
       add(:end_time, :timestamp)
       add(:duration, :integer)
