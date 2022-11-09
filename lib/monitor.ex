@@ -62,12 +62,12 @@ defmodule ApplicationRunner.Monitor do
   end
 
   def handle_event([:application_runner, :app_listener, :start], measurements, metadata, _config) do
-    env_id = Map.get(metadata, :env_id)
+    env_id = Map.get(metadata, "env_id")
 
-    Map.get(metadata, :type)
+    Map.get(metadata, "type")
     |> case do
-      "sessions" ->
-        user_id = Map.get(metadata, :user_id)
+      "session" ->
+        user_id = Map.get(metadata, "user_id")
 
         session_mesureament = get_session_mesureament(env_id, user_id)
 
@@ -79,12 +79,12 @@ defmodule ApplicationRunner.Monitor do
   end
 
   def handle_event([:application_runner, :app_listener, :stop], measurements, metadata, _config) do
-    env_id = Map.get(metadata, :env_id)
+    env_id = Map.get(metadata, "env_id")
 
-    Map.get(metadata, :type)
+    Map.get(metadata, "type")
     |> case do
       "sessions" ->
-        user_id = Map.get(metadata, :user_id)
+        user_id = Map.get(metadata, "user_id")
 
         session_mesureament = get_session_mesureament(env_id, user_id)
 
