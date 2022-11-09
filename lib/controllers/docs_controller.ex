@@ -2,7 +2,6 @@ defmodule ApplicationRunner.DocsController do
   use ApplicationRunner, :controller
 
   alias ApplicationRunner.{Guardian.AppGuardian, MongoStorage}
-  alias ApplicationRunner.MongoStorage.MongoUserLink
   alias LenraCommon.Errors.DevError
   alias QueryParser.Parser
 

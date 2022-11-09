@@ -5,11 +5,11 @@ defmodule ApplicationRunner.Monitor.EnvListenerMesureament do
   use Ecto.Schema
   import Ecto.Changeset
 
-  alias ApplicationRunner.Monitor.SessionMeasurement
+  alias ApplicationRunner.Contract.Environment
 
   @primary_key {:uuid, Ecto.UUID, autogenerate: true}
-  schema "session_listener_measurement" do
-    belongs_to(:session_mesureament_uuid, SessionMeasurement, references: :uuid)
+  schema "env_listener_measurement" do
+    belongs_to(:environment, Environment)
 
     field(:start_time, :utc_datetime)
     field(:end_time, :utc_datetime)
@@ -22,12 +22,12 @@ defmodule ApplicationRunner.Monitor.EnvListenerMesureament do
   def changeset(listener_mesureament, params \\ %{}) do
     listener_mesureament
     |> cast(params, [:start_time, :end_time, :duration])
-    |> validate_required([:start_time, :session_mesureament_uuid])
+    |> validate_required([:start_time, :environment_id])
     |> foreign_key_constraint(:session_mesureament_uuid)
   end
 
-  def new(session_mesureament_id, params \\ %{}) do
-    %__MODULE__{session_mesureament_uuid: session_mesureament_id}
+  def new(environment_id, params \\ %{}) do
+    %__MODULE__{environment_id: environment_id}
     |> __MODULE__.changeset(params)
   end
 

@@ -9,7 +9,10 @@ defmodule ApplicationRunner.Monitor.SessionListenerMesureament do
 
   @primary_key {:uuid, Ecto.UUID, autogenerate: true}
   schema "session_listener_measurement" do
-    belongs_to(:session_mesureament_uuid, SessionMeasurement, references: :uuid)
+    belongs_to(:session_mesureament, SessionMeasurement,
+      references: :uuid,
+      foreign_key: :session_mesureament_uuid
+    )
 
     field(:start_time, :utc_datetime)
     field(:end_time, :utc_datetime)
