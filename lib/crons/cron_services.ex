@@ -49,7 +49,7 @@ defmodule ApplicationRunner.Crons.CronServices do
     # Map to keyword list
     job_params =
       params
-      |> Map.take(["name", "overlap", "state", "timezone"])
+      |> Map.take(["name", "overlap", "state"])
       |> Enum.map(fn {key, value} -> {String.to_atom(key), value} end)
 
     ApplicationRunner.Scheduler.new_job(job_params ++ [schedule: schedule])

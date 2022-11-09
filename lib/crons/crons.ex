@@ -20,7 +20,6 @@ defmodule ApplicationRunner.Crons.Cron do
              :user_id,
              :overlap,
              :state,
-             :timezone
            ]}
   schema "crons" do
     belongs_to(:environment, Environment)
@@ -33,7 +32,6 @@ defmodule ApplicationRunner.Crons.Cron do
     field(:name, ApplicationRunner.Ecto.Reference)
     field(:overlap, :boolean, default: false)
     field(:state, :string, default: "active")
-    field(:timezone, :date)
 
     field(:should_run_missed_steps, :boolean, default: false)
 
@@ -51,7 +49,6 @@ defmodule ApplicationRunner.Crons.Cron do
       :name,
       :overlap,
       :state,
-      :timezone
     ])
     |> validate_required([:environment_id, :listener_name, :schedule])
     |> validate_change(:schedule, fn :schedule, cron ->

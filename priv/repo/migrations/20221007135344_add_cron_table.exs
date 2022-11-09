@@ -14,7 +14,6 @@ defmodule ApplicationRunner.Repo.Migrations.AddCronTable do
       add :name, :string
       add :overlap, :boolean
       add :state, :string
-      add :timezone, :date
 
       timestamps()
     end
