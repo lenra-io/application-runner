@@ -11,7 +11,8 @@ defmodule ApplicationRunner.Monitor.SessionListenerMesureament do
   schema "session_listener_measurement" do
     belongs_to(:session_mesureament, SessionMeasurement,
       references: :uuid,
-      foreign_key: :session_mesureament_uuid
+      foreign_key: :session_mesureament_uuid,
+      type: :binary_id
     )
 
     field(:start_time, :utc_datetime)

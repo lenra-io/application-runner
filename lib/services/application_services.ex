@@ -2,10 +2,9 @@ defmodule ApplicationRunner.ApplicationServices do
   @moduledoc """
     The service that manages calls to an Openfaas action with `run_action/3`
   """
-
   alias ApplicationRunner.Errors.TechnicalError
-  alias ApplicationRunner.Telemetry
   alias ApplicationRunner.Guardian.AppGuardian
+  alias ApplicationRunner.Telemetry
 
   require Logger
 

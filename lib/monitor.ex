@@ -83,7 +83,7 @@ defmodule ApplicationRunner.Monitor do
 
     Map.get(metadata, "type")
     |> case do
-      "sessions" ->
+      "session" ->
         user_id = Map.get(metadata, "user_id")
 
         session_mesureament = get_session_mesureament(env_id, user_id)
