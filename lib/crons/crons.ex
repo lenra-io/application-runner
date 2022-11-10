@@ -19,7 +19,7 @@ defmodule ApplicationRunner.Crons.Cron do
              :environment_id,
              :user_id,
              :overlap,
-             :state,
+             :state
            ]}
   schema "crons" do
     belongs_to(:environment, Environment)
@@ -48,7 +48,7 @@ defmodule ApplicationRunner.Crons.Cron do
       :user_id,
       :name,
       :overlap,
-      :state,
+      :state
     ])
     |> validate_required([:environment_id, :listener_name, :schedule])
     |> validate_change(:schedule, fn :schedule, cron ->
