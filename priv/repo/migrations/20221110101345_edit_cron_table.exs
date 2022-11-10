@@ -6,6 +6,7 @@ defmodule ApplicationRunner.Repo.Migrations.EditCronTable do
       add :name, :string
       add :overlap, :boolean
       add :state, :string
+      remove :last_run_date
     end
 
     rename table(:crons), :cron_expression, to: :schedule
