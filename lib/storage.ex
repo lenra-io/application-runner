@@ -2,7 +2,7 @@ defmodule ApplicationRunner.Storage do
   @moduledoc """
     ApplicationRunner.Storage implements everything needed for the crons to run properly.
   """
-  alias ApplicationRunner.Crons.CronServices
+  alias ApplicationRunner.Crons
   alias Quantum.Storage
 
   @dialyzer {:nowarn_function, child_spec: 1}
@@ -22,7 +22,7 @@ defmodule ApplicationRunner.Storage do
 
   @impl Storage
   @doc """
-    This is handled by the CronServices, it should not be implemented
+    This is handled by ApplicationRunner.Crons, it should not be implemented
     because some parameters cannot be passed to this handle_cast
     such as `env_id`, `props`, `listener_name`, etc...
 
@@ -34,22 +34,22 @@ defmodule ApplicationRunner.Storage do
 
   @impl Storage
   def delete_job(_storage_pid, job_name) do
-    with {:ok, cron} <- CronServices.get_by_name(job_name) do
-      CronServices.delete(cron)
+    with {:ok, cron} <- Crons.get_by_name(job_name) do
+      Crons.delete(cron)
     end
   end
 
   @impl Storage
   def update_job(_storage_pid, job) do
-    with {:ok, cron} <- CronServices.get_by_name(job.name) do
-      CronServices.update(cron, job)
+    with {:ok, cron} <- Crons.get_by_name(job.name) do
+      Crons.update(cron, job)
     end
   end
 
   @impl Storage
   def jobs(_storage_pid) do
-    CronServices.all()
-    |> Enum.map(&CronServices.to_quantum/1)
+    Crons.all()
+    |> Enum.map(&Crons.to_quantum/1)
   end
 
   @impl Storage
@@ -68,8 +68,8 @@ defmodule ApplicationRunner.Storage do
 
   @impl Storage
   def update_job_state(_storage_pid, job_name, state) do
-    with {:ok, cron} <- CronServices.get_by_name(job_name) do
-      CronServices.update(cron, %{"state" => state})
+    with {:ok, cron} <- Crons.get_by_name(job_name) do
+      Crons.update(cron, %{"state" => state})
     end
   end
 
