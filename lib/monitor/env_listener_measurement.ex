@@ -1,4 +1,4 @@
-defmodule ApplicationRunner.Monitor.EnvListenerMesureament do
+defmodule ApplicationRunner.Monitor.EnvListenerMeasurement do
   @moduledoc """
     ApplicationRunner.Monitor.SessionMeasurement is a ecto schema
   """
@@ -23,7 +23,7 @@ defmodule ApplicationRunner.Monitor.EnvListenerMesureament do
     listener_mesureament
     |> cast(params, [:start_time, :end_time, :duration])
     |> validate_required([:start_time, :environment_id])
-    |> foreign_key_constraint(:session_mesureament_uuid)
+    |> foreign_key_constraint(:session_measurement_uuid)
   end
 
   def new(environment_id, params \\ %{}) do

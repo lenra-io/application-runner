@@ -4,7 +4,7 @@ defmodule ApplicationRunner.Repo.Migrations.ListenerMonitor do
   def change do
     create table(:session_listener_measurement, primary_key: false) do
       add(:uuid, :uuid, primary_key: true)
-      add(:session_mesureament_uuid, references(:session_measurement, column: :uuid, type: :uuid), null: false)
+      add(:session_measurement_uuid, references(:session_measurement, column: :uuid, type: :uuid), null: false)
       add(:start_time, :timestamp, null: false)
       add(:end_time, :timestamp)
       add(:duration, :integer)

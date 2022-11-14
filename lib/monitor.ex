@@ -16,8 +16,8 @@ defmodule ApplicationRunner.Monitor do
   import Ecto.Query, only: [from: 2]
 
   alias ApplicationRunner.Monitor.{
-    EnvListenerMesureament,
-    SessionListenerMesureament,
+    EnvListenerMeasurement,
+    SessionListenerMeasurement,
     SessionMeasurement
   }
 
@@ -69,12 +69,12 @@ defmodule ApplicationRunner.Monitor do
       "session" ->
         user_id = Map.get(metadata, "user_id")
 
-        session_mesureament = get_session_mesureament(env_id, user_id)
+        session_measurement = get_session_measurement(env_id, user_id)
 
-        @repo.insert(SessionListenerMesureament.new(session_mesureament.uuid, measurements))
+        @repo.insert(SessionListenerMeasurement.new(session_measurement.uuid, measurements))
 
       "env" ->
-        @repo.insert(EnvListenerMesureament.new(env_id, measurements))
+        @repo.insert(EnvListenerMeasurement.new(env_id, measurements))
     end
   end
 
@@ -86,32 +86,32 @@ defmodule ApplicationRunner.Monitor do
       "session" ->
         user_id = Map.get(metadata, "user_id")
 
-        session_mesureament = get_session_mesureament(env_id, user_id)
+        session_measurement = get_session_measurement(env_id, user_id)
 
         @repo.one!(
-          from(sm in SessionListenerMesureament,
-            where: sm.session_mesureament_uuid == ^session_mesureament.uuid,
+          from(sm in SessionListenerMeasurement,
+            where: sm.session_measurement_uuid == ^session_measurement.uuid,
             order_by: [desc: sm.inserted_at],
             limit: 1
           )
         )
-        |> SessionListenerMesureament.update(measurements)
+        |> SessionListenerMeasurement.update(measurements)
         |> @repo.update()
 
       "env" ->
         @repo.one!(
-          from(em in EnvListenerMesureament,
+          from(em in EnvListenerMeasurement,
             where: em.environment_id == ^env_id,
             order_by: [desc: em.inserted_at],
             limit: 1
           )
         )
-        |> EnvListenerMesureament.update(measurements)
+        |> EnvListenerMeasurement.update(measurements)
         |> @repo.update()
     end
   end
 
-  defp get_session_mesureament(env_id, user_id) do
+  defp get_session_measurement(env_id, user_id) do
     @repo.one!(
       from(sm in SessionMeasurement,
         where: sm.user_id == ^user_id and sm.environment_id == ^env_id,

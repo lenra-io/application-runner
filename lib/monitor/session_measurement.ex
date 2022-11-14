@@ -6,7 +6,7 @@ defmodule ApplicationRunner.Monitor.SessionMeasurement do
   import Ecto.Changeset
 
   alias ApplicationRunner.Contract.{Environment, User}
-  alias ApplicationRunner.Monitor.SessionListenerMesureament
+  alias ApplicationRunner.Monitor.SessionListenerMeasurement
 
   @primary_key {:uuid, Ecto.UUID, autogenerate: true}
   schema "session_measurement" do
@@ -18,15 +18,15 @@ defmodule ApplicationRunner.Monitor.SessionMeasurement do
 
     field(:duration, :integer)
 
-    has_many(:listener_measurement, SessionListenerMesureament,
-      foreign_key: :session_mesureament_uuid
+    has_many(:listener_measurement, SessionListenerMeasurement,
+      foreign_key: :session_measurement_uuid
     )
 
     timestamps()
   end
 
-  def changeset(session_mesureament, params \\ %{}) do
-    session_mesureament
+  def changeset(session_measurement, params \\ %{}) do
+    session_measurement
     |> cast(params, [:start_time, :end_time, :duration])
     |> validate_required([:start_time, :environment_id, :user_id])
     |> foreign_key_constraint(:user_id)
@@ -38,8 +38,8 @@ defmodule ApplicationRunner.Monitor.SessionMeasurement do
     |> __MODULE__.changeset(params)
   end
 
-  def update(session_mesureament, params) do
-    session_mesureament
+  def update(session_measurement, params) do
+    session_measurement
     |> changeset(params)
   end
 end
