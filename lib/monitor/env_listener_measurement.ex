@@ -23,7 +23,7 @@ defmodule ApplicationRunner.Monitor.EnvListenerMeasurement do
     listener_mesureament
     |> cast(params, [:start_time, :end_time, :duration])
     |> validate_required([:start_time, :environment_id])
-    |> foreign_key_constraint(:session_measurement_uuid)
+    |> foreign_key_constraint(:environment_id)
   end
 
   def new(environment_id, params \\ %{}) do

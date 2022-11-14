@@ -99,6 +99,14 @@ defmodule ApplicationRunner.Monitor do
         |> @repo.update()
 
       "env" ->
+        @repo.one(
+          from(em in EnvListenerMeasurement,
+            where: em.environment_id == ^env_id,
+            order_by: [desc: em.inserted_at],
+            limit: 1
+          )
+        )
+
         @repo.one!(
           from(em in EnvListenerMeasurement,
             where: em.environment_id == ^env_id,

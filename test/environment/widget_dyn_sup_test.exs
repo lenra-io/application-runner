@@ -7,27 +7,31 @@ defmodule ApplicationRunner.Environment.WidgetDynSupTest do
     WidgetUid
   }
 
-  alias ApplicationRunner.Environment
+  alias ApplicationRunner.{Contract, Environment, Telemetry}
+  alias ApplicationRunner.Guardian.AppGuardian
   alias QueryParser.Parser
 
   @manifest %{"rootWidget" => "main"}
   @widget %{"type" => "text", "value" => "test"}
 
   @function_name Ecto.UUID.generate()
-  @env_id 43
   @session_id 1337
 
-  @env_metadata %Environment.Metadata{
-    env_id: @env_id,
-    function_name: @function_name,
-    token: "abc"
-  }
-
   setup do
+    {:ok, %{id: env_id}} = Repo.insert(Contract.Environment.new())
+
     Bypass.open(port: 1234)
     |> Bypass.stub("POST", "/function/#{@function_name}", &handle_resp/1)
 
-    {:ok, _pid} = start_supervised({Environment.Supervisor, @env_metadata})
+    {:ok, token, claims} = AppGuardian.encode_and_sign(env_id, %{type: "env", env_id: env_id})
+
+    env_metadata = %Environment.Metadata{
+      env_id: @env_id,
+      function_name: @function_name,
+      token: token
+    }
+
+    {:ok, _pid} = start_supervised({Environment.Supervisor, env_metadata})
 
     on_exit(fn ->
       Swarm.unregister_name(Environment.Supervisor.get_name(@env_id))

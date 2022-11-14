@@ -1,7 +1,15 @@
 defmodule ApplicationRunner.IntegrationTest do
   use ApplicationRunner.ConnCase, async: false
 
-  alias ApplicationRunner.{AppSocket, Contract, Environment, MongoStorage, RouteChannel, Session}
+  alias ApplicationRunner.{
+    AppSocket,
+    Contract,
+    Environment,
+    MongoStorage,
+    RouteChannel,
+    Session,
+    Telemetry
+  }
 
   @session_id Ecto.UUID.generate()
   @function_name Ecto.UUID.generate()
@@ -205,6 +213,7 @@ defmodule ApplicationRunner.IntegrationTest do
     # The mongo_user_link should not exist before starting the session
     assert not MongoStorage.has_user_link?(em.env_id, sm.user_id)
 
+    Telemetry.start(:app_session, sm)
     # Start the session and start one widget
     {:ok, _} = Session.start_session(sm, em)
     {:ok, _} = Session.RouteDynSup.ensure_child_started(sm.env_id, sm.session_id, @mode, @route)
