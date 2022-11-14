@@ -5,61 +5,40 @@ defmodule ApplicationRunner.Crons.CronServices do
 
   import Ecto.Query, only: [from: 2, from: 1]
 
-  alias ApplicationRunner.Crons.Cron
+  alias ApplicationRunner.EventHandler
+  alias ApplicationRunner.Crons.{Cron, CronServices}
   alias ApplicationRunner.Environment
   alias ApplicationRunner.Errors.BusinessError
   alias ApplicationRunner.Errors.TechnicalError
-  alias ApplicationRunner.Guardian.AppGuardian
   alias Crontab.CronExpression.Parser
 
+  @adapter Application.compile_env(:application_runner, :adapter)
   @repo Application.compile_env(:application_runner, :repo)
 
   def run_cron(
-        function_name,
         action,
         props,
         event,
         env_id
       ) do
-    with {:ok, token, _claims} <-
-           AppGuardian.encode_and_sign(env_id, %{type: "env", env_id: env_id}),
+    with {:ok, metadata} <-
+           Environment.create_metadata(env_id),
          {:ok, _pid} <-
-           Environment.ensure_env_started(%Environment.Metadata{
-             env_id: env_id,
-             function_name: function_name,
-             token: token
-           }) do
-      ApplicationRunner.ApplicationServices.run_listener(
-        function_name,
-        action,
-        props,
-        event,
-        Environment.fetch_token(env_id)
-      )
+           Environment.ensure_env_started(metadata) do
+      EventHandler.send_env_event(env_id, action, props, event)
     end
   end
 
-  def create(env_id, %{"listener_name" => action} = params) do
-    res =
-      Cron.new(env_id, params)
-      |> @repo.insert()
+  def create(env_id, %{"listener_name" => _action} = params) do
+    with {:ok, cron} = res <-
+           Cron.new(env_id, params)
+           |> @repo.insert() do
+      cron
+      |> to_quantum()
+      |> ApplicationRunner.Scheduler.add_job()
 
-    {:ok, schedule} = Parser.parse(Map.get(params, "schedule"))
-
-    # Map to keyword list
-    job_params =
-      params
-      |> Map.take(["name", "overlap", "state"])
-      |> Enum.map(fn {key, value} -> {String.to_atom(key), value} end)
-
-    ApplicationRunner.Scheduler.new_job(job_params ++ [schedule: schedule])
-    |> Quantum.Job.set_task(
-      {ApplicationRunner.Crons.CronServices, :run_cron,
-       [Map.get(params, "function_name"), action, Map.get(params, "props"), %{}, env_id]}
-    )
-    |> ApplicationRunner.Scheduler.add_job()
-
-    res
+      res
+    end
   end
 
   def create(_env_id, _params) do
@@ -99,5 +78,28 @@ defmodule ApplicationRunner.Crons.CronServices do
 
   def delete(cron) do
     @repo.delete(cron)
+  end
+
+  def to_quantum(cron) do
+    {:ok, schedule} = Parser.parse(cron.schedule)
+
+    job =
+      ApplicationRunner.Scheduler.new_job(
+        name: cron.name,
+        overlap: cron.overlap,
+        state: String.to_existing_atom(cron.state),
+        schedule: schedule
+      )
+
+    job
+    |> Quantum.Job.set_task(
+      {CronServices, :run_cron,
+       [
+         cron.listener_name,
+         cron.props,
+         %{},
+         cron.environment_id
+       ]}
+    )
   end
 end

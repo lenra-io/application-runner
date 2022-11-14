@@ -1,7 +1,6 @@
 defmodule ApplicationRunner.AppSocket do
   defmacro __using__(opts) do
     route_channel = Keyword.fetch!(opts, :route_channel)
-    adapter_mod = Keyword.fetch!(opts, :adapter)
 
     quote do
       require Logger
@@ -15,7 +14,7 @@ defmodule ApplicationRunner.AppSocket do
       alias ApplicationRunner.Session
       alias LenraCommonWeb.ErrorHelpers
 
-      @adapter_mod unquote(adapter_mod)
+      @adapter Application.compile_env(:application_runner, :adapter)
 
       defoverridable init: 1
 
@@ -43,8 +42,8 @@ defmodule ApplicationRunner.AppSocket do
       @impl true
       def connect(params, socket, _connect_info) do
         with {:ok, app_name, context} <- extract_params(params),
-             {:ok, user_id} <- @adapter_mod.resource_from_params(params),
-             :ok <- @adapter_mod.allow(user_id, app_name),
+             {:ok, user_id} <- @adapter.resource_from_params(params),
+             :ok <- @adapter.allow(user_id, app_name),
              {:ok, env_metadata, session_metadata} <-
                create_metadatas(user_id, app_name, context),
              {:ok, session_pid} <- Session.start_session(session_metadata, env_metadata) do
@@ -85,10 +84,10 @@ defmodule ApplicationRunner.AppSocket do
         session_id = Ecto.UUID.generate()
 
         with function_name when is_bitstring(function_name) <-
-               @adapter_mod.get_function_name(app_name),
-             env_id <- @adapter_mod.get_env_id(app_name),
+               @adapter.get_function_name(app_name),
+             env_id <- @adapter.get_env_id(app_name),
              {:ok, session_token} <- create_session_token(env_id, session_id, user_id),
-             {:ok, env_token} <- create_env_token(env_id) do
+             {:ok, env_metadata} <- Environment.create_metadata(env_id) do
           # prepare the assigns to the session/environment
           session_metadata = %Session.Metadata{
             env_id: env_id,
@@ -97,12 +96,6 @@ defmodule ApplicationRunner.AppSocket do
             function_name: function_name,
             context: context,
             token: session_token
-          }
-
-          env_metadata = %Environment.Metadata{
-            env_id: env_id,
-            function_name: function_name,
-            token: env_token
           }
 
           {:ok, env_metadata, session_metadata}

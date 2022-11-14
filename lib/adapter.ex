@@ -14,9 +14,14 @@ defmodule ApplicationRunner.Adapter do
   @callback get_function_name(String.t()) :: String.t()
 
   @doc """
-    Override this function to return the environment id from the app_name to the server/devtools needs
+  Override this function to return the environment id from the app_name to the server/devtools needs
   """
   @callback get_env_id(String.t()) :: number()
 
   @callback resource_from_params(map()) :: {:ok, number} | {:error, any()}
+
+  @doc """
+    Override this function to return the function name according to the server/devtools needs
+  """
+  @callback get_service_name(integer()) :: String.t()
 end
