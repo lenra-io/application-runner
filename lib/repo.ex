@@ -1,6 +1,3 @@
-defmodule Repo do
-  @moduledoc false
-  use Ecto.Repo,
-    otp_app: :application_runner,
-    adapter: Ecto.Adapters.Postgres
+defmodule ApplicationRunner.Repo do
+  use Ecto.Repo, otp_app: :application_runner, adapter: Ecto.Adapters.Postgres
 end
