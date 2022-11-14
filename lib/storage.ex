@@ -5,6 +5,8 @@ defmodule ApplicationRunner.Storage do
   alias ApplicationRunner.Crons.CronServices
   alias Quantum.Storage
 
+  @dialyzer {:nowarn_function, child_spec: 1}
+
   @behaviour Storage
 
   @repo Application.compile_env(:application_runner, :repo)

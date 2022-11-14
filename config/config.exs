@@ -21,7 +21,8 @@ config :application_runner,
   repo: ApplicationRunner.Repo,
   url: "localhost:4000",
   mongo_url: "mongodb://localhost:27017",
-  env: "dev"
+  env: "dev",
+  adapter: ApplicationRunner.FakeAppAdapter
 
 config :application_runner, ApplicationRunner.Repo,
   database: "file::memory:?cache=shared",

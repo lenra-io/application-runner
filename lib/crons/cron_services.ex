@@ -12,7 +12,6 @@ defmodule ApplicationRunner.Crons.CronServices do
   alias ApplicationRunner.Errors.TechnicalError
   alias Crontab.CronExpression.Parser
 
-  @adapter Application.compile_env(:application_runner, :adapter)
   @repo Application.compile_env(:application_runner, :repo)
 
   def run_cron(

@@ -25,6 +25,15 @@ defmodule ApplicationRunner.Router do
         pipe_through([:api])
         post("/webhooks/:webhook_uuid", Webhooks.WebhooksController, :trigger)
       end
+
+      scope "/api", ApplicationRunner do
+        # TODO: How to handle permissions now that we moved this from server to here ?
+        pipe_through([:api])
+
+        get("/apps/:app_id/environments/:env_id/crons", CronController, :all)
+        get("/apps/:app_id/environments/:env_id/crons/:id", CronController, :get)
+        post("/apps/:app_id/environments/:env_id/crons", CronController, :create)
+      end
     end
   end
 
