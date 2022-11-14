@@ -6,7 +6,7 @@ defmodule ApplicationRunner.Crons do
   import Ecto.Query, only: [from: 2, from: 1]
 
   alias ApplicationRunner.EventHandler
-  alias ApplicationRunner.Crons.{Cron, CronServices}
+  alias ApplicationRunner.Crons.Cron
   alias ApplicationRunner.Environment
   alias ApplicationRunner.Errors.BusinessError
   alias ApplicationRunner.Errors.TechnicalError
@@ -71,6 +71,7 @@ defmodule ApplicationRunner.Crons do
   end
 
   def update(cron, params) do
+    # TODO delegate this to the Storage and other methods too
     Cron.update(cron, params)
     |> @repo.update()
   end
@@ -92,7 +93,7 @@ defmodule ApplicationRunner.Crons do
 
     job
     |> Quantum.Job.set_task(
-      {CronServices, :run_cron,
+      {ApplicationRunner.Crons, :run_cron,
        [
          cron.listener_name,
          cron.props,
