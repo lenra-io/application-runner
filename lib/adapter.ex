@@ -21,7 +21,7 @@ defmodule ApplicationRunner.Adapter do
   @callback resource_from_params(map()) :: {:ok, number} | {:error, any()}
 
   @doc """
-    Override this function to return the function name according to the server/devtools needs
+    Override this function to return the service name according to the server/devtools needs
   """
   @callback get_service_name(integer()) :: String.t()
 end

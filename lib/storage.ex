@@ -11,10 +11,14 @@ defmodule ApplicationRunner.Storage do
 
   @repo Application.compile_env(:application_runner, :repo)
 
-  @impl true
-  def child_spec(_init_arg) do
-    :ignore
-  end
+  use GenServer
+
+  @doc false
+  @impl GenServer
+  def init(_args), do: {:ok, nil}
+
+  @doc false
+  def start_link(_opts), do: :ignore
 
   @impl Storage
   @doc """
