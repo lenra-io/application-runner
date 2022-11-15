@@ -21,10 +21,7 @@ defmodule ApplicationRunner.Storage do
 
   @impl Storage
   @doc """
-    This is handled by ApplicationRunner.Crons, it should not be implemented
-    because some parameters cannot be passed to this handle_cast
-    such as `env_id`, `props`, `listener_name`, etc...
-
+    This is handled by ApplicationRunner.Crons.
     Quantum can work without it thanks to the `update_job` method.
   """
   def add_job(_storage_pid, _job) do
