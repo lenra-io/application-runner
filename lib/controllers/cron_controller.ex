@@ -8,11 +8,11 @@ defmodule ApplicationRunner.CronController do
   def create(conn, %{"env_id" => env_id} = params) do
     case Integer.parse(env_id) do
       {env_id_int, ""} ->
-        with {:ok, cron} <-
+        with :ok <-
                env_id_int
                |> Crons.create(params) do
           conn
-          |> reply(cron)
+          |> reply(:ok)
         end
 
       :error ->
@@ -26,11 +26,11 @@ defmodule ApplicationRunner.CronController do
         raise BusinessError.invalid_token()
 
       {:ok, %{environment: env} = _resources} ->
-        with {:ok, cron} <-
+        with :ok <-
                env.id
                |> Crons.create(params) do
           conn
-          |> reply(cron)
+          |> reply(:ok)
         end
     end
   end
@@ -55,9 +55,9 @@ defmodule ApplicationRunner.CronController do
 
   def update(conn, %{"id" => cron_id} = params) do
     with {:ok, cron} <- Crons.get(cron_id),
-         {:ok, updated_cron} <- Crons.update(cron, params) do
+         :ok <- Crons.update(cron, params) do
       conn
-      |> reply(updated_cron)
+      |> reply(:ok)
     end
   end
 end
