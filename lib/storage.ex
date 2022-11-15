@@ -3,15 +3,14 @@ defmodule ApplicationRunner.Storage do
     ApplicationRunner.Storage implements everything needed for the crons to run properly.
   """
   alias ApplicationRunner.Crons
+  alias ApplicationRunner.Repo
   alias Quantum.Storage
-
-  @dialyzer {:nowarn_function, child_spec: 1}
 
   @behaviour Storage
 
-  @repo Application.compile_env(:application_runner, :repo)
-
   use GenServer
+
+  require Logger
 
   @doc false
   @impl GenServer
@@ -48,13 +47,12 @@ defmodule ApplicationRunner.Storage do
 
   @impl Storage
   def jobs(_storage_pid) do
-    Crons.all()
-    |> Enum.map(&Crons.to_quantum/1)
+    Crons.all() |> Enum.map(&Crons.to_quantum/1)
   end
 
   @impl Storage
   def last_execution_date(_storage_pid) do
-    case @repo.get(ApplicationRunner.Quantum, 1) do
+    case Repo.get(ApplicationRunner.Quantum, 1) do
       nil -> NaiveDateTime.utc_now()
       quantum_response -> quantum_response.last_execution_date
     end
@@ -75,9 +73,12 @@ defmodule ApplicationRunner.Storage do
 
   @impl Storage
   def update_last_execution_date(_storage_pid, last_execution_date) do
-    @repo.insert(ApplicationRunner.Quantum.update(last_execution_date),
-      on_conflict: [set: [last_execution_date: last_execution_date]],
-      conflict_target: :id
-    )
+    with {:ok, _res} <-
+           Repo.insert(ApplicationRunner.Quantum.update(last_execution_date),
+             on_conflict: [set: [last_execution_date: last_execution_date]],
+             conflict_target: :id
+           ) do
+      :ok
+    end
   end
 end

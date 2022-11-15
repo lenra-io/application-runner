@@ -2,6 +2,8 @@ defmodule ApplicationRunner.CronController do
   use ApplicationRunner, :controller
 
   alias ApplicationRunner.Crons
+  alias ApplicationRunner.Errors.BusinessError
+  alias ApplicationRunner.Guardian.AppGuardian
 
   def create(conn, %{"env_id" => env_id} = params) do
     {env_id_int, ""} = Integer.parse(env_id)
@@ -11,6 +13,21 @@ defmodule ApplicationRunner.CronController do
            |> Crons.create(params) do
       conn
       |> reply(cron)
+    end
+  end
+
+  def app_create(conn, params) do
+    case AppGuardian.Plug.current_resource(conn) do
+      nil ->
+        raise BusinessError.invalid_token()
+
+      {:ok, %{environment: env} = _resources} ->
+        with {:ok, cron} <-
+               env.id
+               |> Crons.create(params) do
+          conn
+          |> reply(cron)
+        end
     end
   end
 

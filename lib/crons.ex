@@ -10,9 +10,8 @@ defmodule ApplicationRunner.Crons do
   alias ApplicationRunner.Environment
   alias ApplicationRunner.Errors.BusinessError
   alias ApplicationRunner.Errors.TechnicalError
+  alias ApplicationRunner.Repo
   alias Crontab.CronExpression.Parser
-
-  @repo Application.compile_env(:application_runner, :repo)
 
   def run_cron(
         action,
@@ -31,7 +30,7 @@ defmodule ApplicationRunner.Crons do
   def create(env_id, %{"listener_name" => _action} = params) do
     with {:ok, cron} = res <-
            Cron.new(env_id, params)
-           |> @repo.insert() do
+           |> Repo.insert() do
       cron
       |> to_quantum()
       |> ApplicationRunner.Scheduler.add_job()
@@ -45,39 +44,39 @@ defmodule ApplicationRunner.Crons do
   end
 
   def get(id) do
-    case @repo.get(Cron, id) do
+    case Repo.get(Cron, id) do
       nil -> TechnicalError.error_404_tuple()
       cron -> {:ok, cron}
     end
   end
 
   def get_by_name(name) do
-    case @repo.get_by(Cron, name: name) do
+    case Repo.get_by(Cron, name: name) do
       nil -> TechnicalError.error_404_tuple()
       cron -> {:ok, cron}
     end
   end
 
   def all do
-    @repo.all(from(c in Cron))
+    Repo.all(from(c in Cron))
   end
 
   def all(env_id) do
-    @repo.all(from(c in Cron, where: c.environment_id == ^env_id))
+    Repo.all(from(c in Cron, where: c.environment_id == ^env_id))
   end
 
   def all(env_id, user_id) do
-    @repo.all(from(c in Cron, where: c.environment_id == ^env_id and c.user_id == ^user_id))
+    Repo.all(from(c in Cron, where: c.environment_id == ^env_id and c.user_id == ^user_id))
   end
 
   def update(cron, params) do
     # TODO delegate this to the Storage and other methods too
     Cron.update(cron, params)
-    |> @repo.update()
+    |> Repo.update()
   end
 
   def delete(cron) do
-    @repo.delete(cron)
+    Repo.delete(cron)
   end
 
   def to_quantum(cron) do

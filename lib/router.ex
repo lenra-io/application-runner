@@ -18,7 +18,7 @@ defmodule ApplicationRunner.Router do
         delete("/colls/:coll/docs/:docId", DocsController, :delete)
         post("/colls/:coll/docs/find", DocsController, :find)
 
-        # TODO Add cron routes here
+        post("/crons", CronController, :app_create)
 
         post("/webhooks", Webhooks.WebhooksController, :create)
       end
