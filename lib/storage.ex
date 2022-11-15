@@ -3,6 +3,7 @@ defmodule ApplicationRunner.Storage do
     ApplicationRunner.Storage implements everything needed for the crons to run properly.
   """
   alias ApplicationRunner.Crons
+  alias ApplicationRunner.Crons.Cron
   alias ApplicationRunner.Repo
   alias Quantum.Storage
 
@@ -24,21 +25,31 @@ defmodule ApplicationRunner.Storage do
     This is handled by ApplicationRunner.Crons.
     Quantum can work without it thanks to the `update_job` method.
   """
-  def add_job(_storage_pid, _job) do
-    :ok
+  def add_job(_storage_pid, job) do
+    with {:ok, _res} <-
+           job
+           |> Crons.to_schema()
+           |> Repo.insert() do
+      :ok
+    end
   end
 
   @impl Storage
   def delete_job(_storage_pid, job_name) do
-    with {:ok, cron} <- Crons.get_by_name(job_name) do
-      Crons.delete(cron)
+    with {:ok, cron} <- Crons.get_by_name(job_name),
+         {:ok, _res} <-
+           Repo.delete(cron) do
+      :ok
     end
   end
 
   @impl Storage
   def update_job(_storage_pid, job) do
-    with {:ok, cron} <- Crons.get_by_name(job.name) do
-      Crons.update(cron, job)
+    with {:ok, cron} <- Crons.get_by_name(job.name),
+         {:ok, _res} <-
+           Cron.update(cron, job)
+           |> Repo.update() do
+      :ok
     end
   end
 
@@ -63,8 +74,11 @@ defmodule ApplicationRunner.Storage do
 
   @impl Storage
   def update_job_state(_storage_pid, job_name, state) do
-    with {:ok, cron} <- Crons.get_by_name(job_name) do
-      Crons.update(cron, %{"state" => state})
+    with {:ok, cron} <- Crons.get_by_name(job_name),
+         {:ok, _res} <-
+           Cron.update(cron, %{"state" => state})
+           |> Repo.update() do
+      :ok
     end
   end
 

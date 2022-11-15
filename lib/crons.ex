@@ -28,15 +28,10 @@ defmodule ApplicationRunner.Crons do
   end
 
   def create(env_id, %{"listener_name" => _action} = params) do
-    with {:ok, cron} = res <-
-           Cron.new(env_id, params)
-           |> Repo.insert() do
-      cron
-      |> to_quantum()
-      |> ApplicationRunner.Scheduler.add_job()
-
-      res
-    end
+    params
+    |> Map.put(:environment_id, env_id)
+    |> to_quantum()
+    |> ApplicationRunner.Scheduler.add_job()
   end
 
   def create(_env_id, _params) do
@@ -70,12 +65,17 @@ defmodule ApplicationRunner.Crons do
   end
 
   def update(cron, params) do
-    Cron.update(cron, params)
-    |> Repo.update()
+    # Quantum's default behavior will update the job when using the add_job.
+    # There is no Scheduler.update_job method.
+    cron
+    |> Map.merge(params)
+    |> to_quantum()
+    |> ApplicationRunner.Scheduler.add_job()
   end
 
   def delete(cron) do
-    Repo.delete(cron)
+    cron
+    |> ApplicationRunner.Scheduler.delete_job()
   end
 
   def to_quantum(cron) do
@@ -95,6 +95,25 @@ defmodule ApplicationRunner.Crons do
            ]}
       )
     end
+  end
+
+  def to_schema(%Quantum.Job{task: {_, _, [listener_name, props, _, env_id]}} = job) do
+    job_map = Map.from_struct(job)
+
+    Cron.new(
+      env_id,
+      Map.merge(
+        job_map,
+        %{
+          "listener_name" => listener_name,
+          "props" => props
+        }
+      )
+    )
+  end
+
+  def to_schema(_invalid_job) do
+    BusinessError.invalid_params_tuple()
   end
 
   defdelegate new(env_id, params), to: Cron
