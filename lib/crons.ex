@@ -5,11 +5,11 @@ defmodule ApplicationRunner.Crons do
 
   import Ecto.Query, only: [from: 2, from: 1]
 
-  alias ApplicationRunner.EventHandler
   alias ApplicationRunner.Crons.Cron
   alias ApplicationRunner.Environment
   alias ApplicationRunner.Errors.BusinessError
   alias ApplicationRunner.Errors.TechnicalError
+  alias ApplicationRunner.EventHandler
   alias ApplicationRunner.Repo
   alias Crontab.CronExpression.Parser
 
