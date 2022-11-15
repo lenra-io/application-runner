@@ -6,7 +6,7 @@ defmodule ApplicationRunner.Ecto.Reference do
   def type, do: :string
 
   def cast(reference) when is_reference(reference) do
-    {:ok, reference |> :erlang.ref_to_list() |> List.to_string()}
+    {:ok, reference}
   end
 
   def cast(_), do: :error
@@ -15,5 +15,7 @@ defmodule ApplicationRunner.Ecto.Reference do
     {:ok, String.to_charlist(reference) |> :erlang.list_to_ref()}
   end
 
-  def dump(reference), do: cast(reference)
+  def dump(reference) when is_reference(reference) do
+    {:ok, reference |> :erlang.ref_to_list() |> List.to_string()}
+  end
 end

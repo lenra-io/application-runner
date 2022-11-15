@@ -1,4 +1,4 @@
-defmodule ApplicationRunner.Crons.CronsTest do
+defmodule ApplicationRunner.CronsTest do
   @moduledoc false
 
   use ApplicationRunner.RepoCase
@@ -166,19 +166,18 @@ defmodule ApplicationRunner.Crons.CronsTest do
     test "update Cron should work properly", %{
       env_id: env_id
     } do
-      assert {:ok, cron} =
-               Cron.new(env_id, %{
+      assert :ok =
+               Crons.create(env_id, %{
                  "listener_name" => "listener",
                  "schedule" => "* * * * *"
                })
-               |> Repo.insert()
 
-      assert {:ok, cron_res} = Crons.get(cron.id)
-      assert cron_res.listener_name == "listener"
+      assert [cron] = Crons.all()
+      assert cron.listener_name == "listener"
 
-      Crons.update(cron_res, %{"listener_name" => "changed"})
+      Crons.update(cron, %{"listener_name" => "changed"})
 
-      assert {:ok, updated_cron} = Crons.get(cron.id)
+      assert [updated_cron] = Crons.all()
       assert updated_cron.listener_name == "changed"
     end
   end

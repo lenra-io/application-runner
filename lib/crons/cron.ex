@@ -38,8 +38,8 @@ defmodule ApplicationRunner.Crons.Cron do
     timestamps()
   end
 
-  def changeset(webhook, params \\ %{}) do
-    webhook
+  def changeset(cron, params \\ %{}) do
+    cron
     |> cast(params, [
       :listener_name,
       :schedule,

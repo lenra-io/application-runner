@@ -11,7 +11,7 @@ defmodule ApplicationRunner.Crons do
   alias ApplicationRunner.Errors.TechnicalError
   alias ApplicationRunner.EventHandler
   alias ApplicationRunner.Repo
-  alias Crontab.CronExpression.Parser
+  alias Crontab.CronExpression.{Composer, Parser}
 
   def run_cron(
         action,
@@ -28,8 +28,9 @@ defmodule ApplicationRunner.Crons do
   end
 
   def create(env_id, %{"listener_name" => _action} = params) do
-    params
-    |> Map.put(:environment_id, env_id)
+    env_id
+    |> Cron.new(params)
+    |> Ecto.Changeset.apply_changes()
     |> to_quantum()
     |> ApplicationRunner.Scheduler.add_job()
   end
@@ -67,10 +68,14 @@ defmodule ApplicationRunner.Crons do
   def update(cron, params) do
     # Quantum's default behavior will update the job when using the add_job.
     # There is no Scheduler.update_job method.
-    cron
-    |> Map.merge(params)
-    |> to_quantum()
-    |> ApplicationRunner.Scheduler.add_job()
+    with %Ecto.Changeset{valid?: true} = changeset <-
+           cron
+           |> Cron.update(params) do
+      changeset
+      |> Ecto.Changeset.apply_changes()
+      |> to_quantum()
+      |> ApplicationRunner.Scheduler.add_job()
+    end
   end
 
   def delete(cron) do
@@ -97,19 +102,22 @@ defmodule ApplicationRunner.Crons do
     end
   end
 
-  def to_schema(%Quantum.Job{task: {_, _, [listener_name, props, _, env_id]}} = job) do
-    job_map = Map.from_struct(job)
-
-    Cron.new(
-      env_id,
-      Map.merge(
-        job_map,
-        %{
-          "listener_name" => listener_name,
-          "props" => props
-        }
-      )
-    )
+  def to_schema(%Quantum.Job{
+        name: name,
+        overlap: overlap,
+        schedule: schedule,
+        state: state,
+        task: {_, _, [listener_name, props, _, env_id]}
+      }) do
+    Cron.changeset(%Cron{environment_id: env_id}, %{
+      "listener_name" => listener_name,
+      "schedule" => Composer.compose(schedule),
+      "props" => props,
+      "name" => name,
+      "overlap" => overlap,
+      "state" => Atom.to_string(state)
+    })
+    |> Ecto.Changeset.apply_changes()
   end
 
   def to_schema(_invalid_job) do
