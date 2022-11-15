@@ -70,7 +70,6 @@ defmodule ApplicationRunner.Crons do
   end
 
   def update(cron, params) do
-    # TODO delegate this to the Storage and other methods too
     Cron.update(cron, params)
     |> Repo.update()
   end
@@ -80,26 +79,22 @@ defmodule ApplicationRunner.Crons do
   end
 
   def to_quantum(cron) do
-    {:ok, schedule} = Parser.parse(cron.schedule)
-
-    job =
+    with {:ok, schedule} <- Parser.parse(cron.schedule) do
       ApplicationRunner.Scheduler.new_job(
         name: cron.name,
         overlap: cron.overlap,
         state: String.to_existing_atom(cron.state),
-        schedule: schedule
+        schedule: schedule,
+        task:
+          {ApplicationRunner.Crons, :run_cron,
+           [
+             cron.listener_name,
+             cron.props,
+             %{},
+             cron.environment_id
+           ]}
       )
-
-    job
-    |> Quantum.Job.set_task(
-      {ApplicationRunner.Crons, :run_cron,
-       [
-         cron.listener_name,
-         cron.props,
-         %{},
-         cron.environment_id
-       ]}
-    )
+    end
   end
 
   defdelegate new(env_id, params), to: Cron

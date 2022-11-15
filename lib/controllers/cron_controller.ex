@@ -6,13 +6,17 @@ defmodule ApplicationRunner.CronController do
   alias ApplicationRunner.Guardian.AppGuardian
 
   def create(conn, %{"env_id" => env_id} = params) do
-    {env_id_int, ""} = Integer.parse(env_id)
+    case Integer.parse(env_id) do
+      {env_id_int, ""} ->
+        with {:ok, cron} <-
+               env_id_int
+               |> Crons.create(params) do
+          conn
+          |> reply(cron)
+        end
 
-    with {:ok, cron} <-
-           env_id_int
-           |> Crons.create(params) do
-      conn
-      |> reply(cron)
+      :error ->
+        BusinessError.invalid_params_tuple()
     end
   end
 

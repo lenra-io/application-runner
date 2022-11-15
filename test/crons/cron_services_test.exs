@@ -4,10 +4,10 @@ defmodule ApplicationRunner.Crons.CronsTest do
   use ApplicationRunner.RepoCase
 
   alias ApplicationRunner.Contract.{Environment, User}
-  alias ApplicationRunner.Environment.{Metadata, MetadataAgent}
-  alias ApplicationRunner.Repo
   alias ApplicationRunner.Crons
   alias ApplicationRunner.Crons.Cron
+  alias ApplicationRunner.Environment.{Metadata, MetadataAgent}
+  alias ApplicationRunner.Repo
 
   setup do
     {:ok, env} = Repo.insert(Environment.new())
