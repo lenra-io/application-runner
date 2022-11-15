@@ -9,10 +9,8 @@ defmodule ApplicationRunner.CronController do
     case Integer.parse(env_id) do
       {env_id_int, ""} ->
         with :ok <-
-               env_id_int
-               |> Crons.create(params) do
-          conn
-          |> reply(:ok)
+               Crons.create(env_id_int, params) do
+          reply(conn, :ok)
         end
 
       :error ->
@@ -27,10 +25,8 @@ defmodule ApplicationRunner.CronController do
 
       {:ok, %{environment: env} = _resources} ->
         with :ok <-
-               env.id
-               |> Crons.create(params) do
-          conn
-          |> reply(:ok)
+               Crons.create(env.id, params) do
+          reply(conn, :ok)
         end
     end
   end
@@ -38,26 +34,22 @@ defmodule ApplicationRunner.CronController do
   def get(conn, %{"id" => cron_id} = _params) do
     with {:ok, cron} <-
            Crons.get(cron_id) do
-      conn
-      |> reply(cron)
+      reply(conn, cron)
     end
   end
 
   def all(conn, %{"env_id" => env_id, "user_id" => user_id} = _params) do
-    conn
-    |> reply(Crons.all(env_id, user_id))
+    reply(conn, Crons.all(env_id, user_id))
   end
 
   def all(conn, %{"env_id" => env_id} = _params) do
-    conn
-    |> reply(Crons.all(env_id))
+    reply(conn, Crons.all(env_id))
   end
 
   def update(conn, %{"id" => cron_id} = params) do
     with {:ok, cron} <- Crons.get(cron_id),
          :ok <- Crons.update(cron, params) do
-      conn
-      |> reply(:ok)
+      reply(conn, :ok)
     end
   end
 end

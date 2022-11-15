@@ -6,4 +6,6 @@ end
 
 Application.ensure_started(:application_runner)
 
+Ecto.Adapters.SQL.Sandbox.mode(ApplicationRunner.Repo, :manual)
+
 ExUnit.start()

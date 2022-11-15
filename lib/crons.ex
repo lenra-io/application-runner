@@ -28,11 +28,16 @@ defmodule ApplicationRunner.Crons do
   end
 
   def create(env_id, %{"listener_name" => _action} = params) do
-    env_id
-    |> Cron.new(params)
-    |> Ecto.Changeset.apply_changes()
+    cron =
+      env_id
+      |> Cron.new(params)
+      |> Ecto.Changeset.apply_changes()
+
+    cron
     |> to_quantum()
     |> ApplicationRunner.Scheduler.add_job()
+
+    cron.name
   end
 
   def create(_env_id, _params) do
