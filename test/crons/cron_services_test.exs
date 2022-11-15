@@ -1,4 +1,4 @@
-defmodule ApplicationRunner.Crons.ServicesTest do
+defmodule ApplicationRunner.Crons.CronsTest do
   @moduledoc false
 
   use ApplicationRunner.RepoCase
@@ -6,7 +6,8 @@ defmodule ApplicationRunner.Crons.ServicesTest do
   alias ApplicationRunner.Contract.{Environment, User}
   alias ApplicationRunner.Environment.{Metadata, MetadataAgent}
   alias ApplicationRunner.Repo
-  alias ApplicationRunner.Crons.{Cron, CronServices}
+  alias ApplicationRunner.Crons
+  alias ApplicationRunner.Crons.Cron
 
   setup do
     {:ok, env} = Repo.insert(Environment.new())
@@ -35,7 +36,7 @@ defmodule ApplicationRunner.Crons.ServicesTest do
       env_id: env_id
     } do
       assert {:ok, _cron} =
-               CronServices.create(env_id, %{
+               Crons.create(env_id, %{
                  "listener_name" => "listener",
                  "schedule" => "* * * * *"
                })
@@ -52,7 +53,7 @@ defmodule ApplicationRunner.Crons.ServicesTest do
       user_id: user_id
     } do
       assert {:ok, cron} =
-               CronServices.create(env_id, %{
+               Crons.create(env_id, %{
                  "listener_name" => "listener",
                  "schedule" => "* * * * *",
                  "user_id" => user_id
@@ -66,12 +67,12 @@ defmodule ApplicationRunner.Crons.ServicesTest do
     test "Cron create without listener_name and schedule should not work", %{
       env_id: env_id
     } do
-      assert {:error, _reason} = CronServices.create(env_id, %{})
+      assert {:error, _reason} = Crons.create(env_id, %{})
     end
 
     test "Cron create with invalid env_id should not work", %{} do
       assert {:error, _reason} =
-               CronServices.create(-1, %{
+               Crons.create(-1, %{
                  "listener_name" => "listener",
                  "schedule" => "* * * * *"
                })
@@ -87,13 +88,13 @@ defmodule ApplicationRunner.Crons.ServicesTest do
                })
                |> Repo.insert()
 
-      crons = CronServices.all(env_id)
+      crons = Crons.all(env_id)
 
       assert Enum.at(crons, 0).listener_name == "listener"
     end
 
     test "Cron get_all with no Cron in db should return an empty array", %{env_id: env_id} do
-      assert [] == CronServices.all(env_id)
+      assert [] == Crons.all(env_id)
     end
 
     test "Cron get_all should work properly with multiple Crons", %{env_id: env_id} do
@@ -105,7 +106,7 @@ defmodule ApplicationRunner.Crons.ServicesTest do
                Cron.new(env_id, %{"listener_name" => "2", "schedule" => "* * * * *"})
                |> Repo.insert()
 
-      crons = CronServices.all(env_id)
+      crons = Crons.all(env_id)
 
       assert Enum.at(crons, 0).listener_name == "1"
       assert Enum.at(crons, 1).listener_name == "2"
@@ -125,7 +126,7 @@ defmodule ApplicationRunner.Crons.ServicesTest do
                })
                |> Repo.insert()
 
-      crons = CronServices.all(env_id, user.id)
+      crons = Crons.all(env_id, user.id)
 
       assert Enum.at(crons, 0).listener_name == "user_specific"
     end
@@ -133,7 +134,7 @@ defmodule ApplicationRunner.Crons.ServicesTest do
     test "get_all Crons linked to specific user but no Crons in db should return empty array", %{
       env_id: env_id
     } do
-      assert [] = CronServices.all(env_id, 1)
+      assert [] = Crons.all(env_id, 1)
     end
   end
 
@@ -148,7 +149,7 @@ defmodule ApplicationRunner.Crons.ServicesTest do
                })
                |> Repo.insert()
 
-      assert {:ok, cron_res} = CronServices.get(cron.id)
+      assert {:ok, cron_res} = Crons.get(cron.id)
 
       assert cron_res.listener_name == "listener"
       assert cron_res.schedule == "* * * * *"
@@ -157,7 +158,7 @@ defmodule ApplicationRunner.Crons.ServicesTest do
     test "get not existing cron should return error", %{
       env_id: _env_id
     } do
-      assert {:error, %{reason: :error_404}} = CronServices.get(1)
+      assert {:error, %{reason: :error_404}} = Crons.get(1)
     end
   end
 
@@ -172,12 +173,12 @@ defmodule ApplicationRunner.Crons.ServicesTest do
                })
                |> Repo.insert()
 
-      assert {:ok, cron_res} = CronServices.get(cron.id)
+      assert {:ok, cron_res} = Crons.get(cron.id)
       assert cron_res.listener_name == "listener"
 
-      CronServices.update(cron_res, %{"listener_name" => "changed"})
+      Crons.update(cron_res, %{"listener_name" => "changed"})
 
-      assert {:ok, updated_cron} = CronServices.get(cron.id)
+      assert {:ok, updated_cron} = Crons.get(cron.id)
       assert updated_cron.listener_name == "changed"
     end
   end
@@ -193,11 +194,11 @@ defmodule ApplicationRunner.Crons.ServicesTest do
                })
                |> Repo.insert()
 
-      assert {:ok, _cron} = CronServices.get(cron.id)
+      assert {:ok, _cron} = Crons.get(cron.id)
 
-      CronServices.delete(cron)
+      Crons.delete(cron)
 
-      assert {:error, %{reason: :error_404}} = CronServices.get(cron.id)
+      assert {:error, %{reason: :error_404}} = Crons.get(cron.id)
     end
   end
 end
