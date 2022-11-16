@@ -26,10 +26,9 @@ defmodule ApplicationRunner.Storage do
     Quantum can work without it thanks to the `update_job` method.
   """
   def add_job(_storage_pid, job) do
-    with {:ok, _res} <-
-           job
-           |> Crons.to_schema()
-           |> Repo.insert() do
+    with %Ecto.Changeset{valid?: true} = changeset <- Crons.to_changeset(job),
+         {:ok, _res} <-
+           Repo.insert(changeset) do
       :ok
     end
   end
@@ -47,7 +46,14 @@ defmodule ApplicationRunner.Storage do
   def update_job(_storage_pid, job) do
     with {:ok, cron} <- Crons.get_by_name(job.name),
          {:ok, _res} <-
-           Cron.update(cron, job)
+           Cron.update(
+             cron,
+             # Applying changes as a cron changeset and applying changes to properly run Cron.update
+             job
+             |> Crons.to_changeset()
+             |> Ecto.Changeset.apply_changes()
+             |> Map.from_struct()
+           )
            |> Repo.update() do
       :ok
     end

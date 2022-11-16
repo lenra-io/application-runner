@@ -40,20 +40,20 @@ defmodule ApplicationRunner.Crons do
     cron.name
   end
 
-  def create(_env_id, _params) do
-    BusinessError.invalid_params_tuple()
+  def create(_env_id, params) do
+    BusinessError.invalid_params_tuple(params)
   end
 
   def get(id) do
     case Repo.get(Cron, id) do
-      nil -> TechnicalError.error_404_tuple()
+      nil -> TechnicalError.error_404_tuple(id)
       cron -> {:ok, cron}
     end
   end
 
   def get_by_name(name) do
     case Repo.get_by(Cron, name: name) do
-      nil -> TechnicalError.error_404_tuple()
+      nil -> TechnicalError.error_404_tuple(name)
       cron -> {:ok, cron}
     end
   end
@@ -107,7 +107,7 @@ defmodule ApplicationRunner.Crons do
     end
   end
 
-  def to_schema(%Quantum.Job{
+  def to_changeset(%Quantum.Job{
         name: name,
         overlap: overlap,
         schedule: schedule,
@@ -122,11 +122,10 @@ defmodule ApplicationRunner.Crons do
       "overlap" => overlap,
       "state" => Atom.to_string(state)
     })
-    |> Ecto.Changeset.apply_changes()
   end
 
-  def to_schema(_invalid_job) do
-    BusinessError.invalid_params_tuple()
+  def to_changeset(invalid_job) do
+    BusinessError.invalid_params_tuple(invalid_job)
   end
 
   defdelegate new(env_id, params), to: Cron
