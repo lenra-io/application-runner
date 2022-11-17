@@ -82,7 +82,7 @@ defmodule ApplicationRunner.Storage do
   def update_job_state(_storage_pid, job_name, state) do
     with {:ok, cron} <- Crons.get_by_name(job_name),
          {:ok, _res} <-
-           Cron.update(cron, %{"state" => state})
+           Cron.update(cron, %{"state" => Atom.to_string(state)})
            |> Repo.update() do
       :ok
     end

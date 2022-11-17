@@ -159,4 +159,67 @@ defmodule ApplicationRunner.StorageTest do
       assert [%Quantum.Job{}, %Quantum.Job{}] = Storage.jobs(1)
     end
   end
+
+  describe "last_execution_date" do
+    test "if never executed, the last execution date should be now", %{
+      env_id: env_id
+    } do
+      now = NaiveDateTime.utc_now()
+      last = Storage.last_execution_date(1)
+      assert now.hour == last.hour
+      assert now.minute == last.minute
+    end
+
+    test "if executed at least once, should return the last execution date", %{
+      env_id: env_id
+    } do
+      {:ok, date} = NaiveDateTime.new(2000, 1, 1, 0, 0, 0)
+
+      # We cannot wait for a cron to be executed so we manually add a fake last_execution_date
+      ApplicationRunner.Quantum.new(date)
+      |> Repo.insert()
+
+      last = Storage.last_execution_date(1)
+
+      assert last.year == 2000
+    end
+  end
+
+  describe "update_job_state" do
+    test "should work properly", %{
+      env_id: env_id
+    } do
+      job = CronHelper.basic_job(env_id)
+
+      assert :ok = Storage.add_job(1, job)
+
+      assert [%Cron{state: "active"}] = Repo.all(Cron)
+
+      assert [%Quantum.Job{state: :active}] = Storage.jobs(1)
+
+      assert :ok = Storage.update_job_state(1, job.name, :inactive)
+    end
+
+    test "on non existing job", %{
+      env_id: env_id
+    } do
+      job = CronHelper.basic_job(env_id)
+
+      assert {:error, %{reason: :error_404}} = Storage.update_job_state(1, job.name, :inactive)
+    end
+  end
+
+  describe "update_last_execution_date" do
+    test "should work properly", %{
+      env_id: env_id
+    } do
+      {:ok, date} = NaiveDateTime.new(2000, 1, 1, 0, 0, 0)
+
+      assert :ok = Storage.update_last_execution_date(1, date)
+
+      last = Storage.last_execution_date(1)
+
+      assert last.year == 2000
+    end
+  end
 end
