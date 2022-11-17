@@ -19,6 +19,9 @@ defmodule ApplicationRunner.Router do
         post("/colls/:coll/docs/find", DocsController, :find)
 
         post("/crons", CronController, :app_create)
+        get("/crons", CronController, :all)
+        put("/crons/:name", CronController, :update)
+        delete("/crons/:name", CronController, :delete)
 
         post("/webhooks", Webhooks.WebhooksController, :create)
       end
