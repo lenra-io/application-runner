@@ -49,9 +49,7 @@ defmodule ApplicationRunner.StorageTest do
       assert cron.environment_id == env_id
     end
 
-    test "without listener_name and schedule should not work", %{
-      env_id: env_id
-    } do
+    test "without listener_name and schedule should not work" do
       assert {:error, %{reason: :invalid_params}} = Storage.add_job(1, Scheduler.new_job())
     end
 
@@ -77,7 +75,7 @@ defmodule ApplicationRunner.StorageTest do
       updated_cron =
         Cron.update(cron, %{"listener_name" => "changed"})
         |> Ecto.Changeset.apply_changes()
-        |> Crons.to_quantum()
+        |> Crons.to_job()
 
       assert :ok = Storage.update_job(1, updated_cron)
 
@@ -97,7 +95,7 @@ defmodule ApplicationRunner.StorageTest do
         |> Ecto.Changeset.apply_changes()
         |> Cron.update(%{"listener_name" => "changed"})
         |> Ecto.Changeset.apply_changes()
-        |> Crons.to_quantum()
+        |> Crons.to_job()
 
       assert {:error, %{reason: :error_404}} = Storage.update_job(1, updated_cron)
     end
@@ -139,9 +137,7 @@ defmodule ApplicationRunner.StorageTest do
       assert [%Quantum.Job{}] = Storage.jobs(1)
     end
 
-    test "with no jobs in database", %{
-      env_id: env_id
-    } do
+    test "with no jobs in database" do
       assert [] = Storage.jobs(1)
     end
 
@@ -161,18 +157,14 @@ defmodule ApplicationRunner.StorageTest do
   end
 
   describe "last_execution_date" do
-    test "if never executed, the last execution date should be now", %{
-      env_id: env_id
-    } do
+    test "if never executed, the last execution date should be now" do
       now = NaiveDateTime.utc_now()
       last = Storage.last_execution_date(1)
       assert now.hour == last.hour
       assert now.minute == last.minute
     end
 
-    test "if executed at least once, should return the last execution date", %{
-      env_id: env_id
-    } do
+    test "if executed at least once, should return the last execution date" do
       {:ok, date} = NaiveDateTime.new(2000, 1, 1, 0, 0, 0)
 
       # We cannot wait for a cron to be executed so we manually add a fake last_execution_date
@@ -210,9 +202,7 @@ defmodule ApplicationRunner.StorageTest do
   end
 
   describe "update_last_execution_date" do
-    test "should work properly", %{
-      env_id: env_id
-    } do
+    test "should work properly" do
       {:ok, date} = NaiveDateTime.new(2000, 1, 1, 0, 0, 0)
 
       assert :ok = Storage.update_last_execution_date(1, date)

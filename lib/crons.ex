@@ -34,7 +34,7 @@ defmodule ApplicationRunner.Crons do
       |> Ecto.Changeset.apply_changes()
 
     cron
-    |> to_quantum()
+    |> to_job()
     |> ApplicationRunner.Scheduler.add_job()
 
     cron.name
@@ -78,7 +78,7 @@ defmodule ApplicationRunner.Crons do
            |> Cron.update(params) do
       changeset
       |> Ecto.Changeset.apply_changes()
-      |> to_quantum()
+      |> to_job()
       |> ApplicationRunner.Scheduler.add_job()
     end
   end
@@ -88,7 +88,7 @@ defmodule ApplicationRunner.Crons do
     |> ApplicationRunner.Scheduler.delete_job()
   end
 
-  def to_quantum(cron) do
+  def to_job(cron) do
     with {:ok, schedule} <- Parser.parse(cron.schedule) do
       ApplicationRunner.Scheduler.new_job(
         name: cron.name,

@@ -13,6 +13,6 @@ defmodule ApplicationRunner.CronHelper do
       "schedule" => "* * * * * *"
     })
     |> Ecto.Changeset.apply_changes()
-    |> Crons.to_quantum()
+    |> Crons.to_job()
   end
 end

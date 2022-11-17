@@ -21,10 +21,6 @@ defmodule ApplicationRunner.Storage do
   def start_link(_opts), do: :ignore
 
   @impl Storage
-  @doc """
-    This is handled by ApplicationRunner.Crons.
-    Quantum can work without it thanks to the `update_job` method.
-  """
   def add_job(_storage_pid, job) do
     with %Ecto.Changeset{valid?: true} = changeset <- Crons.to_changeset(job),
          {:ok, _res} <-
@@ -61,7 +57,7 @@ defmodule ApplicationRunner.Storage do
 
   @impl Storage
   def jobs(_storage_pid) do
-    Crons.all() |> Enum.map(&Crons.to_quantum/1)
+    Crons.all() |> Enum.map(&Crons.to_job/1)
   end
 
   @impl Storage
