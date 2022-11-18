@@ -2,7 +2,6 @@ defmodule ApplicationRunner.DocsController do
   use ApplicationRunner, :controller
 
   alias ApplicationRunner.{Guardian.AppGuardian, MongoStorage}
-  alias ApplicationRunner.MongoStorage.MongoUserLink
   alias LenraCommon.Errors.DevError
   alias QueryParser.Parser
 
@@ -56,11 +55,12 @@ defmodule ApplicationRunner.DocsController do
   end
 
   def create(conn, %{"coll" => coll}, doc, %{environment: env}, replace_params) do
-    with {:ok, docs} <-
+    with filtered_doc <- Map.delete(doc, "_id"),
+         {:ok, docs} <-
            MongoStorage.create_doc(
              env.id,
              coll,
-             Parser.replace_params(doc, replace_params)
+             Parser.replace_params(filtered_doc, replace_params)
            ) do
       reply(conn, docs)
     end
