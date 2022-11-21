@@ -114,7 +114,7 @@ defmodule ApplicationRunner.Crons do
         state: state,
         task: {_, _, [listener_name, props, _, env_id]}
       }) do
-    Cron.changeset(%Cron{environment_id: env_id}, %{
+    Cron.new(env_id, %{
       "listener_name" => listener_name,
       "schedule" => Composer.compose(schedule),
       "props" => props,
