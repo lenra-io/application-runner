@@ -16,6 +16,7 @@ defmodule ApplicationRunner.Errors.TechnicalError do
       {:openfaas_not_reachable, "Openfaas could not be reached."},
       {:timeout, "Timeout"},
       {:listener_not_found, "Listener not found"},
-      {:mongo_error, "Could not access mongo. Please retry later."}
+      {:mongo_error, "Could not access mongo. Please retry later."},
+      {:cron_not_found, "Cron not found."}
     ]
 end

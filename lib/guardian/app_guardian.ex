@@ -10,8 +10,6 @@ defmodule ApplicationRunner.Guardian.AppGuardian do
     Session
   }
 
-  require Logger
-
   alias ApplicationRunner.Errors.{BusinessError, TechnicalError}
 
   def subject_for_token(session_pid, _claims) do

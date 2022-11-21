@@ -7,13 +7,12 @@ defmodule ApplicationRunner.Crons do
 
   alias ApplicationRunner.Crons.Cron
   alias ApplicationRunner.Environment
-  alias ApplicationRunner.Errors.BusinessError
-  alias ApplicationRunner.Errors.TechnicalError
+  alias ApplicationRunner.Errors.{BusinessError, TechnicalError}
   alias ApplicationRunner.EventHandler
   alias ApplicationRunner.Repo
   alias Crontab.CronExpression.{Composer, Parser}
 
-  def run_cron(
+  def run_env_cron(
         action,
         props,
         event,
@@ -46,7 +45,7 @@ defmodule ApplicationRunner.Crons do
 
   def get(id) do
     case Repo.get(Cron, id) do
-      nil -> TechnicalError.error_404_tuple(id)
+      nil -> TechnicalError.cron_not_found_tuple(id)
       cron -> {:ok, cron}
     end
   end
@@ -96,7 +95,7 @@ defmodule ApplicationRunner.Crons do
         state: String.to_existing_atom(cron.state),
         schedule: schedule,
         task:
-          {ApplicationRunner.Crons, :run_cron,
+          {ApplicationRunner.Crons, :run_env_cron,
            [
              cron.listener_name,
              cron.props,

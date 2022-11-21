@@ -5,23 +5,10 @@ defmodule ApplicationRunner.CronController do
   alias ApplicationRunner.Errors.BusinessError
   alias ApplicationRunner.Guardian.AppGuardian
 
-  def create(conn, %{"env_id" => env_id} = params) do
-    case Integer.parse(env_id) do
-      {env_id_int, ""} ->
-        with :ok <-
-               Crons.create(env_id_int, params) do
-          reply(conn, :ok)
-        end
-
-      :error ->
-        BusinessError.invalid_params_tuple()
-    end
-  end
-
   def app_create(conn, params) do
     case AppGuardian.Plug.current_resource(conn) do
       nil ->
-        raise BusinessError.invalid_token()
+        BusinessError.invalid_token_tuple()
 
       {:ok, %{environment: env} = _resources} ->
         with :ok <-
