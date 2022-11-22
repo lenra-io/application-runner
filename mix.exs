@@ -17,6 +17,14 @@ defmodule ApplicationRunner.MixProject do
     ]
   end
 
+  # Run "mix help compile.app" to learn about applications.
+  def application do
+    [
+      mod: {ApplicationRunner.Application, []},
+      extra_applications: [:logger, :runtime_tools]
+    ]
+  end
+
   defp elixirc_paths(:test), do: ["lib", "test/support", "priv/repo"]
   defp elixirc_paths(:dev), do: ["lib", "test/support"]
   defp elixirc_paths(_), do: ["lib"]
@@ -43,13 +51,6 @@ defmodule ApplicationRunner.MixProject do
       {:quantum, "~> 3.0"},
       {:query_parser, git: "https://github.com/lenra-io/query-parser.git", tag: "v1.0.0-beta.15"},
       {:lenra_common, git: "https://github.com/lenra-io/lenra-common.git", tag: "v2.4.0"}
-    ]
-  end
-
-  def application do
-    [
-      mod: {ApplicationRunner.Application, []},
-      extra_applications: [:logger, :runtime_tools]
     ]
   end
 
