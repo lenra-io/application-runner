@@ -33,11 +33,11 @@ defmodule ApplicationRunner.Router do
     end
   end
 
-  defmacro resource_route(resource_controller) do
+  defmacro resource_route() do
     quote do
       get(
         "/apps/:app_name/resources/:resource",
-        unquote(resource_controller),
+        ApplicationRunner.ResourcesController,
         :get_app_resource
       )
     end
