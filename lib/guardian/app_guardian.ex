@@ -2,6 +2,7 @@ defmodule ApplicationRunner.Guardian.AppGuardian do
   @moduledoc """
     ApplicationRunner.Guardian.AppGuardian handle the callback operations to generate and verify the token.
   """
+
   use Guardian, otp_app: :application_runner
 
   alias ApplicationRunner.{
