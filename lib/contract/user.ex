@@ -16,7 +16,7 @@ defmodule ApplicationRunner.Contract.User do
     field(:email, :string)
     has_many(:webhooks, Webhook, foreign_key: :uuid)
     has_many(:crons, Cron, foreign_key: :id)
-    has_many(:session_measurement, SessionMeasurement)
+    has_many(:session_measurements, SessionMeasurement)
 
     timestamps()
   end
