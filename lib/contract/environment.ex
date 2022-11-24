@@ -18,7 +18,7 @@ defmodule ApplicationRunner.Contract.Environment do
     has_many(:webhooks, Webhook, foreign_key: :environment_id)
     has_many(:crons, Cron, foreign_key: :environment_id)
     has_many(:env_listener_measurements, EnvListenerMeasurement, foreign_key: :environment_id)
-    has_many(:session_measurement, SessionMeasurement, foreign_key: :environment_id)
+    has_many(:session_measurements, SessionMeasurement, foreign_key: :environment_id)
 
     timestamps()
   end
