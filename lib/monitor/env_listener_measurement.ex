@@ -32,7 +32,7 @@ defmodule ApplicationRunner.Monitor.EnvListenerMeasurement do
   end
 
   def update(listener_mesureament, params) do
-    listener_mesureament
+    listener_measurement
     |> changeset(params)
   end
 end
