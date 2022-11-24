@@ -19,7 +19,7 @@ defmodule ApplicationRunner.Monitor.EnvListenerMeasurement do
     timestamps()
   end
 
-  def changeset(listener_mesureament, params \\ %{}) do
+  def changeset(listener_measurement, params \\ %{}) do
     listener_measurement
     |> cast(params, [:start_time, :end_time, :duration])
     |> validate_required([:start_time, :environment_id])
@@ -31,7 +31,7 @@ defmodule ApplicationRunner.Monitor.EnvListenerMeasurement do
     |> __MODULE__.changeset(params)
   end
 
-  def update(listener_mesureament, params) do
+  def update(listener_measurement, params) do
     listener_measurement
     |> changeset(params)
   end
