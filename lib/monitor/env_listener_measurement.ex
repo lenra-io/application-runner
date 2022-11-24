@@ -20,7 +20,7 @@ defmodule ApplicationRunner.Monitor.EnvListenerMeasurement do
   end
 
   def changeset(listener_mesureament, params \\ %{}) do
-    listener_mesureament
+    listener_measurement
     |> cast(params, [:start_time, :end_time, :duration])
     |> validate_required([:start_time, :environment_id])
     |> foreign_key_constraint(:environment_id)
