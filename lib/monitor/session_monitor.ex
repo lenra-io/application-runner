@@ -23,7 +23,7 @@ defmodule ApplicationRunner.Monitor.SessionMonitor do
   def handle_call({:monitor, pid, metadata}, _from, state) do
     Process.monitor(pid)
 
-    start_time = Telemetry.start(:app_session, metadata)
+    start_time = Map.get(metadata, :start_time)
 
     {:reply, :ok, Map.put(state, pid, {start_time, metadata})}
   end

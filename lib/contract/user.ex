@@ -8,6 +8,7 @@ defmodule ApplicationRunner.Contract.User do
   import Ecto.Changeset
 
   alias ApplicationRunner.Crons.Cron
+  alias ApplicationRunner.Monitor.SessionMeasurement
   alias ApplicationRunner.Webhooks.Webhook
 
   @table_name Application.compile_env!(:application_runner, :lenra_user_table)
@@ -15,6 +16,8 @@ defmodule ApplicationRunner.Contract.User do
     field(:email, :string)
     has_many(:webhooks, Webhook, foreign_key: :uuid)
     has_many(:crons, Cron, foreign_key: :id)
+    has_many(:session_measurements, SessionMeasurement)
+
     timestamps()
   end
 
