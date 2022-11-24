@@ -1,6 +1,6 @@
 defmodule ApplicationRunner.Monitor.EnvListenerMeasurement do
   @moduledoc """
-    ApplicationRunner.Monitor.SessionMeasurement is a ecto schema
+    ApplicationRunner.Monitor.EnvListenerMeasurement is a ecto schema.
   """
   use Ecto.Schema
   import Ecto.Changeset
