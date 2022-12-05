@@ -173,6 +173,7 @@ defmodule ApplicationRunner.ApplicationServices do
 
   defp response({:ok, %Finch.Response{status: 200, body: body}}, key)
        when key in [:manifest, :widget] do
+    IO.inspect(body)
     {:ok, Jason.decode!(body)}
   end
 
