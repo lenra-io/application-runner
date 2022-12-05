@@ -195,7 +195,7 @@ defmodule ApplicationRunner.ApplicationServices do
          _action
        )
        when status_code not in [200, 202] do
-    Logger.error(body)
+    Logger.error(inspect(body))
 
     case status_code do
       400 ->
