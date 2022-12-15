@@ -18,6 +18,11 @@ defmodule ApplicationRunner.Router do
         delete("/colls/:coll/docs/:docId", DocsController, :delete)
         post("/colls/:coll/docs/find", DocsController, :find)
 
+        post("/transaction", DocsController, :transaction)
+        post("/transaction/:session_id/docs", DocsController, :create_transaction)
+        put("/transaction/:session_id/docs", DocsController, :update_transaction)
+        delete("/transaction/:session_id/docs", DocsController, :update_transaction)
+
         post("/webhooks", Webhooks.WebhooksController, :create)
       end
 
