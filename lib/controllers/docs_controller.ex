@@ -102,4 +102,47 @@ defmodule ApplicationRunner.DocsController do
       reply(conn, docs)
     end
   end
+
+  ###############
+  # Transaction #
+  ###############
+
+  def transaction(conn, _params, %{environment: env}, _replace_params) do
+    with MongoStorage.start_transaction(env.id) do
+      reply(conn)
+    end
+  end
+
+  def create_transaction(
+        conn,
+        %{"coll" => coll, "session_id" => session_id},
+        %{environment: env},
+        replace_params
+      ) do
+    with {:ok, doc} <- MongoStorage.create_doc(env.id, coll, replace_params, session_id) do
+      reply(conn, doc)
+    end
+  end
+
+  def update_transaction(
+        conn,
+        %{"coll" => coll, "session_id" => session_id},
+        %{environment: env},
+        replace_params
+      ) do
+    with {:ok, doc} <- MongoStorage.update_doc(env.id, coll, replace_params, session_id) do
+      reply(conn, doc)
+    end
+  end
+
+  def delete_transaction(
+        conn,
+        %{"docId" => doc_id, "coll" => coll, "session_id" => session_id},
+        %{environment: env},
+        replace_params
+      ) do
+    with {:ok, doc} <- MongoStorage.delete_doc(env.id, doc_id, replace_params, session_id) do
+      reply(conn, doc)
+    end
+  end
 end

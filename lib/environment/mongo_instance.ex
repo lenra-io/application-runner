@@ -16,6 +16,7 @@ defmodule ApplicationRunner.Environment.MongoInstance do
       auth_source: System.get_env("MONGO_AUTH_SOURCE", database_name),
       pool_size: 10
     ]
+    |> IO.inspect()
   end
 end
 
