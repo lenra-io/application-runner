@@ -268,8 +268,7 @@ defmodule ApplicationRunner.MongoStorage do
   ####################
 
   def start_transaction(env_id) do
-    with pid when is_pid(pid) <- Swarm.whereis_name(mongo_instance(env_id)) |> IO.inspect(),
-         {:ok, session_pid} <- Mongo.Session.start_session(mongo_instance(env_id), :write),
+    with {:ok, session_pid} <- Mongo.Session.start_session(mongo_instance(env_id), :write),
          session_uuid <- Ecto.UUID.generate(),
          :yes <- Swarm.register_name(session_uuid, session_pid),
          :ok <- Mongo.Session.start_transaction(session_pid) do
@@ -277,11 +276,8 @@ defmodule ApplicationRunner.MongoStorage do
     else
       :no ->
         BusinessError.error_during_transaction_start_tuple(%{
-          error: "uuid already used, plesa try again"
+          error: "uuid already used, please try again"
         })
-
-      :undefined ->
-        BusinessError.mongo_not_started_tuple()
 
       {:error, msg} ->
         BusinessError.error_during_transaction_start_tuple(%{error_message: msg})
@@ -291,7 +287,8 @@ defmodule ApplicationRunner.MongoStorage do
   def commit_transaction(session_uuid, env_id) do
     with :ok <- Mongo.Session.commit_transaction(Swarm.whereis_name(session_uuid)),
          :ok <-
-           Mongo.Session.end_session(mongo_instance(env_id), Swarm.whereis_name(session_uuid)) do
+           Mongo.Session.end_session(mongo_instance(env_id), Swarm.whereis_name(session_uuid)),
+         :ok <- Swarm.unregister_name(session_uuid) do
       :ok
     else
       # TODO: check what to do in this case
@@ -301,13 +298,14 @@ defmodule ApplicationRunner.MongoStorage do
   end
 
   def revert_transaction(session_uuid, env_id) do
-    with :ok <- Mongo.Session.abort_transaction(Swarm.whereis_name(session_uuid)),
-         :ok <-
-           Mongo.Session.end_session(mongo_instance(env_id), Swarm.whereis_name(session_uuid)) do
+    with :ok <-
+           Mongo.Session.end_session(mongo_instance(env_id), Swarm.whereis_name(session_uuid)),
+         :ok <- Swarm.unregister_name(session_uuid) do
       :ok
     else
       # TODO: check what to do in this case
-      _any -> :error
+      _any ->
+        :error
     end
   end
 end

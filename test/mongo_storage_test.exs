@@ -10,13 +10,9 @@ defmodule ApplicationRunner.MongoStorageTest do
   end
 
   describe "start_transaction" do
-    test "should return an error if mongo not started" do
-      assert BusinessError.mongo_not_started_tuple() == MongoStorage.start_transaction(0)
-    end
-
     test "should return session_uuid" do
-      setup_mongo(1) |> IO.inspect()
-      Swarm.registered() |> IO.inspect()
+      setup_mongo(1)
+      Swarm.registered()
       assert {:ok, _uuid} = MongoStorage.start_transaction(1)
     end
   end
