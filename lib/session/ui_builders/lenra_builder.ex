@@ -5,131 +5,144 @@ defmodule ApplicationRunner.Session.UiBuilders.LenraBuilder do
   @behaviour ApplicationRunner.Session.UiBuilders.UiBuilderAdapter
 
   alias ApplicationRunner.{Environment, JsonSchemata, Session, Ui}
-  alias ApplicationRunner.Environment.WidgetUid
+  alias ApplicationRunner.Environment.ViewUid
   alias ApplicationRunner.MongoStorage.MongoUserLink
   alias ApplicationRunner.Session.RouteServer
   alias ApplicationRunner.Session.UiBuilders.UiBuilderAdapter
   alias LenraCommon.Errors
 
-  @type widget :: map()
+  @type view :: map()
   @type component :: map()
 
   def get_routes(env_id) do
     Environment.ManifestHandler.get_lenra_routes(env_id)
   end
 
-  def build_ui(session_metadata, widget_uid) do
-    with {:ok, ui_context} <- get_and_build_widget(session_metadata, Ui.Context.new(), widget_uid) do
+  def build_ui(session_metadata, view_uid) do
+    with {:ok, ui_context} <- get_and_build_view(session_metadata, Ui.Context.new(), view_uid) do
       {:ok,
        transform_ui(%{
-         "rootWidget" => widget_id(widget_uid),
-         "widgets" => ui_context.widgets_map
+         "rootView" => view_id(view_uid),
+         "views" => ui_context.views_map
        })}
     end
   end
 
-  defp transform_ui(%{"rootWidget" => root_widget, "widgets" => widgets}) do
-    transform(%{"root" => Map.fetch!(widgets, root_widget)}, widgets)
+  defp transform_ui(%{"rootView" => root_views, "views" => views}) do
+    transform(%{"root" => Map.fetch!(views, root_views)}, views)
   end
 
-  defp transform(%{"type" => "widget", "id" => id}, widgets) do
-    transform(Map.fetch!(widgets, id), widgets)
+  defp transform(%{"type" => "view", "id" => id}, views) do
+    transform(Map.fetch!(views, id), views)
   end
 
-  defp transform(widget, widgets) when is_map(widget) do
-    Enum.map(widget, fn
-      {k, v} -> {k, transform(v, widgets)}
+  defp transform(view, views) when is_map(view) do
+    Enum.map(view, fn
+      {k, v} -> {k, transform(v, views)}
     end)
     |> Map.new()
   end
 
-  defp transform(widget, widgets) when is_list(widget) do
-    Enum.map(widget, &transform(&1, widgets))
+  defp transform(view, views) when is_list(view) do
+    Enum.map(view, &transform(&1, views))
   end
 
-  defp transform(widget, _widgets) do
-    widget
+  defp transform(view, _views) do
+    view
   end
 
-  @spec get_and_build_widget(Session.Metadata.t(), Ui.Context.t(), WidgetUid.t()) ::
+  @spec get_and_build_view(Session.Metadata.t(), Ui.Context.t(), ViewUid.t()) ::
           {:ok, Ui.Context.t()} | {:error, UiBuilderAdapter.common_error()}
-  defp get_and_build_widget(
+  defp get_and_build_view(
          %Session.Metadata{} = session_metadata,
          %Ui.Context{} = ui_context,
-         %WidgetUid{} = widget_uid
+         %ViewUid{} = view_uid
        ) do
-    with {:ok, widget} <- RouteServer.fetch_widget(session_metadata, widget_uid),
+    with {:ok, view} <- RouteServer.fetch_view(session_metadata, view_uid),
          {:ok, component, new_app_context} <-
-           build_component(session_metadata, widget, ui_context, widget_uid) do
-      str_widget_id = widget_id(widget_uid)
-      {:ok, put_in(new_app_context.widgets_map[str_widget_id], component)}
+           build_component(session_metadata, view, ui_context, view_uid) do
+      str_view_id = view_id(view_uid)
+      {:ok, put_in(new_app_context.views_map[str_view_id], component)}
     end
   end
 
   # Build a component.
-  # If the component type is "widget" this is considered a Widget and will be handled like one.
+  # If the component type is "view" this is considered a view and will be handled like one.
   # Everything else will be handled as a simple component.
-  @spec build_component(Session.Metadata.t(), widget(), Ui.Context.t(), WidgetUid.t()) ::
+  @spec build_component(Session.Metadata.t(), view(), Ui.Context.t(), ViewUid.t()) ::
           {:ok, component(), Ui.Context.t()} | {:error, UiBuilderAdapter.common_error()}
   defp build_component(
          session_metadata,
          %{"type" => comp_type} = component,
          ui_context,
-         widget_uid
+         view_uid
        ) do
     with schema_path <- JsonSchemata.get_component_path(comp_type),
-         {:ok, validation_data} <- validate_with_error(schema_path, component, widget_uid) do
+         {:ok, validation_data} <- validate_with_error(schema_path, component, view_uid) do
       case comp_type do
-        "widget" ->
-          handle_widget(session_metadata, component, ui_context, widget_uid)
+        "view" ->
+          handle_view(session_metadata, component, ui_context, view_uid)
 
         _ ->
           handle_component(
             session_metadata,
             component,
             ui_context,
-            widget_uid,
+            view_uid,
             validation_data
           )
       end
     end
   end
 
-  # Build a widget means :
-  # - getting the name and props, coll and query of the widget
-  # - create the ID of the widget with name/data/props
-  # - Create a new WidgetContext corresponding to the Widget
-  # - Recursively get_and_build_widget.
-  @spec handle_widget(Session.Metadata.t(), widget(), Ui.Context.t(), WidgetUid.t()) ::
+  defp build_component(
+         _session_metadata,
+         component,
+         _ui_context,
+         view_uid
+       ) do
+    ApplicationRunner.Errors.BusinessError.components_malformated_tuple(%{
+      view: view_uid.name,
+      at: view_uid.prefix_path,
+      receive: component
+    })
+  end
+
+  # Build a view means :
+  # - getting the name and props, coll and query of the view
+  # - create the ID of the view with name/data/props
+  # - Create a new viewContext corresponding to the view
+  # - Recursively get_and_build_view.
+  @spec handle_view(Session.Metadata.t(), view(), Ui.Context.t(), ViewUid.t()) ::
           {:ok, component(), Ui.Context.t()} | {:error, UiBuilderAdapter.common_error()}
-  defp handle_widget(session_metadata, component, ui_context, widget_uid) do
+  defp handle_view(session_metadata, component, ui_context, view_uid) do
     name = Map.get(component, "name")
     props = Map.get(component, "props")
     coll = Map.get(component, "coll")
     query = Map.get(component, "query", %{})
 
-    with {:ok, new_widget_uid} <-
-           RouteServer.create_widget_uid(
+    with {:ok, new_view_uid} <-
+           RouteServer.create_view_uid(
              session_metadata,
              name,
              coll,
              query,
              %{},
              props,
-             widget_uid.context,
-             widget_uid.prefix_path
+             view_uid.context,
+             view_uid.prefix_path
            ),
          {:ok, new_app_context} <-
-           get_and_build_widget(session_metadata, ui_context, new_widget_uid) do
+           get_and_build_view(session_metadata, ui_context, new_view_uid) do
       {
         :ok,
-        %{"type" => "widget", "id" => widget_id(new_widget_uid), "name" => name},
+        %{"type" => "view", "id" => view_id(new_view_uid), "name" => name},
         new_app_context
       }
     end
   end
 
-  @spec create_widget_uid(
+  @spec create_view_uid(
           Session.Metadata.t(),
           binary(),
           binary() | nil,
@@ -137,8 +150,8 @@ defmodule ApplicationRunner.Session.UiBuilders.LenraBuilder do
           map() | nil,
           map(),
           binary()
-        ) :: {:ok, WidgetUid.t()} | {:error, LenraCommon.Errors.BusinessError.t()}
-  defp create_widget_uid(session_metadata, name, coll, query, props, context, prefix_path) do
+        ) :: {:ok, ViewUid.t()} | {:error, LenraCommon.Errors.BusinessError.t()}
+  defp create_view_uid(session_metadata, name, coll, query, props, context, prefix_path) do
     %MongoUserLink{mongo_user_id: mongo_user_id} =
       MongoStorage.get_mongo_user_link!(session_metadata.env_id, session_metadata.user_id)
 
@@ -147,10 +160,10 @@ defmodule ApplicationRunner.Session.UiBuilders.LenraBuilder do
 
     with {:ok, query_parsed} <- parse_query(query, params) do
       {:ok,
-       %WidgetUid{
+       %ViewUid{
          name: name,
          props: props,
-         prefix_path: "#{prefix_path}\n@widget:#{name}",
+         prefix_path: "#{prefix_path}\n@view:#{name}",
          query_parsed: query_parsed,
          query_transformed: query_transformed,
          coll: coll,
@@ -184,12 +197,12 @@ defmodule ApplicationRunner.Session.UiBuilders.LenraBuilder do
   #   - Recursively build all children (list of child) properties
   #   - Recursively build all single child properties
   #   - Build all listeners
-  #   - Then merge all children/child context/widget with the current one.
+  #   - Then merge all children/child context/view with the current one.
   @spec handle_component(
           Session.Metadata.t(),
           component(),
           Ui.Context.t(),
-          WidgetUid.t(),
+          ViewUid.t(),
           map()
         ) ::
           {:ok, component(), Ui.Context.t()} | {:error, UiBuilderAdapter.common_error()}
@@ -197,7 +210,7 @@ defmodule ApplicationRunner.Session.UiBuilders.LenraBuilder do
          %Session.Metadata{} = session_metadata,
          component,
          ui_context,
-         widget_uid,
+         view_uid,
          %{listeners: listeners_keys, children: children_keys, child: child_keys}
        ) do
     with {:ok, children_map, merged_children_ui_context} <-
@@ -206,15 +219,15 @@ defmodule ApplicationRunner.Session.UiBuilders.LenraBuilder do
              component,
              children_keys,
              ui_context,
-             widget_uid
+             view_uid
            ),
          {:ok, child_map, merged_child_ui_context} <-
-           build_child_list(session_metadata, component, child_keys, ui_context, widget_uid),
+           build_child_list(session_metadata, component, child_keys, ui_context, view_uid),
          {:ok, listeners_map} <-
            build_listeners(session_metadata, component, listeners_keys) do
       new_context = %Ui.Context{
-        widgets_map:
-          Map.merge(merged_child_ui_context.widgets_map, merged_children_ui_context.widgets_map),
+        views_map:
+          Map.merge(merged_child_ui_context.views_map, merged_children_ui_context.views_map),
         listeners_map:
           Map.merge(
             merged_child_ui_context.listeners_map,
@@ -233,9 +246,9 @@ defmodule ApplicationRunner.Session.UiBuilders.LenraBuilder do
   # Validate the component against the corresponding Json Schema.
   # Returns the data needed for the component to build.
   # If there is a validation error, return the `{:error, build_errors}` tuple.
-  @spec validate_with_error(String.t(), component(), WidgetUid.t()) ::
+  @spec validate_with_error(String.t(), component(), ViewUid.t()) ::
           {:error, UiBuilderAdapter.common_error()} | {:ok, map()}
-  defp validate_with_error(schema_path, component, %WidgetUid{prefix_path: prefix_path}) do
+  defp validate_with_error(schema_path, component, %ViewUid{prefix_path: prefix_path}) do
     with {:ok, %{schema: schema} = schema_map} <- JsonSchemata.get_schema_map(schema_path),
          :ok <- ExComponentSchema.Validator.validate(schema, component) do
       {:ok, schema_map}
@@ -259,7 +272,7 @@ defmodule ApplicationRunner.Session.UiBuilders.LenraBuilder do
           component(),
           list(String.t()),
           Ui.Context.t(),
-          WidgetUid.t()
+          ViewUid.t()
         ) ::
           {:ok, map(), Ui.Context.t()} | {:error, UiBuilderAdapter.common_error()}
   defp build_child_list(
@@ -267,9 +280,9 @@ defmodule ApplicationRunner.Session.UiBuilders.LenraBuilder do
          component,
          child_list,
          ui_context,
-         widget_uid
+         view_uid
        ) do
-    case reduce_child_list(session_metadata, component, child_list, ui_context, widget_uid) do
+    case reduce_child_list(session_metadata, component, child_list, ui_context, view_uid) do
       {:error, error} -> {:error, error}
       {comp, merged_ui_context} -> {:ok, comp, merged_ui_context}
     end
@@ -280,7 +293,7 @@ defmodule ApplicationRunner.Session.UiBuilders.LenraBuilder do
          component,
          child_list,
          ui_context,
-         %WidgetUid{prefix_path: prefix_path} = widget_uid
+         %ViewUid{prefix_path: prefix_path} = view_uid
        ) do
     Enum.reduce_while(
       child_list,
@@ -301,7 +314,7 @@ defmodule ApplicationRunner.Session.UiBuilders.LenraBuilder do
               child_key,
               ui_context_acc,
               ui_context,
-              Map.put(widget_uid, :prefix_path, child_path)
+              Map.put(view_uid, :prefix_path, child_path)
             )
         end
       end
@@ -315,13 +328,13 @@ defmodule ApplicationRunner.Session.UiBuilders.LenraBuilder do
          child_key,
          ui_context_acc,
          ui_context,
-         widget_uid
+         view_uid
        ) do
     case build_component(
            session_metadata,
            child_comp,
            ui_context,
-           widget_uid
+           view_uid
          ) do
       {:ok, built_component, child_ui_context} ->
         {
@@ -345,7 +358,7 @@ defmodule ApplicationRunner.Session.UiBuilders.LenraBuilder do
           component(),
           list(),
           Ui.Context.t(),
-          WidgetUid.t()
+          ViewUid.t()
         ) ::
           {:ok, map(), Ui.Context.t()} | {:error, UiBuilderAdapter.common_error()}
   defp build_children_list(
@@ -353,7 +366,7 @@ defmodule ApplicationRunner.Session.UiBuilders.LenraBuilder do
          component,
          children_keys,
          %Ui.Context{} = ui_context,
-         %WidgetUid{prefix_path: prefix_path} = widget_uid
+         %ViewUid{prefix_path: prefix_path} = view_uid
        ) do
     Enum.reduce_while(
       children_keys,
@@ -368,7 +381,7 @@ defmodule ApplicationRunner.Session.UiBuilders.LenraBuilder do
                  component,
                  children_key,
                  ui_context,
-                 Map.put(widget_uid, :prefix_path, children_path)
+                 Map.put(view_uid, :prefix_path, children_path)
                ) do
             {:ok, built_children, children_ui_context} ->
               {
@@ -393,15 +406,15 @@ defmodule ApplicationRunner.Session.UiBuilders.LenraBuilder do
     end
   end
 
-  @spec build_children(Session.Metadata.t(), map, String.t(), Ui.Context.t(), WidgetUid.t()) ::
+  @spec build_children(Session.Metadata.t(), map, String.t(), Ui.Context.t(), ViewUid.t()) ::
           {:error, UiBuilderAdapter.common_error()} | {:ok, list(component()), Ui.Context.t()}
-  defp build_children(session_metadata, component, children_key, ui_context, widget_uid) do
+  defp build_children(session_metadata, component, children_key, ui_context, view_uid) do
     case Map.get(component, children_key) do
       nil ->
         {:ok, [], ui_context}
 
       children ->
-        build_children_map(session_metadata, children, ui_context, widget_uid)
+        build_children_map(session_metadata, children, ui_context, view_uid)
     end
   end
 
@@ -409,7 +422,7 @@ defmodule ApplicationRunner.Session.UiBuilders.LenraBuilder do
          session_metadata,
          children,
          ui_context,
-         %WidgetUid{prefix_path: prefix_path} = widget_uid
+         %ViewUid{prefix_path: prefix_path} = view_uid
        ) do
     children
     |> Enum.with_index()
@@ -420,7 +433,7 @@ defmodule ApplicationRunner.Session.UiBuilders.LenraBuilder do
         session_metadata,
         child,
         ui_context,
-        Map.put(widget_uid, :prefix_path, children_path)
+        Map.put(view_uid, :prefix_path, children_path)
       )
     end)
     |> Enum.reduce_while(
@@ -446,8 +459,8 @@ defmodule ApplicationRunner.Session.UiBuilders.LenraBuilder do
   defp merge_ui_context(ui_context1, ui_context2) do
     Map.put(
       ui_context1,
-      :widgets_map,
-      Map.merge(ui_context1.widgets_map, ui_context2.widgets_map)
+      :views_map,
+      Map.merge(ui_context1.views_map, ui_context2.views_map)
     )
   end
 
@@ -473,7 +486,7 @@ defmodule ApplicationRunner.Session.UiBuilders.LenraBuilder do
     )
   end
 
-  defp widget_id(%WidgetUid{} = widget_uid) do
-    Crypto.hash({widget_uid.name, widget_uid.coll, widget_uid.query_parsed, widget_uid.props})
+  defp view_id(%ViewUid{} = view_uid) do
+    Crypto.hash({view_uid.name, view_uid.coll, view_uid.query_parsed, view_uid.props})
   end
 end

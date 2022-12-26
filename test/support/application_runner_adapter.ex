@@ -12,8 +12,8 @@ defmodule ApplicationRunner.ApplicationRunnerAdapter do
 
   def start_link(_), do: GenServer.start_link(__MODULE__, [], name: __MODULE__)
 
-  def get_widget(_session_state, name, data, props) do
-    GenServer.call(__MODULE__, {:get_widget, name, data, props})
+  def get_view(_session_state, name, data, props) do
+    GenServer.call(__MODULE__, {:get_view, name, data, props})
   end
 
   def set_mock(mock) do
@@ -26,14 +26,14 @@ defmodule ApplicationRunner.ApplicationRunnerAdapter do
   end
 
   @impl true
-  def handle_call({:get_widget, name, data, props}, _from, %{widgets: widgets} = mock) do
-    case Map.get(widgets, name) do
+  def handle_call({:get_view, name, data, props}, _from, %{views: views} = mock) do
+    case Map.get(views, name) do
       nil ->
-        {:reply, {:error, :widget_not_found}, mock}
+        {:reply, {:error, :view_not_found}, mock}
 
-      widget ->
-        widget = widget.(data, props)
-        {:reply, {:ok, widget}, mock}
+      view ->
+        view = view.(data, props)
+        {:reply, {:ok, view}, mock}
     end
   end
 

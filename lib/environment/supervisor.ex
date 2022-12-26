@@ -26,7 +26,7 @@ defmodule ApplicationRunner.Environment.Supervisor do
       {Environment.ChangeStream, env_id: em.env_id},
       # MongoSessionDynamicSup
       {Environment.QueryDynSup, env_id: em.env_id},
-      {Environment.WidgetDynSup, env_id: em.env_id},
+      {Environment.ViewDynSup, env_id: em.env_id},
       {Session.DynamicSupervisor, env_id: em.env_id}
     ]
 

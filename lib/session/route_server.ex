@@ -2,17 +2,17 @@ defmodule ApplicationRunner.Session.RouteServer do
   @moduledoc """
     This module is started once per session and is responsible for the UI Rebuild.
     When a ChangeEventManager did notify all the QueryServer
-    AND all the QueryServer did notify all the WidgetServer,
+    AND all the QueryServer did notify all the ViewServer,
     THEN the ChangeEventManager notify the RouteServer.
 
-    The RouteServer then rebuild the entire UI using the WidgetServer, store the new UI
+    The RouteServer then rebuild the entire UI using the ViewServer, store the new UI
     and create a diff between the old and the new UI to send it to the AppChannel.
   """
   use GenServer
   use SwarmNamed
 
   alias ApplicationRunner.MongoStorage.MongoUserLink
-  alias ApplicationRunner.Environment.{WidgetDynSup, WidgetServer, WidgetUid}
+  alias ApplicationRunner.Environment.{ViewDynSup, ViewServer, ViewUid}
   alias ApplicationRunner.Errors.BusinessError
   alias ApplicationRunner.{MongoStorage, RouteChannel, Session}
   alias ApplicationRunner.Session.UiBuilders.UiBuilderAdapter
@@ -83,13 +83,13 @@ defmodule ApplicationRunner.Session.RouteServer do
     builder_mod = get_builder_mode(mode)
     routes = builder_mod.get_routes(session_metadata.env_id)
 
-    with {:ok, route_params, base_widget} <- find_route(routes, route),
-         name <- Map.get(base_widget, "name"),
-         props <- Map.get(base_widget, "props", %{}),
-         coll <- Map.get(base_widget, "coll"),
-         query <- Map.get(base_widget, "query", %{}),
-         {:ok, widget_uid} <-
-           create_widget_uid(
+    with {:ok, route_params, base_view} <- find_route(routes, route),
+         name <- Map.get(base_view, "name"),
+         props <- Map.get(base_view, "props", %{}),
+         coll <- Map.get(base_view, "coll"),
+         query <- Map.get(base_view, "query", %{}),
+         {:ok, view_uid} <-
+           create_view_uid(
              session_metadata,
              name,
              coll,
@@ -99,7 +99,7 @@ defmodule ApplicationRunner.Session.RouteServer do
              session_metadata.context,
              ""
            ) do
-      builder_mod.build_ui(session_metadata, widget_uid)
+      builder_mod.build_ui(session_metadata, view_uid)
     else
       :error ->
         BusinessError.route_does_not_exist_tuple(route)
@@ -139,7 +139,7 @@ defmodule ApplicationRunner.Session.RouteServer do
           )
   end
 
-  @spec create_widget_uid(
+  @spec create_view_uid(
           Session.Metadata.t(),
           binary(),
           binary() | nil,
@@ -148,8 +148,8 @@ defmodule ApplicationRunner.Session.RouteServer do
           map() | nil,
           map(),
           binary()
-        ) :: {:ok, WidgetUid.t()} | {:error, LenraCommon.Errors.BusinessError.t()}
-  def create_widget_uid(
+        ) :: {:ok, ViewUid.t()} | {:error, LenraCommon.Errors.BusinessError.t()}
+  def create_view_uid(
         session_metadata,
         name,
         coll,
@@ -167,10 +167,10 @@ defmodule ApplicationRunner.Session.RouteServer do
 
     with {:ok, query_parsed} <- parse_query(query, params) do
       {:ok,
-       %WidgetUid{
+       %ViewUid{
          name: name,
          props: props,
-         prefix_path: "#{prefix_path}\n@widget:#{name}",
+         prefix_path: "#{prefix_path}\n@view:#{name}",
          query_parsed: query_parsed,
          query_transformed: query_transformed,
          coll: coll,
@@ -179,20 +179,20 @@ defmodule ApplicationRunner.Session.RouteServer do
     end
   end
 
-  @spec fetch_widget(Session.Metadata.t(), WidgetUid.t()) ::
+  @spec fetch_view(Session.Metadata.t(), ViewUid.t()) ::
           {:ok, map()} | {:error, UiBuilderAdapter.common_error()}
-  def fetch_widget(%Session.Metadata{} = session_metadata, %WidgetUid{} = widget_uid) do
-    filtered_widget_uid = Map.filter(widget_uid, fn {key, _value} -> key != :prefix_path end)
+  def fetch_view(%Session.Metadata{} = session_metadata, %ViewUid{} = view_uid) do
+    filtered_view_uid = Map.filter(view_uid, fn {key, _value} -> key != :prefix_path end)
 
-    case WidgetDynSup.ensure_child_started(
+    case ViewDynSup.ensure_child_started(
            session_metadata.env_id,
            session_metadata.session_id,
            session_metadata.function_name,
-           filtered_widget_uid
+           filtered_view_uid
          ) do
       {:ok, _} ->
-        widget = WidgetServer.fetch_widget!(session_metadata.env_id, widget_uid)
-        {:ok, widget}
+        view = ViewServer.fetch_view!(session_metadata.env_id, view_uid)
+        {:ok, view}
 
       {:error, err} ->
         {:error, err}

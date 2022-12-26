@@ -7,7 +7,7 @@ defmodule ApplicationRunner.Session.UiBuilders.JsonBuilder do
   alias ApplicationRunner.Environment
   alias ApplicationRunner.Session.RouteServer
 
-  @type widget :: map()
+  @type view :: map()
   @type component :: map()
 
   @impl ApplicationRunner.Session.UiBuilders.UiBuilderAdapter
@@ -16,14 +16,14 @@ defmodule ApplicationRunner.Session.UiBuilders.JsonBuilder do
   end
 
   @impl ApplicationRunner.Session.UiBuilders.UiBuilderAdapter
-  def build_ui(session_metadata, widget_uid) do
-    with {:ok, json} <- RouteServer.fetch_widget(session_metadata, widget_uid) do
+  def build_ui(session_metadata, view_uid) do
+    with {:ok, json} <- RouteServer.fetch_view(session_metadata, view_uid) do
       build_listeners(session_metadata, json)
     end
   end
 
-  def build_listeners(session_metadata, widget) do
-    {:ok, do_build_listeners(session_metadata, widget)}
+  def build_listeners(session_metadata, view) do
+    {:ok, do_build_listeners(session_metadata, view)}
   rescue
     err -> {:error, err}
   end
