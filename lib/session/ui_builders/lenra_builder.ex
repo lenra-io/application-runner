@@ -58,8 +58,6 @@ defmodule ApplicationRunner.Session.UiBuilders.LenraBuilder do
          %Ui.Context{} = ui_context,
          %WidgetUid{} = widget_uid
        ) do
-    IO.inspect({:lenra_builder, widget_uid})
-
     with {:ok, widget} <- RouteServer.fetch_widget(session_metadata, widget_uid),
          {:ok, component, new_app_context} <-
            build_component(session_metadata, widget, ui_context, widget_uid) do
