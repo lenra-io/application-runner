@@ -31,8 +31,7 @@ defmodule ApplicationRunner.Environment.WidgetServer do
     env_id = Keyword.fetch!(opts, :env_id)
     widget_uid = Keyword.fetch!(opts, :widget_uid)
 
-    filtered_widget_uid =
-      Map.filter(widget_uid, fn {key, _value} -> key != :prefix_path end) |> IO.inspect()
+    filtered_widget_uid = Map.filter(widget_uid, fn {key, _value} -> key != :prefix_path end)
 
     GenServer.start_link(__MODULE__, opts, name: get_full_name({env_id, filtered_widget_uid}))
   end
