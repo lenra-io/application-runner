@@ -182,11 +182,13 @@ defmodule ApplicationRunner.Session.RouteServer do
   @spec fetch_widget(Session.Metadata.t(), WidgetUid.t()) ::
           {:ok, map()} | {:error, UiBuilderAdapter.common_error()}
   def fetch_widget(%Session.Metadata{} = session_metadata, %WidgetUid{} = widget_uid) do
+    filtered_widget_uid = Map.filter(widget_uid, fn {key, _value} -> key != :prefix_path end)
+
     case WidgetDynSup.ensure_child_started(
            session_metadata.env_id,
            session_metadata.session_id,
            session_metadata.function_name,
-           widget_uid
+           filtered_widget_uid
          ) do
       {:ok, _} ->
         widget = WidgetServer.fetch_widget!(session_metadata.env_id, widget_uid)

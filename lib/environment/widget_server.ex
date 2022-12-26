@@ -22,14 +22,19 @@ defmodule ApplicationRunner.Environment.WidgetServer do
 
   @spec fetch_widget!(any, WidgetUid.t()) :: map()
   def fetch_widget!(env_id, widget_uid) do
-    GenServer.call(get_full_name({env_id, widget_uid}), :fetch_widget!)
+    filtered_widget_uid = Map.filter(widget_uid, fn {key, _value} -> key != :prefix_path end)
+
+    GenServer.call(get_full_name({env_id, filtered_widget_uid}), :fetch_widget!)
   end
 
   def start_link(opts) do
     env_id = Keyword.fetch!(opts, :env_id)
     widget_uid = Keyword.fetch!(opts, :widget_uid)
 
-    GenServer.start_link(__MODULE__, opts, name: get_full_name({env_id, widget_uid}))
+    filtered_widget_uid =
+      Map.filter(widget_uid, fn {key, _value} -> key != :prefix_path end) |> IO.inspect()
+
+    GenServer.start_link(__MODULE__, opts, name: get_full_name({env_id, filtered_widget_uid}))
   end
 
   @impl true
