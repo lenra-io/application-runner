@@ -66,11 +66,11 @@ defmodule ApplicationRunner.ApplicationServices do
     res
   end
 
-  @spec fetch_widget(String.t(), String.t(), map(), map(), map()) ::
+  @spec fetch_view(String.t(), String.t(), map(), map(), map()) ::
           {:ok, map()} | {:error, any()}
-  def fetch_widget(
+  def fetch_view(
         function_name,
-        widget_name,
+        view_name,
         data,
         props,
         context
@@ -79,14 +79,14 @@ defmodule ApplicationRunner.ApplicationServices do
 
     url = "#{base_url}/function/#{function_name}"
     headers = [{"Content-Type", "application/json"} | base_headers]
-    body = Jason.encode!(%{widget: widget_name, data: data, props: props, context: context})
+    body = Jason.encode!(%{view: view_name, data: data, props: props, context: context})
 
     Finch.build(:post, url, headers, body)
     |> Finch.request(AppHttp, receive_timeout: 1000)
-    |> response(:widget)
+    |> response(:view)
     |> case do
-      {:ok, %{"widget" => widget}} ->
-        {:ok, widget}
+      {:ok, %{"view" => view}} ->
+        {:ok, view}
 
       err ->
         err
@@ -172,7 +172,7 @@ defmodule ApplicationRunner.ApplicationServices do
   end
 
   defp response({:ok, %Finch.Response{status: 200, body: body}}, key)
-       when key in [:manifest, :widget] do
+       when key in [:manifest, :view] do
     {:ok, Jason.decode!(body)}
   end
 

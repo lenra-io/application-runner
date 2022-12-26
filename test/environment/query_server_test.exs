@@ -5,7 +5,7 @@ defmodule ApplicationRunner.Environment.QueryServerTest do
     MongoInstance,
     QueryDynSup,
     QueryServer,
-    WidgetServer
+    ViewServer
   }
 
   alias QueryParser.Parser
@@ -497,15 +497,15 @@ defmodule ApplicationRunner.Environment.QueryServerTest do
       QueryServer.join_group(pid2, "42")
 
       # BOTH process in Group 1 should receive the change event
-      group1 = WidgetServer.group_name(@env_id, "test", Parser.parse!("{}"))
+      group1 = ViewServer.group_name(@env_id, "test", Parser.parse!("{}"))
       # Group 1 should NOT receive the change event (wrong env_id)
-      group2 = WidgetServer.group_name(@env_id + 1, "test", Parser.parse!("{}"))
+      group2 = ViewServer.group_name(@env_id + 1, "test", Parser.parse!("{}"))
       # Group 1 should NOT receive the change event (wrong coll)
-      group3 = WidgetServer.group_name(@env_id, "test1", Parser.parse!("{}"))
+      group3 = ViewServer.group_name(@env_id, "test1", Parser.parse!("{}"))
       # Group 1 should NOT receive the change event (query does not match)
-      group4 = WidgetServer.group_name(@env_id, "test", Parser.parse!("{\"aaaa\": 1}"))
+      group4 = ViewServer.group_name(@env_id, "test", Parser.parse!("{\"aaaa\": 1}"))
       # Group 1 should receive the change event (query match)
-      group5 = WidgetServer.group_name(@env_id, "test", Parser.parse!("{\"idx\": 1}"))
+      group5 = ViewServer.group_name(@env_id, "test", Parser.parse!("{\"idx\": 1}"))
 
       p1 = spawn_pass_process(:a1)
       p1b = spawn_pass_process(:a1b)
@@ -858,8 +858,8 @@ defmodule ApplicationRunner.Environment.QueryServerTest do
       name = QueryServer.get_name({@env_id, "test", Parser.parse!("{}")})
       new_name = QueryServer.get_name({@env_id, "bar", Parser.parse!("{}")})
 
-      group = WidgetServer.group_name(@env_id, "test", Parser.parse!("{}"))
-      new_group = WidgetServer.group_name(@env_id, "bar", Parser.parse!("{}"))
+      group = ViewServer.group_name(@env_id, "test", Parser.parse!("{}"))
+      new_group = ViewServer.group_name(@env_id, "bar", Parser.parse!("{}"))
       p1 = spawn_pass_process(:p1)
       p2 = spawn_pass_process(:p2)
       Swarm.join(group, p1)

@@ -1,4 +1,4 @@
-defmodule ApplicationRunner.Environment.WidgetUid do
+defmodule ApplicationRunner.Environment.ViewUid do
   @moduledoc """
     This identify a unique widget for a given environment.
   """

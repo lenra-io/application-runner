@@ -4,12 +4,12 @@ defmodule ApplicationRunner.Environment.QueryServer do
     - It get the initial data from the mongo db using coll/query.
     - It wait for the Session Change Event and update the data accordingly
     - It use QueryParser to check if the new data actually match the query.
-    - If the data is updated, it notify the Widget group using Swarm.publish
+    - If the data is updated, it notify the view group using Swarm.publish
   """
   use GenServer
   use SwarmNamed
 
-  alias ApplicationRunner.Environment.WidgetServer
+  alias ApplicationRunner.Environment.ViewServer
   alias ApplicationRunner.MongoStorage
   alias LenraCommon.Errors.DevError
   alias QueryParser.Exec
@@ -52,7 +52,7 @@ defmodule ApplicationRunner.Environment.QueryServer do
   end
 
   @doc """
-    Start monotoring the given WidgetServer
+    Start monotoring the given ViewServer
   """
   def monitor(qs_pid, w_pid) do
     GenServer.call(qs_pid, {:monitor, w_pid})
@@ -283,7 +283,7 @@ defmodule ApplicationRunner.Environment.QueryServer do
          query_parsed: query_parsed,
          coll: coll
        }) do
-    group = WidgetServer.group_name(env_id, coll, query_parsed)
+    group = ViewServer.group_name(env_id, coll, query_parsed)
     Swarm.publish(group, {:data_changed, new_data})
   end
 
@@ -292,12 +292,12 @@ defmodule ApplicationRunner.Environment.QueryServer do
          query_parsed: query_parsed,
          coll: old_coll
        }) do
-    group = WidgetServer.group_name(env_id, old_coll, query_parsed)
+    group = ViewServer.group_name(env_id, old_coll, query_parsed)
     Swarm.publish(group, {:coll_changed, new_coll})
   end
 
-  # If a WidgetServer die, we receive a message here.
-  # If there is no more monitored WidgetServer, we stop this QueryServer.
+  # If a ViewServer die, we receive a message here.
+  # If there is no more monitored ViewServer, we stop this QueryServer.
   def handle_info({:DOWN, _ref, :process, w_pid, _reason}, state) do
     new_w_pids = MapSet.delete(state.w_pids, w_pid)
 

@@ -45,7 +45,7 @@ defmodule ApplicationRunner.Environment.ManifestHandler do
     {:reply, Map.get(state, :manifest), state}
   end
 
-  @default_route %{"/" => %{"type" => "widget", "name" => "main"}}
+  @default_route %{"/" => %{"type" => "view", "name" => "main"}}
   def handle_call(:get_lenra_routes, _from, state) do
     manifest = Map.get(state, :manifest)
 

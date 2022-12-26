@@ -22,7 +22,7 @@ defmodule ApplicationRunner.ComponentCase do
 
       alias ApplicationRunner.Environments.{Manager, Managers}
 
-      @manifest %{"rootWidget" => "root"}
+      @manifest %{"rootView" => "root"}
 
       setup context do
         start_supervised(EnvManagers)
@@ -94,20 +94,20 @@ defmodule ApplicationRunner.ComponentCase do
           %{"action" => _action} ->
             Plug.Conn.resp(conn, 200, "")
 
-          # Widget data key
-          %{"data" => data, "props" => props, "widget" => widget} ->
-            {:ok, widget} = ApplicationRunnerAdapter.get_widget(%{}, widget, data, props)
+          # view data key
+          %{"data" => data, "props" => props, "view" => view} ->
+            {:ok, view} = ApplicationRunnerAdapter.get_view(%{}, view, data, props)
 
             Plug.Conn.resp(
               conn,
               200,
-              Jason.encode!(widget)
+              Jason.encode!(view)
             )
         end
       end
 
       def mock_root_and_run(json, env_id) do
-        ApplicationRunnerAdapter.set_mock(%{widgets: %{"root" => fn _, _ -> json end}})
+        ApplicationRunnerAdapter.set_mock(%{views: %{"root" => fn _, _ -> json end}})
         EnvManager.reload_all_ui(env_id)
       end
 
