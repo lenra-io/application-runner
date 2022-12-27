@@ -6,7 +6,6 @@ defmodule ApplicationRunner.Session.UiBuilders.LenraBuilder do
 
   alias ApplicationRunner.{Environment, JsonSchemata, Session, Ui}
   alias ApplicationRunner.Environment.ViewUid
-  alias ApplicationRunner.MongoStorage.MongoUserLink
   alias ApplicationRunner.Session.RouteServer
   alias ApplicationRunner.Session.UiBuilders.UiBuilderAdapter
   alias LenraCommon.Errors
@@ -140,57 +139,6 @@ defmodule ApplicationRunner.Session.UiBuilders.LenraBuilder do
         new_app_context
       }
     end
-  end
-
-  @spec create_view_uid(
-          Session.Metadata.t(),
-          binary(),
-          binary() | nil,
-          map() | nil,
-          map() | nil,
-          map(),
-          binary()
-        ) :: {:ok, ViewUid.t()} | {:error, LenraCommon.Errors.BusinessError.t()}
-  defp create_view_uid(session_metadata, name, coll, query, props, context, prefix_path) do
-    %MongoUserLink{mongo_user_id: mongo_user_id} =
-      MongoStorage.get_mongo_user_link!(session_metadata.env_id, session_metadata.user_id)
-
-    params = %{"me" => mongo_user_id}
-    query_transformed = Parser.replace_params(query, params)
-
-    with {:ok, query_parsed} <- parse_query(query, params) do
-      {:ok,
-       %ViewUid{
-         name: name,
-         props: props,
-         prefix_path: "#{prefix_path}\n@view:#{name}",
-         query_parsed: query_parsed,
-         query_transformed: query_transformed,
-         coll: coll,
-         context: context
-       }}
-    end
-  end
-
-  # The Parser.parse function propagate a wrong warning.
-  # Probably due to a bug in the parser grammar.
-  # I don't know how to fix this so i just ignore the error...
-  # @dialyzer {:nowarn_function, parse_query: 2}
-  defp parse_query(query, params) when not is_nil(query) do
-    query
-    |> Jason.encode!()
-    |> Parser.parse(params)
-    |> case do
-      {:ok, res} ->
-        {:ok, MongoStorage.decode_ids(res)}
-
-      {:error, reason} ->
-        {:error, reason}
-    end
-  end
-
-  defp parse_query(nil, _params) do
-    {:ok, nil}
   end
 
   # Build a components means to :
