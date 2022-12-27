@@ -9,11 +9,11 @@ defmodule ApplicationRunner.Monitor.SessionMonitor do
   alias ApplicationRunner.Telemetry
 
   def monitor(pid, metadata) do
-    GenServer.call({:via, :swarm, __MODULE__}, {:monitor, pid, metadata})
+    GenServer.call(__MODULE__, {:monitor, pid, metadata})
   end
 
   def start_link(_opts) do
-    GenServer.start_link(__MODULE__, [], name: {:via, :swarm, __MODULE__})
+    GenServer.start_link(__MODULE__, [], name: __MODULE__)
   end
 
   def init(_) do
@@ -34,9 +34,5 @@ defmodule ApplicationRunner.Monitor.SessionMonitor do
     Telemetry.stop(:app_session, start_time, metadata)
 
     {:noreply, new_state}
-  end
-
-  def handle_info({:swarm, :die}, _state) do
-    {:error, {:already_started, Swarm.whereis_name({:via, :swarm, __MODULE__})}}
   end
 end
