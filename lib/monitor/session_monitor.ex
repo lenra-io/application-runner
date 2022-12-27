@@ -35,4 +35,8 @@ defmodule ApplicationRunner.Monitor.SessionMonitor do
 
     {:noreply, new_state}
   end
+
+  def handle_info({:swarm, :die}, state) do
+    {:stop, :shutdown, state}
+  end
 end
