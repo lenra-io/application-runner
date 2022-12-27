@@ -36,7 +36,7 @@ defmodule ApplicationRunner.Monitor.SessionMonitor do
     {:noreply, new_state}
   end
 
-  def handle_info({:swarm, :die}, state) do
-    {:stop, :shutdown, state}
+  def handle_info({:swarm, :die}, _state) do
+    {:error, {:already_started, Swarm.whereis_name({:via, :swarm, __MODULE__})}}
   end
 end
