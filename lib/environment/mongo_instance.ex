@@ -13,6 +13,7 @@ defmodule ApplicationRunner.Environment.MongoInstance do
     [
       url: "#{mongo_url}/#{database_name}",
       name: get_full_name(env_id),
+      auth_source: Application.get_env(:application_runner, :mongo_auth_source, database_name),
       pool_size: 10
     ]
   end
