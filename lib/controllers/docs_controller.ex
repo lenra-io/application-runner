@@ -102,4 +102,88 @@ defmodule ApplicationRunner.DocsController do
       reply(conn, docs)
     end
   end
+
+  ###############
+  # Transaction #
+  ###############
+
+  def transaction(conn, _params, _body_params, %{environment: env}, _replace_params) do
+    with {:ok, session_uuid} <- MongoStorage.start_transaction(env.id) do
+      reply(conn, session_uuid)
+    end
+  end
+
+  def commit_transaction(
+        conn,
+        %{"session_id" => session_id},
+        _body_params,
+        %{environment: env},
+        _replace_params
+      ) do
+    with :ok <- MongoStorage.commit_transaction(session_id, env.id) do
+      reply(conn)
+    end
+  end
+
+  def abort_transaction(
+        conn,
+        %{"session_id" => session_id},
+        _body_params,
+        %{environment: env},
+        _replace_params
+      ) do
+    with :ok <- MongoStorage.revert_transaction(session_id, env.id) do
+      reply(conn)
+    end
+  end
+
+  def create_transaction(
+        conn,
+        %{"coll" => coll, "session_id" => session_id},
+        doc,
+        %{environment: env},
+        replace_params
+      ) do
+    with filtered_doc <- Map.delete(doc, "_id"),
+         {:ok, docs} <-
+           MongoStorage.create_doc(
+             env.id,
+             coll,
+             Parser.replace_params(filtered_doc, replace_params),
+             session_id
+           ) do
+      reply(conn, docs)
+    end
+  end
+
+  def update_transaction(
+        conn,
+        %{"coll" => coll, "session_id" => session_id, "docId" => doc_id},
+        new_doc,
+        %{environment: env},
+        replace_params
+      ) do
+    with {:ok, docs} <-
+           MongoStorage.update_doc(
+             env.id,
+             coll,
+             doc_id,
+             Parser.replace_params(new_doc, replace_params),
+             session_id
+           ) do
+      reply(conn, docs)
+    end
+  end
+
+  def delete_transaction(
+        conn,
+        %{"coll" => coll, "docId" => doc_id, "session_id" => session_id},
+        _body_params,
+        %{environment: env},
+        _replace_params
+      ) do
+    with :ok <- MongoStorage.delete_doc(env.id, coll, doc_id, session_id) do
+      reply(conn)
+    end
+  end
 end
