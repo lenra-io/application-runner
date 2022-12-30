@@ -5,7 +5,6 @@ defmodule ApplicationRunner.MongoStorage do
   """
   import Ecto.Query, only: [from: 2]
 
-  alias Inspect.PID
   alias ApplicationRunner.Contract
   alias ApplicationRunner.Environment
   alias ApplicationRunner.Errors.BusinessError
@@ -74,12 +73,12 @@ defmodule ApplicationRunner.MongoStorage do
 
   @spec create_doc(number(), String.t(), map(), any()) ::
           {:ok, map()} | {:error, TechnicalErrorType.t()}
-  def create_doc(env_id, coll, doc, session_uuid \\ nil) do
+  def create_doc(env_id, coll, doc) do
     decoded_doc = decode_ids(doc)
 
     env_id
     |> mongo_instance()
-    |> handle_create_doc(session_uuid, coll, decoded_doc)
+    |> Mongo.insert_one(coll, decoded_doc)
     |> case do
       {:error, err} ->
         TechnicalError.mongo_error_tuple(err)
@@ -89,13 +88,18 @@ defmodule ApplicationRunner.MongoStorage do
     end
   end
 
-  defp handle_create_doc(pipe, session_uuid, coll, decoded_doc) do
-    if session_uuid != nil do
-      pipe
-      |> Mongo.insert_one(coll, decoded_doc, session: Swarm.whereis_name(session_uuid))
-    else
-      pipe
-      |> Mongo.insert_one(coll, decoded_doc)
+  def create_doc(env_id, coll, doc, session_uuid) do
+    decoded_doc = decode_ids(doc)
+
+    env_id
+    |> mongo_instance()
+    |> Mongo.insert_one(coll, decoded_doc, session: Swarm.whereis_name(session_uuid))
+    |> case do
+      {:error, err} ->
+        TechnicalError.mongo_error_tuple(err)
+
+      {:ok, res} ->
+        {:ok, Map.put(doc, "_id", res.inserted_id)}
     end
   end
 
@@ -151,15 +155,15 @@ defmodule ApplicationRunner.MongoStorage do
     end
   end
 
-  @spec update_doc(number(), String.t(), String.t(), map(), any()) ::
+  @spec update_doc(number(), String.t(), String.t(), map()) ::
           {:ok, map()} | {:error, TechnicalErrorType.t()}
-  def update_doc(env_id, coll, doc_id, new_doc, session_uuid \\ nil) do
+  def update_doc(env_id, coll, doc_id, new_doc) do
     with {:ok, bson_doc_id} <- decode_object_id(doc_id),
          decoded_doc <- decode_ids(new_doc),
          {_value, filtered_doc} <- Map.pop(decoded_doc, "_id") do
       env_id
       |> mongo_instance()
-      |> handle_update_doc(session_uuid, coll, bson_doc_id, filtered_doc)
+      |> Mongo.replace_one(coll, %{"_id" => bson_doc_id}, filtered_doc)
       |> case do
         {:error, err} ->
           TechnicalError.mongo_error_tuple(err)
@@ -170,24 +174,31 @@ defmodule ApplicationRunner.MongoStorage do
     end
   end
 
-  defp handle_update_doc(pipe, session_uuid, coll, bson_doc_id, filtered_doc) do
-    if session_uuid != nil do
-      pipe
+  def update_doc(env_id, coll, doc_id, new_doc, session_uuid) do
+    with {:ok, bson_doc_id} <- decode_object_id(doc_id),
+         decoded_doc <- decode_ids(new_doc),
+         {_value, filtered_doc} <- Map.pop(decoded_doc, "_id") do
+      env_id
+      |> mongo_instance()
       |> Mongo.replace_one(coll, %{"_id" => bson_doc_id}, filtered_doc,
         session: Swarm.whereis_name(session_uuid)
       )
-    else
-      pipe
-      |> Mongo.replace_one(coll, %{"_id" => bson_doc_id}, filtered_doc)
+      |> case do
+        {:error, err} ->
+          TechnicalError.mongo_error_tuple(err)
+
+        _res ->
+          {:ok, Map.put(decoded_doc, "_id", bson_doc_id)}
+      end
     end
   end
 
   @spec delete_doc(number(), String.t(), String.t()) :: :ok | {:error, TechnicalErrorType.t()}
-  def delete_doc(env_id, coll, doc_id, session_uuid \\ nil) do
+  def delete_doc(env_id, coll, doc_id) do
     with {:ok, bson_doc_id} <- decode_object_id(doc_id) do
       env_id
       |> mongo_instance()
-      |> handle_delete_doc(session_uuid, coll, bson_doc_id)
+      |> Mongo.delete_one(coll, %{"_id" => bson_doc_id})
       |> case do
         {:error, err} ->
           TechnicalError.mongo_error_tuple(err)
@@ -198,13 +209,18 @@ defmodule ApplicationRunner.MongoStorage do
     end
   end
 
-  defp handle_delete_doc(pipe, session_uuid, coll, bson_doc_id) do
-    if session_uuid != nil do
-      pipe
+  def delete_doc(env_id, coll, doc_id, session_uuid) do
+    with {:ok, bson_doc_id} <- decode_object_id(doc_id) do
+      env_id
+      |> mongo_instance()
       |> Mongo.delete_one(coll, %{"_id" => bson_doc_id}, session: Swarm.whereis_name(session_uuid))
-    else
-      pipe
-      |> Mongo.delete_one(coll, %{"_id" => bson_doc_id})
+      |> case do
+        {:error, err} ->
+          TechnicalError.mongo_error_tuple(err)
+
+        _res ->
+          :ok
+      end
     end
   end
 
