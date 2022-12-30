@@ -1,9 +1,9 @@
 defmodule ApplicationRunner.MongoStorageTest do
   use ApplicationRunner.ConnCase, async: false
 
-  alias ApplicationRunner.MongoStorage
-  alias ApplicationRunner.Errors.BusinessError
   alias ApplicationRunner.Environment.MongoInstance
+  alias ApplicationRunner.Errors.BusinessError
+  alias ApplicationRunner.MongoStorage
 
   defp setup_mongo(env_id, coll) do
     Mongo.start_link(MongoInstance.config(env_id))
@@ -40,7 +40,7 @@ defmodule ApplicationRunner.MongoStorageTest do
 
       assert :ok = MongoStorage.commit_transaction(uuid, env_id)
 
-      {:ok, docs} = MongoStorage.fetch_all_docs(env_id, "test") |> IO.inspect()
+      {:ok, docs} = MongoStorage.fetch_all_docs(env_id, "test")
 
       assert length(docs) == 1
 
@@ -103,7 +103,7 @@ defmodule ApplicationRunner.MongoStorageTest do
 
       {:ok, docs} = MongoStorage.fetch_all_docs(env_id, "test")
 
-      assert length(docs) == 0
+      assert Enum.empty?(docs)
     end
   end
 
