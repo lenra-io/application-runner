@@ -22,8 +22,7 @@ defmodule ApplicationRunner.Errors.BusinessError do
       {:invalid_channel_name, "The given channel name does not exist."},
       {:components_malformated,
        "The components was malformated, check metadata for more details"},
-      {:error_during_transaction_start,
-       "An error occured during transaction start."},
+      {:error_during_transaction_start, "An error occured during transaction start."},
       {:mongo_not_started, "Mongo is not started for the given env_id"}
     ]
 end
