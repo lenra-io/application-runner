@@ -8,10 +8,16 @@ defmodule ApplicationRunner.Environment.MongoInstance do
 
   def config(env_id) do
     database_name = @env <> "_#{env_id}"
-    mongo_url = Application.fetch_env!(:application_runner, :mongo_url)
+
+    mongo_config = Application.fetch_env!(:application_runner, :mongo)
 
     [
-      url: "#{mongo_url}/#{database_name}",
+      hostname: mongo_config[:hostname],
+      port: mongo_config[:port],
+      database: database_name,
+      username: mongo_config[:username],
+      password: mongo_config[:password],
+      ssl: mongo_config[:ssl],
       name: get_full_name(env_id),
       pool_size: 10
     ]
