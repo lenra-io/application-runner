@@ -10,10 +10,11 @@ defmodule ApplicationRunner.Environment.MongoInstance do
     database_name = @env <> "_#{env_id}"
 
     mongo_config = Application.fetch_env!(:application_runner, :mongo)
+    {port, _} = Integer.parse(mongo_config[:port])
 
     [
       hostname: mongo_config[:hostname],
-      port: mongo_config[:port],
+      port: port,
       database: database_name,
       username: mongo_config[:username],
       password: mongo_config[:password],

@@ -25,8 +25,6 @@ config :application_runner,
 config :application_runner, :mongo,
   hostname: "localhost",
   port: "27017",
-  username: "",
-  password: "",
   ssl: false
 
 config :application_runner, ApplicationRunner.Repo,
