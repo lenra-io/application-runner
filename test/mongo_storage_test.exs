@@ -17,26 +17,30 @@ defmodule ApplicationRunner.MongoStorageTest do
     end
 
     test "should return error if mongo not started" do
+      env_id = Ecto.UUID.generate()
+
       assert {:noproc,
               {GenServer, :call,
                [
-                 {:via, :swarm, {ApplicationRunner.Environment.MongoInstance, 1}},
+                 {:via, :swarm, {ApplicationRunner.Environment.MongoInstance, env_id}},
                  _any,
                  _timeout
-               ]}} = catch_exit(MongoStorage.start_transaction(1))
+               ]}} = catch_exit(MongoStorage.start_transaction(env_id))
     end
   end
 
   describe "create_doc" do
     test "create doc should create doc if transaction accepted" do
-      setup_mongo(1, "test")
-      assert {:ok, uuid} = MongoStorage.start_transaction(1)
+      env_id = Ecto.UUID.generate()
 
-      assert {:ok, doc} = MongoStorage.create_doc(1, "test", %{test: "test"}, uuid)
+      setup_mongo(env_id, "test")
+      assert {:ok, uuid} = MongoStorage.start_transaction(env_id)
 
-      assert :ok = MongoStorage.commit_transaction(uuid, 1)
+      assert {:ok, doc} = MongoStorage.create_doc(env_id, "test", %{test: "test"}, uuid)
 
-      {:ok, docs} = MongoStorage.fetch_all_docs(1, "test") |> IO.inspect()
+      assert :ok = MongoStorage.commit_transaction(uuid, env_id)
+
+      {:ok, docs} = MongoStorage.fetch_all_docs(env_id, "test") |> IO.inspect()
 
       assert length(docs) == 1
 
@@ -44,23 +48,27 @@ defmodule ApplicationRunner.MongoStorageTest do
     end
 
     test "create doc should return error if uuid is incorrect" do
-      setup_mongo(1, "test")
-      assert {:ok, uuid} = MongoStorage.start_transaction(1)
+      env_id = Ecto.UUID.generate()
 
-      assert :badarg = catch_error(MongoStorage.create_doc(1, "test", %{test: "test"}, -1))
+      setup_mongo(env_id, "test")
+      assert {:ok, uuid} = MongoStorage.start_transaction(env_id)
+
+      assert :badarg = catch_error(MongoStorage.create_doc(env_id, "test", %{test: "test"}, -1))
     end
   end
 
   describe "update_doc" do
     test "should add update" do
-      setup_mongo(1, "test")
-      assert {:ok, uuid} = MongoStorage.start_transaction(1)
+      env_id = Ecto.UUID.generate()
 
-      {:ok, %{"_id" => doc_id}} = MongoStorage.create_doc(1, "test", %{test: "test"})
+      setup_mongo(env_id, "test")
+      assert {:ok, uuid} = MongoStorage.start_transaction(env_id)
+
+      {:ok, %{"_id" => doc_id}} = MongoStorage.create_doc(env_id, "test", %{test: "test"})
 
       assert {:ok, updated_doc} =
                MongoStorage.update_doc(
-                 1,
+                 env_id,
                  "test",
                  Jason.encode!(doc_id) |> Jason.decode!(),
                  %{
@@ -69,9 +77,9 @@ defmodule ApplicationRunner.MongoStorageTest do
                  uuid
                )
 
-      assert :ok = MongoStorage.commit_transaction(uuid, 1)
+      assert :ok = MongoStorage.commit_transaction(uuid, env_id)
 
-      {:ok, docs} = MongoStorage.fetch_all_docs(1, "test")
+      {:ok, docs} = MongoStorage.fetch_all_docs(env_id, "test")
 
       assert length(docs) == 1
 
@@ -81,17 +89,19 @@ defmodule ApplicationRunner.MongoStorageTest do
 
   describe "delete_doc" do
     test "should add delete" do
-      setup_mongo(1, "test")
-      assert {:ok, uuid} = MongoStorage.start_transaction(1)
+      env_id = Ecto.UUID.generate()
 
-      {:ok, %{"_id" => doc_id}} = MongoStorage.create_doc(1, "test", %{test: "test"})
+      setup_mongo(env_id, "test")
+      assert {:ok, uuid} = MongoStorage.start_transaction(env_id)
+
+      {:ok, %{"_id" => doc_id}} = MongoStorage.create_doc(env_id, "test", %{test: "test"})
 
       assert :ok =
                MongoStorage.delete_doc(1, "test", Jason.encode!(doc_id) |> Jason.decode!(), uuid)
 
-      assert :ok = MongoStorage.commit_transaction(uuid, 1)
+      assert :ok = MongoStorage.commit_transaction(uuid, env_id)
 
-      {:ok, docs} = MongoStorage.fetch_all_docs(1, "test")
+      {:ok, docs} = MongoStorage.fetch_all_docs(env_id, "test")
 
       assert length(docs) == 0
     end
@@ -99,14 +109,16 @@ defmodule ApplicationRunner.MongoStorageTest do
 
   describe "revert_transaction" do
     test "should revert update" do
-      setup_mongo(1, "test")
-      assert {:ok, uuid} = MongoStorage.start_transaction(1)
+      env_id = Ecto.UUID.generate()
 
-      {:ok, %{"_id" => doc_id}} = MongoStorage.create_doc(1, "test", %{test: "test"})
+      setup_mongo(env_id, "test")
+      assert {:ok, uuid} = MongoStorage.start_transaction(env_id)
+
+      {:ok, %{"_id" => doc_id}} = MongoStorage.create_doc(env_id, "test", %{test: "test"})
 
       assert {:ok, updated_doc} =
                MongoStorage.update_doc(
-                 1,
+                 env_id,
                  "test",
                  Jason.encode!(doc_id) |> Jason.decode!(),
                  %{
@@ -115,9 +127,9 @@ defmodule ApplicationRunner.MongoStorageTest do
                  uuid
                )
 
-      assert :ok = MongoStorage.revert_transaction(uuid, 1)
+      assert :ok = MongoStorage.revert_transaction(uuid, env_id)
 
-      {:ok, docs} = MongoStorage.fetch_all_docs(1, "test")
+      {:ok, docs} = MongoStorage.fetch_all_docs(env_id, "test")
 
       assert length(docs) == 1
 
