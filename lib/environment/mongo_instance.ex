@@ -20,7 +20,7 @@ defmodule ApplicationRunner.Environment.MongoInstance do
       password: mongo_config[:password],
       ssl: mongo_config[:ssl],
       name: get_full_name(env_id),
-      auth_source: System.get_env("MONGO_AUTH_SOURCE", database_name),
+      auth_source: mongo_config[:auth_source],
       pool_size: 10
     ]
   end
