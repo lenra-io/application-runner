@@ -234,7 +234,9 @@ defmodule ApplicationRunner.Environment.QueryServer do
   end
 
   defp change_data("insert", full_doc, doc_id, data, map_data, query_parsed, state) do
-    if Exec.match?(full_doc, query_parsed) do
+    parsed_query = filter_bson_id(query_parsed)
+
+    if Exec.match?(full_doc, parsed_query) do
       new_map_data = Map.put(map_data, doc_id, full_doc)
       new_data = from_map_data(new_map_data)
       notify_data_changed(new_data, state)
@@ -246,7 +248,9 @@ defmodule ApplicationRunner.Environment.QueryServer do
 
   defp change_data(op_type, full_doc, doc_id, data, map_data, query_parsed, state)
        when op_type in ["update", "replace"] do
-    if Exec.match?(full_doc, query_parsed) do
+    parsed_query = filter_bson_id(query_parsed)
+
+    if Exec.match?(full_doc, parsed_query) do
       new_map_data = Map.put(map_data, doc_id, full_doc)
       new_data = from_map_data(new_map_data)
 
@@ -276,6 +280,45 @@ defmodule ApplicationRunner.Environment.QueryServer do
   defp change_data(op_type, _full_doc, _doc_id, _data, _map_data, _query_parsed, state) do
     Logger.debug("Ingore event #{op_type}")
     {:reply, :ok, state}
+  end
+
+  @object_id_regex ~r/^ObjectId\(([[:xdigit:]]{24})\)$/
+
+  defp filter_bson_id(map) when is_map(map) do
+    Map.map(map, fn {_key, value} ->
+      handle_filter_bson_id(value)
+    end)
+  end
+
+  defp filter_bson_id(map) when is_list(map) do
+    Enum.map(map, fn value ->
+      handle_filter_bson_id(value)
+    end)
+  end
+
+  defp handle_filter_bson_id(value) do
+    case value do
+      str when is_bitstring(str) ->
+        case Regex.run(@object_id_regex, str) do
+          nil ->
+            str
+
+          [_, hex_id] ->
+            case BSON.ObjectId.decode!(hex_id) do
+              res ->
+                res
+            end
+        end
+
+      sub_map when is_map(sub_map) ->
+        filter_bson_id(sub_map)
+
+      sub_list when is_list(sub_list) ->
+        filter_bson_id(sub_list)
+
+      value ->
+        value
+    end
   end
 
   defp notify_data_changed(new_data, %{
