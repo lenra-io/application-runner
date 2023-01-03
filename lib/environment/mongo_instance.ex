@@ -16,7 +16,7 @@ defmodule ApplicationRunner.Environment.MongoInstance do
     case Integer.parse(mongo_config[:port]) do
       {port, _} ->
         [
-          hostname: mongo_config[:hostname],
+          hostname: "mongodb://" <> mongo_config[:hostname],
           port: port,
           database: database_name,
           username: mongo_config[:username],
