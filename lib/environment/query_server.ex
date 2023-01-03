@@ -304,10 +304,7 @@ defmodule ApplicationRunner.Environment.QueryServer do
             str
 
           [_, hex_id] ->
-            case BSON.ObjectId.decode!(hex_id) do
-              res ->
-                res
-            end
+            BSON.ObjectId.decode!(hex_id)
         end
 
       sub_map when is_map(sub_map) ->
