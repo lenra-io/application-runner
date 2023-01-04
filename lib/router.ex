@@ -38,6 +38,8 @@ defmodule ApplicationRunner.Router do
         post("/transacation/:session_id/abort", DocsController, :abort_transaction)
 
         post("/webhooks", Webhooks.WebhooksController, :create)
+
+        post("/notify", NotificationController, :notify)
       end
 
       scope "/", ApplicationRunner do
