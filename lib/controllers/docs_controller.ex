@@ -1,10 +1,10 @@
 defmodule ApplicationRunner.DocsController do
   use ApplicationRunner, :controller
 
+  alias ApplicationRunner.Environment.MongoInstance
   alias ApplicationRunner.{Guardian.AppGuardian, MongoStorage}
   alias LenraCommon.Errors.DevError
   alias QueryParser.Parser
-  alias ApplicationRunner.Environment.MongoInstance
 
   require Logger
 

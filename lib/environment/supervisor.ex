@@ -5,8 +5,8 @@ defmodule ApplicationRunner.Environment.Supervisor do
   use Supervisor
   use SwarmNamed
 
-  alias ApplicationRunner.Environment.MongoInstance
   alias ApplicationRunner.Environment
+  alias ApplicationRunner.Environment.MongoInstance
   alias ApplicationRunner.Session
 
   def start_link(%Environment.Metadata{} = env_metadata) do
