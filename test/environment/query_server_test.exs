@@ -143,6 +143,14 @@ defmodule ApplicationRunner.Environment.QueryServerTest do
         MongoInstance.config(@env_id)
       })
 
+    start_supervised(
+      {Task.Supervisor,
+       name:
+         {:via, :swarm,
+          {ApplicationRunner.Environment.MongoInstance.TaskSupervisor,
+           MongoInstance.get_name(@env_id)}}}
+    )
+
     Mongo.drop_collection(mongo_name, "test")
 
     # Register self in swarm to allow grouping
@@ -156,6 +164,11 @@ defmodule ApplicationRunner.Environment.QueryServerTest do
       Swarm.unregister_name(:test_process)
       Swarm.unregister_name(QueryDynSup.get_name(@env_id))
       Swarm.unregister_name(MongoInstance.get_name(@env_id))
+
+      Swarm.unregister_name(
+        {ApplicationRunner.Environment.MongoInstance.TaskSupervisor,
+         MongoInstance.get_name(@env_id)}
+      )
     end)
 
     {:ok, %{mongo_name: mongo_name}}

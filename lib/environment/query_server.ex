@@ -9,7 +9,7 @@ defmodule ApplicationRunner.Environment.QueryServer do
   use GenServer
   use SwarmNamed
 
-  alias ApplicationRunner.Environment.ViewServer
+  alias ApplicationRunner.Environment.{MongoInstance, ViewServer}
   alias ApplicationRunner.MongoStorage
   alias LenraCommon.Errors.DevError
   alias QueryParser.Exec
@@ -101,7 +101,11 @@ defmodule ApplicationRunner.Environment.QueryServer do
   end
 
   defp fetch_initial_data(env_id, coll, query_transformed) do
-    MongoStorage.filter_docs(env_id, coll, query_transformed)
+    MongoInstance.run_mongo_task(env_id, MongoStorage, :filter_docs, [
+      env_id,
+      coll,
+      query_transformed
+    ])
   end
 
   def handle_call(
