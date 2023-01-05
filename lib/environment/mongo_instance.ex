@@ -33,6 +33,15 @@ defmodule ApplicationRunner.Environment.MongoInstance do
         raise error
     end
   end
+
+  def run_mongo_task(env_id, mod, fun, opts) do
+    Task.Supervisor.async(
+      {:via, :swarm,
+       {ApplicationRunner.Environment.MongoInstance.TaskSupervisor, get_name(env_id)}},
+      fn -> Kernel.apply(mod, fun, opts) end
+    )
+    |> Task.await()
+  end
 end
 
 defimpl Jason.Encoder, for: BSON.ObjectId do

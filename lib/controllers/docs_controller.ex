@@ -4,6 +4,7 @@ defmodule ApplicationRunner.DocsController do
   alias ApplicationRunner.{Guardian.AppGuardian, MongoStorage}
   alias LenraCommon.Errors.DevError
   alias QueryParser.Parser
+  alias ApplicationRunner.Environment.MongoInstance
 
   require Logger
 
@@ -39,17 +40,19 @@ defmodule ApplicationRunner.DocsController do
         _replace_params
       ) do
     with {:ok, doc} <-
-           MongoStorage.fetch_doc(
+           MongoInstance.run_mongo_task(
              env.id,
-             coll,
-             doc_id
+             MongoStorage,
+             :fetch_doc,
+             [env.id, coll, doc_id]
            ) do
       reply(conn, doc)
     end
   end
 
   def get_all(conn, %{"coll" => coll}, _body_params, %{environment: env}, _replace_params) do
-    with {:ok, docs} <- MongoStorage.fetch_all_docs(env.id, coll) do
+    with {:ok, docs} <-
+           MongoInstance.run_mongo_task(env.id, MongoStorage, :fetch_all_docs, [env.id, coll]) do
       reply(conn, docs)
     end
   end
@@ -57,11 +60,11 @@ defmodule ApplicationRunner.DocsController do
   def create(conn, %{"coll" => coll}, doc, %{environment: env}, replace_params) do
     with filtered_doc <- Map.delete(doc, "_id"),
          {:ok, docs} <-
-           MongoStorage.create_doc(
+           MongoInstance.run_mongo_task(env.id, MongoStorage, :create_doc, [
              env.id,
              coll,
              Parser.replace_params(filtered_doc, replace_params)
-           ) do
+           ]) do
       reply(conn, docs)
     end
   end
@@ -74,12 +77,12 @@ defmodule ApplicationRunner.DocsController do
         replace_params
       ) do
     with {:ok, docs} <-
-           MongoStorage.update_doc(
+           MongoInstance.run_mongo_task(env.id, MongoStorage, :update_doc, [
              env.id,
              coll,
              doc_id,
              Parser.replace_params(new_doc, replace_params)
-           ) do
+           ]) do
       reply(conn, docs)
     end
   end
@@ -91,14 +94,19 @@ defmodule ApplicationRunner.DocsController do
         %{environment: env},
         _replace_params
       ) do
-    with :ok <- MongoStorage.delete_doc(env.id, coll, doc_id) do
+    with :ok <-
+           MongoInstance.run_mongo_task(env.id, MongoStorage, :delete_doc, [env.id, coll, doc_id]) do
       reply(conn)
     end
   end
 
   def find(conn, %{"coll" => coll}, filter, %{environment: env}, replace_params) do
     with {:ok, docs} <-
-           MongoStorage.filter_docs(env.id, coll, Parser.replace_params(filter, replace_params)) do
+           MongoInstance.run_mongo_task(env.id, MongoStorage, :filter_docs, [
+             env.id,
+             coll,
+             Parser.replace_params(filter, replace_params)
+           ]) do
       reply(conn, docs)
     end
   end
@@ -108,7 +116,8 @@ defmodule ApplicationRunner.DocsController do
   ###############
 
   def transaction(conn, _params, _body_params, %{environment: env}, _replace_params) do
-    with {:ok, session_uuid} <- MongoStorage.start_transaction(env.id) do
+    with {:ok, session_uuid} <-
+           MongoInstance.run_mongo_task(env.id, MongoStorage, :start_transaction, [env.id]) do
       reply(conn, session_uuid)
     end
   end
@@ -120,7 +129,11 @@ defmodule ApplicationRunner.DocsController do
         %{environment: env},
         _replace_params
       ) do
-    with :ok <- MongoStorage.commit_transaction(session_id, env.id) do
+    with :ok <-
+           MongoInstance.run_mongo_task(env.id, MongoStorage, :commit_transaction, [
+             session_id,
+             env.id
+           ]) do
       reply(conn)
     end
   end
@@ -132,7 +145,11 @@ defmodule ApplicationRunner.DocsController do
         %{environment: env},
         _replace_params
       ) do
-    with :ok <- MongoStorage.revert_transaction(session_id, env.id) do
+    with :ok <-
+           MongoInstance.run_mongo_task(env.id, MongoStorage, :revert_transaction, [
+             session_id,
+             env.id
+           ]) do
       reply(conn)
     end
   end
@@ -146,12 +163,12 @@ defmodule ApplicationRunner.DocsController do
       ) do
     with filtered_doc <- Map.delete(doc, "_id"),
          {:ok, docs} <-
-           MongoStorage.create_doc(
+           MongoInstance.run_mongo_task(env.id, MongoStorage, :create_doc, [
              env.id,
              coll,
              Parser.replace_params(filtered_doc, replace_params),
              session_id
-           ) do
+           ]) do
       reply(conn, docs)
     end
   end
@@ -164,13 +181,13 @@ defmodule ApplicationRunner.DocsController do
         replace_params
       ) do
     with {:ok, docs} <-
-           MongoStorage.update_doc(
+           MongoInstance.run_mongo_task(env.id, MongoStorage, :update_doc, [
              env.id,
              coll,
              doc_id,
              Parser.replace_params(new_doc, replace_params),
              session_id
-           ) do
+           ]) do
       reply(conn, docs)
     end
   end
@@ -182,7 +199,13 @@ defmodule ApplicationRunner.DocsController do
         %{environment: env},
         _replace_params
       ) do
-    with :ok <- MongoStorage.delete_doc(env.id, coll, doc_id, session_id) do
+    with :ok <-
+           MongoInstance.run_mongo_task(env.id, MongoStorage, :delete_doc, [
+             env.id,
+             coll,
+             doc_id,
+             session_id
+           ]) do
       reply(conn)
     end
   end
