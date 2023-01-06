@@ -16,6 +16,9 @@ config :application_runner,
   query_inactivity_timeout: 1000 * 60 * 10,
   # 1 hour
   listeners_timeout: 1 * 60 * 60 * 1000,
+  # 30 s
+  view_timeout: 1 * 30 * 1000,
+  manifest_timeout: 1 * 30 * 1000,
   lenra_environment_table: "environments",
   lenra_user_table: "users",
   repo: ApplicationRunner.Repo,

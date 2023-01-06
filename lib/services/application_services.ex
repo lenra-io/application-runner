@@ -82,7 +82,9 @@ defmodule ApplicationRunner.ApplicationServices do
     body = Jason.encode!(%{view: view_name, data: data, props: props, context: context})
 
     Finch.build(:post, url, headers, body)
-    |> Finch.request(AppHttp, receive_timeout: 1000)
+    |> Finch.request(AppHttp,
+      receive_timeout: Application.fetch_env!(:application_runner, :view_timeout)
+    )
     |> response(:view)
     |> case do
       {:ok, %{"view" => view}} ->
@@ -101,7 +103,9 @@ defmodule ApplicationRunner.ApplicationServices do
     headers = [{"Content-Type", "application/json"} | base_headers]
 
     Finch.build(:post, url, headers)
-    |> Finch.request(AppHttp, receive_timeout: 1000)
+    |> Finch.request(AppHttp,
+      receive_timeout: Application.fetch_env!(:application_runner, :manifest_timeout)
+    )
     |> response(:manifest)
     |> case do
       {:ok, %{"manifest" => manifest}} ->
