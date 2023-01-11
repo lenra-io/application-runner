@@ -78,6 +78,10 @@ defmodule ApplicationRunner.Environment.ViewServer do
     end
   end
 
+  def handle_info(:timeout, state) do
+    {:stop, :normal, state}
+  end
+
   @impl true
   def handle_call(:fetch_view!, _from, state) do
     {:reply, Map.fetch!(state, :view), state, @inactivity_timeout}
