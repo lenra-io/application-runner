@@ -7,7 +7,7 @@ defmodule ApplicationRunner.Environment.ViewDynSupTest do
     ViewUid
   }
 
-  alias ApplicationRunner.{Contract, Environment, Telemetry}
+  alias ApplicationRunner.{Contract, Environment}
   alias ApplicationRunner.Guardian.AppGuardian
   alias QueryParser.Parser
 
@@ -23,10 +23,10 @@ defmodule ApplicationRunner.Environment.ViewDynSupTest do
     Bypass.open(port: 1234)
     |> Bypass.stub("POST", "/function/#{@function_name}", &handle_resp/1)
 
-    {:ok, token, claims} = AppGuardian.encode_and_sign(env_id, %{type: "env", env_id: env_id})
+    {:ok, token, _claims} = AppGuardian.encode_and_sign(env_id, %{type: "env", env_id: env_id})
 
     env_metadata = %Environment.Metadata{
-      env_id: @env_id,
+      env_id: env_id,
       function_name: @function_name,
       token: token
     }
@@ -34,10 +34,10 @@ defmodule ApplicationRunner.Environment.ViewDynSupTest do
     {:ok, _pid} = start_supervised({Environment.Supervisor, env_metadata})
 
     on_exit(fn ->
-      Swarm.unregister_name(Environment.Supervisor.get_name(@env_id))
+      Swarm.unregister_name(Environment.Supervisor.get_name(env_id))
     end)
 
-    :ok
+    {:ok, env_id: env_id}
   end
 
   defp handle_resp(conn) do
@@ -57,7 +57,7 @@ defmodule ApplicationRunner.Environment.ViewDynSupTest do
   end
 
   describe "ApplicationRunner.Environments.ViewDynSup.ensure_child_started/2" do
-    test "should start view genserver with valid opts" do
+    test "should start view genserver with valid opts", %{env_id: env_id} do
       view_uid = %ViewUid{
         name: "test",
         coll: "testcoll",
@@ -67,17 +67,17 @@ defmodule ApplicationRunner.Environment.ViewDynSupTest do
         context: %{}
       }
 
-      assert :undefined != Swarm.whereis_name(Environment.ViewDynSup.get_name(@env_id))
+      assert :undefined != Swarm.whereis_name(Environment.ViewDynSup.get_name(env_id))
 
       assert {:ok, _pid} =
                ViewDynSup.ensure_child_started(
-                 @env_id,
+                 env_id,
                  @session_id,
                  @function_name,
                  view_uid
                )
 
-      assert @view == ViewServer.fetch_view!(@env_id, view_uid)
+      assert @view == ViewServer.fetch_view!(env_id, view_uid)
     end
   end
 end
