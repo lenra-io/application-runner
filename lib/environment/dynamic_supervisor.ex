@@ -10,8 +10,11 @@ defmodule ApplicationRunner.Environment.DynamicSupervisor do
   alias ApplicationRunner.Session
   alias LenraCommon.Errors, as: LC
 
+  require Logger
+
   @doc false
   def start_link(opts) do
+    Logger.notice("Start Environment.DynamicSupervisor")
     DynamicSupervisor.start_link(__MODULE__, opts, name: __MODULE__)
   end
 
@@ -33,6 +36,8 @@ defmodule ApplicationRunner.Environment.DynamicSupervisor do
   @spec start_env(term()) ::
           {:error, {:already_started, pid()}} | {:ok, pid()} | {:error, term()}
   def start_env(env_metadata) do
+    Logger.debug("Start Environment Supervisor with env_metadta: #{env_metadata}")
+
     case DynamicSupervisor.start_child(
            __MODULE__,
            {ApplicationRunner.Environment.Supervisor, env_metadata}
@@ -52,9 +57,16 @@ defmodule ApplicationRunner.Environment.DynamicSupervisor do
   @spec ensure_env_started(term()) :: {:ok, pid} | {:error, term()}
   def ensure_env_started(env_metadata) do
     case start_env(env_metadata) do
-      {:ok, pid} -> {:ok, pid}
-      {:error, {:already_started, pid}} -> {:ok, pid}
-      {:error, err} -> {:error, err}
+      {:ok, pid} ->
+        {:ok, pid}
+
+      {:error, {:already_started, pid}} ->
+        Logger.notice("Environment Supervisor already started for metadata: #{env_metadata}")
+        {:ok, pid}
+
+      {:error, err} ->
+        Logger.critical(err)
+        {:error, err}
     end
   end
 
@@ -64,13 +76,16 @@ defmodule ApplicationRunner.Environment.DynamicSupervisor do
   """
   @spec stop_env(number()) :: :ok | {:error, LC.BusinessError.t()}
   def stop_env(env_id) do
+    Logger.debug("Stop Environment for env_id: #{env_id}")
     name = Environment.Supervisor.get_name(env_id)
 
     case Swarm.whereis_name(name) do
       :undefined ->
+        Logger.error("Failed to found Supervision Tree for name: #{name}")
         BusinessError.env_not_started_tuple()
 
       pid ->
+        Logger.info("Stop Environment Supervision Tree for name: #{name}")
         Supervisor.stop(pid)
     end
   end

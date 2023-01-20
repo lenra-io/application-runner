@@ -20,6 +20,7 @@ defmodule ApplicationRunner.Environment.ChangeStream do
 
   def init(opts) do
     env_id = Keyword.fetch!(opts, :env_id)
+    Logger.info("start change stream for env: #{env_id}")
 
     state = %{env_id: env_id}
     {:ok, state, {:continue, :start_stream}}
@@ -46,6 +47,8 @@ defmodule ApplicationRunner.Environment.ChangeStream do
   defp start_change_stream(env_id) do
     mongo_name = MongoInstance.get_full_name(env_id)
     cs_name = get_full_name(env_id)
+
+    Logger.debug("Start change stream for env: #{env_id}, with mongo_name: #{mongo_name}")
 
     Mongo.watch_db(
       mongo_name,

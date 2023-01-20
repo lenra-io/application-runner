@@ -13,6 +13,7 @@ defmodule ApplicationRunner.ApplicationServices do
     auth = Application.fetch_env!(:application_runner, :faas_auth)
 
     headers = [{"Authorization", auth}]
+    Logger.debug("Get http context: #{inspect({base_url, headers})}")
     {base_url, headers}
   end
 
@@ -61,6 +62,7 @@ defmodule ApplicationRunner.ApplicationServices do
       )
       |> response(:listener)
 
+    Logger.debug("response: #{inspect(res)}")
     Telemetry.stop(:app_listener, start_time, peeked_token.claims)
 
     res

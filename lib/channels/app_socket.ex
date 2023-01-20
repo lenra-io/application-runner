@@ -51,7 +51,11 @@ defmodule ApplicationRunner.AppSocket do
                create_metadatas(user_id, app_name, context),
              start_time <- Telemetry.start(:app_session, session_metadata),
              {:ok, session_pid} <- Session.start_session(session_metadata, env_metadata) do
-          Logger.info("joined app #{app_name} with params #{inspect(params)}")
+          Logger.notice("joined app #{app_name} with params #{inspect(params)}")
+
+          Logger.debug(
+            "#{app_name}: /n/t session_metadata: #{session_metadata} /n/t env_metadata: #{env_metadata}"
+          )
 
           socket =
             socket
@@ -63,9 +67,11 @@ defmodule ApplicationRunner.AppSocket do
           {:ok, socket}
         else
           {:error, reason} when is_bitstring(reason) ->
+            Logger.error(%{message: reason, reason: "application_error"})
             {:error, %{message: reason, reason: "application_error"}}
 
           {:error, reason} when is_struct(reason) ->
+            Logger.error(reason)
             {:error, ErrorHelpers.translate_error(reason)}
 
           {:error, reason} ->

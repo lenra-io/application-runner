@@ -23,16 +23,22 @@ defmodule ApplicationRunner.RouteChannel do
       def join("route:" <> route, params, socket) do
         mode = Map.get(params, "mode", "lenra")
         session_id = socket.assigns.session_id
+        Logger.debug("Join for #{session_id}, with params: #{params}")
 
         with sm <- Session.MetadataAgent.get_metadata(session_id),
              :yes <- Swarm.register_name(get_name({session_id, mode, route}), self()),
              :ok <- Swarm.join(get_group(session_id, mode, route), self()),
              {:ok, _pid} <-
                Session.RouteDynSup.ensure_child_started(sm.env_id, session_id, mode, route) do
+          Logger.notice("Route #{route}, in mode #{mode}, open for session: #{session_id}")
           {:ok, socket}
         else
           :no ->
-            raise DevError.exception("Could not register the AppChannel into swarm")
+            Logger.critical(
+              "Could not register the AppChannel into swarm, session_id: #{session_id}, route #{route}"
+            )
+
+            {:error, DevError.message("Could not register the AppChannel into swarm")}
 
           err ->
             err
@@ -40,6 +46,7 @@ defmodule ApplicationRunner.RouteChannel do
       end
 
       def join(_, _any, _socket) do
+        Logger.critical(BusinessError.invalid_channel_name())
         {:error, ErrorHelpers.translate_error(BusinessError.invalid_channel_name())}
       end
 
@@ -103,12 +110,14 @@ defmodule ApplicationRunner.RouteChannel do
             %{message: "#{message} at path #{path}", reason: "invalid_ui"}
           end)
 
+        Logger.notice("Channel error: #{formatted_errors}")
+
         push(socket, "error", %{"errors" => formatted_errors})
         {:noreply, socket}
       end
 
       def handle_info({:send, :error, malformatted_error}, socket) do
-        Logger.error("Malformatted error #{inspect(malformatted_error)}")
+        Logger.critical("Malformatted error #{inspect(malformatted_error)}")
 
         push(socket, "error", %{
           "errors" => ErrorHelpers.translate_error(TechnicalError.unknown_error())
