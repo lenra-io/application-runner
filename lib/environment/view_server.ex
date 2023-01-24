@@ -79,7 +79,7 @@ defmodule ApplicationRunner.Environment.ViewServer do
   end
 
   def handle_info(:timeout, state) do
-    {:stop, :normal, state}
+    {:shutdown, :normal, state}
   end
 
   @impl true
