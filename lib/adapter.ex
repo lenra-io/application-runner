@@ -1,4 +1,6 @@
 defmodule ApplicationRunner.Adapter do
+  alias ApplicationRunner.Notifications.Notif
+
   @moduledoc """
   ApplicationRunner.Adapter provides a callback for a different implementation depending on the parent application
   """
@@ -19,4 +21,9 @@ defmodule ApplicationRunner.Adapter do
   @callback get_env_id(String.t()) :: number()
 
   @callback resource_from_params(map()) :: {:ok, number} | {:error, any()}
+
+  @doc """
+    Send the notification to a specific user using the correct technique (UnifiedPush, FCM, APNS...)
+  """
+  @callback send_notification(Notif.t()) :: :ok | {:error, any()}
 end

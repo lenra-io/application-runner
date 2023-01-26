@@ -67,6 +67,20 @@ defmodule ApplicationRunner.MongoStorage do
     |> repo().insert()
   end
 
+  @doc """
+    Transform a given "Mongo User Id" into a postgres "User Id".
+  """
+  @spec muids_to_uids(list(String.t())) :: list(number())
+  def muids_to_uids(muids) do
+    query =
+      from(mul in MongoUserLink,
+        where: mul.mongo_user_id in ^muids,
+        select: mul.user_id
+      )
+
+    repo().all(query)
+  end
+
   ########
   # DATA #
   ########

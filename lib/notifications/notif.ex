@@ -15,6 +15,7 @@ defmodule ApplicationRunner.Notifications.Notif do
     field(:click, :string)
     field(:at, :string)
     field(:to, {:array, :string})
+    field(:to_uids, {:array, :string})
   end
 
   def changeset(notif, params \\ %{}) do
@@ -29,12 +30,19 @@ defmodule ApplicationRunner.Notifications.Notif do
       :email,
       :click,
       :at,
-      :to
+      :to,
+      :to_uids
     ])
     |> validate_required([:message, :to])
   end
 
   def new(params) do
     changeset(%Notif{}, params)
+    |> apply_changes()
+  end
+
+  def put_to_uids(%Notif{} = notif, to_uids) do
+    changeset(notif, %{"to_uids" => to_uids})
+    |> apply_changes()
   end
 end

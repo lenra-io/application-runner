@@ -1,5 +1,7 @@
 defmodule ApplicationRunner.Router do
-  defmacro app_routes do
+  defmacro app_routes() do
+    # notification_controller = Keyword.get(opts, :notification_controller)
+
     quote do
       alias ApplicationRunner.Guardian.EnsureAuthenticatedAppPipeline
 
@@ -39,7 +41,7 @@ defmodule ApplicationRunner.Router do
 
         post("/webhooks", Webhooks.WebhooksController, :create)
 
-        post("/notify", NotificationController, :notify)
+        # post("/notify", unquote(notification_controller), :notify)
       end
 
       scope "/", ApplicationRunner do
