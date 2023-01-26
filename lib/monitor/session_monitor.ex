@@ -6,6 +6,7 @@ defmodule ApplicationRunner.Monitor.SessionMonitor do
   use GenServer
   use SwarmNamed
 
+  alias ApplicationRunner.Session.DynamicSupervisor
   alias ApplicationRunner.Telemetry
 
   def monitor(pid, metadata) do
@@ -29,9 +30,14 @@ defmodule ApplicationRunner.Monitor.SessionMonitor do
   end
 
   def handle_info({:DOWN, _ref, :process, pid, _reason}, state) do
+    env_id = Map.get(state, :env_id)
+    session_id = Map.get(state, :session_id)
+
     {{start_time, metadata}, new_state} = Map.pop(state, pid)
 
     Telemetry.stop(:app_session, start_time, metadata)
+
+    DynamicSupervisor.stop_session(env_id, session_id)
 
     {:noreply, new_state}
   end

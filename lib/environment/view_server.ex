@@ -9,7 +9,7 @@ defmodule ApplicationRunner.Environment.ViewServer do
   alias ApplicationRunner.Environment.{QueryServer, ViewUid}
 
   # 10 minutes timeout
-  @inactivity_timeout 1000 * 60 * 10
+  # @inactivity_timeout 1000 * 60 * 10
 
   def group_name(env_id, coll, query) do
     {__MODULE__, env_id, coll, query}
@@ -57,7 +57,7 @@ defmodule ApplicationRunner.Environment.ViewServer do
         view_uid: view_uid
       }
 
-      {:ok, state, @inactivity_timeout}
+      {:ok, state}
     else
       {:error, error} ->
         {:stop, error}
@@ -71,19 +71,15 @@ defmodule ApplicationRunner.Environment.ViewServer do
 
     case ApplicationServices.fetch_view(fna, wuid.name, new_data, wuid.props, wuid.context) do
       {:ok, view} ->
-        {:noreply, Map.put(state, :view, view), @inactivity_timeout}
+        {:noreply, Map.put(state, :view, view)}
 
       {:error, error} ->
         raise error
     end
   end
 
-  def handle_info(:timeout, state) do
-    {:stop, :normal, state}
-  end
-
   @impl true
   def handle_call(:fetch_view!, _from, state) do
-    {:reply, Map.fetch!(state, :view), state, @inactivity_timeout}
+    {:reply, Map.fetch!(state, :view), state}
   end
 end
