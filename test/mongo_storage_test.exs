@@ -2,7 +2,6 @@ defmodule ApplicationRunner.MongoStorageTest do
   use ApplicationRunner.ConnCase, async: false
 
   alias ApplicationRunner.Environment.MongoInstance
-  alias ApplicationRunner.Errors.BusinessError
   alias ApplicationRunner.MongoStorage
 
   defp setup_mongo(env_id, coll) do
@@ -22,7 +21,7 @@ defmodule ApplicationRunner.MongoStorageTest do
       assert {:noproc,
               {GenServer, :call,
                [
-                 {:via, :swarm, {ApplicationRunner.Environment.MongoInstance, env_id}},
+                 {:via, :swarm, {ApplicationRunner.Environment.MongoInstance, ^env_id}},
                  _any,
                  _timeout
                ]}} = catch_exit(MongoStorage.start_transaction(env_id))
@@ -36,7 +35,7 @@ defmodule ApplicationRunner.MongoStorageTest do
       setup_mongo(env_id, "test")
       assert {:ok, uuid} = MongoStorage.start_transaction(env_id)
 
-      assert {:ok, doc} = MongoStorage.create_doc(env_id, "test", %{test: "test"}, uuid)
+      assert {:ok, _doc} = MongoStorage.create_doc(env_id, "test", %{test: "test"}, uuid)
 
       assert :ok = MongoStorage.commit_transaction(uuid, env_id)
 
@@ -51,7 +50,7 @@ defmodule ApplicationRunner.MongoStorageTest do
       env_id = Ecto.UUID.generate()
 
       setup_mongo(env_id, "test")
-      assert {:ok, uuid} = MongoStorage.start_transaction(env_id)
+      assert {:ok, _uuid} = MongoStorage.start_transaction(env_id)
 
       assert :badarg = catch_error(MongoStorage.create_doc(env_id, "test", %{test: "test"}, -1))
     end
@@ -66,7 +65,7 @@ defmodule ApplicationRunner.MongoStorageTest do
 
       {:ok, %{"_id" => doc_id}} = MongoStorage.create_doc(env_id, "test", %{test: "test"})
 
-      assert {:ok, updated_doc} =
+      assert {:ok, _updated_doc} =
                MongoStorage.update_doc(
                  env_id,
                  "test",
@@ -116,7 +115,7 @@ defmodule ApplicationRunner.MongoStorageTest do
 
       {:ok, %{"_id" => doc_id}} = MongoStorage.create_doc(env_id, "test", %{test: "test"})
 
-      assert {:ok, updated_doc} =
+      assert {:ok, _updated_doc} =
                MongoStorage.update_doc(
                  env_id,
                  "test",
