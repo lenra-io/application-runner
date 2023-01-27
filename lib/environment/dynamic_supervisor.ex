@@ -6,8 +6,8 @@ defmodule ApplicationRunner.Environment.DynamicSupervisor do
   use DynamicSupervisor
 
   alias ApplicationRunner.Environment
-  alias ApplicationRunner.Session
   alias ApplicationRunner.Errors.BusinessError
+  alias ApplicationRunner.Session
   alias LenraCommon.Errors, as: LC
 
   @doc false
