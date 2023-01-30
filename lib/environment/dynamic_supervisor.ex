@@ -7,6 +7,7 @@ defmodule ApplicationRunner.Environment.DynamicSupervisor do
 
   alias ApplicationRunner.Environment
   alias ApplicationRunner.Errors.BusinessError
+  alias ApplicationRunner.Session
   alias LenraCommon.Errors, as: LC
 
   @doc false
@@ -71,6 +72,15 @@ defmodule ApplicationRunner.Environment.DynamicSupervisor do
 
       pid ->
         Supervisor.stop(pid)
+    end
+  end
+
+  def session_stopped(env_id) do
+    Swarm.whereis_name(Session.DynamicSupervisor.get_name(env_id))
+    |> DynamicSupervisor.count_children()
+    |> case do
+      %{supervisors: 0} -> stop_env(env_id)
+      _any -> :ok
     end
   end
 end
