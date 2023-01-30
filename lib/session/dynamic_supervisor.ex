@@ -47,7 +47,7 @@ defmodule ApplicationRunner.Session.DynamicSupervisor do
   """
   @spec stop_session(any(), any()) :: :ok | {:error, :app_not_started}
   def stop_session(env_id, session_id) do
-    case Swarm.whereis_name(Session.Supervisor.get_full_name(session_id)) do
+    case Swarm.whereis_name(Session.Supervisor.get_name(session_id)) do
       :undefined ->
         {:error, :app_not_started}
 

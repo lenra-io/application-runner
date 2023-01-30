@@ -4,12 +4,12 @@ defmodule ApplicationRunner.Environment.QueryServer do
     - It get the initial data from the mongo db using coll/query.
     - It wait for the Session Change Event and update the data accordingly
     - It use QueryParser to check if the new data actually match the query.
-    - If the data is updated, it notify the Widget group using Swarm.publish
+    - If the data is updated, it notify the view group using Swarm.publish
   """
   use GenServer
   use SwarmNamed
 
-  alias ApplicationRunner.Environment.WidgetServer
+  alias ApplicationRunner.Environment.{MongoInstance, ViewServer}
   alias ApplicationRunner.MongoStorage
   alias LenraCommon.Errors.DevError
   alias QueryParser.Exec
@@ -52,7 +52,7 @@ defmodule ApplicationRunner.Environment.QueryServer do
   end
 
   @doc """
-    Start monotoring the given WidgetServer
+    Start monotoring the given ViewServer
   """
   def monitor(qs_pid, w_pid) do
     GenServer.call(qs_pid, {:monitor, w_pid})
@@ -101,7 +101,11 @@ defmodule ApplicationRunner.Environment.QueryServer do
   end
 
   defp fetch_initial_data(env_id, coll, query_transformed) do
-    MongoStorage.filter_docs(env_id, coll, query_transformed)
+    MongoInstance.run_mongo_task(env_id, MongoStorage, :filter_docs, [
+      env_id,
+      coll,
+      query_transformed
+    ])
   end
 
   def handle_call(
@@ -234,7 +238,9 @@ defmodule ApplicationRunner.Environment.QueryServer do
   end
 
   defp change_data("insert", full_doc, doc_id, data, map_data, query_parsed, state) do
-    if Exec.match?(full_doc, query_parsed) do
+    parsed_query = filter_bson_id(query_parsed)
+
+    if Exec.match?(full_doc, parsed_query) do
       new_map_data = Map.put(map_data, doc_id, full_doc)
       new_data = from_map_data(new_map_data)
       notify_data_changed(new_data, state)
@@ -246,7 +252,9 @@ defmodule ApplicationRunner.Environment.QueryServer do
 
   defp change_data(op_type, full_doc, doc_id, data, map_data, query_parsed, state)
        when op_type in ["update", "replace"] do
-    if Exec.match?(full_doc, query_parsed) do
+    parsed_query = filter_bson_id(query_parsed)
+
+    if Exec.match?(full_doc, parsed_query) do
       new_map_data = Map.put(map_data, doc_id, full_doc)
       new_data = from_map_data(new_map_data)
 
@@ -278,12 +286,48 @@ defmodule ApplicationRunner.Environment.QueryServer do
     {:reply, :ok, state}
   end
 
+  @object_id_regex ~r/^ObjectId\(([[:xdigit:]]{24})\)$/
+
+  defp filter_bson_id(map) when is_map(map) do
+    Map.map(map, fn {_key, value} ->
+      handle_filter_bson_id(value)
+    end)
+  end
+
+  defp filter_bson_id(map) when is_list(map) do
+    Enum.map(map, fn value ->
+      handle_filter_bson_id(value)
+    end)
+  end
+
+  defp handle_filter_bson_id(value) do
+    case value do
+      str when is_bitstring(str) ->
+        case Regex.run(@object_id_regex, str) do
+          nil ->
+            str
+
+          [_, hex_id] ->
+            BSON.ObjectId.decode!(hex_id)
+        end
+
+      sub_map when is_map(sub_map) ->
+        filter_bson_id(sub_map)
+
+      sub_list when is_list(sub_list) ->
+        filter_bson_id(sub_list)
+
+      value ->
+        value
+    end
+  end
+
   defp notify_data_changed(new_data, %{
          env_id: env_id,
          query_parsed: query_parsed,
          coll: coll
        }) do
-    group = WidgetServer.group_name(env_id, coll, query_parsed)
+    group = ViewServer.group_name(env_id, coll, query_parsed)
     Swarm.publish(group, {:data_changed, new_data})
   end
 
@@ -292,12 +336,12 @@ defmodule ApplicationRunner.Environment.QueryServer do
          query_parsed: query_parsed,
          coll: old_coll
        }) do
-    group = WidgetServer.group_name(env_id, old_coll, query_parsed)
+    group = ViewServer.group_name(env_id, old_coll, query_parsed)
     Swarm.publish(group, {:coll_changed, new_coll})
   end
 
-  # If a WidgetServer die, we receive a message here.
-  # If there is no more monitored WidgetServer, we stop this QueryServer.
+  # If a ViewServer die, we receive a message here.
+  # If there is no more monitored ViewServer, we stop this QueryServer.
   def handle_info({:DOWN, _ref, :process, w_pid, _reason}, state) do
     new_w_pids = MapSet.delete(state.w_pids, w_pid)
 

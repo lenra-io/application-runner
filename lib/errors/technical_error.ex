@@ -11,7 +11,7 @@ defmodule ApplicationRunner.Errors.TechnicalError do
       {:reference_not_found, "Reference not found"},
       {:datastore_not_found, "Datastore cannot be found"},
       {:data_not_found, "Data cannot be found"},
-      {:widget_not_found, "No Widget found in app manifest."},
+      {:view_not_found, "No View found in app manifest."},
       {:manifest_not_found, "Manifest not found"},
       {:openfaas_not_reachable, "Openfaas could not be reached."},
       {:timeout, "Timeout"},

@@ -1,39 +1,43 @@
-defmodule ApplicationRunner.Environment.WidgetDynSupTest do
+defmodule ApplicationRunner.Environment.ViewDynSupTest do
   use ApplicationRunner.RepoCase, async: false
 
   alias ApplicationRunner.Environment.{
-    WidgetDynSup,
-    WidgetServer,
-    WidgetUid
+    ViewDynSup,
+    ViewServer,
+    ViewUid
   }
 
-  alias ApplicationRunner.Environment
+  alias ApplicationRunner.{Contract, Environment}
+  alias ApplicationRunner.Guardian.AppGuardian
   alias QueryParser.Parser
 
-  @manifest %{"rootWidget" => "main"}
-  @widget %{"type" => "text", "value" => "test"}
+  @manifest %{"rootview" => "main"}
+  @view %{"type" => "text", "value" => "test"}
 
   @function_name Ecto.UUID.generate()
-  @env_id 43
   @session_id 1337
 
-  @env_metadata %Environment.Metadata{
-    env_id: @env_id,
-    function_name: @function_name,
-    token: "abc"
-  }
-
   setup do
+    {:ok, %{id: env_id}} = Repo.insert(Contract.Environment.new())
+
     Bypass.open(port: 1234)
     |> Bypass.stub("POST", "/function/#{@function_name}", &handle_resp/1)
 
-    {:ok, _pid} = start_supervised({Environment.Supervisor, @env_metadata})
+    {:ok, token, _claims} = AppGuardian.encode_and_sign(env_id, %{type: "env", env_id: env_id})
+
+    env_metadata = %Environment.Metadata{
+      env_id: env_id,
+      function_name: @function_name,
+      token: token
+    }
+
+    {:ok, _pid} = start_supervised({Environment.Supervisor, env_metadata})
 
     on_exit(fn ->
-      Swarm.unregister_name(Environment.Supervisor.get_name(@env_id))
+      Swarm.unregister_name(Environment.Supervisor.get_name(env_id))
     end)
 
-    :ok
+    {:ok, env_id: env_id}
   end
 
   defp handle_resp(conn) do
@@ -44,7 +48,7 @@ defmodule ApplicationRunner.Environment.WidgetDynSupTest do
         Plug.Conn.resp(
           conn,
           200,
-          Jason.encode!(%{widget: @widget})
+          Jason.encode!(%{view: @view})
         )
 
       {:error, _} ->
@@ -52,9 +56,9 @@ defmodule ApplicationRunner.Environment.WidgetDynSupTest do
     end
   end
 
-  describe "ApplicationRunner.Environments.WidgetDynSup.ensure_child_started/2" do
-    test "should start widget genserver with valid opts" do
-      widget_uid = %WidgetUid{
+  describe "ApplicationRunner.Environments.ViewDynSup.ensure_child_started/2" do
+    test "should start view genserver with valid opts", %{env_id: env_id} do
+      view_uid = %ViewUid{
         name: "test",
         coll: "testcoll",
         query_parsed: Parser.parse!("{}"),
@@ -63,17 +67,17 @@ defmodule ApplicationRunner.Environment.WidgetDynSupTest do
         context: %{}
       }
 
-      assert :undefined != Swarm.whereis_name(Environment.WidgetDynSup.get_name(@env_id))
+      assert :undefined != Swarm.whereis_name(Environment.ViewDynSup.get_name(env_id))
 
       assert {:ok, _pid} =
-               WidgetDynSup.ensure_child_started(
-                 @env_id,
+               ViewDynSup.ensure_child_started(
+                 env_id,
                  @session_id,
                  @function_name,
-                 widget_uid
+                 view_uid
                )
 
-      assert @widget == WidgetServer.fetch_widget!(@env_id, widget_uid)
+      assert @view == ViewServer.fetch_view!(env_id, view_uid)
     end
   end
 end

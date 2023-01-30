@@ -20,6 +20,10 @@ defmodule ApplicationRunner.Errors.BusinessError do
       {:no_action_in_listener, "Your listener does not have the required property 'action'"},
       {:route_does_not_exist, "The given route does not exist. Please check your manifest."},
       {:invalid_channel_name, "The given channel name does not exist."},
-      {:invalid_params, "Invalid params"}
+      {:invalid_params, "Invalid params"},
+      {:components_malformated,
+       "The components was malformated, check metadata for more details"},
+      {:error_during_transaction_start, "An error occured during transaction start."},
+      {:mongo_not_started, "Mongo is not started for the given env_id"}
     ]
 end

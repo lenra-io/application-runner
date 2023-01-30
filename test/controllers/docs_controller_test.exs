@@ -24,6 +24,14 @@ defmodule ApplicationRunner.DocsControllerTest do
     {:ok, _} = start_supervised({Environment.MetadataAgent, env_metadata})
     {:ok, pid} = start_supervised({Mongo, Environment.MongoInstance.config(env.id)})
 
+    start_supervised(
+      {Task.Supervisor,
+       name:
+         {:via, :swarm,
+          {ApplicationRunner.Environment.MongoInstance.TaskSupervisor,
+           Environment.MongoInstance.get_name(env.id)}}}
+    )
+
     Mongo.drop_collection(pid, @coll)
 
     doc_id =

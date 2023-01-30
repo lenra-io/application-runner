@@ -2,19 +2,45 @@ defmodule ApplicationRunner.Environment.MongoInstance do
   @moduledoc """
     This module provide the config option to start the `Mongo` genserver in the environment supervisor.
   """
-  @env Application.compile_env!(:application_runner, :env)
+  require Logger
 
   use SwarmNamed
 
   def config(env_id) do
-    database_name = @env <> "_#{env_id}"
-    mongo_url = Application.fetch_env!(:application_runner, :mongo_url)
+    env = Application.fetch_env!(:application_runner, :env)
 
-    [
-      url: "#{mongo_url}/#{database_name}",
-      name: get_full_name(env_id),
-      pool_size: 10
-    ]
+    database_name = env <> "_#{env_id}"
+
+    mongo_config = Application.fetch_env!(:application_runner, :mongo)
+
+    case Integer.parse(mongo_config[:port]) do
+      {port, _} ->
+        [
+          hostname: mongo_config[:hostname],
+          port: port,
+          database: database_name,
+          username: mongo_config[:username],
+          password: mongo_config[:password],
+          ssl: mongo_config[:ssl],
+          name: get_full_name(env_id),
+          auth_source: mongo_config[:auth_source],
+          pool_size: 10
+        ]
+
+      :error ->
+        error = "Failed to parse Mongo port: " <> mongo_config[:port]
+        Logger.emergency(error)
+        raise error
+    end
+  end
+
+  def run_mongo_task(env_id, mod, fun, opts) do
+    Task.Supervisor.async(
+      {:via, :swarm,
+       {ApplicationRunner.Environment.MongoInstance.TaskSupervisor, get_name(env_id)}},
+      fn -> Kernel.apply(mod, fun, opts) end
+    )
+    |> Task.await()
   end
 end
 

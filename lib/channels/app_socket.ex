@@ -12,6 +12,7 @@ defmodule ApplicationRunner.AppSocket do
       alias ApplicationRunner.Errors.{BusinessError, TechnicalError}
       alias ApplicationRunner.Monitor
       alias ApplicationRunner.Session
+      alias ApplicationRunner.Telemetry
       alias LenraCommonWeb.ErrorHelpers
 
       @adapter Application.compile_env(:application_runner, :adapter)
@@ -24,6 +25,7 @@ defmodule ApplicationRunner.AppSocket do
       @impl true
       def init(state) do
         res = {:ok, {_, socket}} = super(state)
+
         Monitor.SessionMonitor.monitor(self(), socket.assigns)
         res
       end
@@ -46,6 +48,7 @@ defmodule ApplicationRunner.AppSocket do
              :ok <- @adapter.allow(user_id, app_name),
              {:ok, env_metadata, session_metadata} <-
                create_metadatas(user_id, app_name, context),
+             start_time <- Telemetry.start(:app_session, session_metadata),
              {:ok, session_pid} <- Session.start_session(session_metadata, env_metadata) do
           Logger.info("joined app #{app_name} with params #{inspect(params)}")
 
@@ -54,6 +57,7 @@ defmodule ApplicationRunner.AppSocket do
             |> assign(env_id: session_metadata.env_id)
             |> assign(session_id: session_metadata.session_id)
             |> assign(user_id: user_id)
+            |> assign(start_time: start_time)
 
           {:ok, socket}
         else

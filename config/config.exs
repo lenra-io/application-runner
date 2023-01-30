@@ -16,6 +16,9 @@ config :application_runner,
   query_inactivity_timeout: 1000 * 60 * 10,
   # 1 hour
   listeners_timeout: 1 * 60 * 60 * 1000,
+  # 30 s
+  view_timeout: 1 * 30 * 1000,
+  manifest_timeout: 1 * 30 * 1000,
   lenra_environment_table: "environments",
   lenra_user_table: "users",
   repo: ApplicationRunner.Repo,
@@ -23,6 +26,11 @@ config :application_runner,
   mongo_url: "mongodb://localhost:27017",
   env: "dev",
   adapter: ApplicationRunner.FakeAppAdapter
+
+config :application_runner, :mongo,
+  hostname: "localhost",
+  port: "27017",
+  ssl: false
 
 config :application_runner, ApplicationRunner.Repo,
   database: "file::memory:?cache=shared",

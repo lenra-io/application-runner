@@ -6,6 +6,7 @@ defmodule ApplicationRunner.Environment.Supervisor do
   use SwarmNamed
 
   alias ApplicationRunner.Environment
+  alias ApplicationRunner.Environment.MongoInstance
   alias ApplicationRunner.Session
 
   def start_link(%Environment.Metadata{} = env_metadata) do
@@ -22,11 +23,16 @@ defmodule ApplicationRunner.Environment.Supervisor do
       {Environment.ManifestHandler, env_id: em.env_id, function_name: em.function_name},
       {ApplicationRunner.EventHandler, mode: :env, id: em.env_id},
       {Mongo, Environment.MongoInstance.config(em.env_id)},
+      {Task.Supervisor,
+       name:
+         {:via, :swarm,
+          {ApplicationRunner.Environment.MongoInstance.TaskSupervisor,
+           MongoInstance.get_name(em.env_id)}}},
       {Environment.Events.OnEnvStart, env_id: em.env_id},
       {Environment.ChangeStream, env_id: em.env_id},
       # MongoSessionDynamicSup
       {Environment.QueryDynSup, env_id: em.env_id},
-      {Environment.WidgetDynSup, env_id: em.env_id},
+      {Environment.ViewDynSup, env_id: em.env_id},
       {Session.DynamicSupervisor, env_id: em.env_id}
     ]
 

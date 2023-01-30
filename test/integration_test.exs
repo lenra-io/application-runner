@@ -1,7 +1,15 @@
 defmodule ApplicationRunner.IntegrationTest do
   use ApplicationRunner.ConnCase, async: false
 
-  alias ApplicationRunner.{AppSocket, Contract, Environment, MongoStorage, RouteChannel, Session}
+  alias ApplicationRunner.{
+    AppSocket,
+    Contract,
+    Environment,
+    MongoStorage,
+    RouteChannel,
+    Session,
+    Telemetry
+  }
 
   @session_id Ecto.UUID.generate()
   @function_name Ecto.UUID.generate()
@@ -12,13 +20,13 @@ defmodule ApplicationRunner.IntegrationTest do
   @coll "test_integration"
   @query %{"foo" => "bar"}
 
-  @manifest %{"rootWidget" => "main"}
+  @manifest %{"rootView" => "main"}
 
-  def widget("main", _) do
-    %{"type" => "widget", "name" => "echo", "query" => @query, "coll" => @coll}
+  def view("main", _) do
+    %{"type" => "view", "name" => "echo", "query" => @query, "coll" => @coll}
   end
 
-  def widget("echo", data) do
+  def view("echo", data) do
     %{"type" => "text", "value" => Jason.encode!(data)}
   end
 
@@ -108,8 +116,8 @@ defmodule ApplicationRunner.IntegrationTest do
           {:ok, %{"action" => action, "props" => props}} ->
             resp_listener(logger_agent, conn, action, props, sm.token)
 
-          {:ok, %{"widget" => name, "data" => data}} ->
-            resp_widget(logger_agent, conn, name, data)
+          {:ok, %{"view" => name, "data" => data}} ->
+            resp_view(logger_agent, conn, name, data)
 
           {:error, _} ->
             resp_manifest(logger_agent, conn)
@@ -124,13 +132,13 @@ defmodule ApplicationRunner.IntegrationTest do
     Plug.Conn.resp(conn, 200, Jason.encode!(%{manifest: @manifest}))
   end
 
-  def resp_widget(logger_agent, conn, name, data) do
-    add_log_to_agent(logger_agent, {:widget, name, data})
+  def resp_view(logger_agent, conn, name, data) do
+    add_log_to_agent(logger_agent, {:view, name, data})
 
     Plug.Conn.resp(
       conn,
       200,
-      Jason.encode!(%{widget: widget(name, data)})
+      Jason.encode!(%{view: view(name, data)})
     )
   end
 
@@ -205,7 +213,8 @@ defmodule ApplicationRunner.IntegrationTest do
     # The mongo_user_link should not exist before starting the session
     assert not MongoStorage.has_user_link?(em.env_id, sm.user_id)
 
-    # Start the session and start one widget
+    Telemetry.start(:app_session, sm)
+    # Start the session and start one view
     {:ok, _} = Session.start_session(sm, em)
     {:ok, _} = Session.RouteDynSup.ensure_child_started(sm.env_id, sm.session_id, @mode, @route)
 
@@ -300,7 +309,7 @@ defmodule ApplicationRunner.IntegrationTest do
     assert [
              # First, the env starts...
              # The manifest is fetched
-             {:manifest, %{"rootWidget" => "main"}},
+             {:manifest, %{"rootView" => "main"}},
              # The onEnvStart event is run.
              {:listener, "onEnvStart", %{}},
              # Then the session starts.
@@ -309,30 +318,30 @@ defmodule ApplicationRunner.IntegrationTest do
              # The onSessionStart event is run
              {:listener, "onSessionStart", %{}},
              # The UiServer get the UI for the first time during startup.
-             # The first widget "main" is fetched
-             {:widget, "main", []},
-             # The second widget "echo" is fetched because the main link to it. The data is empty.
-             {:widget, "echo", []},
+             # The first view "main" is fetched
+             {:view, "main", []},
+             # The second view "echo" is fetched because the main link to it. The data is empty.
+             {:view, "echo", []},
 
              # We then simulate an insert listener.
              {:listener, "insert", %{"foo" => "bar"}},
-             # Only the "echo" widget is fetched again because "main" is cached.
-             {:widget, "echo", [%{"_id" => _, "foo" => "bar"}]},
+             # Only the "echo" view is fetched again because "main" is cached.
+             {:view, "echo", [%{"_id" => _, "foo" => "bar"}]},
 
              # We then simulate an update listener.
              {:listener, "update", %{"foo" => "baz"}},
              # Again, only echo. This time, the query does not match the data anymore.
-             {:widget, "echo", []},
+             {:view, "echo", []},
 
              # We then simulate an update listener to revert the changes.
              {:listener, "update", %{"foo" => "bar"}},
              # Again, only echo. The query does match the data again.
-             {:widget, "echo", [%{"_id" => _, "foo" => "bar"}]},
+             {:view, "echo", [%{"_id" => _, "foo" => "bar"}]},
 
              # Finally, we simulate a delete listener to remove the data.
              {:listener, "delete", %{}},
-             # The "echo" widget update for the last time.
-             {:widget, "echo", []}
+             # The "echo" view update for the last time.
+             {:view, "echo", []}
            ] = get_logs(logger_agent)
 
     on_exit(fn ->

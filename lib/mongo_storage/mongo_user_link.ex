@@ -18,6 +18,8 @@ defmodule ApplicationRunner.MongoStorage.MongoUserLink do
   def changeset(mongo_user_link, params \\ %{}) do
     mongo_user_link
     |> cast(params, [:environment_id, :user_id])
+    |> foreign_key_constraint(:user_id)
+    |> foreign_key_constraint(:environment_id)
     |> validate_required([])
   end
 

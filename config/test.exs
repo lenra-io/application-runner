@@ -6,7 +6,8 @@ config :application_runner,
   ecto_repos: [ApplicationRunner.Repo],
   faas_url: "http://localhost:1234",
   faas_auth: "Basic YWRtaW46M2kwREc4NTdLWlVaODQ3R0pheW5qMXAwbQ==",
-  faas_registry: "registry.gitlab.com/lenra/platform/lenra-ci"
+  faas_registry: "registry.gitlab.com/lenra/platform/lenra-ci",
+  env: "test"
 
 config :application_runner, ApplicationRunner.Repo,
   username: "postgres",

@@ -71,7 +71,7 @@ sequenceDiagram
     participant RouteChannel
     participant RouteSupervisor
     participant RouteServer
-    participant WidgetServer
+    participant ViewServer
     participant QueryServer
     participant App
     participant Mongo
@@ -84,25 +84,25 @@ sequenceDiagram
     alt Lenra Route
         Note over RouteServer: RouteServer use LenraBuilder
         loop recursively
-            RouteServer->>+WidgetServer: start(query, name, props)
-            WidgetServer->>+QueryServer: start(query)
+            RouteServer->>+ViewServer: start(query, name, props)
+            ViewServer->>+QueryServer: start(query)
             QueryServer->>Mongo: getData(query)
             Mongo-->>QueryServer: Data
-            WidgetServer->>QueryServer: getData
-            QueryServer-->>WidgetServer: data
-            RouteServer->>WidgetServer: getWidget
-            WidgetServer-->>RouteServer: widget
+            ViewServer->>QueryServer: getData
+            QueryServer-->>ViewServer: data
+            RouteServer->>ViewServer: getWidget
+            ViewServer-->>RouteServer: view
         end
     else Json Route
         Note over RouteServer: RouteServer use JsonBuilder
-        RouteServer->>+WidgetServer: start(query, name, props)
-        WidgetServer->>+QueryServer: start(query)
+        RouteServer->>+ViewServer: start(query, name, props)
+        ViewServer->>+QueryServer: start(query)
         QueryServer->>Mongo: getData(query)
         Mongo-->>QueryServer: Data
-        WidgetServer->>QueryServer: getData
-        QueryServer-->>WidgetServer: data
-        RouteServer->>WidgetServer: getWidget
-        WidgetServer-->>RouteServer: widget
+        ViewServer->>QueryServer: getData
+        QueryServer-->>ViewServer: data
+        RouteServer->>ViewServer: getWidget
+        ViewServer-->>RouteServer: view
     end
     RouteChannel-->>Client: Ok
     RouteServer-->>Client: UI
@@ -114,7 +114,7 @@ sequenceDiagram
     deactivate RouteChannel
     deactivate RouteSupervisor
     deactivate RouteServer
-    deactivate WidgetServer
+    deactivate ViewServer
     deactivate QueryServer
 ```
 
@@ -180,7 +180,7 @@ sequenceDiagram
     participant RouteChannel
     participant RouteServer
     participant App
-    participant WidgetServers
+    participant ViewServers
     participant QueryServers
     participant ChangeEventManagers
     participant ChangeStream
@@ -191,7 +191,7 @@ sequenceDiagram
     activate ChangeStream
     activate ChangeEventManagers
     activate QueryServers
-    activate WidgetServers
+    activate ViewServers
     activate RouteServer
     activate RouteChannel
     activate App
@@ -202,16 +202,16 @@ sequenceDiagram
     ChangeEventManagers->>QueryServers: Broadcast the event to all QueryServers
     opt Event match the query and not already handled
         QueryServers-->>QueryServers: Update the data
-        QueryServers->>WidgetServers: data_changed(data)
-        WidgetServers->>App: get widget
-        App-->>WidgetServers: widget
+        QueryServers->>ViewServers: data_changed(data)
+        ViewServers->>App: get view
+        App-->>ViewServers: view
     end
     QueryServers-->>ChangeEventManagers: OK
     Note over ChangeEventManagers: when all QueryServers are OK
     ChangeEventManagers->>RouteServer: update
     loop Recursively
-        RouteServer->>WidgetServers: get widget
-        WidgetServers-->>RouteServer: widget
+        RouteServer->>ViewServers: get view
+        ViewServers-->>RouteServer: view
     end
     RouteServer-->>RouteServer: Diff old/new ui
     RouteServer-->>RouteChannel: Patch UI
@@ -223,7 +223,7 @@ sequenceDiagram
     deactivate ChangeStream
     deactivate ChangeEventManagers
     deactivate QueryServers
-    deactivate WidgetServers
+    deactivate ViewServers
     deactivate RouteServer
     deactivate RouteChannel
     deactivate App

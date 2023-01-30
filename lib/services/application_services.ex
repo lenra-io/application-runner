@@ -2,8 +2,10 @@ defmodule ApplicationRunner.ApplicationServices do
   @moduledoc """
     The service that manages calls to an Openfaas action with `run_action/3`
   """
-
   alias ApplicationRunner.Errors.TechnicalError
+  alias ApplicationRunner.Guardian.AppGuardian
+  alias ApplicationRunner.Telemetry
+
   require Logger
 
   defp get_http_context do
@@ -49,18 +51,26 @@ defmodule ApplicationRunner.ApplicationServices do
 
     Logger.debug("Run app #{function_name} with action #{action}")
 
-    Finch.build(:post, url, headers, body)
-    |> Finch.request(AppHttp,
-      receive_timeout: Application.fetch_env!(:application_runner, :listeners_timeout)
-    )
-    |> response(:listener)
+    peeked_token = AppGuardian.peek(token)
+    start_time = Telemetry.start(:app_listener, peeked_token.claims)
+
+    res =
+      Finch.build(:post, url, headers, body)
+      |> Finch.request(AppHttp,
+        receive_timeout: Application.fetch_env!(:application_runner, :listeners_timeout)
+      )
+      |> response(:listener)
+
+    Telemetry.stop(:app_listener, start_time, peeked_token.claims)
+
+    res
   end
 
-  @spec fetch_widget(String.t(), String.t(), map(), map(), map()) ::
+  @spec fetch_view(String.t(), String.t(), map(), map(), map()) ::
           {:ok, map()} | {:error, any()}
-  def fetch_widget(
+  def fetch_view(
         function_name,
-        widget_name,
+        view_name,
         data,
         props,
         context
@@ -69,14 +79,16 @@ defmodule ApplicationRunner.ApplicationServices do
 
     url = "#{base_url}/function/#{function_name}"
     headers = [{"Content-Type", "application/json"} | base_headers]
-    body = Jason.encode!(%{widget: widget_name, data: data, props: props, context: context})
+    body = Jason.encode!(%{view: view_name, data: data, props: props, context: context})
 
     Finch.build(:post, url, headers, body)
-    |> Finch.request(AppHttp, receive_timeout: 1000)
-    |> response(:widget)
+    |> Finch.request(AppHttp,
+      receive_timeout: Application.fetch_env!(:application_runner, :view_timeout)
+    )
+    |> response(:view)
     |> case do
-      {:ok, %{"widget" => widget}} ->
-        {:ok, widget}
+      {:ok, %{"view" => view}} ->
+        {:ok, view}
 
       err ->
         err
@@ -91,7 +103,9 @@ defmodule ApplicationRunner.ApplicationServices do
     headers = [{"Content-Type", "application/json"} | base_headers]
 
     Finch.build(:post, url, headers)
-    |> Finch.request(AppHttp, receive_timeout: 1000)
+    |> Finch.request(AppHttp,
+      receive_timeout: Application.fetch_env!(:application_runner, :manifest_timeout)
+    )
     |> response(:manifest)
     |> case do
       {:ok, %{"manifest" => manifest}} ->
@@ -162,7 +176,7 @@ defmodule ApplicationRunner.ApplicationServices do
   end
 
   defp response({:ok, %Finch.Response{status: 200, body: body}}, key)
-       when key in [:manifest, :widget] do
+       when key in [:manifest, :view] do
     {:ok, Jason.decode!(body)}
   end
 
