@@ -31,7 +31,7 @@ defmodule ApplicationRunner.ApplicationServices do
         event,
         token
       ) do
-    {base_url, base_headers} = get_http_context()
+    {base_url, base_headers} = get_http_context() |> IO.inspect()
 
     url = "#{base_url}/function/#{function_name}"
 
@@ -47,7 +47,7 @@ defmodule ApplicationRunner.ApplicationServices do
         api: %{url: Application.fetch_env!(:application_runner, :url), token: token}
       })
 
-    Logger.debug("Call to Openfaas : #{function_name}")
+    Logger.debug("Call to Openfaas : #{url}, #{body}")
 
     Logger.debug("Run app #{function_name} with action #{action}")
 
@@ -63,7 +63,8 @@ defmodule ApplicationRunner.ApplicationServices do
 
     Telemetry.stop(:app_listener, start_time, peeked_token.claims)
 
-    res
+    IO.inspect("ApplicationService.run_listener")
+    res |> IO.inspect()
   end
 
   @spec fetch_view(String.t(), String.t(), map(), map(), map()) ::

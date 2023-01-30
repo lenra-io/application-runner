@@ -20,6 +20,7 @@ defmodule ApplicationRunner.Environment.Events.OnEnvStart do
         {:ok, :ok, {:continue, :stop_me}}
 
       {:error, reason} ->
+        IO.inspect(reason)
         {:stop, reason}
     end
   end
