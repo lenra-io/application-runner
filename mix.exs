@@ -41,7 +41,7 @@ defmodule ApplicationRunner.MixProject do
       {:telemetry, "~> 1.2.0"},
       {:swarm, "~> 3.4"},
       {:ecto_sql, "~> 3.9.2"},
-      {:postgrex, "~> 0.16.5", only: [:test], runtime: false},
+      {:postgrex, "~> 0.16.5"},
       {:guardian, "~> 2.3.1"},
       {:phoenix, "~> 1.6.15"},
       {:finch, "~> 0.14"},
