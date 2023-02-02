@@ -31,7 +31,7 @@ defmodule ApplicationRunner.JsonSchemata do
       |> Enum.map(&Path.relative_to(&1, root_json_directory))
 
     schemata = Enum.map(relative_shemata_path, &load_schema/1)
-    schemata_map = Enum.zip(relative_shemata_path, schemata) |> Enum.into(%{})
+    schemata_map = Enum.zip(relative_shemata_path, schemata) |> Enum.into(%{}) |> IO.inspect()
 
     {:ok, schemata_map}
   end
@@ -81,7 +81,7 @@ defmodule ApplicationRunner.JsonSchemata do
   @impl true
   def handle_call({:get_schema_map, path}, _from, schemata_map) do
     schema_map =
-      case Map.fetch(schemata_map, path) do
+      case Map.fetch(schemata_map, path) |> IO.inspect() do
         :error -> {:error, [{"Invalid component type", "#"}]}
         res -> res
       end
