@@ -23,33 +23,42 @@ defmodule ApplicationRunner.JsonSchemata do
   # Server (callbacks)
   @impl true
   def init(_) do
-    root_json_directory = Application.app_dir(:application_runner, @component_api_directory)
+    root_json_directory =
+      Application.app_dir(:application_runner, @component_api_directory) <>
+        "/component.schema.json"
 
-    relative_shemata_path =
-      Path.join(root_json_directory, "/**/*.schema.json")
-      |> Path.wildcard()
-      |> Enum.map(&Path.relative_to(&1, root_json_directory))
+    # relative_shemata_path =
+    #   Path.join(root_json_directory, "/**/*.schema.json")
+    #   |> Path.wildcard()
+    #   |> Enum.map(&Path.relative_to(&1, root_json_directory))
 
-    schemata = Enum.map(relative_shemata_path, &load_schema/1)
-    schemata_map = Enum.zip(relative_shemata_path, schemata) |> Enum.into(%{}) |> IO.inspect()
+    # schemata = Enum.map(relative_shemata_path, &load_schema/1)
+    # schemata_map = Enum.zip(relative_shemata_path, schemata) |> Enum.into(%{}) |> IO.inspect()
+
+    {:ok, file_content} = File.read(root_json_directory)
+
+    schemata_map =
+      file_content
+      |> Jason.decode!()
+      |> ExComponentSchema.Schema.resolve()
 
     {:ok, schemata_map}
   end
 
-  def load_schema(path) do
-    schema =
-      read_schema(path)
-      |> ExComponentSchema.Schema.resolve()
+  # def load_schema(path) do
+  #   schema =
+  #     read_schema(path)
+  #     |> ExComponentSchema.Schema.resolve()
 
-    schema_properties = ApplicationRunner.SchemaParser.parse(schema)
+  #   schema_properties = ApplicationRunner.SchemaParser.parse(schema)
 
-    Map.merge(%{schema: schema}, schema_properties)
-  rescue
-    e in ExComponentSchema.Schema.InvalidSchemaError ->
-      reraise ExComponentSchema.Schema.InvalidSchemaError,
-              [message: "#{path} #{e.message}"],
-              __STACKTRACE__
-  end
+  #   Map.merge(%{schema: schema}, schema_properties)
+  # rescue
+  #   e in ExComponentSchema.Schema.InvalidSchemaError ->
+  #     reraise ExComponentSchema.Schema.InvalidSchemaError,
+  #             [message: "#{path} #{e.message}"],
+  #             __STACKTRACE__
+  # end
 
   defp load_raw_schema(schema, schemata_map, component_name) do
     resolved_schema = ExComponentSchema.Schema.resolve(schema)
@@ -60,9 +69,21 @@ defmodule ApplicationRunner.JsonSchemata do
     |> Enum.into(schemata_map)
   end
 
-  def read_schema(path) do
-    Application.app_dir(:application_runner, @component_api_directory)
-    |> Path.join(path)
+  def read_schema(path, root_location) do
+    IO.inspect({:read_schema, path, root_location})
+
+    formatted_path =
+      if root_location == :root do
+        Path.join("/", path)
+      else
+        String.replace(root_location, ~r/\/.+\.schema\.json/, "/")
+        |> IO.inspect()
+        |> Path.join(path)
+      end
+      |> IO.inspect()
+
+    "#{Application.app_dir(:application_runner, @component_api_directory)}/#{formatted_path}"
+    |> IO.inspect()
     |> File.read()
     |> case do
       {:ok, file_content} -> file_content
@@ -79,13 +100,13 @@ defmodule ApplicationRunner.JsonSchemata do
   end
 
   @impl true
-  def handle_call({:get_schema_map, path}, _from, schemata_map) do
-    schema_map =
-      case Map.fetch(schemata_map, path) |> IO.inspect() do
-        :error -> {:error, [{"Invalid component type", "#"}]}
-        res -> res
-      end
+  def handle_call({:get_schema_map, _path}, _from, schemata_map) do
+    # schema_map =
+    #   case Map.fetch(schemata_map, path) |> IO.inspect() do
+    #     :error -> {:error, [{"Invalid component type", "#"}]}
+    #     res -> res
+    #   end
 
-    {:reply, schema_map, schemata_map}
+    {:reply, schemata_map, schemata_map}
   end
 end
