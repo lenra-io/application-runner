@@ -205,6 +205,7 @@ defmodule ApplicationRunner.Session.UiBuilders.LenraBuilder do
          :ok <- ExComponentSchema.Validator.validate(schema, component) |> IO.inspect() do
       # IO.inspect(schema_path)
       # IO.inspect(schema.refs[schema_path])
+      IO.inspect(schema_path)
       IO.inspect(JsonSchemata.get_schema_map(schema_path))
       {:ok, JsonSchemata.get_schema_map(schema_path)}
     else
