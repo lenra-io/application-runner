@@ -70,20 +70,15 @@ defmodule ApplicationRunner.JsonSchemata do
   end
 
   def read_schema(path, root_location) do
-    IO.inspect({:read_schema, path, root_location})
-
     formatted_path =
-      if root_location == :root do
+      if root_location == "component.schema.json" do
         Path.join("/", path)
       else
         String.replace(root_location, ~r/\/.+\.schema\.json/, "/")
-        |> IO.inspect()
         |> Path.join(path)
       end
-      |> IO.inspect()
 
     "#{Application.app_dir(:application_runner, @component_api_directory)}/#{formatted_path}"
-    |> IO.inspect()
     |> File.read()
     |> case do
       {:ok, file_content} -> file_content
