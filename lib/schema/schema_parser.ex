@@ -4,7 +4,7 @@ defmodule ApplicationRunner.SchemaParser do
   """
 
   def parse(schema) do
-    properties = Map.get(schema, "properties", %{})
+    properties = Map.get(schema, "oneOf", %{})
 
     case properties do
       nil ->
@@ -36,6 +36,8 @@ defmodule ApplicationRunner.SchemaParser do
   end
 
   def parse_property(schema, key, value) do
+    IO.inspect({:parse_property, schema, key, value})
+
     case value do
       %{"$ref" => ref} ->
         fragment = ExComponentSchema.Schema.get_fragment!(schema, ref)

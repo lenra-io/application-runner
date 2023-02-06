@@ -42,11 +42,11 @@ defmodule ApplicationRunner.JsonSchemata do
       |> Jason.decode!()
       |> ExComponentSchema.Schema.resolve()
 
-    # schema_properties = ApplicationRunner.SchemaParser.parse(schemata_map)
+    schema_properties = ApplicationRunner.SchemaParser.parse(schemata_map)
 
-    # schema = Map.merge(%{schema: schemata_map}, schema_properties)
+    schema = Map.merge(%{schema: schemata_map}, schema_properties)
 
-    {:ok, schemata_map}
+    {:ok, schema}
   end
 
   # def load_schema(path) do

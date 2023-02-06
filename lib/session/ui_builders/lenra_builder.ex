@@ -201,12 +201,12 @@ defmodule ApplicationRunner.Session.UiBuilders.LenraBuilder do
   defp validate_with_error(schema_path, component, %ViewUid{prefix_path: prefix_path}) do
     IO.inspect({:validate_with_error})
 
-    with %ExComponentSchema.Schema.Root{} = schema <-
+    with %{schema: schema} = schemata <-
            JsonSchemata.get_schema_map() |> IO.inspect(),
          :ok <- ExComponentSchema.Validator.validate(schema, component) |> IO.inspect() do
-      IO.inspect(schema_path)
-      IO.inspect(schema.refs[schema_path])
-      {:ok, SchemaParser.parse(schema.refs[schema_path])}
+      # IO.inspect(schema_path)
+      # IO.inspect(schema.refs[schema_path])
+      {:ok, schemata}
     else
       {:error, errors} ->
         err_message =
