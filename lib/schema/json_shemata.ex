@@ -99,6 +99,8 @@ defmodule ApplicationRunner.JsonSchemata do
       if path == :root do
         Map.get(schemata_map, :schemata_map) |> IO.inspect()
       else
+        IO.inspect(Map.get(schemata_map, :schema))
+
         case Map.fetch(Map.get(schemata_map, :schema).refs, path) |> IO.inspect() do
           :error -> {:error, [{"Invalid component type", "#"}]}
           res -> res
