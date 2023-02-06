@@ -4,7 +4,6 @@ defmodule ApplicationRunner.Session.UiBuilders.LenraBuilder do
   """
   @behaviour ApplicationRunner.Session.UiBuilders.UiBuilderAdapter
 
-  alias ApplicationRunner.SchemaParser
   alias ApplicationRunner.{Environment, JsonSchemata, Session, Ui}
   alias ApplicationRunner.Environment.ViewUid
   alias ApplicationRunner.Session.RouteServer
@@ -198,7 +197,7 @@ defmodule ApplicationRunner.Session.UiBuilders.LenraBuilder do
   # If there is a validation error, return the `{:error, build_errors}` tuple.
   @spec validate_with_error(String.t(), component(), ViewUid.t()) ::
           {:error, UiBuilderAdapter.common_error()} | {:ok, map()}
-  defp validate_with_error(schema_path, component, %ViewUid{prefix_path: prefix_path}) do
+  defp validate_with_error(_schema_path, component, %ViewUid{prefix_path: prefix_path}) do
     IO.inspect({:validate_with_error})
 
     with %{schema: schema} = schemata <-

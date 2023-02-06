@@ -4,7 +4,7 @@ defmodule ApplicationRunner.SchemaParser do
   """
 
   def parse(schema) do
-    properties = Map.get(schema, "oneOf", %{})
+    properties = Map.get(Map.get(schema, :schema), "properties", %{})
 
     case properties do
       nil ->
@@ -40,7 +40,7 @@ defmodule ApplicationRunner.SchemaParser do
 
     case value do
       %{"$ref" => ref} ->
-        fragment = ExComponentSchema.Schema.get_fragment!(schema, ref)
+        fragment = schema[ref]
         parse_property(schema, key, fragment)
 
       %{"type" => "listener"} ->
