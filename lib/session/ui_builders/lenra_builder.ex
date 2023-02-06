@@ -4,6 +4,7 @@ defmodule ApplicationRunner.Session.UiBuilders.LenraBuilder do
   """
   @behaviour ApplicationRunner.Session.UiBuilders.UiBuilderAdapter
 
+  alias ApplicationRunner.SchemaParser
   alias ApplicationRunner.{Environment, JsonSchemata, Session, Ui}
   alias ApplicationRunner.Environment.ViewUid
   alias ApplicationRunner.Session.RouteServer
@@ -76,6 +77,7 @@ defmodule ApplicationRunner.Session.UiBuilders.LenraBuilder do
          ui_context,
          view_uid
        ) do
+    # TODO: move with in the case avoid validate schema when unsued
     with schema_path <- JsonSchemata.get_component_path(comp_type),
          {:ok, validation_data} <- validate_with_error(schema_path, component, view_uid) do
       case comp_type do
@@ -200,9 +202,9 @@ defmodule ApplicationRunner.Session.UiBuilders.LenraBuilder do
     IO.inspect({:validate_with_error})
 
     with %ExComponentSchema.Schema.Root{} = schema <-
-           JsonSchemata.get_schema_map(schema_path) |> IO.inspect(),
+           JsonSchemata.get_schema_map() |> IO.inspect(),
          :ok <- ExComponentSchema.Validator.validate(schema, component) |> IO.inspect() do
-      {:ok, schema}
+      {:ok, SchemaParser.parse(schema.refs[schema_path])}
     else
       {:error, errors} ->
         err_message =

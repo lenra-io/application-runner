@@ -8,8 +8,8 @@ defmodule ApplicationRunner.JsonSchemata do
   # Client (api)
   @component_api_directory "priv/components-api/api"
 
-  def get_schema_map(path) do
-    GenServer.call(__MODULE__, {:get_schema_map, path})
+  def get_schema_map() do
+    GenServer.call(__MODULE__, :get_schema_map)
   end
 
   def load_raw_schema(schema, component_name) do
@@ -42,11 +42,11 @@ defmodule ApplicationRunner.JsonSchemata do
       |> Jason.decode!()
       |> ExComponentSchema.Schema.resolve()
 
-    schema_properties = ApplicationRunner.SchemaParser.parse(schemata_map)
+    # schema_properties = ApplicationRunner.SchemaParser.parse(schemata_map)
 
-    schema = Map.merge(%{schema: schemata_map}, schema_properties)
+    # schema = Map.merge(%{schema: schemata_map}, schema_properties)
 
-    {:ok, schema}
+    {:ok, schemata_map}
   end
 
   # def load_schema(path) do
@@ -99,7 +99,7 @@ defmodule ApplicationRunner.JsonSchemata do
   end
 
   @impl true
-  def handle_call({:get_schema_map, _path}, _from, schemata_map) do
+  def handle_call(:get_schema_map, _from, schemata_map) do
     # schema_map =
     #   case Map.fetch(schemata_map, path) |> IO.inspect() do
     #     :error -> {:error, [{"Invalid component type", "#"}]}
