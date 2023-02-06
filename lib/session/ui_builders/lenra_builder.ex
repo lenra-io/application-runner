@@ -197,15 +197,16 @@ defmodule ApplicationRunner.Session.UiBuilders.LenraBuilder do
   # If there is a validation error, return the `{:error, build_errors}` tuple.
   @spec validate_with_error(String.t(), component(), ViewUid.t()) ::
           {:error, UiBuilderAdapter.common_error()} | {:ok, map()}
-  defp validate_with_error(_schema_path, component, %ViewUid{prefix_path: prefix_path}) do
+  defp validate_with_error(schema_path, component, %ViewUid{prefix_path: prefix_path}) do
     IO.inspect({:validate_with_error})
 
-    with %{schema: schema} = schemata <-
-           JsonSchemata.get_schema_map() |> IO.inspect(),
+    with schema <-
+           JsonSchemata.get_schema_map(:root),
          :ok <- ExComponentSchema.Validator.validate(schema, component) |> IO.inspect() do
       # IO.inspect(schema_path)
       # IO.inspect(schema.refs[schema_path])
-      {:ok, schemata}
+      IO.inspect(JsonSchemata.get_schema_map(schema_path))
+      {:ok, JsonSchemata.get_schema_map(schema_path)}
     else
       {:error, errors} ->
         err_message =
