@@ -44,8 +44,6 @@ defmodule ApplicationRunner.JsonSchemata do
       root_schema,
       :refs,
       Enum.map(root_schema.refs, fn {id, ref} ->
-        IO.inspect(ref)
-
         try do
           ref_properties = ApplicationRunner.SchemaParser.parse(root_schema, ref)
           {id, Map.merge(%{schema: ref}, ref_properties)}

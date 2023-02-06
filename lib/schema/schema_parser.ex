@@ -36,8 +36,6 @@ defmodule ApplicationRunner.SchemaParser do
   end
 
   def parse_property(root_schema, schema, key, value) do
-    IO.inspect({:parse_property, schema, key, value})
-
     case value do
       %{"$ref" => ref} ->
         fragment = get_in(root_schema.refs, ref)
