@@ -43,10 +43,10 @@ defmodule ApplicationRunner.JsonSchemata do
     Map.replace(
       root_schema,
       :refs,
-      Enum.map(root_schema.refs, fn {id, ref} ->
+      Map.map(root_schema.refs, fn {id, ref} ->
         try do
           ref_properties = ApplicationRunner.SchemaParser.parse(root_schema, ref)
-          {id, Map.merge(%{schema: ref}, ref_properties)}
+          Map.merge(%{schema: ref}, ref_properties)
         rescue
           e in ExComponentSchema.Schema.InvalidSchemaError ->
             reraise ExComponentSchema.Schema.InvalidSchemaError,
