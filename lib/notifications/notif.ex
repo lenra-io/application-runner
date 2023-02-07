@@ -15,7 +15,7 @@ defmodule ApplicationRunner.Notifications.Notif do
     field(:click, :string)
     field(:at, :string)
     field(:to, {:array, :string})
-    field(:to_uids, {:array, :string})
+    field(:to_uids, {:array, :integer})
   end
 
   def changeset(notif, params \\ %{}) do
@@ -42,7 +42,7 @@ defmodule ApplicationRunner.Notifications.Notif do
   end
 
   def put_to_uids(%Notif{} = notif, to_uids) do
-    changeset(notif, %{"to_uids" => to_uids})
+    changeset(notif, %{to_uids: to_uids})
     |> apply_changes()
   end
 end

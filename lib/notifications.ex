@@ -6,9 +6,19 @@ defmodule ApplicationRunner.Notifications do
   alias ApplicationRunner.Notifications.Notif
   alias ApplicationRunner.MongoStorage
 
-  @spec put_uids_to_notif(Notif.t()) :: Notif.t()
-  def put_uids_to_notif(%Notif{} = notif) do
-    to_uids = MongoStorage.muids_to_uids(notif.to)
-    Notif.put_to_uids(notif, to_uids)
+  @spec put_uids_to_notif(Notif.t(), String.t()) :: Notif.t()
+  def put_uids_to_notif(%Notif{} = notif, at_me_muid) do
+    IO.inspect("put_uids_to_notif")
+
+    to_uids =
+      notif.to
+      |> Enum.map(fn
+        "@me" -> at_me_muid
+        muid -> muid
+      end)
+      |> MongoStorage.muids_to_uids()
+      |> IO.inspect()
+
+    Notif.put_to_uids(notif, to_uids) |> IO.inspect()
   end
 end

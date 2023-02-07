@@ -40,7 +40,10 @@ defmodule ApplicationRunner.Router do
         post("/transacation/:session_id/abort", DocsController, :abort_transaction)
 
         post("/webhooks", Webhooks.WebhooksController, :create)
+      end
 
+      scope "/app" do
+        pipe_through([:api, :ensure_auth_app])
         post("/notify", unquote(notification_controller), :notify)
       end
 

@@ -72,13 +72,16 @@ defmodule ApplicationRunner.MongoStorage do
   """
   @spec muids_to_uids(list(String.t())) :: list(number())
   def muids_to_uids(muids) do
+    IO.inspect("muids_to_uids")
+    IO.inspect(muids)
+
     query =
       from(mul in MongoUserLink,
         where: mul.mongo_user_id in ^muids,
         select: mul.user_id
       )
 
-    repo().all(query)
+    repo().all(query) |> IO.inspect()
   end
 
   ########
