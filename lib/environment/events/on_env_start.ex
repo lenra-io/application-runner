@@ -4,6 +4,7 @@ defmodule ApplicationRunner.Environment.Events.OnEnvStart do
   """
 
   use GenServer, restart: :transient
+  require Logger
 
   @on_env_start_action "onEnvStart"
 
@@ -20,7 +21,7 @@ defmodule ApplicationRunner.Environment.Events.OnEnvStart do
         {:ok, :ok, {:continue, :stop_me}}
 
       {:error, reason} ->
-        IO.inspect(reason)
+        Logger.error(reason)
         {:stop, reason}
     end
   end

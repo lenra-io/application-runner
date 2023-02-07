@@ -31,7 +31,7 @@ defmodule ApplicationRunner.ApplicationServices do
         event,
         token
       ) do
-    {base_url, base_headers} = get_http_context() |> IO.inspect()
+    {base_url, base_headers} = get_http_context()
 
     url = "#{base_url}/function/#{function_name}"
 
@@ -63,8 +63,7 @@ defmodule ApplicationRunner.ApplicationServices do
 
     Telemetry.stop(:app_listener, start_time, peeked_token.claims)
 
-    IO.inspect("ApplicationService.run_listener")
-    res |> IO.inspect()
+    res
   end
 
   @spec fetch_view(String.t(), String.t(), map(), map(), map()) ::

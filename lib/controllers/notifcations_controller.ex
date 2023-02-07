@@ -13,10 +13,9 @@ defmodule ApplicationRunner.NotificationsController do
       def notify(conn, params) do
         with resources <- get_resource!(conn),
              mongo_user_id <- get_mongo_user_id(resources),
-             notif <- Notif.new(params) |> IO.inspect(),
-             updated_notif <-
-               Notifications.put_uids_to_notif(notif, mongo_user_id) |> IO.inspect(),
-             :ok <- @adapter_mod.send_notification(updated_notif) |> IO.inspect() do
+             notif <- Notif.new(params),
+             updated_notif <- Notifications.put_uids_to_notif(notif, mongo_user_id),
+             :ok <- @adapter_mod.send_notification(updated_notif) do
           conn
           |> reply(:ok)
         end

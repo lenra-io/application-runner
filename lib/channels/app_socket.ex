@@ -46,13 +46,13 @@ defmodule ApplicationRunner.AppSocket do
       def connect(params, socket, connect_info) do
         Logger.debug(inspect({params, socket, connect_info}))
 
-        with {:ok, app_name, context} <- extract_params(params) |> IO.inspect(),
-             {:ok, user_id} <- @adapter_mod.resource_from_params(params) |> IO.inspect(),
-             :ok <- @adapter_mod.allow(user_id, app_name)|> IO.inspect(),
+        with {:ok, app_name, context} <- extract_params(params),
+             {:ok, user_id} <- @adapter_mod.resource_from_params(params),
+             :ok <- @adapter_mod.allow(user_id, app_name),
              {:ok, env_metadata, session_metadata} <-
-               create_metadatas(user_id, app_name, context)|> IO.inspect(),
-             start_time <- Telemetry.start(:app_session, session_metadata)|> IO.inspect(),
-             {:ok, session_pid} <- Session.start_session(session_metadata, env_metadata)|> IO.inspect() do
+               create_metadatas(user_id, app_name, context),
+             start_time <- Telemetry.start(:app_session, session_metadata),
+             {:ok, session_pid} <- Session.start_session(session_metadata, env_metadata) do
           Logger.info("joined app #{app_name} with params #{inspect(params)}")
 
           socket =

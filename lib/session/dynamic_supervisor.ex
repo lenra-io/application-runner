@@ -27,7 +27,7 @@ defmodule ApplicationRunner.Session.DynamicSupervisor do
   """
   @spec start_session(term(), term()) :: {:error, any} | {:ok, pid()}
   def start_session(session_metadata, env_metadata) do
-    with {:ok, _pid} <- Environment.ensure_env_started(env_metadata) |> IO.inspect() do
+    with {:ok, _pid} <- Environment.ensure_env_started(env_metadata) do
       case DynamicSupervisor.start_child(
              get_full_name(env_metadata.env_id),
              {Session.Supervisor, session_metadata}
