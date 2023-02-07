@@ -43,9 +43,7 @@ defmodule ApplicationRunner.AppSocket do
       # See `Phoenix.Token` documentation for examples in
       # performing token verification on connect.
       @impl true
-      def connect(params, socket, connect_info) do
-        Logger.debug(inspect({params, socket, connect_info}))
-
+      def connect(params, socket, _connect_info) do
         with {:ok, app_name, context} <- extract_params(params),
              {:ok, user_id} <- @adapter_mod.resource_from_params(params),
              :ok <- @adapter_mod.allow(user_id, app_name),
