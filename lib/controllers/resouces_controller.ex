@@ -12,6 +12,10 @@ defmodule ApplicationRunner.ResourcesController do
       @adapter_mod unquote(adapter_mod)
 
       def get_app_resource(conn, %{"app_name" => app_name, "resource" => resource_name}) do
+        Logger.debug(
+          "#{__MODULE__} handle get_app_resource for #{inspect(%{"app_name" => app_name, "resource" => resource_name})}"
+        )
+
         function_name = @adapter_mod.get_function_name(app_name)
 
         conn =
