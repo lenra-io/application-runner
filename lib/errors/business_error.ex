@@ -23,6 +23,7 @@ defmodule ApplicationRunner.Errors.BusinessError do
       {:components_malformated,
        "The components was malformated, check metadata for more details"},
       {:error_during_transaction_start, "An error occured during transaction start."},
-      {:mongo_not_started, "Mongo is not started for the given env_id"}
+      {:mongo_not_started, "Mongo is not started for the given env_id"},
+      {:could_not_register_appchannel, "Could not register the AppChannel into swarm"}
     ]
 end

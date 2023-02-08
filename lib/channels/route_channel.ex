@@ -3,6 +3,7 @@ defmodule ApplicationRunner.RouteChannel do
   @moduledoc """
     `ApplicationRunner.RouteChannel` handle the app channel to run app and listeners and push to the user the resulted UI or Patch
   """
+  alias ApplicationRunner.Telemetry
 
   defmacro __using__(_opts) do
     quote do
@@ -35,7 +36,7 @@ defmodule ApplicationRunner.RouteChannel do
         else
           :no ->
             Logger.critical(
-              "Could not register the AppChannel into swarm, session_id: #{session_id}, route #{route}"
+              BusinessError.could_not_register_appchannel(%{session_id: session_id, route: route})
             )
 
             {:error, DevError.message("Could not register the AppChannel into swarm")}
@@ -46,7 +47,7 @@ defmodule ApplicationRunner.RouteChannel do
       end
 
       def join(_, _any, _socket) do
-        Logger.critical(BusinessError.invalid_channel_name())
+        Telemetry.event(:alert, %{}, BusinessError.invalid_channel_name())
         {:error, ErrorHelpers.translate_error(BusinessError.invalid_channel_name())}
       end
 
