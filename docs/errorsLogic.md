@@ -11,7 +11,48 @@
 - info: info message (ex: socket started, channel_started)  
 - debug: debug message  
 
-All error will be notice with `Logger` and send to Sentry.
+### Best Practice
+- All error will be notice with `Logger` and send to Sentry.
+
+- For debug message you can use message see Debug section for exemple, from warning level prefer use Error struct
+
+- In case we need to do some traitement for Logger error message we can use:
+
+>The fn inside the Logger will be executed only if the log level is set to debug.
+
+```elixir
+Logger.debug(fn -> "params: #{inspect(params)}" end)
+# Instead of
+Logger.debug("params: #{inspect(params)}")
+```
+
+> or use telemetry event to do it async
+
+- try to log the error on the deepest function, and try not duplicate Log (ex: don't log error of the child in parents function if child already log it)
+
+### Debug
+
+#### Controller
+
+```elixir
+#Start
+Logger.debug(
+        "#{__MODULE__} handle #{inspect(conn.method)} on #{inspect(conn.request_path)} with path_params #{inspect(conn.path_params)} and body_params #{inspect(conn.body_params)}"
+      )
+#End
+Logger.debug(
+        "#{__MODULE__} respond to #{inspect(conn.method)} on #{inspect(conn.request_path)} with res #{inspect(<res>)}"
+      )
+```
+
+#### Function
+```elixir
+#Start
+Logger.debug("#{__MODULE__} start_link with #{env_metadata}")
+#End
+Logger.debug("#{__MODULE__} start_link exit with #{inspect(res)}")
+```
+
 
 ### Genserver
 

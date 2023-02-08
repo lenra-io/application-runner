@@ -8,7 +8,7 @@ defmodule ApplicationRunner.Webhooks.WebhooksController do
 
   def create(conn, params) do
     Logger.debug(
-      "#{__MODULE__} handle #{conn.method} on #{conn.request_path} with path_params #{conn.path_params} and body_params #{conn.body_params}"
+      "#{__MODULE__} handle #{inspect(conn.method)} on #{inspect(conn.request_path)} with path_params #{inspect(conn.path_params)} and body_params #{inspect(conn.body_params)}"
     )
 
     with {:ok, webhook} <-
@@ -21,7 +21,7 @@ defmodule ApplicationRunner.Webhooks.WebhooksController do
 
   def trigger(conn, %{"webhook_uuid" => uuid} = _params) do
     Logger.debug(
-      "#{__MODULE__} handle #{conn.method} on #{conn.request_path} with path_params #{conn.path_params} and body_params #{conn.body_params}"
+      "#{__MODULE__} handle #{inspect(conn.method)} on #{inspect(conn.request_path)} with path_params #{inspect(conn.path_params)} and body_params #{inspect(conn.body_params)}"
     )
 
     conn

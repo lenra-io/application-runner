@@ -9,10 +9,16 @@ defmodule ApplicationRunner.Environment.Supervisor do
   alias ApplicationRunner.Environment.MongoInstance
   alias ApplicationRunner.Session
 
+  require Logger
+
   def start_link(%Environment.Metadata{} = env_metadata) do
+    Logger.debug("#{__MODULE__} start_link with #{env_metadata}")
+    Logger.notice("Start #{__MODULE__}")
     env_id = Map.fetch!(env_metadata, :env_id)
 
-    Supervisor.start_link(__MODULE__, env_metadata, name: get_full_name(env_id))
+    res = Supervisor.start_link(__MODULE__, env_metadata, name: get_full_name(env_id))
+
+    Logger.debug("#{__MODULE__} start_link exit with #{inspect(res)}")
   end
 
   @impl true
@@ -36,6 +42,10 @@ defmodule ApplicationRunner.Environment.Supervisor do
       {Session.DynamicSupervisor, env_id: em.env_id}
     ]
 
-    Supervisor.init(children, strategy: :one_for_one)
+    res = Supervisor.init(children, strategy: :one_for_one)
+
+    Logger.debug("#{__MODULE__} init exit with #{inspect(res)}")
+
+    res
   end
 end

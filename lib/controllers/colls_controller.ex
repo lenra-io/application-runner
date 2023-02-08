@@ -10,7 +10,7 @@ defmodule ApplicationRunner.CollsController do
     Logger.debug("#{__MODULE__} handle DELETE on collection #{coll}")
 
     with %{environment: env} <- Guardian.Plug.current_resource(conn),
-         :ok <- Logger.debug("#{__MODULE__} load #{env} from token"),
+         :ok <- Logger.debug("#{__MODULE__} load #{inspect(env)} from token"),
          :ok <- MongoInstance.run_mongo_task(env.id, MongoStorage, :delete_coll, [env.id, coll]) do
       reply(conn)
     end

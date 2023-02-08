@@ -14,13 +14,15 @@ defmodule ApplicationRunner.Environment.DynamicSupervisor do
 
   @doc false
   def start_link(opts) do
-    Logger.notice("Start Environment.DynamicSupervisor")
+    Logger.debug("#{__MODULE__} start_link with #{inspect(opts)}")
+    Logger.notice("Start #{__MODULE__}")
     DynamicSupervisor.start_link(__MODULE__, opts, name: __MODULE__)
   end
 
   @doc false
   @impl true
   def init(_opts) do
+    Logger.debug("#{__MODULE__} init")
     DynamicSupervisor.init(strategy: :one_for_one)
   end
 
@@ -36,13 +38,17 @@ defmodule ApplicationRunner.Environment.DynamicSupervisor do
   @spec start_env(term()) ::
           {:error, {:already_started, pid()}} | {:ok, pid()} | {:error, term()}
   def start_env(env_metadata) do
-    Logger.debug("Start Environment Supervisor with env_metadta: #{env_metadata}")
+    Logger.debug("#{__MODULE__} Start Environment Supervisor with env_metadta: #{env_metadata}")
 
     case DynamicSupervisor.start_child(
            __MODULE__,
            {ApplicationRunner.Environment.Supervisor, env_metadata}
          ) do
       {:error, {:shutdown, {:failed_to_start_child, _module, reason}}} ->
+        Logger.critical(
+          "#{__MODULE__} failed to start Environment Supervisor with env_metadta: #{env_metadata} for reason: #{inspect(reason)}"
+        )
+
         {:error, reason}
 
       res ->
@@ -61,11 +67,10 @@ defmodule ApplicationRunner.Environment.DynamicSupervisor do
         {:ok, pid}
 
       {:error, {:already_started, pid}} ->
-        Logger.notice("Environment Supervisor already started for metadata: #{env_metadata}")
+        Logger.info("Environment Supervisor already started for metadata: #{env_metadata}")
         {:ok, pid}
 
       {:error, err} ->
-        Logger.critical(err)
         {:error, err}
     end
   end
