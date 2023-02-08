@@ -18,12 +18,14 @@ defmodule ApplicationRunner.Errors.AlertAgent do
 
   def send_alert(agent, error) do
     Agent.update(agent, fn alert_metadata ->
+      # If we have already sent less than 5 errors, send a new alert.
       if alert_metadata.alert_sent <= 5 do
         Logger.alert(error)
         Map.update(alert_metadata, :alert_sent, 1, fn value -> value + 1 end)
+        # if we send 5 alerts, send an emergency and reset the counter.
       else
         Logger.emergency(error)
-        Map.update(alert_metadata, :alert_sent, 1, fn _value -> 1 end)
+        Map.update(alert_metadata, :alert_sent, 1, fn _value -> 0 end)
       end
     end)
   end

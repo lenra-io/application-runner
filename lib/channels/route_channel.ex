@@ -55,14 +55,17 @@ defmodule ApplicationRunner.RouteChannel do
       # IN #
       ######
 
+      # Receive run request from client, with event
       def handle_in("run", %{"code" => code, "event" => event}, socket) do
         handle_run(socket, code, event)
       end
 
+      # Receive run request from client
       def handle_in("run", %{"code" => code}, socket) do
         handle_run(socket, code)
       end
 
+      # Call send_client_event to run listener
       def handle_run(socket, code, event \\ %{}) do
         session_id = Map.fetch!(socket.assigns, :session_id)
 
@@ -83,12 +86,15 @@ defmodule ApplicationRunner.RouteChannel do
       ########
       # INFO #
       ########
+
+      # Send new ui to client
       def handle_info({:send, :ui, ui}, socket) do
         Logger.debug("send ui #{inspect(ui)}")
         push(socket, "ui", ui)
         {:noreply, socket}
       end
 
+      # Send patch ui to client
       def handle_info({:send, :patches, patches}, socket) do
         Logger.debug("send patchUi  #{inspect(%{patch: patches})}")
 
@@ -96,13 +102,16 @@ defmodule ApplicationRunner.RouteChannel do
         {:noreply, socket}
       end
 
+      # Send error in error channel
       def handle_info({:send, :error, {:error, err}}, socket) when is_struct(err) do
+        # Log a debug, normally errors are logged before sending the error to the channel.
         Logger.debug("Send error #{inspect(err)}")
 
         push(socket, "error", ErrorHelpers.translate_error(err))
         {:noreply, socket}
       end
 
+      # Send an error if the ui are malformated
       def handle_info({:send, :error, {:error, :invalid_ui, errors}}, socket)
           when is_list(errors) do
         formatted_errors =
