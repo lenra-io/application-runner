@@ -76,7 +76,6 @@ defmodule ApplicationRunner.Session.UiBuilders.LenraBuilder do
          ui_context,
          view_uid
        ) do
-    # TODO: move with in the case avoid validate schema when unsued
     with schema_path <- JsonSchemata.get_component_path(comp_type),
          {:ok, validation_data} <- validate_with_error(schema_path, component, view_uid) do
       case comp_type do

@@ -12,10 +12,6 @@ defmodule ApplicationRunner.JsonSchemata do
     GenServer.call(__MODULE__, {:get_schema_map, path})
   end
 
-  # def load_raw_schema(schema, component_name) do
-  #   GenServer.call(__MODULE__, {:load_raw_schema, schema, component_name})
-  # end
-
   def start_link(_) do
     GenServer.start_link(__MODULE__, %{}, name: __MODULE__)
   end
@@ -57,15 +53,6 @@ defmodule ApplicationRunner.JsonSchemata do
     )
   end
 
-  # defp load_raw_schema(schema, schemata_map, component_name) do
-  #   resolved_schema = ExComponentSchema.Schema.resolve(schema)
-
-  #   properties = ApplicationRunner.SchemaParser.parse(schema, resolved_schema)
-
-  #   [{get_component_path(component_name), Map.merge(%{schema: resolved_schema}, properties)}]
-  #   |> Enum.into(schemata_map)
-  # end
-
   def read_schema(path, root_location) do
     formatted_path =
       if root_location == "component.schema.json" do
@@ -85,11 +72,6 @@ defmodule ApplicationRunner.JsonSchemata do
   end
 
   def get_component_path(comp_type), do: "components/#{comp_type}.schema.json"
-
-  # @impl true
-  # def handle_call({:load_raw_schema, schema, component_name}, _from, schemata_map) do
-  #   {:reply, :ok, load_raw_schema(schema, schemata_map, component_name)}
-  # end
 
   @impl true
   def handle_call({:get_schema_map, path}, _from, schemata_map) do
