@@ -97,7 +97,7 @@ defmodule ApplicationRunner.RouteChannel do
       end
 
       def handle_info({:send, :error, {:error, err}}, socket) when is_struct(err) do
-        Logger.error("Send error #{inspect(err)}")
+        Logger.debug("Send error #{inspect(err)}")
 
         push(socket, "error", ErrorHelpers.translate_error(err))
         {:noreply, socket}
@@ -111,14 +111,14 @@ defmodule ApplicationRunner.RouteChannel do
             %{message: "#{message} at path #{path}", reason: "invalid_ui"}
           end)
 
-        Logger.notice("Channel error: #{formatted_errors}")
+        Logger.warning("Channel error: #{formatted_errors}")
 
         push(socket, "error", %{"errors" => formatted_errors})
         {:noreply, socket}
       end
 
       def handle_info({:send, :error, malformatted_error}, socket) do
-        Logger.critical("Malformatted error #{inspect(malformatted_error)}")
+        Logger.error("Malformatted error #{inspect(malformatted_error)}")
 
         push(socket, "error", %{
           "errors" => ErrorHelpers.translate_error(TechnicalError.unknown_error())

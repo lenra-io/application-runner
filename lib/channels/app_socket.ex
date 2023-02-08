@@ -67,7 +67,7 @@ defmodule ApplicationRunner.AppSocket do
           {:ok, socket}
         else
           {:error, reason} when is_bitstring(reason) ->
-            Logger.error(%{message: reason, reason: "application_error"})
+            Logger.warning(%{message: reason, reason: "application_error"})
             {:error, %{message: reason, reason: "application_error"}}
 
           {:error, reason} when is_struct(reason) ->
