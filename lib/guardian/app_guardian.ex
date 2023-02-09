@@ -13,6 +13,8 @@ defmodule ApplicationRunner.Guardian.AppGuardian do
 
   alias ApplicationRunner.Errors.{BusinessError, TechnicalError}
 
+  require Logger
+
   def subject_for_token(session_pid, _claims) do
     {:ok, to_string(session_pid)}
   end
@@ -45,12 +47,27 @@ defmodule ApplicationRunner.Guardian.AppGuardian do
   defp get_app_token(claims) do
     case claims["type"] do
       "session" ->
-        Session.fetch_token(claims["sub"])
+        try do
+          Session.fetch_token(claims["sub"])
+        rescue
+          e ->
+            Logger.error(
+              "#{__MODULE__} faile to fetch session token for claims: #{inspect(claims)} with error: #{inspect(e)}"
+            )
+        end
 
       "env" ->
-        Environment.fetch_token(String.to_integer(claims["sub"]))
+        try do
+          Environment.fetch_token(String.to_integer(claims["sub"]))
+        rescue
+          e ->
+            Logger.error(
+              "#{__MODULE__} faile to fetch environment token for claims: #{inspect(claims)} with error: #{inspect(e)}"
+            )
+        end
 
       _err ->
+        Logger.error("#{__MODULE__} Unknow token type for claims: #{inspect(claims)}")
         TechnicalError.unknown_error_tuple()
     end
   end

@@ -7,6 +7,8 @@ defmodule ApplicationRunner.Session.Events.OnUserFirstJoin do
 
   alias ApplicationRunner.MongoStorage
 
+  require Logger
+
   @on_user_first_join_action "onUserFirstJoin"
 
   def start_link(opts) do
@@ -18,6 +20,8 @@ defmodule ApplicationRunner.Session.Events.OnUserFirstJoin do
   end
 
   def init([session_id, env_id, user_id]) do
+    Logger.debug("#{__MODULE__} run event for session_id: #{session_id} and user: #{user_id}")
+
     with false <- MongoStorage.has_user_link?(env_id, user_id),
          {:ok, _} <-
            MongoStorage.create_user_link(%{environment_id: env_id, user_id: user_id}),
@@ -28,12 +32,21 @@ defmodule ApplicationRunner.Session.Events.OnUserFirstJoin do
              %{},
              %{}
            ) do
+      Logger.debug(
+        "#{__MODULE__} succesfully run event for session_id: #{session_id} and user: #{user_id}"
+      )
+
       {:ok, :ok, {:continue, :stop_me}}
     else
       true ->
+        Logger.debug("#{__MODULE__} user already run onUserFirstJoin for id: #{user_id}")
         {:ok, :ok, {:continue, :stop_me}}
 
       {:error, reason} ->
+        Logger.warning(
+          "#{__MODULE__} cannot run event session_id: #{session_id} and user: #{user_id}"
+        )
+
         {:stop, reason}
     end
   end

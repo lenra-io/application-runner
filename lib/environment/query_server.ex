@@ -310,8 +310,8 @@ defmodule ApplicationRunner.Environment.QueryServer do
   @object_id_regex ~r/^ObjectId\(([[:xdigit:]]{24})\)$/
 
   defp filter_bson_id(map) when is_map(map) do
-    Map.new(map, fn {_key, value} ->
-      handle_filter_bson_id(value)
+    Map.new(map, fn {key, value} ->
+      {key, handle_filter_bson_id(value)}
     end)
   end
 

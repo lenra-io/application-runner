@@ -84,7 +84,8 @@ defmodule ApplicationRunner.Environment.ViewServer do
         {:noreply, Map.put(state, :view, view)}
 
       {:error, error} ->
-        raise error
+        # TODO: send notification to channel
+        Logger.critical(error)
     end
   end
 

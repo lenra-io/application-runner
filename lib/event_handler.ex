@@ -9,6 +9,8 @@ defmodule ApplicationRunner.EventHandler do
   alias ApplicationRunner.Environment
   alias ApplicationRunner.Session
 
+  require Logger
+
   #########
   ## API ##
   #########
@@ -46,6 +48,9 @@ defmodule ApplicationRunner.EventHandler do
   ###############
 
   def start_link(opts) do
+    Logger.notice("Start #{__MODULE__}")
+    Logger.debug("#{__MODULE__} start_link with opts #{inspect(opts)}")
+
     mode = Keyword.fetch!(opts, :mode)
     id = Keyword.fetch!(opts, :id)
 
@@ -59,6 +64,10 @@ defmodule ApplicationRunner.EventHandler do
 
   @impl true
   def handle_call({:send_event, action, props, event}, _from, %{mode: mode, id: id} = state) do
+    Logger.debug(
+      "#{__MODULE__} handle_call for action: #{inspect(action)} with props #{inspect(props)} and event #{inspect(event)}"
+    )
+
     %{function_name: function_name, token: token} = get_metadata(mode, id)
     res = ApplicationServices.run_listener(function_name, action, props, event, token)
 

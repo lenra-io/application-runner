@@ -142,6 +142,7 @@ defmodule ApplicationRunner.RouteChannel do
     end
   end
 
+  @spec get_group(any, any, any) :: {ApplicationRunner.RouteChannel, any, any, any}
   def get_group(session_id, mode, route) do
     {__MODULE__, session_id, mode, route}
   end

@@ -1,6 +1,8 @@
 defmodule ApplicationRunner.JsonSchemata do
   use GenServer
 
+  require Logger
+
   @moduledoc """
     `LenraServers.JsonValidator` is a GenServer that allow to validate a json schema with `LenraServers.JsonValidator.validate_ui/1`
   """
@@ -17,10 +19,13 @@ defmodule ApplicationRunner.JsonSchemata do
   end
 
   def start_link(_) do
+    Logger.debug("#{__MODULE__} Start")
     GenServer.start_link(__MODULE__, %{}, name: __MODULE__)
   end
 
-  # Server (callbacks)
+  @doc """
+    During init we load root component from component_api (root defined in @component_api_directory).
+  """
   @impl true
   def init(_) do
     root_json_directory = Application.app_dir(:application_runner, @component_api_directory)

@@ -83,6 +83,8 @@ defmodule ApplicationRunner.ApplicationServices do
     headers = [{"Content-Type", "application/json"} | base_headers]
     body = Jason.encode!(%{view: view_name, data: data, props: props, context: context})
 
+    Logger.debug("Fetch application view \n#{url} : \n#{body}")
+
     Finch.build(:post, url, headers, body)
     |> Finch.request(AppHttp,
       receive_timeout: Application.fetch_env!(:application_runner, :view_timeout)
@@ -90,6 +92,8 @@ defmodule ApplicationRunner.ApplicationServices do
     |> response(:view)
     |> case do
       {:ok, %{"view" => view}} ->
+        Logger.debug("Got view #{inspect(view)}")
+
         {:ok, view}
 
       err ->
@@ -103,6 +107,8 @@ defmodule ApplicationRunner.ApplicationServices do
 
     url = "#{base_url}/function/#{function_name}"
     headers = [{"Content-Type", "application/json"} | base_headers]
+
+    Logger.debug("Fetch application manifest \n#{url} : \n#{function_name}")
 
     Finch.build(:post, url, headers)
     |> Finch.request(AppHttp,
@@ -192,7 +198,12 @@ defmodule ApplicationRunner.ApplicationServices do
   end
 
   defp response({:error, %Mint.TransportError{reason: reason}}, _action) do
-    Logger.error("Openfaas could not be reached. It should not happen. \n\t\t reason: #{reason}")
+    Telemetry.event(
+      :alert,
+      %{},
+      TechnicalError.openfaas_not_reachable(reason)
+    )
+
     TechnicalError.openfaas_not_reachable_tuple()
   end
 
@@ -201,22 +212,26 @@ defmodule ApplicationRunner.ApplicationServices do
          _action
        )
        when status_code not in [200, 202] do
-    Logger.error(body)
-
     case status_code do
       400 ->
+        Telemetry.event(:alert, %{}, TechnicalError.bad_request(body))
         TechnicalError.bad_request_tuple(body)
 
       404 ->
+        Logger.error(TechnicalError.error_404(body))
         TechnicalError.error_404_tuple(body)
 
       500 ->
+        Telemetry.event(:alert, %{}, TechnicalError.error_500(body))
         TechnicalError.error_500_tuple(body)
 
       504 ->
+        Logger.error(TechnicalError.timeout(body))
         TechnicalError.timeout_tuple(body)
 
-      _err ->
+      err ->
+        # maybe alert ?
+        Logger.critical(TechnicalError.unknown_error(err))
         TechnicalError.unknown_error_tuple(body)
     end
   end

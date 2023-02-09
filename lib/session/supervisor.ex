@@ -8,7 +8,12 @@ defmodule ApplicationRunner.Session.Supervisor do
 
   alias ApplicationRunner.Session
 
+  require Logger
+
   def start_link(%Session.Metadata{} = session_metadata) do
+    Logger.notice("Start #{__MODULE__}")
+    Logger.debug("#{__MODULE__} start_link with session_metadata #{inspect(session_metadata)}")
+
     Supervisor.start_link(__MODULE__, session_metadata,
       name: get_full_name(session_metadata.session_id)
     )
