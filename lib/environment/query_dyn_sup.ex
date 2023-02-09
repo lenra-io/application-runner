@@ -9,27 +9,44 @@ defmodule ApplicationRunner.Environment.QueryDynSup do
 
   alias ApplicationRunner.Environment.QueryServer
 
+  require Logger
+
   def start_link(opts) do
+    Logger.info("Start #{__MODULE__}")
+    Logger.debug("#{__MODULE__} start_link with #{inspect(opts)}")
     env_id = Keyword.fetch!(opts, :env_id)
-    DynamicSupervisor.start_link(__MODULE__, :ok, name: get_full_name(env_id))
+    res = DynamicSupervisor.start_link(__MODULE__, :ok, name: get_full_name(env_id))
+
+    Logger.debug("#{__MODULE__} start_link exit with #{inspect(res)}")
+
+    res
   end
 
   @impl true
   def init(_init_arg) do
+    Logger.debug("#{__MODULE__} init")
+
     DynamicSupervisor.init(strategy: :one_for_one)
   end
 
   @spec ensure_child_started(term(), String.t() | nil, map() | nil, map() | nil) ::
           {:ok, pid()} | {:error, term()}
   def ensure_child_started(env_id, coll, query_parsed, query_transformed) do
+    Logger.debug(
+      "#{__MODULE__} ensure query server started for #{inspect([env_id, coll, query_parsed, query_transformed])}"
+    )
+
     case start_child(env_id, coll, query_parsed, query_transformed) do
       {:ok, pid} ->
+        Logger.info("ApplicationRunner.Environment.QueryServer started")
         {:ok, pid}
 
       {:error, {:already_started, pid}} ->
+        Logger.debug("ApplicationRunner.Environment.QueryServer already started")
         {:ok, pid}
 
       err ->
+        Logger.critical(err)
         err
     end
   end

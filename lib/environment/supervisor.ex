@@ -16,9 +16,7 @@ defmodule ApplicationRunner.Environment.Supervisor do
     Logger.notice("Start #{__MODULE__}")
     env_id = Map.fetch!(env_metadata, :env_id)
 
-    res = Supervisor.start_link(__MODULE__, env_metadata, name: get_full_name(env_id))
-
-    Logger.debug("#{__MODULE__} start_link exit with #{inspect(res)}")
+    Supervisor.start_link(__MODULE__, env_metadata, name: get_full_name(env_id))
   end
 
   @impl true

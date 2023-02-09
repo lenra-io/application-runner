@@ -1,15 +1,20 @@
 defmodule ApplicationRunner.Environment.MongoInstance do
   @moduledoc """
-    This module provide the config option to start the `Mongo` genserver in the environment supervisor.
+    This module provides some tools to manage `Mongo` genserver.
   """
   require Logger
 
   use SwarmNamed
 
+  @doc """
+    Return the config option to start the `Mongo` genserver in the environment supervisor, for the given env_id.
+  """
   def config(env_id) do
     env = Application.fetch_env!(:application_runner, :env)
 
     database_name = env <> "_#{env_id}"
+
+    Logger.debug("#{__MODULE__} config for #{env_id} with db_name #{database_name}")
 
     mongo_config = Application.fetch_env!(:application_runner, :mongo)
 
@@ -29,18 +34,29 @@ defmodule ApplicationRunner.Environment.MongoInstance do
 
       :error ->
         error = "Failed to parse Mongo port: " <> mongo_config[:port]
-        Logger.emergency(error)
+
         raise error
     end
   end
 
   def run_mongo_task(env_id, mod, fun, opts) do
-    Task.Supervisor.async(
-      {:via, :swarm,
-       {ApplicationRunner.Environment.MongoInstance.TaskSupervisor, get_name(env_id)}},
-      fn -> Kernel.apply(mod, fun, opts) end
+    Logger.debug(
+      "#{__MODULE__} run_mongo_task for #{env_id} with task #{inspect([mod, fun, opts])}"
     )
-    |> Task.await()
+
+    res =
+      Task.Supervisor.async(
+        {:via, :swarm,
+         {ApplicationRunner.Environment.MongoInstance.TaskSupervisor, get_name(env_id)}},
+        fn -> Kernel.apply(mod, fun, opts) end
+      )
+      |> Task.await()
+
+    Logger.debug(
+      "#{__MODULE__} run_mongo_task for #{env_id} with task #{inspect([mod, fun, opts])} result with #{inspect(res)}"
+    )
+
+    res
   end
 end
 

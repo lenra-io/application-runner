@@ -7,7 +7,12 @@ defmodule ApplicationRunner.Environment.ViewDynSup do
 
   alias ApplicationRunner.Environment.{QueryDynSup, QueryServer, ViewServer, ViewUid}
 
+  require Logger
+
   def start_link(opts) do
+    Logger.info("Start #{__MODULE__}")
+    Logger.debug("#{__MODULE__} start_link with #{inspect(opts)}")
+
     env_id = Keyword.fetch!(opts, :env_id)
     DynamicSupervisor.start_link(__MODULE__, :ok, name: get_full_name(env_id))
   end
@@ -24,20 +29,28 @@ defmodule ApplicationRunner.Environment.ViewDynSup do
     query_parsed = view_uid.query_parsed
     query_transformed = view_uid.query_transformed
 
+    Logger.debug(
+      "#{__MODULE__} ensure_child_started for #{inspect(%{env_id: env_id, session_id: session_id})}"
+    )
+
     with {:ok, qs_pid} <-
            QueryDynSup.ensure_child_started(env_id, coll, query_parsed, query_transformed) do
       case start_child(env_id, function_name, view_uid) do
         {:ok, pid} ->
+          Logger.info("ApplicationRunner.Environment.ViewServer")
+
           QueryServer.join_group(qs_pid, session_id)
           ViewServer.join_group(pid, env_id, coll, query_parsed)
           QueryServer.monitor(qs_pid, pid)
           {:ok, pid}
 
         {:error, {:already_started, pid}} ->
+          Logger.debug("ApplicationRunner.Environment.ViewServer already started")
           QueryServer.join_group(qs_pid, session_id)
           {:ok, pid}
 
         err ->
+          Logger.critical(err)
           err
       end
     end

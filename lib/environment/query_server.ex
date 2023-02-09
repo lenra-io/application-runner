@@ -17,6 +17,8 @@ defmodule ApplicationRunner.Environment.QueryServer do
   require Logger
 
   def start_link(opts) do
+    Logger.debug("#{__MODULE__} start_link with #{inspect(opts)}")
+
     with {:ok, coll} <- Keyword.fetch(opts, :coll),
          {:ok, env_id} <- Keyword.fetch(opts, :env_id),
          {:ok, _query_transformed} <- Keyword.fetch(opts, :query_transformed),
@@ -38,30 +40,9 @@ defmodule ApplicationRunner.Environment.QueryServer do
     end
   end
 
-  def group_name(session_id) do
-    {__MODULE__, session_id}
-  end
-
-  def join_group(pid, session_id) do
-    group = group_name(session_id)
-    Swarm.join(group, pid)
-  end
-
-  def get_data(env_id, coll, query_parsed) do
-    GenServer.call(get_full_name({env_id, coll, query_parsed}), :get_data)
-  end
-
-  @doc """
-    Start monotoring the given ViewServer
-  """
-  def monitor(qs_pid, w_pid) do
-    GenServer.call(qs_pid, {:monitor, w_pid})
-  end
-
-  # I cant figure a way to fix the warning throw by Parser...
-  @dialyzer {:no_match, init: 1}
-
   def init(opts) do
+    Logger.debug("#{__MODULE__} init with #{inspect(opts)}")
+
     with {:ok, env_id} <- Keyword.fetch(opts, :env_id),
          {:ok, coll} <- Keyword.fetch(opts, :coll),
          {:ok, query_transformed} <- Keyword.fetch(opts, :query_transformed),
@@ -87,20 +68,52 @@ defmodule ApplicationRunner.Environment.QueryServer do
     end
   end
 
+  def group_name(session_id) do
+    {__MODULE__, session_id}
+  end
+
+  def join_group(pid, session_id) do
+    group = group_name(session_id)
+    Swarm.join(group, pid)
+  end
+
+  def get_data(env_id, coll, query_parsed) do
+    GenServer.call(get_full_name({env_id, coll, query_parsed}), :get_data)
+  end
+
+  @doc """
+    Start monotoring the given ViewServer
+  """
+  def monitor(qs_pid, w_pid) do
+    Logger.debug("#{__MODULE__} monitor with #{inspect({qs_pid, w_pid})}")
+
+    GenServer.call(qs_pid, {:monitor, w_pid})
+  end
+
   defp to_map_data(data) do
+    Logger.debug("#{__MODULE__} to_map_data with data: #{inspect(data)}")
+
     Map.new(data, fn d -> {Map.get(d, "_id"), d} end)
   end
 
   defp from_map_data(map_data) do
+    Logger.debug("#{__MODULE__} from_map_data with data: #{inspect(map_data)}")
+
     Map.values(map_data)
   end
 
   defp fetch_initial_data(_env_id, coll, query_transformed)
        when is_nil(coll) or is_nil(query_transformed) do
+    Logger.debug("#{__MODULE__} fetch_initial_data with nil query")
+
     {:ok, []}
   end
 
   defp fetch_initial_data(env_id, coll, query_transformed) do
+    Logger.debug(
+      "#{__MODULE__} fetch_initial_data with data: #{inspect([env_id, coll, query_transformed])}"
+    )
+
     MongoInstance.run_mongo_task(env_id, MongoStorage, :filter_docs, [
       env_id,
       coll,
@@ -114,6 +127,8 @@ defmodule ApplicationRunner.Environment.QueryServer do
         %{coll: coll, query_parsed: query_parsed} = state
       )
       when is_nil(coll) or is_nil(query_parsed) do
+    Logger.debug("#{__MODULE__} handle_call with :mongo_event with nil query")
+
     {:reply, :ok, state}
   end
 
@@ -122,6 +137,8 @@ defmodule ApplicationRunner.Environment.QueryServer do
         _from,
         state
       ) do
+    Logger.debug("#{__MODULE__} handle_call with :mongo_event #{inspect(event)}")
+
     event_timestamp = get_in(event, ["clusterTime"])
     event_id = get_in(event, ["_id"])
 
@@ -135,10 +152,14 @@ defmodule ApplicationRunner.Environment.QueryServer do
   end
 
   def handle_call(:get_data, _from, state) do
+    Logger.debug("#{__MODULE__} handle_call with :get_data with state: #{inspect(state)}")
+
     {:reply, Map.get(state, :data), state}
   end
 
   def handle_call({:monitor, w_pid}, _from, state) do
+    Logger.debug("#{__MODULE__} handle_call with :monitor for #{w_pid}")
+
     Process.monitor(w_pid)
     new_w_ids = MapSet.put(state.w_pids, w_pid)
     {:reply, :ok, Map.put(state, :w_pids, new_w_ids)}
@@ -289,7 +310,7 @@ defmodule ApplicationRunner.Environment.QueryServer do
   @object_id_regex ~r/^ObjectId\(([[:xdigit:]]{24})\)$/
 
   defp filter_bson_id(map) when is_map(map) do
-    Map.map(map, fn {_key, value} ->
+    Map.new(map, fn {_key, value} ->
       handle_filter_bson_id(value)
     end)
   end
