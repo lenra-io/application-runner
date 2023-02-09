@@ -46,7 +46,7 @@ defmodule ApplicationRunner.Environment.QueryDynSup do
         {:ok, pid}
 
       err ->
-        Logger.critical(err)
+        Logger.critical(inspect(err))
         err
     end
   end

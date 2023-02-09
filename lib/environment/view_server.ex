@@ -85,7 +85,7 @@ defmodule ApplicationRunner.Environment.ViewServer do
 
       {:error, error} ->
         # TODO: send notification to channel
-        Logger.critical(error)
+        Logger.critical(inspect(error))
     end
   end
 
