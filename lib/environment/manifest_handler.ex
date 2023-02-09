@@ -10,7 +10,7 @@ defmodule ApplicationRunner.Environment.ManifestHandler do
   require Logger
 
   def start_link(opts) do
-    Logger.debug("#{__MODULE__} start_link with #{opts}")
+    Logger.debug("#{__MODULE__} start_link with #{inspect(opts)}")
     Logger.info("Start #{__MODULE__}")
     env_id = Keyword.fetch!(opts, :env_id)
     GenServer.start_link(__MODULE__, opts, name: get_full_name(env_id))
@@ -18,21 +18,17 @@ defmodule ApplicationRunner.Environment.ManifestHandler do
 
   @impl true
   def init(opts) do
-    Logger.debug("#{__MODULE__} init with #{opts}")
+    Logger.debug("#{__MODULE__} init with #{inspect(opts)}")
 
     function_name = Keyword.fetch!(opts, :function_name)
 
-    res =
-      case ApplicationServices.fetch_manifest(function_name) do
-        {:ok, manifest} ->
-          {:ok, %{manifest: manifest}}
+    case ApplicationServices.fetch_manifest(function_name) do
+      {:ok, manifest} ->
+        {:ok, %{manifest: manifest}}
 
-        {:error, reason} ->
-          {:stop, reason}
-      end
-
-    Logger.debug("#{__MODULE__} init exit with #{opts}")
-    res
+      {:error, reason} ->
+        {:stop, reason}
+    end
   end
 
   @doc """
@@ -55,14 +51,14 @@ defmodule ApplicationRunner.Environment.ManifestHandler do
 
   @impl true
   def handle_call(:get_manifest, _from, state) do
-    Logger.debug("#{__MODULE__} handle call for #{inspect(:get_manifest)} with #{state}")
+    Logger.debug("#{__MODULE__} handle call for :get_manifest with #{inspect(state)}")
 
     {:reply, Map.get(state, :manifest), state}
   end
 
   @default_route %{"/" => %{"type" => "view", "name" => "main"}}
   def handle_call(:get_lenra_routes, _from, state) do
-    Logger.debug("#{__MODULE__} handle call for #{inspect(:get_lenra_routes)} with #{state}")
+    Logger.debug("#{__MODULE__} handle call for :get_lenra_routes with #{inspect(state)}")
 
     manifest = Map.get(state, :manifest)
 
@@ -70,7 +66,7 @@ defmodule ApplicationRunner.Environment.ManifestHandler do
   end
 
   def handle_call(:get_json_routes, _from, state) do
-    Logger.debug("#{__MODULE__} handle call for #{inspect(:get_json_routes)} with #{state}")
+    Logger.debug("#{__MODULE__} handle call for :get_json_routes with #{inspect(state)}")
 
     manifest = Map.get(state, :manifest)
 

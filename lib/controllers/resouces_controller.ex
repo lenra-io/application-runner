@@ -9,6 +9,8 @@ defmodule ApplicationRunner.ResourcesController do
       alias ApplicationRunner.Environment
       alias ApplicationRunner.Guardian.AppGuardian
 
+      require Logger
+
       @adapter_mod unquote(adapter_mod)
 
       def get_app_resource(conn, %{"app_name" => app_name, "resource" => resource_name}) do

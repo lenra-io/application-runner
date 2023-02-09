@@ -12,7 +12,7 @@ defmodule ApplicationRunner.Environment.Supervisor do
   require Logger
 
   def start_link(%Environment.Metadata{} = env_metadata) do
-    Logger.debug("#{__MODULE__} start_link with #{env_metadata}")
+    Logger.debug("#{__MODULE__} start_link with #{inspect(env_metadata)}")
     Logger.notice("Start #{__MODULE__}")
     env_id = Map.fetch!(env_metadata, :env_id)
 

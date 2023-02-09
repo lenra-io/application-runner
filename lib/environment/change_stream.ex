@@ -14,7 +14,7 @@ defmodule ApplicationRunner.Environment.ChangeStream do
   require Logger
 
   def start_link(opts) do
-    Logger.debug("#{__MODULE__} start_link with #{opts}")
+    Logger.debug("#{__MODULE__} start_link with #{inspect(opts)}")
     env_id = Keyword.fetch!(opts, :env_id)
     res = GenServer.start_link(__MODULE__, opts, name: get_full_name(env_id))
     Logger.debug("#{__MODULE__} start_link exit with #{inspect(res)}")
@@ -22,7 +22,7 @@ defmodule ApplicationRunner.Environment.ChangeStream do
   end
 
   def init(opts) do
-    Logger.debug("#{__MODULE__} init with #{opts}")
+    Logger.debug("#{__MODULE__} init with #{inspect(opts)}")
 
     env_id = Keyword.fetch!(opts, :env_id)
     Logger.info("start change stream for env: #{env_id}")
@@ -60,7 +60,7 @@ defmodule ApplicationRunner.Environment.ChangeStream do
     cs_name = get_full_name(env_id)
 
     Logger.debug(
-      "#{__MODULE__}  start_change_stream for env #{env_id}, with mongo_name: #{mongo_name}"
+      "#{__MODULE__}  start_change_stream for env #{env_id}, with mongo_name: #{inspect(mongo_name)}"
     )
 
     Mongo.watch_db(

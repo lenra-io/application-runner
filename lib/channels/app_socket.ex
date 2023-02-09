@@ -54,7 +54,7 @@ defmodule ApplicationRunner.AppSocket do
           Logger.notice("joined app #{app_name} with params #{inspect(params)}")
 
           Logger.debug(
-            "#{app_name}: /n/t session_metadata: #{session_metadata} /n/t env_metadata: #{env_metadata}"
+            "#{app_name}: /n/t session_metadata: #{inspect(session_metadata)} /n/t env_metadata: #{inspect(env_metadata)}"
           )
 
           socket =

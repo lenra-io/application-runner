@@ -24,7 +24,7 @@ defmodule ApplicationRunner.RouteChannel do
       def join("route:" <> route, params, socket) do
         mode = Map.get(params, "mode", "lenra")
         session_id = socket.assigns.session_id
-        Logger.debug("Join for #{session_id}, with params: #{params}")
+        Logger.debug("Join for #{session_id}, with params: #{inspect(params)}")
 
         with sm <- Session.MetadataAgent.get_metadata(session_id),
              :yes <- Swarm.register_name(get_name({session_id, mode, route}), self()),
@@ -120,7 +120,7 @@ defmodule ApplicationRunner.RouteChannel do
             %{message: "#{message} at path #{path}", reason: "invalid_ui"}
           end)
 
-        Logger.warning("Channel error: #{formatted_errors}")
+        Logger.warning("Channel error: #{inspect(formatted_errors)}")
 
         push(socket, "error", %{"errors" => formatted_errors})
         {:noreply, socket}

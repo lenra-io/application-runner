@@ -38,7 +38,9 @@ defmodule ApplicationRunner.Environment.DynamicSupervisor do
   @spec start_env(term()) ::
           {:error, {:already_started, pid()}} | {:ok, pid()} | {:error, term()}
   def start_env(env_metadata) do
-    Logger.debug("#{__MODULE__} Start Environment Supervisor with env_metadta: #{env_metadata}")
+    Logger.debug(
+      "#{__MODULE__} Start Environment Supervisor with env_metadta: #{inspect(env_metadata)}"
+    )
 
     case DynamicSupervisor.start_child(
            __MODULE__,
@@ -46,7 +48,7 @@ defmodule ApplicationRunner.Environment.DynamicSupervisor do
          ) do
       {:error, {:shutdown, {:failed_to_start_child, _module, reason}}} ->
         Logger.critical(
-          "#{__MODULE__} failed to start Environment Supervisor with env_metadta: #{env_metadata} for reason: #{inspect(reason)}"
+          "#{__MODULE__} failed to start Environment Supervisor with env_metadta: #{inspect(env_metadata)} for reason: #{inspect(reason)}"
         )
 
         {:error, reason}
@@ -67,7 +69,10 @@ defmodule ApplicationRunner.Environment.DynamicSupervisor do
         {:ok, pid}
 
       {:error, {:already_started, pid}} ->
-        Logger.info("Environment Supervisor already started for metadata: #{env_metadata}")
+        Logger.info(
+          "Environment Supervisor already started for metadata: #{inspect(env_metadata)}"
+        )
+
         {:ok, pid}
 
       {:error, err} ->
@@ -86,11 +91,11 @@ defmodule ApplicationRunner.Environment.DynamicSupervisor do
 
     case Swarm.whereis_name(name) do
       :undefined ->
-        Logger.error("Failed to found Supervision Tree for name: #{name}")
+        Logger.error("Failed to found Supervision Tree for name: #{inspect(name)}")
         BusinessError.env_not_started_tuple()
 
       pid ->
-        Logger.info("Stop Environment Supervision Tree for name: #{name}")
+        Logger.info("Stop Environment Supervision Tree for name: #{inspect(name)}")
         Supervisor.stop(pid)
     end
   end

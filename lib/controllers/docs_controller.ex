@@ -51,7 +51,7 @@ defmodule ApplicationRunner.DocsController do
              [env.id, coll, doc_id]
            ) do
       Logger.debug(
-        "#{__MODULE__} respond to #{inspect(conn.method)} on #{inspect(conn.request_path)} with res #{doc}"
+        "#{__MODULE__} respond to #{inspect(conn.method)} on #{inspect(conn.request_path)} with res #{inspect(doc)}"
       )
 
       reply(conn, doc)

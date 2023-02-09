@@ -158,7 +158,7 @@ defmodule ApplicationRunner.Environment.QueryServer do
   end
 
   def handle_call({:monitor, w_pid}, _from, state) do
-    Logger.debug("#{__MODULE__} handle_call with :monitor for #{w_pid}")
+    Logger.debug("#{__MODULE__} handle_call with :monitor for #{inspect(w_pid)}")
 
     Process.monitor(w_pid)
     new_w_ids = MapSet.put(state.w_pids, w_pid)
