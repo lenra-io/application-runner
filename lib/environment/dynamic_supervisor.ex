@@ -91,7 +91,7 @@ defmodule ApplicationRunner.Environment.DynamicSupervisor do
 
     case Swarm.whereis_name(name) do
       :undefined ->
-        Logger.error("Failed to found Supervision Tree for name: #{inspect(name)}")
+        Logger.error("Failed to find supervision tree for name: #{inspect(name)}")
         BusinessError.env_not_started_tuple()
 
       pid ->
