@@ -39,7 +39,7 @@ defmodule ApplicationRunner.Environment.DynamicSupervisor do
           {:error, {:already_started, pid()}} | {:ok, pid()} | {:error, term()}
   def start_env(env_metadata) do
     Logger.debug(
-      "#{__MODULE__} Start Environment Supervisor with env_metadta: #{inspect(env_metadata)}"
+      "#{__MODULE__} Start Environment Supervisor with env_metadata: #{inspect(env_metadata)}"
     )
 
     case DynamicSupervisor.start_child(
