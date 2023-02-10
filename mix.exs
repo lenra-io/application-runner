@@ -36,7 +36,7 @@ defmodule ApplicationRunner.MixProject do
       {:dialyxir, "~> 1.2", only: [:dev, :test], runtime: false},
       {
         :ex_component_schema,
-        git: "https://github.com/lenra-io/ex_component_schema", ref: "21adb5c"
+        git: "https://github.com/lenra-io/ex_component_schema", ref: "v1.0.0-beta.5"
       },
       {:jason, "~> 1.4"},
       {:json_diff, "~> 0.1.3"},
