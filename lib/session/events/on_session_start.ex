@@ -25,7 +25,7 @@ defmodule ApplicationRunner.Session.Events.OnSessionStart do
            %{}
          ) do
       :ok ->
-        Logger.debug("#{__MODULE__} succesfully run event for session_id: #{session_id}")
+        Logger.debug("#{__MODULE__} succesfully ran event for session_id: #{session_id}")
         {:ok, :ok, {:continue, :stop_me}}
 
       {:error, reason} when reason.reason != :error_404 ->
