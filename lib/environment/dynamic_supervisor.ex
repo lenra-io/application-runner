@@ -48,7 +48,7 @@ defmodule ApplicationRunner.Environment.DynamicSupervisor do
          ) do
       {:error, {:shutdown, {:failed_to_start_child, _module, reason}}} ->
         Logger.critical(
-          "#{__MODULE__} failed to start Environment Supervisor with env_metadta: #{inspect(env_metadata)} for reason: #{inspect(reason)}"
+          "#{__MODULE__} failed to start Environment Supervisor with env_metadata: #{inspect(env_metadata)} for reason: #{inspect(reason)}"
         )
 
         {:error, reason}
