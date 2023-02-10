@@ -39,7 +39,7 @@ defmodule ApplicationRunner.Session.Events.OnUserFirstJoin do
       {:ok, :ok, {:continue, :stop_me}}
     else
       true ->
-        Logger.debug("#{__MODULE__} user already run onUserFirstJoin for id: #{user_id}")
+        Logger.debug("#{__MODULE__} user already ran onUserFirstJoin for id: #{user_id}")
         {:ok, :ok, {:continue, :stop_me}}
 
       {:error, reason} ->
