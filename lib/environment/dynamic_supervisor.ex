@@ -95,7 +95,7 @@ defmodule ApplicationRunner.Environment.DynamicSupervisor do
         BusinessError.env_not_started_tuple()
 
       pid ->
-        Logger.info("Stop Environment Supervision Tree for name: #{inspect(name)}")
+        Logger.info("Stopping environment supervision tree for name: #{inspect(name)}")
         Supervisor.stop(pid)
     end
   end
