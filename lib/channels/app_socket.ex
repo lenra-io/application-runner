@@ -51,7 +51,7 @@ defmodule ApplicationRunner.AppSocket do
                create_metadatas(user_id, app_name, context),
              start_time <- Telemetry.start(:app_session, session_metadata),
              {:ok, session_pid} <- Session.start_session(session_metadata, env_metadata) do
-          Logger.notice("joined app #{app_name} with params #{inspect(params)}")
+          Logger.notice("Joined app #{app_name} with params #{inspect(params)}")
 
           Logger.debug(
             "#{app_name}: /n/t session_metadata: #{inspect(session_metadata)} /n/t env_metadata: #{inspect(env_metadata)}"
