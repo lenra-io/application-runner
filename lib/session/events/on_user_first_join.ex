@@ -33,7 +33,7 @@ defmodule ApplicationRunner.Session.Events.OnUserFirstJoin do
              %{}
            ) do
       Logger.debug(
-        "#{__MODULE__} succesfully run event for session_id: #{session_id} and user: #{user_id}"
+        "#{__MODULE__} succesfully ran event for session_id: #{session_id} and user: #{user_id}"
       )
 
       {:ok, :ok, {:continue, :stop_me}}
