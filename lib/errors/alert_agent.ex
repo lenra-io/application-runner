@@ -1,6 +1,6 @@
 defmodule ApplicationRunner.Errors.AlertAgent do
   @moduledoc """
-    LenraCommon.Erros.AlertAgent manage Alert & Emergency error
+    ApplicationRunner.Errors.AlertAgent manages Alert & Emergency errors
   """
 
   use Agent
@@ -22,7 +22,7 @@ defmodule ApplicationRunner.Errors.AlertAgent do
       if alert_metadata.alert_sent <= 5 do
         Logger.alert(error)
         Map.update(alert_metadata, :alert_sent, 1, fn value -> value + 1 end)
-        # if we send 5 alerts, send an emergency and reset the counter.
+        # if we sent 5 alerts, send an emergency and reset the counter.
       else
         Logger.emergency(error)
         Map.update(alert_metadata, :alert_sent, 1, fn _value -> 0 end)

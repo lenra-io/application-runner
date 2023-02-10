@@ -24,7 +24,7 @@ defmodule ApplicationRunner.JsonSchemata do
   end
 
   @doc """
-    During init we load root component from component_api (root defined in @component_api_directory).
+    During init we load the root component from component_api (root defined in @component_api_directory).
   """
   @impl true
   def init(_) do

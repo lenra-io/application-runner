@@ -52,7 +52,7 @@ defmodule ApplicationRunner.Guardian.AppGuardian do
         rescue
           e ->
             Logger.error(
-              "#{__MODULE__} faile to fetch session token for claims: #{inspect(claims)} with error: #{inspect(e)}"
+              "#{__MODULE__} failed to fetch session token for claims: #{inspect(claims)} with error: #{inspect(e)}"
             )
         end
 
@@ -62,12 +62,12 @@ defmodule ApplicationRunner.Guardian.AppGuardian do
         rescue
           e ->
             Logger.error(
-              "#{__MODULE__} faile to fetch environment token for claims: #{inspect(claims)} with error: #{inspect(e)}"
+              "#{__MODULE__} failed to fetch environment token for claims: #{inspect(claims)} with error: #{inspect(e)}"
             )
         end
 
       _err ->
-        Logger.error("#{__MODULE__} Unknow token type for claims: #{inspect(claims)}")
+        Logger.error("#{__MODULE__} Unknown token type for claims: #{inspect(claims)}")
         TechnicalError.unknown_error_tuple()
     end
   end

@@ -82,7 +82,7 @@ defmodule ApplicationRunner.Environment.QueryServer do
   end
 
   @doc """
-    Start monotoring the given ViewServer
+    Start monitoring the given ViewServer
   """
   def monitor(qs_pid, w_pid) do
     Logger.debug("#{__MODULE__} monitor with #{inspect({qs_pid, w_pid})}")

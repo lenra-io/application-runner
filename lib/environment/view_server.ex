@@ -68,7 +68,7 @@ defmodule ApplicationRunner.Environment.ViewServer do
   end
 
   @doc """
-    Receive notifcation from QueryServer when data changed and we need to refresh view.
+    Receive notification from QueryServer when data changed and we need to refresh the view.
   """
   @impl true
   def handle_info({:data_changed, new_data}, state) do

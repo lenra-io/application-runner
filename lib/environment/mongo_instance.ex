@@ -7,7 +7,7 @@ defmodule ApplicationRunner.Environment.MongoInstance do
   use SwarmNamed
 
   @doc """
-    Return the config option to start the `Mongo` genserver in the environment supervisor, for the given env_id.
+    Returns the config options to start the `Mongo` genserver in the environment supervisor, for the given env_id.
   """
   def config(env_id) do
     env = Application.fetch_env!(:application_runner, :env)
