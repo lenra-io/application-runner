@@ -123,7 +123,7 @@ defmodule ApplicationRunner.Monitor do
   end
 
   def handle_event([:application_runner, :alert, :event], event, _metadata, _config) do
-    case Swarm.whereis_name({:via, :swarm, event}) do
+    case Swarm.whereis_name(event) do
       :undefined -> AlertAgent.start_link(event)
       pid -> AlertAgent.send_alert(pid, event)
     end
