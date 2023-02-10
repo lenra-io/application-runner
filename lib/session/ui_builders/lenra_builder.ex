@@ -381,7 +381,7 @@ defmodule ApplicationRunner.Session.UiBuilders.LenraBuilder do
         rescue
           e ->
             Logger.error(
-              "#{__MODULE__} fail to build children map for session_metadata: #{inspect(session_metadata)} with children: #{inspect(children)} and error: #{inspect(e)}"
+              "#{__MODULE__} failed to build children map for session_metadata: #{inspect(session_metadata)} with children: #{inspect(children)} and error: #{inspect(e)}"
             )
         end
     end
