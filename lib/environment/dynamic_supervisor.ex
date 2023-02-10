@@ -86,7 +86,7 @@ defmodule ApplicationRunner.Environment.DynamicSupervisor do
   """
   @spec stop_env(number()) :: :ok | {:error, LC.BusinessError.t()}
   def stop_env(env_id) do
-    Logger.debug("Stop Environment for env_id: #{env_id}")
+    Logger.debug("Stopping environment for env_id: #{env_id}")
     name = Environment.Supervisor.get_name(env_id)
 
     case Swarm.whereis_name(name) do
