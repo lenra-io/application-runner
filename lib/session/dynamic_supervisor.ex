@@ -71,7 +71,7 @@ defmodule ApplicationRunner.Session.DynamicSupervisor do
 
           {:error, :not_found} ->
             Logger.warning(
-              "#{__MODULE__} DynamicSupervisor cannot found Session for env_id: #{env_id}, session_id: #{session_id}"
+              "#{__MODULE__} DynamicSupervisor could not find Session for env_id: #{env_id}, session_id: #{session_id}"
             )
         end
     end
