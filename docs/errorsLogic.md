@@ -65,7 +65,7 @@ Some rules:
 
 ### Alert/Emergency error  
   
-Alert messageq are sent when a problem needs our attention, some examples:
+Alert messages are sent when a problem needs our attention, some examples:
 - Openfaas not reachable/timeout
 - Postgres/Mongo not reachable
 - Function not found in Openfaas, this can normally NEVER happen in our workflow
