@@ -123,8 +123,9 @@ defmodule ApplicationRunner.Session.UiBuilders.LenraBuilder do
   defp handle_view(session_metadata, component, ui_context, view_uid) do
     name = Map.get(component, "name")
     props = Map.get(component, "props")
-    coll = Map.get(component, "coll")
-    query = Map.get(component, "query", %{})
+    find = Map.get(component, "find", %{})
+
+    {coll, query, projection} = RouteServer.extract_find(component, find)
 
     with {:ok, new_view_uid} <-
            RouteServer.create_view_uid(
@@ -133,6 +134,7 @@ defmodule ApplicationRunner.Session.UiBuilders.LenraBuilder do
              coll,
              query,
              %{},
+             projection,
              props,
              view_uid.context,
              view_uid.prefix_path

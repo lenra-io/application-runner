@@ -40,6 +40,33 @@ defmodule ApplicationRunner.Environment.QueryServer do
     end
   end
 
+  def group_name(session_id) do
+    {__MODULE__, session_id}
+  end
+
+  def join_group(pid, session_id) do
+    group = group_name(session_id)
+    Swarm.join(group, pid)
+  end
+
+  def get_data(env_id, coll, query_parsed) do
+    GenServer.call(get_full_name({env_id, coll, query_parsed}), :get_data)
+  end
+
+  def add_projection(env_id, coll, query_parsed, projection) do
+    GenServer.call(get_full_name({env_id, coll, query_parsed}), {:add_projection, projection})
+  end
+
+  @doc """
+    Start monotoring the given ViewServer
+  """
+  def monitor(qs_pid, w_pid) do
+    GenServer.call(qs_pid, {:monitor, w_pid})
+  end
+
+  # I cant figure a way to fix the warning throw by Parser...
+  @dialyzer {:no_match, init: 1}
+
   def init(opts) do
     Logger.debug("#{__MODULE__} init with #{inspect(opts)}")
 
@@ -47,7 +74,11 @@ defmodule ApplicationRunner.Environment.QueryServer do
          {:ok, coll} <- Keyword.fetch(opts, :coll),
          {:ok, query_transformed} <- Keyword.fetch(opts, :query_transformed),
          {:ok, query_parsed} <- Keyword.fetch(opts, :query_parsed),
-         {:ok, data} <- fetch_initial_data(env_id, coll, query_transformed) do
+         {:ok, data} <- fetch_initial_data(env_id, coll, query_transformed),
+         {:ok, projection} <- Keyword.fetch(opts, :projection) do
+      projection_data =
+        Map.merge(%{%{} => %{}}, %{projection => projection_data(data, projection)})
+
       {:ok,
        %{
          data: data,
@@ -57,7 +88,8 @@ defmodule ApplicationRunner.Environment.QueryServer do
          coll: coll,
          latest_timestamp: Mongo.timestamp(DateTime.utc_now()),
          done_ids: MapSet.new(),
-         w_pids: MapSet.new()
+         w_pids: MapSet.new(),
+         projection_data: projection_data
        }}
     else
       :error ->
@@ -119,6 +151,40 @@ defmodule ApplicationRunner.Environment.QueryServer do
       coll,
       query_transformed
     ])
+  end
+
+  defp projection_data(data, projection) do
+    Enum.map(data, fn document ->
+      Map.filter(document, fn {k, _v} -> Map.get(projection, k, false) end)
+    end)
+  end
+
+  defp add_projection_data(projection_data, data, projection) do
+    Map.put(projection_data, projection, projection_data(data, projection))
+  end
+
+  defp projection_change?(projection_data, new_data, projection) do
+    Map.get(projection_data, projection) == projection_data(new_data, projection)
+  end
+
+  def handle_call(
+        {:add_projection, projection},
+        _from,
+        %{data: data, projection_data: projection_data} = state
+      )
+      when projection != %{} do
+    new_state =
+      Map.put(state, :projection_data, add_projection_data(projection_data, data, projection))
+
+    {:reply, :ok, new_state}
+  end
+
+  def handle_call(
+        {:add_projection, _projection},
+        _from,
+        state
+      ) do
+    {:reply, :ok, state}
   end
 
   def handle_call(
@@ -197,7 +263,7 @@ defmodule ApplicationRunner.Environment.QueryServer do
         full_doc = get_in(event, ["fullDocument"])
         doc_id = get_in(event, ["documentKey", "_id"])
 
-        {new_map_data, new_data} =
+        {new_map_data, new_data, new_projection_data} =
           change_data(op_type, full_doc, doc_id, data, map_data, query_parsed, state)
 
         new_done_ids = get_new_done_ids(event_timestamp, latest_timestamp, event_id, done_ids)
@@ -207,7 +273,8 @@ defmodule ApplicationRunner.Environment.QueryServer do
             data: new_data,
             map_data: new_map_data,
             done_ids: new_done_ids,
-            latest_timestamp: event_timestamp
+            latest_timestamp: event_timestamp,
+            new_projection_data: new_projection_data
           })
 
         {:reply, :ok, new_state}
@@ -242,7 +309,9 @@ defmodule ApplicationRunner.Environment.QueryServer do
     Swarm.unregister_name(get_name({env_id, old_coll, query_parsed}))
     # Register new name
     Swarm.register_name(get_name({env_id, new_coll, query_parsed}), self())
+
     notify_coll_changed(new_coll, state)
+
     {:reply, :ok, Map.put(state, :coll, new_coll)}
   end
 
@@ -264,8 +333,8 @@ defmodule ApplicationRunner.Environment.QueryServer do
     if Exec.match?(full_doc, parsed_query) do
       new_map_data = Map.put(map_data, doc_id, full_doc)
       new_data = from_map_data(new_map_data)
-      notify_data_changed(new_data, state)
-      {new_map_data, new_data}
+      new_projection_data = notify_data_changed(new_data, state)
+      {new_map_data, new_data, new_projection_data}
     else
       {map_data, data}
     end
@@ -279,8 +348,8 @@ defmodule ApplicationRunner.Environment.QueryServer do
       new_map_data = Map.put(map_data, doc_id, full_doc)
       new_data = from_map_data(new_map_data)
 
-      notify_data_changed(new_data, state)
-      {new_map_data, new_data}
+      new_projection_data = notify_data_changed(new_data, state)
+      {new_map_data, new_data, new_projection_data}
     else
       old_length = Enum.count(map_data)
       new_map_data = Map.delete(map_data, doc_id)
@@ -289,8 +358,8 @@ defmodule ApplicationRunner.Environment.QueryServer do
         {map_data, data}
       else
         new_data = from_map_data(new_map_data)
-        notify_data_changed(new_data, state)
-        {new_map_data, new_data}
+        new_projection_data = notify_data_changed(new_data, state)
+        {new_map_data, new_data, new_projection_data}
       end
     end
   end
@@ -298,8 +367,10 @@ defmodule ApplicationRunner.Environment.QueryServer do
   defp change_data("delete", _full_doc, doc_id, _data, map_data, _query_parsed, state) do
     new_map_data = Map.delete(map_data, doc_id)
     new_data = from_map_data(new_map_data)
-    notify_data_changed(new_data, state)
-    {new_map_data, new_data}
+
+    new_projection_data = notify_data_changed(new_data, state)
+
+    {new_map_data, new_data, new_projection_data}
   end
 
   defp change_data(op_type, _full_doc, _doc_id, _data, _map_data, _query_parsed, state) do
@@ -343,22 +414,47 @@ defmodule ApplicationRunner.Environment.QueryServer do
     end
   end
 
-  defp notify_data_changed(new_data, %{
-         env_id: env_id,
-         query_parsed: query_parsed,
-         coll: coll
-       }) do
-    group = ViewServer.group_name(env_id, coll, query_parsed)
+  defp notify_data_changed(
+         new_data,
+         %{
+           env_id: env_id,
+           query_parsed: query_parsed,
+           coll: coll,
+           projection_data: projection_data
+         }
+       ) do
+    # Notify all ViewServer that projection changed
+    new_projection_data =
+      Enum.map(projection_data, fn {k, v} ->
+        if projection_change?(v, new_data, k) do
+          group = ViewServer.group_name(env_id, coll, query_parsed, k)
+          Swarm.publish(group, {:data_changed, new_data})
+          {k, projection_data(new_data, k)}
+        else
+          {k, v}
+        end
+      end)
+
+    # Notify ViewServer with no projection. (projection_data for default %{} projection will never change and pass in the map)
+    group = ViewServer.group_name(env_id, coll, query_parsed, %{})
     Swarm.publish(group, {:data_changed, new_data})
+
+    new_projection_data
   end
 
-  defp notify_coll_changed(new_coll, %{
-         env_id: env_id,
-         query_parsed: query_parsed,
-         coll: old_coll
-       }) do
-    group = ViewServer.group_name(env_id, old_coll, query_parsed)
-    Swarm.publish(group, {:coll_changed, new_coll})
+  defp notify_coll_changed(
+         new_coll,
+         %{
+           env_id: env_id,
+           query_parsed: query_parsed,
+           coll: old_coll,
+           projection_data: projection_data
+         }
+       ) do
+    Enum.map(Map.keys(projection_data), fn projection_key ->
+      group = ViewServer.group_name(env_id, old_coll, query_parsed, projection_key)
+      Swarm.publish(group, {:coll_changed, new_coll})
+    end)
   end
 
   # If a ViewServer die, we receive a message here.

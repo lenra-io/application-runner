@@ -95,8 +95,8 @@ defmodule ApplicationRunner.Session.RouteServer do
     with {:ok, route_params, base_view} <- find_route(routes, route),
          name <- Map.get(base_view, "name"),
          props <- Map.get(base_view, "props", %{}),
-         coll <- Map.get(base_view, "coll"),
-         query <- Map.get(base_view, "query", %{}),
+         find <- Map.get(base_view, "find", %{}),
+         {coll, query, projection} <- extract_find(base_view, find),
          {:ok, view_uid} <-
            create_view_uid(
              session_metadata,
@@ -104,6 +104,7 @@ defmodule ApplicationRunner.Session.RouteServer do
              coll,
              query,
              %{"route" => route_params},
+             projection,
              props,
              session_metadata.context,
              ""
@@ -115,6 +116,26 @@ defmodule ApplicationRunner.Session.RouteServer do
 
       err ->
         err
+    end
+  end
+
+  def extract_find(base_view, find) do
+    coll_deprecated = Map.get(base_view, "coll")
+    query_deprecated = Map.get(base_view, "query", %{})
+    name = Map.get(base_view, "name")
+
+    coll = Map.get(find, "coll")
+    query = Map.get(find, "query", %{})
+    projection = Map.get(find, "projection", %{})
+
+    if find == %{} && coll_deprecated != nil do
+      Logger.warning(
+        "Definition of view #{name} is deprecated since applicationRunner beta 106 check https://docs.lenra.io/components-api/components/view.html."
+      )
+
+      {coll_deprecated, query_deprecated, %{}}
+    else
+      {coll, query, projection}
     end
   end
 
@@ -156,6 +177,7 @@ defmodule ApplicationRunner.Session.RouteServer do
           map(),
           map() | nil,
           map(),
+          map(),
           binary()
         ) :: {:ok, ViewUid.t()} | {:error, LenraCommon.Errors.BusinessError.t()}
   def create_view_uid(
@@ -164,6 +186,7 @@ defmodule ApplicationRunner.Session.RouteServer do
         coll,
         query,
         query_params,
+        projection,
         props,
         context,
         prefix_path
@@ -183,7 +206,8 @@ defmodule ApplicationRunner.Session.RouteServer do
          query_parsed: query_parsed,
          query_transformed: query_transformed,
          coll: coll,
-         context: context
+         context: context,
+         projection: projection
        }}
     end
   end
