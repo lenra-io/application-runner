@@ -111,7 +111,7 @@ defmodule ApplicationRunner.RouteChannel do
         {:noreply, socket}
       end
 
-      # Send an error if the ui are malformated
+      # Send an error if the ui is malformed
       def handle_info({:send, :error, {:error, :invalid_ui, errors}}, socket)
           when is_list(errors) do
         formatted_errors =
