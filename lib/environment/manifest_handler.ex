@@ -32,7 +32,7 @@ defmodule ApplicationRunner.Environment.ManifestHandler do
   end
 
   @doc """
-   Return the Manifest for the given env_id
+   Returns the Manifest for the given env_id
   """
   @spec get_manifest(number()) :: map()
   def get_manifest(env_id) do
