@@ -1,6 +1,8 @@
 defmodule ApplicationRunner.CronController do
   use ApplicationRunner, :controller
 
+  alias ApplicationRunner.Environment.MetadataAgent
+  alias ApplicationRunner.Environment
   alias ApplicationRunner.Crons
   alias ApplicationRunner.Errors.BusinessError
   alias ApplicationRunner.Guardian.AppGuardian
@@ -11,8 +13,9 @@ defmodule ApplicationRunner.CronController do
         BusinessError.invalid_token_tuple()
 
       {:ok, %{environment: env} = _resources} ->
-        with :ok <-
-               Crons.create(env.id, params) do
+        with %Environment.Metadata{} = metadata <- MetadataAgent.get_metadata(env.id),
+             :ok <-
+               Crons.create(env.id, metadata.function_name, params) do
           reply(conn, :ok)
         end
     end

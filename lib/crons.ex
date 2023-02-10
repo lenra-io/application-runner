@@ -6,30 +6,33 @@ defmodule ApplicationRunner.Crons do
   import Ecto.Query, only: [from: 2, from: 1]
 
   alias ApplicationRunner.Crons.Cron
-  alias ApplicationRunner.Environment
   alias ApplicationRunner.Errors.{BusinessError, TechnicalError}
-  alias ApplicationRunner.EventHandler
-  alias ApplicationRunner.Repo
+  alias ApplicationRunner.{AppSocket, Environment, EventHandler, Repo}
   alias Crontab.CronExpression.{Composer, Parser}
 
   def run_env_cron(
         action,
         props,
         event,
-        env_id
+        env_id,
+        function_name
       ) do
-    with {:ok, metadata} <-
-           Environment.create_metadata(env_id),
+    with {:ok, token} <-
+           AppSocket.do_create_env_token(env_id),
          {:ok, _pid} <-
-           Environment.ensure_env_started(metadata) do
+           Environment.ensure_env_started(%Environment.Metadata{
+             env_id: env_id,
+             function_name: function_name,
+             token: token
+           }) do
       EventHandler.send_env_event(env_id, action, props, event)
     end
   end
 
-  def create(env_id, %{"listener_name" => _action} = params) do
+  def create(env_id, function_name, %{"listener_name" => _action} = params) do
     cron =
       env_id
-      |> Cron.new(params)
+      |> Cron.new(function_name, params)
       |> Ecto.Changeset.apply_changes()
 
     cron
@@ -100,7 +103,8 @@ defmodule ApplicationRunner.Crons do
              cron.listener_name,
              cron.props,
              %{},
-             cron.environment_id
+             cron.environment_id,
+             cron.function_name
            ]}
       )
     end

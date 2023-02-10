@@ -19,7 +19,8 @@ defmodule ApplicationRunner.Crons.Cron do
              :environment_id,
              :user_id,
              :overlap,
-             :state
+             :state,
+             :function_name
            ]}
   schema "crons" do
     belongs_to(:environment, Environment)
@@ -34,6 +35,7 @@ defmodule ApplicationRunner.Crons.Cron do
     field(:state, :string, default: "active")
 
     field(:should_run_missed_steps, :boolean, default: false)
+    field(:function_name, :string)
 
     timestamps()
   end
@@ -65,8 +67,8 @@ defmodule ApplicationRunner.Crons.Cron do
     changeset(cron, params)
   end
 
-  def new(env_id, params) do
-    %__MODULE__{environment_id: env_id, name: make_ref()}
+  def new(env_id, function_name, params) do
+    %__MODULE__{environment_id: env_id, function_name: function_name, name: make_ref()}
     |> __MODULE__.changeset(params)
   end
 end

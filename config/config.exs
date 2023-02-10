@@ -23,8 +23,7 @@ config :application_runner,
   lenra_user_table: "users",
   repo: ApplicationRunner.Repo,
   url: "localhost:4000",
-  env: "dev",
-  adapter: ApplicationRunner.FakeAppAdapter
+  env: "dev"
 
 config :application_runner, :mongo,
   hostname: "localhost",

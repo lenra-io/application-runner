@@ -1,14 +1,18 @@
 defmodule ApplicationRunner.ResourcesController do
-  defmacro __using__(_opts) do
+  defmacro __using__(opts) do
+    adapter_mod = Keyword.fetch!(opts, :adapter)
+
     quote do
       use ApplicationRunner, :controller
 
       alias ApplicationRunner.ApplicationServices
+      alias ApplicationRunner.Environment
+      alias ApplicationRunner.Guardian.AppGuardian
 
-      @adapter Application.compile_env(:application_runner, :adapter)
+      @adapter_mod unquote(adapter_mod)
 
       def get_app_resource(conn, %{"app_name" => app_name, "resource" => resource_name}) do
-        function_name = @adapter.get_function_name(app_name)
+        function_name = @adapter_mod.get_function_name(app_name)
 
         conn =
           conn
