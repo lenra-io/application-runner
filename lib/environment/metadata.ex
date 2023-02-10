@@ -1,6 +1,6 @@
 defmodule ApplicationRunner.Environment.Metadata do
   @moduledoc """
-    The Environmnet metadata.
+    The Environment metadata.
   """
   @enforce_keys [:env_id, :function_name, :token]
   defstruct [
