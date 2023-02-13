@@ -7,6 +7,7 @@ defmodule ApplicationRunner.JsonSchemata do
 
   # Client (api)
   @component_api_directory "priv/components-api/api"
+  @component_api_root_file "component.schema.json"
 
   def get_schema_map(path) do
     GenServer.call(__MODULE__, {:get_schema_map, path})
@@ -21,7 +22,7 @@ defmodule ApplicationRunner.JsonSchemata do
   def init(_) do
     root_json_directory =
       Application.app_dir(:application_runner, @component_api_directory) <>
-        "/component.schema.json"
+        "/" <> @component_api_root_file
 
     {:ok, file_content} = File.read(root_json_directory)
 
@@ -55,7 +56,7 @@ defmodule ApplicationRunner.JsonSchemata do
 
   def read_schema(path, root_location) do
     formatted_path =
-      if root_location == "component.schema.json" do
+      if root_location == @component_api_root_file do
         Path.join("/", path)
       else
         String.replace(root_location, ~r/\/.+\.schema\.json/, "/")
