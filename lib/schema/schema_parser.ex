@@ -37,7 +37,7 @@ defmodule ApplicationRunner.SchemaParser do
 
   def parse_property(root_schema, schema, key, value) do
     case value do
-      %{"$ref" => ref} ->
+      %{"$ref" => ref} when key != "child" ->
         fragment = get_in(root_schema.refs, ref)
         parse_property(root_schema, schema, key, fragment)
 
