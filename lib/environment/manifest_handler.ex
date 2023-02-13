@@ -63,7 +63,6 @@ defmodule ApplicationRunner.Environment.ManifestHandler do
   end
 
   defp get_route(manifest) do
-    IO.inspect(manifest)
     Map.get(manifest, "lenraRoutes", @default_route)
   end
 end
