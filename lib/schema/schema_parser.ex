@@ -47,7 +47,7 @@ defmodule ApplicationRunner.SchemaParser do
       %{"type" => "component"} ->
         {:child, key}
 
-      %{"type" => "array", "items" => %{"type" => "component"}} ->
+      %{"type" => "array", "items" => %{"$ref" => _ref}} ->
         {:children, key}
 
       _ ->
