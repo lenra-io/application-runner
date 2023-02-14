@@ -49,12 +49,20 @@ defmodule ApplicationRunner.Environment.ManifestHandler do
   def handle_call(:get_lenra_routes, _from, state) do
     manifest = Map.get(state, :manifest)
 
-    {:reply, Map.get(manifest, "lenraRoutes", @default_route), state}
+    {:reply, get_route(manifest), state}
   end
 
   def handle_call(:get_json_routes, _from, state) do
     manifest = Map.get(state, :manifest)
 
     {:reply, Map.get(manifest, "jsonRoutes", @default_route), state}
+  end
+
+  defp get_route(%{"rootView" => rootView}) do
+    %{"/" => %{"type" => "view", "name" => rootView}}
+  end
+
+  defp get_route(manifest) do
+    Map.get(manifest, "lenraRoutes", @default_route)
   end
 end
