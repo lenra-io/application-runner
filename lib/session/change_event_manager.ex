@@ -9,7 +9,11 @@ defmodule ApplicationRunner.Session.ChangeEventManager do
   alias ApplicationRunner.Environment.QueryServer
   alias ApplicationRunner.Session.RouteServer
 
+  require Logger
+
   def start_link(opts) do
+    Logger.info("Start #{__MODULE__}")
+    Logger.debug("#{__MODULE__} start_link with opts #{inspect(opts)}")
     session_id = Keyword.fetch!(opts, :session_id)
     env_id = Keyword.fetch!(opts, :env_id)
     mode = Keyword.fetch!(opts, :mode)
@@ -27,6 +31,8 @@ defmodule ApplicationRunner.Session.ChangeEventManager do
   end
 
   def init(opts) do
+    Logger.debug("#{__MODULE__} init with opts #{inspect(opts)}")
+
     session_id = Keyword.fetch!(opts, :session_id)
     mode = Keyword.fetch!(opts, :mode)
     route = Keyword.fetch!(opts, :route)
@@ -38,6 +44,8 @@ defmodule ApplicationRunner.Session.ChangeEventManager do
         {:mongo_event, doc},
         %{session_id: session_id, mode: mode, route: route} = state
       ) do
+    Logger.debug("#{__MODULE__} handle_info :mongo_event with state #{inspect(state)}")
+
     session_id
     |> QueryServer.group_name()
     |> Swarm.multi_call({:mongo_event, doc})

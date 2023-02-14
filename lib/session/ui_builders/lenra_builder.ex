@@ -10,6 +10,8 @@ defmodule ApplicationRunner.Session.UiBuilders.LenraBuilder do
   alias ApplicationRunner.Session.UiBuilders.UiBuilderAdapter
   alias LenraCommon.Errors
 
+  require Logger
+
   @type view :: map()
   @type component :: map()
 
@@ -18,6 +20,8 @@ defmodule ApplicationRunner.Session.UiBuilders.LenraBuilder do
   end
 
   def build_ui(session_metadata, view_uid) do
+    Logger.debug("#{__MODULE__} build_ui with session_metadata: #{inspect(session_metadata)}")
+
     with {:ok, ui_context} <- get_and_build_view(session_metadata, Ui.Context.new(), view_uid) do
       {:ok,
        transform_ui(%{
@@ -76,6 +80,8 @@ defmodule ApplicationRunner.Session.UiBuilders.LenraBuilder do
          ui_context,
          view_uid
        ) do
+    Logger.debug("#{__MODULE__} build_component with component: #{inspect(component)}")
+
     with schema_path <- JsonSchemata.get_component_path(comp_type),
          {:ok, validation_data} <- validate_with_error(schema_path, component, view_uid) do
       case comp_type do
@@ -318,6 +324,10 @@ defmodule ApplicationRunner.Session.UiBuilders.LenraBuilder do
          %Ui.Context{} = ui_context,
          %ViewUid{prefix_path: prefix_path} = view_uid
        ) do
+    Logger.debug(
+      "#{__MODULE__} build_children_list with component: #{inspect(component)}, children_key: #{children_keys}"
+    )
+
     Enum.reduce_while(
       children_keys,
       {%{}, ui_context},
@@ -359,12 +369,23 @@ defmodule ApplicationRunner.Session.UiBuilders.LenraBuilder do
   @spec build_children(Session.Metadata.t(), map, String.t(), Ui.Context.t(), ViewUid.t()) ::
           {:error, UiBuilderAdapter.common_error()} | {:ok, list(component()), Ui.Context.t()}
   defp build_children(session_metadata, component, children_key, ui_context, view_uid) do
+    Logger.debug(
+      "#{__MODULE__} build_children with component: #{inspect(component)}, children_key: #{children_key}"
+    )
+
     case Map.get(component, children_key) do
       nil ->
         {:ok, [], ui_context}
 
       children ->
-        build_children_map(session_metadata, children, ui_context, view_uid)
+        try do
+          build_children_map(session_metadata, children, ui_context, view_uid)
+        rescue
+          e ->
+            Logger.error(
+              "#{__MODULE__} failed to build children map for session_metadata: #{inspect(session_metadata)} with children: #{inspect(children)} and error: #{inspect(e)}"
+            )
+        end
     end
   end
 
@@ -374,6 +395,8 @@ defmodule ApplicationRunner.Session.UiBuilders.LenraBuilder do
          ui_context,
          %ViewUid{prefix_path: prefix_path} = view_uid
        ) do
+    Logger.debug("#{__MODULE__} build_children_map with children: #{inspect(children)}")
+
     children
     |> Enum.with_index()
     |> Parallel.map(fn {child, index} ->
@@ -417,6 +440,10 @@ defmodule ApplicationRunner.Session.UiBuilders.LenraBuilder do
   @spec build_listeners(Session.Metadata.t(), component(), list(String.t())) ::
           {:ok, map()} | {:error, UiBuilderAdapter.common_error()}
   defp build_listeners(session_metadata, component, listeners_keys) do
+    Logger.debug(
+      "#{__MODULE__} build_children_map with children: #{inspect(component)}, listeners_keys: #{inspect(listeners_keys)}"
+    )
+
     Enum.reduce_while(
       listeners_keys,
       {:ok, %{}},

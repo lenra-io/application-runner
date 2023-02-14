@@ -3,6 +3,7 @@ defmodule ApplicationRunner.RouteChannel do
   @moduledoc """
     `ApplicationRunner.RouteChannel` handle the app channel to run app and listeners and push to the user the resulted UI or Patch
   """
+  alias ApplicationRunner.Telemetry
 
   defmacro __using__(_opts) do
     quote do
@@ -23,16 +24,22 @@ defmodule ApplicationRunner.RouteChannel do
       def join("route:" <> route, params, socket) do
         mode = Map.get(params, "mode", "lenra")
         session_id = socket.assigns.session_id
+        Logger.debug("Join for #{session_id}, with params: #{inspect(params)}")
 
         with sm <- Session.MetadataAgent.get_metadata(session_id),
              :yes <- Swarm.register_name(get_name({session_id, mode, route}), self()),
              :ok <- Swarm.join(get_group(session_id, mode, route), self()),
              {:ok, _pid} <-
                Session.RouteDynSup.ensure_child_started(sm.env_id, session_id, mode, route) do
+          Logger.notice("Route #{route}, in mode #{mode}, open for session: #{session_id}")
           {:ok, socket}
         else
           :no ->
-            raise DevError.exception("Could not register the AppChannel into swarm")
+            Logger.critical(
+              BusinessError.could_not_register_appchannel(%{session_id: session_id, route: route})
+            )
+
+            {:error, DevError.message("Could not register the AppChannel into swarm")}
 
           err ->
             err
@@ -40,6 +47,7 @@ defmodule ApplicationRunner.RouteChannel do
       end
 
       def join(_, _any, _socket) do
+        Telemetry.event(:alert, %{}, BusinessError.invalid_channel_name())
         {:error, ErrorHelpers.translate_error(BusinessError.invalid_channel_name())}
       end
 
@@ -47,14 +55,17 @@ defmodule ApplicationRunner.RouteChannel do
       # IN #
       ######
 
+      # Receive run request from client, with event
       def handle_in("run", %{"code" => code, "event" => event}, socket) do
         handle_run(socket, code, event)
       end
 
+      # Receive run request from client
       def handle_in("run", %{"code" => code}, socket) do
         handle_run(socket, code)
       end
 
+      # Call send_client_event to run listener
       def handle_run(socket, code, event \\ %{}) do
         session_id = Map.fetch!(socket.assigns, :session_id)
 
@@ -75,12 +86,15 @@ defmodule ApplicationRunner.RouteChannel do
       ########
       # INFO #
       ########
+
+      # Send new ui to client
       def handle_info({:send, :ui, ui}, socket) do
         Logger.debug("send ui #{inspect(ui)}")
         push(socket, "ui", ui)
         {:noreply, socket}
       end
 
+      # Send patch ui to client
       def handle_info({:send, :patches, patches}, socket) do
         Logger.debug("send patchUi  #{inspect(%{patch: patches})}")
 
@@ -88,13 +102,16 @@ defmodule ApplicationRunner.RouteChannel do
         {:noreply, socket}
       end
 
+      # Send error in error channel
       def handle_info({:send, :error, {:error, err}}, socket) when is_struct(err) do
-        Logger.error("Send error #{inspect(err)}")
+        # Log a debug, normally errors are logged before sending the error to the channel.
+        Logger.debug("Send error #{inspect(err)}")
 
         push(socket, "error", ErrorHelpers.translate_error(err))
         {:noreply, socket}
       end
 
+      # Send an error if the ui is malformed
       def handle_info({:send, :error, {:error, :invalid_ui, errors}}, socket)
           when is_list(errors) do
         formatted_errors =
@@ -102,6 +119,8 @@ defmodule ApplicationRunner.RouteChannel do
           |> Enum.map(fn {message, path} ->
             %{message: "#{message} at path #{path}", reason: "invalid_ui"}
           end)
+
+        Logger.warning("Channel error: #{inspect(formatted_errors)}")
 
         push(socket, "error", %{"errors" => formatted_errors})
         {:noreply, socket}
@@ -123,6 +142,7 @@ defmodule ApplicationRunner.RouteChannel do
     end
   end
 
+  @spec get_group(any, any, any) :: {ApplicationRunner.RouteChannel, any, any, any}
   def get_group(session_id, mode, route) do
     {__MODULE__, session_id, mode, route}
   end

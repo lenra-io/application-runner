@@ -20,7 +20,12 @@ defmodule ApplicationRunner.Session.RouteServer do
   alias LenraCommon.Errors
   alias QueryParser.Parser
 
+  require Logger
+
   def start_link(opts) do
+    Logger.notice("Start #{__MODULE__}")
+    Logger.debug("#{__MODULE__} start_link with opts #{inspect(opts)}")
+
     session_id = Keyword.fetch!(opts, :session_id)
     mode = Keyword.fetch!(opts, :mode)
     route = Keyword.fetch!(opts, :route)
@@ -55,6 +60,8 @@ defmodule ApplicationRunner.Session.RouteServer do
         :rebuild,
         %{session_id: session_id, ui: old_ui, route: route, mode: mode} = state
       ) do
+    Logger.debug("#{__MODULE__} rebuild for state #{inspect(state)}")
+
     case load_ui(session_id, mode, route) do
       {:ok, ui} ->
         case JSONDiff.diff(old_ui, ui) do
@@ -82,6 +89,8 @@ defmodule ApplicationRunner.Session.RouteServer do
     session_metadata = Session.MetadataAgent.get_metadata(session_id)
     builder_mod = get_builder_mode(mode)
     routes = builder_mod.get_routes(session_metadata.env_id)
+
+    Logger.debug("#{__MODULE__} load_ui for state session_id:#{session_id}")
 
     with {:ok, route_params, base_view} <- find_route(routes, route),
          name <- Map.get(base_view, "name"),

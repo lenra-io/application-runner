@@ -14,14 +14,23 @@ defmodule ApplicationRunner.Environment.ChangeStream do
   require Logger
 
   def start_link(opts) do
+    Logger.debug("#{__MODULE__} start_link with #{inspect(opts)}")
     env_id = Keyword.fetch!(opts, :env_id)
-    GenServer.start_link(__MODULE__, opts, name: get_full_name(env_id))
+    res = GenServer.start_link(__MODULE__, opts, name: get_full_name(env_id))
+    Logger.debug("#{__MODULE__} start_link exit with #{inspect(res)}")
+    res
   end
 
   def init(opts) do
+    Logger.debug("#{__MODULE__} init with #{inspect(opts)}")
+
     env_id = Keyword.fetch!(opts, :env_id)
+    Logger.info("start change stream for env: #{env_id}")
 
     state = %{env_id: env_id}
+
+    Logger.debug("#{__MODULE__} init exit with #{inspect(state)}")
+
     {:ok, state, {:continue, :start_stream}}
   end
 
@@ -38,7 +47,10 @@ defmodule ApplicationRunner.Environment.ChangeStream do
   end
 
   def handle_cast({:mongo_event, doc}, %{env_id: env_id} = state) do
-    Logger.debug("New mongo_event for env #{env_id} : #{inspect(doc)}")
+    Logger.debug(
+      "#{__MODULE__} cast #{inspect({:mongo_event, doc})} for env #{env_id} : #{inspect(doc)}"
+    )
+
     Swarm.publish(ChangeEventManager.get_group(env_id), {:mongo_event, doc})
     {:noreply, state}
   end
@@ -46,6 +58,10 @@ defmodule ApplicationRunner.Environment.ChangeStream do
   defp start_change_stream(env_id) do
     mongo_name = MongoInstance.get_full_name(env_id)
     cs_name = get_full_name(env_id)
+
+    Logger.debug(
+      "#{__MODULE__}  start_change_stream for env #{env_id}, with mongo_name: #{inspect(mongo_name)}"
+    )
 
     Mongo.watch_db(
       mongo_name,

@@ -7,6 +7,8 @@ defmodule ApplicationRunner.Session.UiBuilders.JsonBuilder do
   alias ApplicationRunner.Environment
   alias ApplicationRunner.Session.RouteServer
 
+  require Logger
+
   @type view :: map()
   @type component :: map()
 
@@ -17,6 +19,8 @@ defmodule ApplicationRunner.Session.UiBuilders.JsonBuilder do
 
   @impl ApplicationRunner.Session.UiBuilders.UiBuilderAdapter
   def build_ui(session_metadata, view_uid) do
+    Logger.debug("#{__MODULE__} build_ui with session_metadata: #{inspect(session_metadata)}")
+
     with {:ok, json} <- RouteServer.fetch_view(session_metadata, view_uid) do
       build_listeners(session_metadata, json)
     end

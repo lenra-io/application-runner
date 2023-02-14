@@ -21,6 +21,8 @@ defmodule ApplicationRunner.Monitor do
     SessionMeasurement
   }
 
+  alias ApplicationRunner.Errors.AlertAgent
+
   @repo Application.compile_env(:application_runner, :repo)
 
   def setup do
@@ -28,7 +30,8 @@ defmodule ApplicationRunner.Monitor do
       [:application_runner, :app_session, :start],
       [:application_runner, :app_session, :stop],
       [:application_runner, :app_listener, :start],
-      [:application_runner, :app_listener, :stop]
+      [:application_runner, :app_listener, :stop],
+      [:application_runner, :alert, :event]
     ]
 
     :telemetry.attach_many(
@@ -116,6 +119,13 @@ defmodule ApplicationRunner.Monitor do
         )
         |> EnvListenerMeasurement.update(measurements)
         |> @repo.update()
+    end
+  end
+
+  def handle_event([:application_runner, :alert, :event], event, _metadata, _config) do
+    case Swarm.whereis_name(event) do
+      :undefined -> AlertAgent.start_link(event)
+      pid -> AlertAgent.send_alert(pid, event)
     end
   end
 
