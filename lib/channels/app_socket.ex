@@ -1,6 +1,7 @@
 defmodule ApplicationRunner.AppSocket do
   defmacro __using__(opts) do
     route_channel = Keyword.fetch!(opts, :route_channel)
+    routes_channel = Keyword.fetch!(opts, :routes_channel)
     adapter_mod = Keyword.fetch!(opts, :adapter)
 
     quote do
@@ -22,6 +23,7 @@ defmodule ApplicationRunner.AppSocket do
 
       ## Channels
       channel("route:*", unquote(route_channel))
+      channel("routes", unquote(routes_channel))
 
       @impl true
       def init(state) do

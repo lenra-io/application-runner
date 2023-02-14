@@ -113,13 +113,16 @@ defmodule ApplicationRunner.Session.RouteServer do
     Enum.reduce_while(
       routes,
       :error,
-      fn {k, v}, _err ->
-        case Utils.Routes.match_route(k, url) do
+      fn route, _err ->
+        path = Map.get(route, "path")
+        widget = Map.get(route, "widget")
+
+        case Utils.Routes.match_route(path, url) do
           {:error, err} ->
             {:cont, {:error, err}}
 
           {:ok, route_params} ->
-            {:halt, {:ok, route_params, v}}
+            {:halt, {:ok, route_params, widget}}
         end
       end
     )
@@ -208,6 +211,9 @@ defmodule ApplicationRunner.Session.RouteServer do
         code = Session.ListenersCache.create_code(action, props)
         Session.ListenersCache.save_listener(session_metadata.session_id, code, listener)
         {:ok, listener |> Map.drop(["action", "props", "type"]) |> Map.put("code", code)}
+
+      %{"navTo" => navTo} ->
+        {:ok, %{"navTo" => navTo}}
 
       _ ->
         BusinessError.no_action_in_listener_tuple(listener)
