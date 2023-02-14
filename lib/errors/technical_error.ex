@@ -16,6 +16,7 @@ defmodule ApplicationRunner.Errors.TechnicalError do
       {:openfaas_not_reachable, "Openfaas could not be reached."},
       {:timeout, "Timeout"},
       {:listener_not_found, "Listener not found"},
-      {:mongo_error, "Could not access mongo. Please retry later."}
+      {:mongo_error, "Could not access mongo. Please try again later."},
+      {:failed_parse_mongo_port, "Failed to parse Mongo port."}
     ]
 end

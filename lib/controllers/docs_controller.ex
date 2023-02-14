@@ -13,6 +13,10 @@ defmodule ApplicationRunner.DocsController do
       mongo_user_id = get_mongo_user_id(resources)
       args = [conn, conn.path_params, conn.body_params, resources, %{"me" => mongo_user_id}]
 
+      Logger.debug(
+        "#{__MODULE__} handle #{inspect(conn.method)} on #{inspect(conn.request_path)} with path_params #{inspect(conn.path_params)} and body_params #{inspect(conn.body_params)}"
+      )
+
       apply(__MODULE__, action_name(conn), args)
     end
   end
@@ -46,6 +50,10 @@ defmodule ApplicationRunner.DocsController do
              :fetch_doc,
              [env.id, coll, doc_id]
            ) do
+      Logger.debug(
+        "#{__MODULE__} respond to #{inspect(conn.method)} on #{inspect(conn.request_path)} with res #{inspect(doc)}"
+      )
+
       reply(conn, doc)
     end
   end
@@ -53,6 +61,10 @@ defmodule ApplicationRunner.DocsController do
   def get_all(conn, %{"coll" => coll}, _body_params, %{environment: env}, _replace_params) do
     with {:ok, docs} <-
            MongoInstance.run_mongo_task(env.id, MongoStorage, :fetch_all_docs, [env.id, coll]) do
+      Logger.debug(
+        "#{__MODULE__} respond to #{inspect(conn.method)} on #{inspect(conn.request_path)} with res #{inspect(docs)}"
+      )
+
       reply(conn, docs)
     end
   end
@@ -65,6 +77,10 @@ defmodule ApplicationRunner.DocsController do
              coll,
              Parser.replace_params(filtered_doc, replace_params)
            ]) do
+      Logger.debug(
+        "#{__MODULE__} respond to #{inspect(conn.method)} on #{inspect(conn.request_path)} with res #{inspect(docs)}"
+      )
+
       reply(conn, docs)
     end
   end
@@ -83,6 +99,10 @@ defmodule ApplicationRunner.DocsController do
              doc_id,
              Parser.replace_params(new_doc, replace_params)
            ]) do
+      Logger.debug(
+        "#{__MODULE__} respond to #{inspect(conn.method)} on #{inspect(conn.request_path)} with res #{inspect(docs)}"
+      )
+
       reply(conn, docs)
     end
   end
@@ -96,6 +116,10 @@ defmodule ApplicationRunner.DocsController do
       ) do
     with :ok <-
            MongoInstance.run_mongo_task(env.id, MongoStorage, :delete_doc, [env.id, coll, doc_id]) do
+      Logger.debug(
+        "#{__MODULE__} respond to #{inspect(conn.method)} on #{inspect(conn.request_path)} with status :ok"
+      )
+
       reply(conn)
     end
   end
@@ -107,6 +131,10 @@ defmodule ApplicationRunner.DocsController do
              coll,
              Parser.replace_params(filter, replace_params)
            ]) do
+      Logger.debug(
+        "#{__MODULE__} respond to #{inspect(conn.method)} on #{inspect(conn.request_path)} with res #{inspect(docs)}"
+      )
+
       reply(conn, docs)
     end
   end
@@ -134,6 +162,10 @@ defmodule ApplicationRunner.DocsController do
              session_id,
              env.id
            ]) do
+      Logger.debug(
+        "#{__MODULE__} respond to #{inspect(conn.method)} on #{inspect(conn.request_path)} with status :ok"
+      )
+
       reply(conn)
     end
   end
@@ -150,6 +182,10 @@ defmodule ApplicationRunner.DocsController do
              session_id,
              env.id
            ]) do
+      Logger.debug(
+        "#{__MODULE__} respond to #{inspect(conn.method)} on #{inspect(conn.request_path)} with status :ok"
+      )
+
       reply(conn)
     end
   end
@@ -169,6 +205,10 @@ defmodule ApplicationRunner.DocsController do
              Parser.replace_params(filtered_doc, replace_params),
              session_id
            ]) do
+      Logger.debug(
+        "#{__MODULE__} respond to #{inspect(conn.method)} on #{inspect(conn.request_path)} with res #{inspect(docs)}"
+      )
+
       reply(conn, docs)
     end
   end
@@ -188,6 +228,10 @@ defmodule ApplicationRunner.DocsController do
              Parser.replace_params(new_doc, replace_params),
              session_id
            ]) do
+      Logger.debug(
+        "#{__MODULE__} respond to #{inspect(conn.method)} on #{inspect(conn.request_path)} with res #{inspect(docs)}"
+      )
+
       reply(conn, docs)
     end
   end
@@ -206,6 +250,10 @@ defmodule ApplicationRunner.DocsController do
              doc_id,
              session_id
            ]) do
+      Logger.debug(
+        "#{__MODULE__} respond to #{inspect(conn.method)} on #{inspect(conn.request_path)} with status :ok"
+      )
+
       reply(conn)
     end
   end

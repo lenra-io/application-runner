@@ -10,14 +10,19 @@ defmodule ApplicationRunner.Environment.DynamicSupervisor do
   alias ApplicationRunner.Session
   alias LenraCommon.Errors, as: LC
 
+  require Logger
+
   @doc false
   def start_link(opts) do
+    Logger.debug("#{__MODULE__} start_link with #{inspect(opts)}")
+    Logger.notice("Start #{__MODULE__}")
     DynamicSupervisor.start_link(__MODULE__, opts, name: __MODULE__)
   end
 
   @doc false
   @impl true
   def init(_opts) do
+    Logger.debug("#{__MODULE__} init")
     DynamicSupervisor.init(strategy: :one_for_one)
   end
 
@@ -33,11 +38,19 @@ defmodule ApplicationRunner.Environment.DynamicSupervisor do
   @spec start_env(term()) ::
           {:error, {:already_started, pid()}} | {:ok, pid()} | {:error, term()}
   def start_env(env_metadata) do
+    Logger.debug(
+      "#{__MODULE__} Start Environment Supervisor with env_metadata: #{inspect(env_metadata)}"
+    )
+
     case DynamicSupervisor.start_child(
            __MODULE__,
            {ApplicationRunner.Environment.Supervisor, env_metadata}
          ) do
       {:error, {:shutdown, {:failed_to_start_child, _module, reason}}} ->
+        Logger.critical(
+          "#{__MODULE__} failed to start Environment Supervisor with env_metadata: #{inspect(env_metadata)} for reason: #{inspect(reason)}"
+        )
+
         {:error, reason}
 
       res ->
@@ -52,9 +65,18 @@ defmodule ApplicationRunner.Environment.DynamicSupervisor do
   @spec ensure_env_started(term()) :: {:ok, pid} | {:error, term()}
   def ensure_env_started(env_metadata) do
     case start_env(env_metadata) do
-      {:ok, pid} -> {:ok, pid}
-      {:error, {:already_started, pid}} -> {:ok, pid}
-      {:error, err} -> {:error, err}
+      {:ok, pid} ->
+        {:ok, pid}
+
+      {:error, {:already_started, pid}} ->
+        Logger.info(
+          "Environment Supervisor already started for metadata: #{inspect(env_metadata)}"
+        )
+
+        {:ok, pid}
+
+      {:error, err} ->
+        {:error, err}
     end
   end
 
@@ -64,13 +86,16 @@ defmodule ApplicationRunner.Environment.DynamicSupervisor do
   """
   @spec stop_env(number()) :: :ok | {:error, LC.BusinessError.t()}
   def stop_env(env_id) do
+    Logger.debug("Stopping environment for env_id: #{env_id}")
     name = Environment.Supervisor.get_name(env_id)
 
     case Swarm.whereis_name(name) do
       :undefined ->
+        Logger.error("Failed to find supervision tree for name: #{inspect(name)}")
         BusinessError.env_not_started_tuple()
 
       pid ->
+        Logger.info("Stopping environment supervision tree for name: #{inspect(name)}")
         Supervisor.stop(pid)
     end
   end

@@ -6,9 +6,15 @@ defmodule ApplicationRunner.Session.DynamicSupervisor do
   use DynamicSupervisor
   use SwarmNamed
 
+  require Logger
+
+  alias ApplicationRunner.Errors.BusinessError
   alias ApplicationRunner.{Environment, Session}
 
   def start_link(opts) do
+    Logger.notice("Start #{__MODULE__}")
+    Logger.debug("#{__MODULE__} start_link with opts #{inspect(opts)}")
+
     env_id = Keyword.fetch!(opts, :env_id)
     DynamicSupervisor.start_link(__MODULE__, :ok, name: get_full_name(env_id))
   end
@@ -33,9 +39,11 @@ defmodule ApplicationRunner.Session.DynamicSupervisor do
              {Session.Supervisor, session_metadata}
            ) do
         {:error, {:shutdown, {:failed_to_start_child, _module, reason}}} ->
+          Logger.critical(BusinessError.cannot_start_session(session_metadata))
           {:error, reason}
 
         res ->
+          Logger.debug("Session start for metadata: #{inspect(session_metadata)}")
           res
       end
     end
@@ -49,10 +57,23 @@ defmodule ApplicationRunner.Session.DynamicSupervisor do
   def stop_session(env_id, session_id) do
     case Swarm.whereis_name(Session.Supervisor.get_name(session_id)) do
       :undefined ->
+        Logger.debug(
+          "#{__MODULE__} Session not found by swarm for env_id: #{env_id}, session_id: #{session_id}"
+        )
+
         {:error, :app_not_started}
 
       pid ->
         DynamicSupervisor.terminate_child(get_full_name(env_id), pid)
+        |> case do
+          :ok ->
+            Logger.debug("Session not found for env_id: #{env_id}, session_id: #{session_id}")
+
+          {:error, :not_found} ->
+            Logger.warning(
+              "#{__MODULE__} DynamicSupervisor could not find Session for env_id: #{env_id}, session_id: #{session_id}"
+            )
+        end
     end
   end
 end
