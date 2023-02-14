@@ -40,7 +40,7 @@ defmodule ApplicationRunner.JsonSchemata do
     Map.replace(
       root_schema,
       :refs,
-      Map.map(root_schema.refs, fn {id, ref} ->
+      Map.new(root_schema.refs, fn {id, ref} ->
         try do
           ref_properties = ApplicationRunner.SchemaParser.parse(root_schema, ref)
           Map.merge(%{schema: ref}, ref_properties)
