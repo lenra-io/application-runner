@@ -45,7 +45,8 @@ defmodule ApplicationRunner.Environment.ViewServer do
     env_id = Keyword.fetch!(opts, :env_id)
     %ViewUid{} = view_uid = Keyword.fetch!(opts, :view_uid)
 
-    with data <- QueryServer.get_data(env_id, view_uid.coll, view_uid.query_parsed),
+    with data <-
+           QueryServer.get_data(env_id, view_uid.coll, view_uid.query_parsed, view_uid.projection),
          {:ok, view} <-
            ApplicationServices.fetch_view(
              function_name,

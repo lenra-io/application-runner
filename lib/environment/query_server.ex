@@ -49,8 +49,8 @@ defmodule ApplicationRunner.Environment.QueryServer do
     Swarm.join(group, pid)
   end
 
-  def get_data(env_id, coll, query_parsed) do
-    GenServer.call(get_full_name({env_id, coll, query_parsed}), :get_data)
+  def get_data(env_id, coll, query_parsed, projection) do
+    GenServer.call(get_full_name({env_id, coll, query_parsed}), {:get_data, projection})
   end
 
   def add_projection(env_id, coll, query_parsed, projection) do
@@ -77,7 +77,7 @@ defmodule ApplicationRunner.Environment.QueryServer do
          {:ok, data} <- fetch_initial_data(env_id, coll, query_transformed),
          {:ok, projection} <- Keyword.fetch(opts, :projection) do
       projection_data =
-        Map.merge(%{%{} => %{}}, %{projection => projection_data(data, projection)})
+        Map.merge(%{%{} => data}, %{projection => projection_data(data, projection)})
 
       {:ok,
        %{
@@ -217,10 +217,15 @@ defmodule ApplicationRunner.Environment.QueryServer do
     end
   end
 
-  def handle_call(:get_data, _from, state) do
+  def handle_call({:get_data, projection}, _from, state) do
     Logger.debug("#{__MODULE__} handle_call with :get_data with state: #{inspect(state)}")
 
-    {:reply, Map.get(state, :data), state}
+    if projection != %{} do
+      data = Map.get(state, :data)
+      {:reply, projection_data(data, projection), state}
+    else
+      {:reply, Map.get(state, :data), state}
+    end
   end
 
   def handle_call({:monitor, w_pid}, _from, state) do
@@ -355,7 +360,7 @@ defmodule ApplicationRunner.Environment.QueryServer do
       new_map_data = Map.delete(map_data, doc_id)
 
       if old_length == Enum.count(new_map_data) do
-        {map_data, data}
+        {map_data, data, Map.get(state, :projection_data)}
       else
         new_data = from_map_data(new_map_data)
         new_projection_data = notify_data_changed(new_data, state)
@@ -426,9 +431,9 @@ defmodule ApplicationRunner.Environment.QueryServer do
     # Notify all ViewServer that projection changed
     new_projection_data =
       Enum.map(projection_data, fn {k, v} ->
-        if projection_change?(v, new_data, k) do
+        if !projection_change?(projection_data, new_data, k) do
           group = ViewServer.group_name(env_id, coll, query_parsed, k)
-          Swarm.publish(group, {:data_changed, new_data})
+          Swarm.publish(group, {:data_changed, projection_data(new_data, k)})
           {k, projection_data(new_data, k)}
         else
           {k, v}
