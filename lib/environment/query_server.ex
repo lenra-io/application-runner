@@ -431,16 +431,17 @@ defmodule ApplicationRunner.Environment.QueryServer do
     # Notify all ViewServer that projection changed
     new_projection_data =
       Enum.map(projection_data, fn {k, v} ->
-        if !projection_change?(projection_data, new_data, k) do
+        if projection_change?(projection_data, new_data, k) do
+          {k, v}
+        else
           group = ViewServer.group_name(env_id, coll, query_parsed, k)
           Swarm.publish(group, {:data_changed, projection_data(new_data, k)})
           {k, projection_data(new_data, k)}
-        else
-          {k, v}
         end
       end)
 
-    # Notify ViewServer with no projection. (projection_data for default %{} projection will never change and pass in the map)
+    # Notify ViewServer with no projection.
+    # (projection_data for default %{} projection will never change and pass in the map)
     group = ViewServer.group_name(env_id, coll, query_parsed, %{})
     Swarm.publish(group, {:data_changed, new_data})
 

@@ -124,7 +124,30 @@ defmodule ApplicationRunner.DocsController do
     end
   end
 
+  def find(conn, %{"coll" => coll}, filter, %{environment: env}, %{
+        "query" => query,
+        "projection" => projection
+      }) do
+    with {:ok, docs} <-
+           MongoInstance.run_mongo_task(env.id, MongoStorage, :filter_docs, [
+             env.id,
+             coll,
+             Parser.replace_params(filter, query),
+             %{projection: projection}
+           ]) do
+      Logger.debug(
+        "#{__MODULE__} respond to #{inspect(conn.method)} on #{inspect(conn.request_path)} with res #{inspect(docs)}"
+      )
+
+      reply(conn, docs)
+    end
+  end
+
   def find(conn, %{"coll" => coll}, filter, %{environment: env}, replace_params) do
+    Logger.warning(
+      "This form of query is depracted prefer use: {query: <yout query>, projection: {projection}}, more info at: https://www.mongodb.com/docs/manual/reference/method/db.collection.find/#mongodb-method-db.collection.find"
+    )
+
     with {:ok, docs} <-
            MongoInstance.run_mongo_task(env.id, MongoStorage, :filter_docs, [
              env.id,
