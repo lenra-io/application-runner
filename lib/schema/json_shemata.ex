@@ -37,7 +37,7 @@ defmodule ApplicationRunner.JsonSchemata do
       |> ExComponentSchema.Schema.resolve()
       |> load_schema()
 
-    {:ok, %{schemata_map: schemata_map}}
+    {:ok, schemata_map}
   end
 
   def load_schema(root_schema) do
@@ -103,7 +103,7 @@ defmodule ApplicationRunner.JsonSchemata do
   @impl true
   def handle_call({:get_schema_map, path}, _from, schemata_map) do
     res =
-      case Map.fetch(Map.get(schemata_map, :schemata_map), path) do
+      case Map.fetch(schemata_map, path) do
         :error -> {:error, [{"Invalid component type", "#"}]}
         {:ok, res} -> res
       end
