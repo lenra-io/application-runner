@@ -203,10 +203,11 @@ defmodule ApplicationRunner.Session.UiBuilders.LenraBuilder do
   @spec validate_with_error(String.t(), component(), ViewUid.t()) ::
           {:error, UiBuilderAdapter.common_error()} | {:ok, map()}
   defp validate_with_error(schema_path, component, %ViewUid{prefix_path: prefix_path}) do
-    with schema <-
-           JsonSchemata.get_schema_map(:root),
-         :ok <- ExComponentSchema.Validator.validate(schema, component) do
-      {:ok, JsonSchemata.get_schema_map(schema_path)}
+    with %{schema: schema} = schema_map <-
+           JsonSchemata.get_schema_map(schema_path),
+         :ok <-
+           ExComponentSchema.Validator.validate(schema, component) do
+      {:ok, schema_map}
     else
       {:error, errors} ->
         err_message =

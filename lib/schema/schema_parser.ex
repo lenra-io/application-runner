@@ -3,8 +3,8 @@ defmodule ApplicationRunner.SchemaParser do
   ApplicationRunner's Schema Parser
   """
 
-  def parse(root_schema, schema) do
-    properties = Map.get(schema, "properties", %{})
+  def parse(schema, root_schema) do
+    properties = Map.get(Map.get(schema, :schema), "properties", %{})
 
     case properties do
       nil ->
