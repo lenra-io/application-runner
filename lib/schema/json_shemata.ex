@@ -37,8 +37,6 @@ defmodule ApplicationRunner.JsonSchemata do
       |> ExComponentSchema.Schema.resolve()
       |> load_schema()
 
-    # schema = load_schema(schemata_map)
-
     {:ok, %{schemata_map: schemata_map}}
   end
 
@@ -49,7 +47,7 @@ defmodule ApplicationRunner.JsonSchemata do
           parse_schema_ref(ref, ref["$id"])
           |> ExComponentSchema.Schema.resolve()
 
-        schema_properties = ApplicationRunner.SchemaParser.parse(schema, root_schema)
+        schema_properties = ApplicationRunner.SchemaParser.parse(schema)
 
         Map.merge(%{schema: schema}, schema_properties)
       rescue
