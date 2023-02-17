@@ -206,7 +206,6 @@ defmodule ApplicationRunner.Session.UiBuilders.LenraBuilder do
     with schema <-
            JsonSchemata.get_schema_map(:root),
          :ok <- ExComponentSchema.Validator.validate(schema, component) do
-      JsonSchemata.get_schema_map(schema_path)
       {:ok, JsonSchemata.get_schema_map(schema_path)}
     else
       {:error, errors} ->
