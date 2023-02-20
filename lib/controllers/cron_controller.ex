@@ -8,16 +8,14 @@ defmodule ApplicationRunner.CronController do
   alias ApplicationRunner.Guardian.AppGuardian
 
   def app_create(conn, params) do
-    case AppGuardian.Plug.current_resource(conn) do
-      nil ->
-        BusinessError.invalid_token_tuple()
-
-      {:ok, %{environment: env} = _resources} ->
-        with %Environment.Metadata{} = metadata <- MetadataAgent.get_metadata(env.id),
-             :ok <-
-               Crons.create(env.id, metadata.function_name, params) do
-          reply(conn, :ok)
-        end
+    with %{environment: env} <- AppGuardian.Plug.current_resource(conn),
+         %Environment.Metadata{} = metadata <- MetadataAgent.get_metadata(env.id),
+         :ok <-
+           Crons.create(env.id, metadata.function_name, params) do
+      reply(conn, :ok)
+    else
+      nil -> BusinessError.invalid_token_tuple()
+      err -> err
     end
   end
 
