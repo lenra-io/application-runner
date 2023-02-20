@@ -12,7 +12,7 @@ defmodule ApplicationRunner.Crons.CronTest do
       Environment.new()
       |> Repo.insert!()
 
-    Cron.new(env.id, %{
+    Cron.new(env.id, "test" %{
       "schedule" => "* * * * *",
       "listener_name" => "listener",
       "props" => %{
@@ -40,7 +40,7 @@ defmodule ApplicationRunner.Crons.CronTest do
       Environment.new()
       |> Repo.insert!()
 
-    Cron.new(env.id, %{
+    Cron.new(env.id, "test" %{
       "schedule" => "* * * * *",
       "listener_name" => "listener",
       "should_run_missed_steps" => true
@@ -61,7 +61,7 @@ defmodule ApplicationRunner.Crons.CronTest do
       |> Repo.insert!()
 
     cron =
-      Cron.new(env.id, %{
+      Cron.new(env.id, "test" %{
         "schedule" => "This is not a valid schedule",
         "listener_name" => "listener",
         "props" => %{
@@ -105,7 +105,7 @@ defmodule ApplicationRunner.Crons.CronTest do
       Environment.new()
       |> Repo.insert!()
 
-    Cron.new(env.id, %{
+    Cron.new(env.id, "test" %{
       "schedule" => "* * * * *",
       "listener_name" => "listener"
     })
@@ -126,7 +126,7 @@ defmodule ApplicationRunner.Crons.CronTest do
       User.new(%{"email" => "test@lenra.io"})
       |> Repo.insert!()
 
-    Cron.new(env.id, %{
+    Cron.new(env.id, "test" %{
       "schedule" => "* * * * *",
       "listener_name" => "listener",
       "user_id" => user.id
