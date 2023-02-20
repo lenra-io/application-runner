@@ -57,13 +57,6 @@ defmodule ApplicationRunner.Environment.QueryServer do
     GenServer.call(get_full_name({env_id, coll, query_parsed}), {:add_projection, projection})
   end
 
-  @doc """
-    Start monotoring the given ViewServer
-  """
-  def monitor(qs_pid, w_pid) do
-    GenServer.call(qs_pid, {:monitor, w_pid})
-  end
-
   # I cant figure a way to fix the warning throw by Parser...
   @dialyzer {:no_match, init: 1}
 
@@ -77,7 +70,11 @@ defmodule ApplicationRunner.Environment.QueryServer do
          {:ok, data} <- fetch_initial_data(env_id, coll, query_transformed),
          {:ok, projection} <- Keyword.fetch(opts, :projection) do
       projection_data =
-        Map.merge(%{%{} => data}, %{projection => projection_data(data, projection)})
+        if projection != %{} do
+          %{projection => projection_data(data, projection)}
+        else
+          %{}
+        end
 
       {:ok,
        %{
@@ -98,15 +95,6 @@ defmodule ApplicationRunner.Environment.QueryServer do
       {:error, err} ->
         {:stop, err}
     end
-  end
-
-  def group_name(session_id) do
-    {__MODULE__, session_id}
-  end
-
-  def join_group(pid, session_id) do
-    group = group_name(session_id)
-    Swarm.join(group, pid)
   end
 
   def get_data(env_id, coll, query_parsed) do
@@ -160,7 +148,9 @@ defmodule ApplicationRunner.Environment.QueryServer do
   end
 
   defp add_projection_data(projection_data, data, projection) do
-    Map.put(projection_data, projection, projection_data(data, projection))
+    if projection != %{} do
+      Map.put(projection_data, projection, projection_data(data, projection))
+    end
   end
 
   defp projection_change?(projection_data, new_data, projection) do
@@ -341,7 +331,7 @@ defmodule ApplicationRunner.Environment.QueryServer do
       new_projection_data = notify_data_changed(new_data, state)
       {new_map_data, new_data, new_projection_data}
     else
-      {map_data, data}
+      {map_data, data, Map.get(state, :projection)}
     end
   end
 
@@ -460,6 +450,9 @@ defmodule ApplicationRunner.Environment.QueryServer do
       group = ViewServer.group_name(env_id, old_coll, query_parsed, projection_key)
       Swarm.publish(group, {:coll_changed, new_coll})
     end)
+
+    group = ViewServer.group_name(env_id, old_coll, query_parsed, %{})
+    Swarm.publish(group, {:coll_changed, new_coll})
   end
 
   # If a ViewServer die, we receive a message here.

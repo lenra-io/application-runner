@@ -325,6 +325,7 @@ defmodule ApplicationRunner.IntegrationTest do
 
              # We then simulate an insert listener.
              {:listener, "insert", %{"foo" => "bar"}},
+
              # Only the "echo" view is fetched again because "main" is cached.
              {:view, "echo", [%{"_id" => _, "foo" => "bar"}]},
 
@@ -335,6 +336,7 @@ defmodule ApplicationRunner.IntegrationTest do
 
              # We then simulate an update listener to revert the changes.
              {:listener, "update", %{"foo" => "bar"}},
+
              # Again, only echo. The query does match the data again.
              {:view, "echo", [%{"_id" => _, "foo" => "bar"}]},
 
