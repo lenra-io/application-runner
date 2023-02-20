@@ -7,9 +7,14 @@ defmodule ApplicationRunner.Session.RouteDynSup do
   use DynamicSupervisor
   use SwarmNamed
 
+  require Logger
+
   alias ApplicationRunner.Session.{RouteServer, RouteSupervisor}
 
   def start_link(opts) do
+    Logger.notice("Start #{__MODULE__}")
+    Logger.debug("#{__MODULE__} start_link with opts #{inspect(opts)}")
+
     session_id = Keyword.fetch!(opts, :session_id)
     DynamicSupervisor.start_link(__MODULE__, :ok, name: get_full_name(session_id))
   end
@@ -22,16 +27,28 @@ defmodule ApplicationRunner.Session.RouteDynSup do
   @spec ensure_child_started(term(), String.t(), String.t(), String.t()) ::
           {:ok, pid()} | {:error, term()}
   def ensure_child_started(env_id, session_id, mode, route) do
+    Logger.debug(
+      "#{__MODULE__} ensure_child_started for env_id: #{env_id}, session_id: #{session_id}, mode: #{mode}, route: #{route}"
+    )
+
     case start_child(env_id, session_id, mode, route) do
       {:ok, pid} ->
         {:ok, pid}
 
       {:error, {:already_started, pid}} ->
+        Logger.debug(
+          "#{__MODULE__} already_started for env_id: #{env_id}, session_id: #{session_id}, mode: #{mode}, route: #{route}"
+        )
+
         route_server_name = RouteServer.get_full_name({session_id, mode, route})
         GenServer.cast(route_server_name, :resync)
         {:ok, pid}
 
       err ->
+        Logger.critical(
+          "#{__MODULE__} cannot start route_server for env_id: #{env_id}, session_id: #{session_id}, mode: #{mode}, route: #{route}"
+        )
+
         err
     end
   end

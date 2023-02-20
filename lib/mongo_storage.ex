@@ -14,6 +14,8 @@ defmodule ApplicationRunner.MongoStorage do
 
   import Ecto.Query
 
+  require Logger
+
   defp mongo_instance(env_id) do
     Environment.MongoInstance.get_full_name(env_id)
   end
@@ -74,6 +76,10 @@ defmodule ApplicationRunner.MongoStorage do
   @spec create_doc(number(), String.t(), map(), any()) ::
           {:ok, map()} | {:error, TechnicalErrorType.t()}
   def create_doc(env_id, coll, doc) do
+    Logger.debug(
+      "#{__MODULE__} create_doc for env_id: #{env_id}, coll: #{coll}, doc: #{inspect(doc)}"
+    )
+
     decoded_doc = decode_ids(doc)
 
     env_id
@@ -89,6 +95,10 @@ defmodule ApplicationRunner.MongoStorage do
   end
 
   def create_doc(env_id, coll, doc, session_uuid) do
+    Logger.debug(
+      "#{__MODULE__} create_doc for env_id: #{env_id}, coll: #{coll}, doc: #{inspect(doc)}, session_uuid: #{inspect(session_uuid)}"
+    )
+
     decoded_doc = decode_ids(doc)
 
     env_id
@@ -105,12 +115,20 @@ defmodule ApplicationRunner.MongoStorage do
 
   @spec fetch_doc(number(), String.t(), term()) :: {:ok, map()} | {:error, TechnicalErrorType.t()}
   def fetch_doc(env_id, coll, doc_id) when is_bitstring(doc_id) do
+    Logger.debug(
+      "#{__MODULE__} fetch_doc for env_id: #{env_id}, coll: #{coll}, doc: #{inspect(doc_id)}"
+    )
+
     with {:ok, bson_doc_id} <- decode_object_id(doc_id) do
       fetch_doc(env_id, coll, bson_doc_id)
     end
   end
 
   def fetch_doc(env_id, coll, bson_doc_id) when is_struct(bson_doc_id, BSON.ObjectId) do
+    Logger.debug(
+      "#{__MODULE__} fetch_doc for env_id: #{env_id}, coll: #{coll}, doc: #{inspect(bson_doc_id)}"
+    )
+
     env_id
     |> mongo_instance()
     |> Mongo.find_one(coll, %{"_id" => bson_doc_id})
@@ -126,6 +144,8 @@ defmodule ApplicationRunner.MongoStorage do
   @spec fetch_all_docs(number(), String.t()) ::
           {:ok, list(map())} | {:error, TechnicalErrorType.t()}
   def fetch_all_docs(env_id, coll) do
+    Logger.debug("#{__MODULE__} fetch_doc for env_id: #{env_id}, coll: #{coll}")
+
     env_id
     |> mongo_instance()
     |> Mongo.find(coll, %{})
@@ -141,6 +161,10 @@ defmodule ApplicationRunner.MongoStorage do
   @spec filter_docs(number(), String.t(), map()) ::
           {:ok, list(map())} | {:error, TechnicalErrorType.t()}
   def filter_docs(env_id, coll, filter) do
+    Logger.debug(
+      "#{__MODULE__} filter_docs for env_id: #{env_id}, coll: #{coll}, filter: #{inspect(filter)}"
+    )
+
     clean_filter = decode_ids(filter)
 
     env_id
@@ -158,6 +182,10 @@ defmodule ApplicationRunner.MongoStorage do
   @spec update_doc(number(), String.t(), String.t(), map()) ::
           {:ok, map()} | {:error, TechnicalErrorType.t()}
   def update_doc(env_id, coll, doc_id, new_doc) do
+    Logger.debug(
+      "#{__MODULE__} update_doc for env_id: #{env_id}, coll: #{coll}, doc_id: #{inspect(doc_id)}, new_doc: #{inspect(new_doc)}"
+    )
+
     with {:ok, bson_doc_id} <- decode_object_id(doc_id),
          decoded_doc <- decode_ids(new_doc),
          {_value, filtered_doc} <- Map.pop(decoded_doc, "_id") do
@@ -175,6 +203,10 @@ defmodule ApplicationRunner.MongoStorage do
   end
 
   def update_doc(env_id, coll, doc_id, new_doc, session_uuid) do
+    Logger.debug(
+      "#{__MODULE__} update_doc for env_id: #{env_id}, coll: #{coll}, doc_id: #{inspect(doc_id)}, new_doc: #{inspect(new_doc)}, session_uuid: #{inspect(session_uuid)}"
+    )
+
     with {:ok, bson_doc_id} <- decode_object_id(doc_id),
          decoded_doc <- decode_ids(new_doc),
          {_value, filtered_doc} <- Map.pop(decoded_doc, "_id") do
@@ -195,6 +227,10 @@ defmodule ApplicationRunner.MongoStorage do
 
   @spec delete_doc(number(), String.t(), String.t()) :: :ok | {:error, TechnicalErrorType.t()}
   def delete_doc(env_id, coll, doc_id) do
+    Logger.debug(
+      "#{__MODULE__} update_doc for env_id: #{env_id}, coll: #{coll}, doc_id: #{inspect(doc_id)}"
+    )
+
     with {:ok, bson_doc_id} <- decode_object_id(doc_id) do
       env_id
       |> mongo_instance()
@@ -210,6 +246,10 @@ defmodule ApplicationRunner.MongoStorage do
   end
 
   def delete_doc(env_id, coll, doc_id, session_uuid) do
+    Logger.debug(
+      "#{__MODULE__} update_doc for env_id: #{env_id}, coll: #{coll}, doc_id: #{inspect(doc_id)}, session_uuid: #{inspect(session_uuid)}"
+    )
+
     with {:ok, bson_doc_id} <- decode_object_id(doc_id) do
       env_id
       |> mongo_instance()

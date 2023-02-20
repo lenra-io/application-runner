@@ -7,13 +7,19 @@ defmodule ApplicationRunner.Environment.ManifestHandler do
 
   alias ApplicationRunner.ApplicationServices
 
+  require Logger
+
   def start_link(opts) do
+    Logger.debug("#{__MODULE__} start_link with #{inspect(opts)}")
+    Logger.info("Start #{__MODULE__}")
     env_id = Keyword.fetch!(opts, :env_id)
     GenServer.start_link(__MODULE__, opts, name: get_full_name(env_id))
   end
 
   @impl true
   def init(opts) do
+    Logger.debug("#{__MODULE__} init with #{inspect(opts)}")
+
     function_name = Keyword.fetch!(opts, :function_name)
 
     case ApplicationServices.fetch_manifest(function_name) do
@@ -25,6 +31,9 @@ defmodule ApplicationRunner.Environment.ManifestHandler do
     end
   end
 
+  @doc """
+   Returns the Manifest for the given env_id
+  """
   @spec get_manifest(number()) :: map()
   def get_manifest(env_id) do
     GenServer.call(get_full_name(env_id), :get_manifest)
@@ -42,19 +51,33 @@ defmodule ApplicationRunner.Environment.ManifestHandler do
 
   @impl true
   def handle_call(:get_manifest, _from, state) do
+    Logger.debug("#{__MODULE__} handle call for :get_manifest with #{inspect(state)}")
+
     {:reply, Map.get(state, :manifest), state}
   end
 
   @default_route %{"/" => %{"type" => "view", "name" => "main"}}
   def handle_call(:get_lenra_routes, _from, state) do
+    Logger.debug("#{__MODULE__} handle call for :get_lenra_routes with #{inspect(state)}")
+
     manifest = Map.get(state, :manifest)
 
-    {:reply, Map.get(manifest, "lenraRoutes", @default_route), state}
+    {:reply, get_route(manifest), state}
   end
 
   def handle_call(:get_json_routes, _from, state) do
+    Logger.debug("#{__MODULE__} handle call for :get_json_routes with #{inspect(state)}")
+
     manifest = Map.get(state, :manifest)
 
     {:reply, Map.get(manifest, "jsonRoutes", @default_route), state}
+  end
+
+  defp get_route(%{"rootView" => rootView}) do
+    %{"/" => %{"type" => "view", "name" => rootView}}
+  end
+
+  defp get_route(manifest) do
+    Map.get(manifest, "lenraRoutes", @default_route)
   end
 end

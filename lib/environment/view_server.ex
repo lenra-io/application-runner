@@ -8,8 +8,7 @@ defmodule ApplicationRunner.Environment.ViewServer do
   alias ApplicationRunner.ApplicationServices
   alias ApplicationRunner.Environment.{QueryServer, ViewUid}
 
-  # 10 minutes timeout
-  # @inactivity_timeout 1000 * 60 * 10
+  require Logger
 
   def group_name(env_id, coll, query) do
     {__MODULE__, env_id, coll, query}
@@ -28,6 +27,8 @@ defmodule ApplicationRunner.Environment.ViewServer do
   end
 
   def start_link(opts) do
+    Logger.debug("#{__MODULE__} start_link with #{inspect(opts)}")
+
     env_id = Keyword.fetch!(opts, :env_id)
     view_uid = Keyword.fetch!(opts, :view_uid)
 
@@ -38,6 +39,8 @@ defmodule ApplicationRunner.Environment.ViewServer do
 
   @impl true
   def init(opts) do
+    Logger.debug("#{__MODULE__} init with #{inspect(opts)}")
+
     function_name = Keyword.fetch!(opts, :function_name)
     env_id = Keyword.fetch!(opts, :env_id)
     %ViewUid{} = view_uid = Keyword.fetch!(opts, :view_uid)
@@ -64,22 +67,32 @@ defmodule ApplicationRunner.Environment.ViewServer do
     end
   end
 
+  @doc """
+    Receive notification from QueryServer when data changed and we need to refresh the view.
+  """
   @impl true
   def handle_info({:data_changed, new_data}, state) do
     fna = Map.fetch!(state, :function_name)
     wuid = Map.fetch!(state, :view_uid)
+
+    Logger.debug(
+      "#{__MODULE__} handle_info for :data_changes with #{inspect(%{function_name: fna, view_uid: wuid})}"
+    )
 
     case ApplicationServices.fetch_view(fna, wuid.name, new_data, wuid.props, wuid.context) do
       {:ok, view} ->
         {:noreply, Map.put(state, :view, view)}
 
       {:error, error} ->
-        raise error
+        # TODO: send notification to channel
+        Logger.critical(inspect(error))
     end
   end
 
   @impl true
   def handle_call(:fetch_view!, _from, state) do
+    Logger.debug("#{__MODULE__} handle_info for :fetch_view!")
+
     {:reply, Map.fetch!(state, :view), state}
   end
 end
