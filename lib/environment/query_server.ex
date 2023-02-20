@@ -446,7 +446,7 @@ defmodule ApplicationRunner.Environment.QueryServer do
            projection_data: projection_data
          }
        ) do
-    Enum.map(Map.keys(projection_data), fn projection_key ->
+    Enum.each(Map.keys(projection_data), fn projection_key ->
       group = ViewServer.group_name(env_id, old_coll, query_parsed, projection_key)
       Swarm.publish(group, {:coll_changed, new_coll})
     end)
