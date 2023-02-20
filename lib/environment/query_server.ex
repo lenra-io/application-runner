@@ -441,7 +441,6 @@ defmodule ApplicationRunner.Environment.QueryServer do
       end)
 
     # Notify ViewServer with no projection.
-    # (projection_data for default %{} projection will never change and pass in the map)
     group = ViewServer.group_name(env_id, coll, query_parsed, %{})
     Swarm.publish(group, {:data_changed, new_data})
 

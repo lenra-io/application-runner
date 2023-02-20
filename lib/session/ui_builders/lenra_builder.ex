@@ -131,10 +131,8 @@ defmodule ApplicationRunner.Session.UiBuilders.LenraBuilder do
            RouteServer.create_view_uid(
              session_metadata,
              name,
-             coll,
-             query,
+             %{coll: coll, query: query, projection: projection},
              %{},
-             projection,
              props,
              view_uid.context,
              view_uid.prefix_path

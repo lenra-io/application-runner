@@ -101,10 +101,8 @@ defmodule ApplicationRunner.Session.RouteServer do
            create_view_uid(
              session_metadata,
              name,
-             coll,
-             query,
+             %{coll: coll, query: query, projection: projection},
              %{"route" => route_params},
-             projection,
              props,
              session_metadata.context,
              ""
@@ -172,25 +170,25 @@ defmodule ApplicationRunner.Session.RouteServer do
   @spec create_view_uid(
           Session.Metadata.t(),
           binary(),
-          binary() | nil,
-          map() | nil,
+          map(),
           map(),
           map() | nil,
-          map(),
           map(),
           binary()
         ) :: {:ok, ViewUid.t()} | {:error, LenraCommon.Errors.BusinessError.t()}
   def create_view_uid(
         session_metadata,
         name,
-        coll,
-        query,
+        find,
         query_params,
-        projection,
         props,
         context,
         prefix_path
       ) do
+    coll = Map.get(find, :coll)
+    query = Map.get(find, :query)
+    projection = Map.get(find, :projection)
+
     %MongoUserLink{mongo_user_id: mongo_user_id} =
       MongoStorage.get_mongo_user_link!(session_metadata.env_id, session_metadata.user_id)
 
