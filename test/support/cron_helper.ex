@@ -6,9 +6,9 @@ defmodule ApplicationRunner.CronHelper do
   alias ApplicationRunner.Crons
   alias ApplicationRunner.Crons.Cron
 
-  def basic_job(env_id) do
+  def basic_job(env_id, function_name) do
     env_id
-    |> Cron.new(%{
+    |> Cron.new(function_name, %{
       "listener_name" => "listener",
       "schedule" => "* * * * * *"
     })

@@ -38,7 +38,7 @@ defmodule ApplicationRunner.StorageTest do
     test "should work properly", %{
       env_id: env_id
     } do
-      job = CronHelper.basic_job(env_id)
+      job = CronHelper.basic_job(env_id, "test")
 
       assert :ok = Storage.add_job(1, job)
 
@@ -54,7 +54,7 @@ defmodule ApplicationRunner.StorageTest do
     end
 
     test "with invalid env_id should not work", %{} do
-      job = CronHelper.basic_job(-1)
+      job = CronHelper.basic_job(-1, "test")
 
       assert {:error, %{errors: [environment_id: {"does not exist", _meta}]}} =
                Storage.add_job(1, job)
@@ -65,7 +65,7 @@ defmodule ApplicationRunner.StorageTest do
     test "should work properly", %{
       env_id: env_id
     } do
-      job = CronHelper.basic_job(env_id)
+      job = CronHelper.basic_job(env_id, "test")
 
       assert :ok = Storage.add_job(1, job)
 
@@ -87,7 +87,7 @@ defmodule ApplicationRunner.StorageTest do
       env_id: env_id
     } do
       # Not adding this job to the Scheduler
-      job = CronHelper.basic_job(env_id)
+      job = CronHelper.basic_job(env_id, "test")
 
       updated_cron =
         job
@@ -105,7 +105,7 @@ defmodule ApplicationRunner.StorageTest do
     test "should work properly", %{
       env_id: env_id
     } do
-      job = CronHelper.basic_job(env_id)
+      job = CronHelper.basic_job(env_id, "test")
 
       assert :ok = Storage.add_job(1, job)
 
@@ -118,7 +118,7 @@ defmodule ApplicationRunner.StorageTest do
 
     test "not existing job", %{env_id: env_id} do
       # Not adding this job to the Scheduler
-      job = CronHelper.basic_job(env_id)
+      job = CronHelper.basic_job(env_id, "test")
 
       assert {:error, %{reason: :error_404}} = Storage.delete_job(1, job.name)
     end
@@ -128,7 +128,7 @@ defmodule ApplicationRunner.StorageTest do
     test "should work properly", %{
       env_id: env_id
     } do
-      job = CronHelper.basic_job(env_id)
+      job = CronHelper.basic_job(env_id, "test")
 
       assert :ok = Storage.add_job(1, job)
 
@@ -144,8 +144,8 @@ defmodule ApplicationRunner.StorageTest do
     test "with multiple jobs in database", %{
       env_id: env_id
     } do
-      job = CronHelper.basic_job(env_id)
-      job2 = CronHelper.basic_job(env_id)
+      job = CronHelper.basic_job(env_id, "test")
+      job2 = CronHelper.basic_job(env_id, "test")
 
       assert :ok = Storage.add_job(1, job)
       assert :ok = Storage.add_job(1, job2)
@@ -181,7 +181,7 @@ defmodule ApplicationRunner.StorageTest do
     test "should work properly", %{
       env_id: env_id
     } do
-      job = CronHelper.basic_job(env_id)
+      job = CronHelper.basic_job(env_id, "test")
 
       assert :ok = Storage.add_job(1, job)
 
@@ -195,7 +195,7 @@ defmodule ApplicationRunner.StorageTest do
     test "on non existing job", %{
       env_id: env_id
     } do
-      job = CronHelper.basic_job(env_id)
+      job = CronHelper.basic_job(env_id, "test")
 
       assert {:error, %{reason: :error_404}} = Storage.update_job_state(1, job.name, :inactive)
     end

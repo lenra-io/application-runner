@@ -115,9 +115,9 @@ defmodule ApplicationRunner.Crons do
         overlap: overlap,
         schedule: schedule,
         state: state,
-        task: {_, _, [listener_name, props, _, env_id]}
+        task: {_, _, [listener_name, props, _, env_id, function_name]}
       }) do
-    Cron.new(env_id, %{
+    Cron.new(env_id, function_name, %{
       "listener_name" => listener_name,
       "schedule" => Composer.compose(schedule),
       "props" => props,
@@ -131,5 +131,5 @@ defmodule ApplicationRunner.Crons do
     BusinessError.invalid_params_tuple(invalid_job)
   end
 
-  defdelegate new(env_id, params), to: Cron
+  defdelegate new(env_id, function_name, params), to: Cron
 end
