@@ -75,7 +75,7 @@ defmodule ApplicationRunner.Crons.CronTest do
 
   test "Cron with invalid env_id should not work" do
     cron =
-      Cron.new(1, %{
+      Cron.new(1, "test", %{
         "schedule" => "* * * * *",
         "listener_name" => "listener",
         "props" => %{
@@ -89,7 +89,7 @@ defmodule ApplicationRunner.Crons.CronTest do
 
   test "Cron without required parameters should not work" do
     cron =
-      Cron.new(1, %{
+      Cron.new(1, "test", %{
         "props" => %{
           "prop1" => "1",
           "prop2" => "2"
