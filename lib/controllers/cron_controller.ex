@@ -1,9 +1,9 @@
 defmodule ApplicationRunner.CronController do
   use ApplicationRunner, :controller
 
-  alias ApplicationRunner.Environment.MetadataAgent
-  alias ApplicationRunner.Environment
   alias ApplicationRunner.Crons
+  alias ApplicationRunner.Environment
+  alias ApplicationRunner.Environment.MetadataAgent
   alias ApplicationRunner.Errors.BusinessError
   alias ApplicationRunner.Guardian.AppGuardian
 
