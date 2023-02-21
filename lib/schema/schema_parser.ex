@@ -44,10 +44,10 @@ defmodule ApplicationRunner.SchemaParser do
       %{"type" => "listener"} ->
         {:listener, key}
 
-      %{"$ref" => _ref} ->
+      %{"type" => "component"} ->
         {:child, key}
 
-      %{"type" => "array", "items" => %{"$ref" => _ref}} ->
+      %{"type" => "array", "items" => %{"type" => "component"}} ->
         {:children, key}
 
       _ ->
