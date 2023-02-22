@@ -59,23 +59,30 @@ defmodule ApplicationRunner.JsonSchemata do
     end)
   end
 
-  defp parse_schema_ref(sub_value, id) do
-    Map.map(sub_value, fn {k, v} ->
-      if k == "$ref" do
-        if String.contains?(Enum.at(v, 0), id) do
-          Enum.concat(["#"], Enum.drop(v, 1))
-        else
-          v
-        end
-        |> Enum.join("/")
+  defp parse_schema_ref(%{"$ref" => v}, id) do
+    concat_v =
+      if String.contains?(Enum.at(v, 0), id) do
+        Enum.concat(["#"], Enum.drop(v, 1))
       else
-        case v do
-          map when is_map(map) ->
-            parse_schema_ref(v, id)
+        v
+      end
+      |> Enum.join("/")
 
-          value ->
-            value
-        end
+    if concat_v == "../component.schema.json" do
+      %{"type" => "component"}
+    else
+      %{"$ref" => concat_v}
+    end
+  end
+
+  defp parse_schema_ref(sub_value, id) do
+    Map.new(sub_value, fn {k, v} ->
+      case v do
+        map when is_map(map) ->
+          {k, parse_schema_ref(v, id)}
+
+        value ->
+          {k, value}
       end
     end)
   end
