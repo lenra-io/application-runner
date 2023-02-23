@@ -151,7 +151,7 @@ defmodule ApplicationRunner.DocsController do
 
   def find(conn, %{"coll" => coll}, filter, %{environment: env}, replace_params) do
     Logger.warning(
-      "This form of query is depracted prefer use: {query: <yout query>, projection: {projection}}, more info at: https://www.mongodb.com/docs/manual/reference/method/db.collection.find/#mongodb-method-db.collection.find"
+      "This form of query is deprecated, prefer using: {query: <your query>, projection: {projection}}, more info at: https://www.mongodb.com/docs/manual/reference/method/db.collection.find/#mongodb-method-db.collection.find"
     )
 
     with {:ok, docs} <-
