@@ -17,6 +17,7 @@ defmodule ApplicationRunner.Errors.TechnicalError do
       {:timeout, "Timeout"},
       {:listener_not_found, "Listener not found"},
       {:mongo_error, "Could not access mongo. Please try again later."},
-      {:failed_parse_mongo_port, "Failed to parse Mongo port."}
+      {:failed_parse_mongo_port, "Failed to parse Mongo port."},
+      {:cron_not_found, "Cron not found."}
     ]
 end
