@@ -57,7 +57,7 @@ defmodule ApplicationRunner.Environment.QueryServer do
     GenServer.call(get_full_name({env_id, coll, query_parsed}), {:add_projection, projection})
   end
 
-  # I cant figure a way to fix the warning throw by Parser...
+  # TODO: Figure out a way to fix the warning thrown by Parser...
   @dialyzer {:no_match, init: 1}
 
   def init(opts) do
