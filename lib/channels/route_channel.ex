@@ -39,7 +39,10 @@ defmodule ApplicationRunner.RouteChannel do
               BusinessError.could_not_register_appchannel(%{session_id: session_id, route: route})
             )
 
-            {:error, DevError.message("Could not register the AppChannel into swarm")}
+            BusinessError.could_not_register_appchannel_tuple(%{
+              session_id: session_id,
+              route: route
+            })
 
           err ->
             err
