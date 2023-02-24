@@ -183,7 +183,8 @@ defmodule ApplicationRunner.Environment.QueryServerTest do
                  @env_id,
                  "test",
                  Parser.parse!("{}"),
-                 Parser.replace_params(%{}, %{})
+                 Parser.replace_params(%{}, %{}),
+                 %{}
                )
 
       QueryServer.join_group(pid, "42")
@@ -196,7 +197,8 @@ defmodule ApplicationRunner.Environment.QueryServerTest do
           @env_id,
           "test",
           Parser.parse!("{}"),
-          Parser.replace_params(%{}, %{})
+          Parser.replace_params(%{}, %{}),
+          %{}
         )
 
       assert %{
@@ -220,6 +222,7 @@ defmodule ApplicationRunner.Environment.QueryServerTest do
           @env_id,
           "test",
           Parser.parse!("{}"),
+          %{},
           %{}
         )
 
@@ -239,7 +242,8 @@ defmodule ApplicationRunner.Environment.QueryServerTest do
           @env_id,
           "test",
           Parser.parse!("{}"),
-          Parser.replace_params(%{}, %{})
+          Parser.replace_params(%{}, %{}),
+          %{}
         )
 
       assert :ok = GenServer.call(pid, {:mongo_event, insert_event(1)})
@@ -251,6 +255,7 @@ defmodule ApplicationRunner.Environment.QueryServerTest do
           @env_id,
           "test",
           Parser.parse!("{}"),
+          %{},
           %{}
         )
 
@@ -259,10 +264,13 @@ defmodule ApplicationRunner.Environment.QueryServerTest do
           @env_id,
           "test",
           Parser.parse!("{}"),
+          %{},
           %{}
         )
 
-      {:ok, pid2} = QueryDynSup.ensure_child_started(@env_id, "foo", Parser.parse!("{}"), %{})
+      {:ok, pid2} =
+        QueryDynSup.ensure_child_started(@env_id, "foo", Parser.parse!("{}"), %{}, %{})
+
       QueryServer.join_group(pid1, "42")
       QueryServer.join_group(pid1, "43")
       QueryServer.join_group(pid2, "43")
@@ -285,7 +293,8 @@ defmodule ApplicationRunner.Environment.QueryServerTest do
                  @env_id,
                  "test",
                  Parser.parse!("{}"),
-                 Parser.replace_params(%{}, %{})
+                 Parser.replace_params(%{}, %{}),
+                 %{}
                )
 
       assert {:ok, ^pid} =
@@ -293,7 +302,8 @@ defmodule ApplicationRunner.Environment.QueryServerTest do
                  @env_id,
                  "test",
                  Parser.parse!("{}"),
-                 Parser.replace_params(%{}, %{})
+                 Parser.replace_params(%{}, %{}),
+                 %{}
                )
     end
 
@@ -303,7 +313,8 @@ defmodule ApplicationRunner.Environment.QueryServerTest do
                  @env_id,
                  "test",
                  Parser.parse!("{}"),
-                 Parser.replace_params(%{}, %{})
+                 Parser.replace_params(%{}, %{}),
+                 %{}
                )
 
       name = {QueryServer, {@env_id, "test", Parser.parse!("{}")}}
@@ -317,7 +328,8 @@ defmodule ApplicationRunner.Environment.QueryServerTest do
                  @env_id,
                  "test",
                  Parser.parse!("{}"),
-                 Parser.replace_params(%{}, %{})
+                 Parser.replace_params(%{}, %{}),
+                 %{}
                )
 
       pid1 =
@@ -349,7 +361,8 @@ defmodule ApplicationRunner.Environment.QueryServerTest do
                  @env_id,
                  "test",
                  Parser.parse!("{}"),
-                 Parser.replace_params(%{}, %{})
+                 Parser.replace_params(%{}, %{}),
+                 %{}
                )
 
       pid1 =
@@ -377,6 +390,53 @@ defmodule ApplicationRunner.Environment.QueryServerTest do
       :timer.sleep(100)
       assert not Process.alive?(qs_pid)
     end
+
+    test "should get have one query server and send filtered data for projection", %{
+      mongo_name: mongo_name
+    } do
+      {:ok, _} =
+        QueryDynSup.ensure_child_started(
+          @env_id,
+          "test",
+          Parser.parse!("{}"),
+          %{},
+          %{"name" => true}
+        )
+
+      # View server with no projection
+      Swarm.join(ViewServer.group_name(@env_id, "test", Parser.parse!("{}"), %{}), self())
+
+      # View server with projection
+      Swarm.join(
+        ViewServer.group_name(@env_id, "test", Parser.parse!("{}"), %{"name" => true}),
+        self()
+      )
+
+      timestamp = Mongo.timestamp(DateTime.utc_now())
+
+      name = QueryServer.get_full_name({@env_id, "test", Parser.parse!("{}")})
+
+      GenServer.call(name, {:mongo_event, insert_event(1, "test", 1, timestamp)})
+
+      # View server with projection received filtered data
+      assert_received {:data_changed,
+                       [
+                         %{"name" => "test1"}
+                       ]}
+
+      # View server with no projection received all data
+      assert_received {:data_changed,
+                       [
+                         %{"name" => "test1", "idx" => 1, "_id" => _}
+                       ]}
+
+      assert %{
+               coll: "test",
+               data: [
+                 %{"name" => "test1", "idx" => 1, "_id" => _}
+               ]
+             } = :sys.get_state(QueryServer.get_full_name({@env_id, "test", Parser.parse!("{}")}))
+    end
   end
 
   describe "QueryServer prevent handling duplicate event" do
@@ -386,7 +446,8 @@ defmodule ApplicationRunner.Environment.QueryServerTest do
                  @env_id,
                  "test",
                  Parser.parse!("{}"),
-                 Parser.replace_params(%{}, %{})
+                 Parser.replace_params(%{}, %{}),
+                 %{}
                )
 
       timestamp = Mongo.timestamp(DateTime.utc_now())
@@ -407,7 +468,8 @@ defmodule ApplicationRunner.Environment.QueryServerTest do
                  @env_id,
                  "test",
                  Parser.parse!("{}"),
-                 Parser.replace_params(%{}, %{})
+                 Parser.replace_params(%{}, %{}),
+                 %{}
                )
 
       name = QueryServer.get_full_name({@env_id, "test", Parser.parse!("{}")})
@@ -425,7 +487,8 @@ defmodule ApplicationRunner.Environment.QueryServerTest do
                  @env_id,
                  "test",
                  Parser.parse!("{}"),
-                 Parser.replace_params(%{}, %{})
+                 Parser.replace_params(%{}, %{}),
+                 %{}
                )
 
       name = QueryServer.get_full_name({@env_id, "test", Parser.parse!("{}")})
@@ -452,7 +515,8 @@ defmodule ApplicationRunner.Environment.QueryServerTest do
                  @env_id,
                  "test",
                  Parser.parse!("{}"),
-                 Parser.replace_params(%{}, %{})
+                 Parser.replace_params(%{}, %{}),
+                 %{}
                )
 
       name = QueryServer.get_full_name({@env_id, "test", Parser.parse!("{}")})
@@ -476,7 +540,8 @@ defmodule ApplicationRunner.Environment.QueryServerTest do
           @env_id,
           "test",
           Parser.parse!("{}"),
-          Parser.replace_params(%{}, %{})
+          Parser.replace_params(%{}, %{}),
+          %{}
         )
 
       name = QueryServer.get_full_name({@env_id, "test", Parser.parse!("{}")})
@@ -499,26 +564,29 @@ defmodule ApplicationRunner.Environment.QueryServerTest do
           @env_id,
           "test",
           Parser.parse!("{}"),
+          %{},
           %{}
         )
 
       q2 = %{"idx" => 1}
       eq2 = Jason.encode!(q2)
 
-      {:ok, pid2} = QueryDynSup.ensure_child_started(@env_id, "test", Parser.parse!(eq2), %{})
+      {:ok, pid2} =
+        QueryDynSup.ensure_child_started(@env_id, "test", Parser.parse!(eq2), %{}, %{})
+
       QueryServer.join_group(pid1, "42")
       QueryServer.join_group(pid2, "42")
 
       # BOTH process in Group 1 should receive the change event
-      group1 = ViewServer.group_name(@env_id, "test", Parser.parse!("{}"))
+      group1 = ViewServer.group_name(@env_id, "test", Parser.parse!("{}"), %{})
       # Group 1 should NOT receive the change event (wrong env_id)
-      group2 = ViewServer.group_name(@env_id + 1, "test", Parser.parse!("{}"))
+      group2 = ViewServer.group_name(@env_id + 1, "test", Parser.parse!("{}"), %{})
       # Group 1 should NOT receive the change event (wrong coll)
-      group3 = ViewServer.group_name(@env_id, "test1", Parser.parse!("{}"))
+      group3 = ViewServer.group_name(@env_id, "test1", Parser.parse!("{}"), %{})
       # Group 1 should NOT receive the change event (query does not match)
-      group4 = ViewServer.group_name(@env_id, "test", Parser.parse!("{\"aaaa\": 1}"))
+      group4 = ViewServer.group_name(@env_id, "test", Parser.parse!("{\"aaaa\": 1}"), %{})
       # Group 1 should receive the change event (query match)
-      group5 = ViewServer.group_name(@env_id, "test", Parser.parse!("{\"idx\": 1}"))
+      group5 = ViewServer.group_name(@env_id, "test", Parser.parse!("{\"idx\": 1}"), %{})
 
       p1 = spawn_pass_process(:a1)
       p1b = spawn_pass_process(:a1b)
@@ -550,7 +618,8 @@ defmodule ApplicationRunner.Environment.QueryServerTest do
           @env_id,
           "test",
           Parser.parse!("{}"),
-          Parser.replace_params(%{}, %{})
+          Parser.replace_params(%{}, %{}),
+          %{}
         )
 
       name = QueryServer.get_full_name({@env_id, "test", Parser.parse!("{}")})
@@ -567,7 +636,7 @@ defmodule ApplicationRunner.Environment.QueryServerTest do
     test "should NOT insert data if the query does not match the new element" do
       q = %{"idx" => %{"$lt" => 3}}
       eq = Jason.encode!(q)
-      {:ok, _} = QueryDynSup.ensure_child_started(@env_id, "test", Parser.parse!(eq), q)
+      {:ok, _} = QueryDynSup.ensure_child_started(@env_id, "test", Parser.parse!(eq), q, %{})
 
       name = QueryServer.get_full_name({@env_id, "test", Parser.parse!(eq)})
 
@@ -589,7 +658,8 @@ defmodule ApplicationRunner.Environment.QueryServerTest do
           @env_id,
           "test",
           Parser.parse!("{}"),
-          Parser.replace_params(%{}, %{})
+          Parser.replace_params(%{}, %{}),
+          %{}
         )
 
       name = QueryServer.get_full_name({@env_id, "test", Parser.parse!("{}")})
@@ -615,7 +685,8 @@ defmodule ApplicationRunner.Environment.QueryServerTest do
           @env_id,
           "test",
           Parser.parse!("{}"),
-          Parser.replace_params(%{}, %{})
+          Parser.replace_params(%{}, %{}),
+          %{}
         )
 
       name = QueryServer.get_full_name({@env_id, "test", Parser.parse!("{}")})
@@ -644,7 +715,8 @@ defmodule ApplicationRunner.Environment.QueryServerTest do
           @env_id,
           "test",
           Parser.parse!(eq),
-          Parser.replace_params(q, %{})
+          Parser.replace_params(q, %{}),
+          %{}
         )
 
       name = QueryServer.get_full_name({@env_id, "test", Parser.parse!(eq)})
@@ -672,7 +744,8 @@ defmodule ApplicationRunner.Environment.QueryServerTest do
           @env_id,
           "test",
           Parser.parse!("{}"),
-          Parser.replace_params(%{}, %{})
+          Parser.replace_params(%{}, %{}),
+          %{}
         )
 
       name = QueryServer.get_full_name({@env_id, "test", Parser.parse!("{}")})
@@ -698,7 +771,8 @@ defmodule ApplicationRunner.Environment.QueryServerTest do
           @env_id,
           "test",
           Parser.parse!("{}"),
-          Parser.replace_params(%{}, %{})
+          Parser.replace_params(%{}, %{}),
+          %{}
         )
 
       name = QueryServer.get_full_name({@env_id, "test", Parser.parse!("{}")})
@@ -727,7 +801,8 @@ defmodule ApplicationRunner.Environment.QueryServerTest do
           @env_id,
           "test",
           Parser.parse!(eq),
-          q
+          q,
+          %{}
         )
 
       name = QueryServer.get_full_name({@env_id, "test", Parser.parse!(eq)})
@@ -755,7 +830,8 @@ defmodule ApplicationRunner.Environment.QueryServerTest do
           @env_id,
           "test",
           Parser.parse!("{}"),
-          Parser.replace_params(%{}, %{})
+          Parser.replace_params(%{}, %{}),
+          %{}
         )
 
       name = QueryServer.get_full_name({@env_id, "test", Parser.parse!("{}")})
@@ -781,7 +857,8 @@ defmodule ApplicationRunner.Environment.QueryServerTest do
           @env_id,
           "test",
           Parser.parse!("{}"),
-          Parser.replace_params(%{}, %{})
+          Parser.replace_params(%{}, %{}),
+          %{}
         )
 
       name = QueryServer.get_full_name({@env_id, "test", Parser.parse!("{}")})
@@ -807,7 +884,8 @@ defmodule ApplicationRunner.Environment.QueryServerTest do
           @env_id,
           "test",
           Parser.parse!("{}"),
-          Parser.replace_params(%{}, %{})
+          Parser.replace_params(%{}, %{}),
+          %{}
         )
 
       name = QueryServer.get_full_name({@env_id, "test", Parser.parse!("{}")})
@@ -835,7 +913,8 @@ defmodule ApplicationRunner.Environment.QueryServerTest do
           @env_id,
           "test",
           Parser.parse!("{}"),
-          Parser.replace_params(%{}, %{})
+          Parser.replace_params(%{}, %{}),
+          %{}
         )
 
       assert Process.alive?(pid)
@@ -849,7 +928,8 @@ defmodule ApplicationRunner.Environment.QueryServerTest do
           @env_id,
           "test",
           Parser.parse!("{}"),
-          Parser.replace_params(%{}, %{})
+          Parser.replace_params(%{}, %{}),
+          %{}
         )
 
       assert Process.alive?(pid)
@@ -865,14 +945,15 @@ defmodule ApplicationRunner.Environment.QueryServerTest do
           @env_id,
           "test",
           Parser.parse!("{}"),
-          Parser.replace_params(%{}, %{})
+          Parser.replace_params(%{}, %{}),
+          %{}
         )
 
       name = QueryServer.get_name({@env_id, "test", Parser.parse!("{}")})
       new_name = QueryServer.get_name({@env_id, "bar", Parser.parse!("{}")})
 
-      group = ViewServer.group_name(@env_id, "test", Parser.parse!("{}"))
-      new_group = ViewServer.group_name(@env_id, "bar", Parser.parse!("{}"))
+      group = ViewServer.group_name(@env_id, "test", Parser.parse!("{}"), %{})
+      new_group = ViewServer.group_name(@env_id, "bar", Parser.parse!("{}"), %{})
       p1 = spawn_pass_process(:p1)
       p2 = spawn_pass_process(:p2)
       Swarm.join(group, p1)
@@ -904,7 +985,8 @@ defmodule ApplicationRunner.Environment.QueryServerTest do
           @env_id,
           "test",
           Parser.parse!("{}"),
-          Parser.replace_params(%{}, %{})
+          Parser.replace_params(%{}, %{}),
+          %{}
         )
 
       name = QueryServer.get_full_name({@env_id, "test", Parser.parse!("{}")})
