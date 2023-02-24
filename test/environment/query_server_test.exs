@@ -390,6 +390,53 @@ defmodule ApplicationRunner.Environment.QueryServerTest do
       :timer.sleep(100)
       assert not Process.alive?(qs_pid)
     end
+
+    test "should get have one query server and send filtered data for projection", %{
+      mongo_name: mongo_name
+    } do
+      {:ok, _} =
+        QueryDynSup.ensure_child_started(
+          @env_id,
+          "test",
+          Parser.parse!("{}"),
+          %{},
+          %{"name" => true}
+        )
+
+      # View server with no projection
+      Swarm.join(ViewServer.group_name(@env_id, "test", Parser.parse!("{}"), %{}), self())
+
+      # View server with projection
+      Swarm.join(
+        ViewServer.group_name(@env_id, "test", Parser.parse!("{}"), %{"name" => true}),
+        self()
+      )
+
+      timestamp = Mongo.timestamp(DateTime.utc_now())
+
+      name = QueryServer.get_full_name({@env_id, "test", Parser.parse!("{}")})
+
+      GenServer.call(name, {:mongo_event, insert_event(1, "test", 1, timestamp)})
+
+      # View server with projection received filtered data
+      assert_received {:data_changed,
+                       [
+                         %{"name" => "test1"}
+                       ]}
+
+      # View server with no projection received all data
+      assert_received {:data_changed,
+                       [
+                         %{"name" => "test1", "idx" => 1, "_id" => _}
+                       ]}
+
+      assert %{
+               coll: "test",
+               data: [
+                 %{"name" => "test1", "idx" => 1, "_id" => _}
+               ]
+             } = :sys.get_state(QueryServer.get_full_name({@env_id, "test", Parser.parse!("{}")}))
+    end
   end
 
   describe "QueryServer prevent handling duplicate event" do
