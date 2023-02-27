@@ -41,6 +41,14 @@ defmodule ApplicationRunner.SchemaParser do
         fragment = get_in(schema.refs, ref)
         parse_property(schema, key, fragment)
 
+      %{"oneOf" => list} ->
+        Enum.reduce_while(list, :none, fn e, _acc ->
+          case parse_property(root_schema, schema, key, e) do
+            :none -> {:cont, :none}
+            res -> {:halt, res}
+          end
+        end)
+
       %{"type" => "listener"} ->
         {:listener, key}
 
