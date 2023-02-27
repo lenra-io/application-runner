@@ -7,7 +7,6 @@ defmodule ApplicationRunner.AppSocket do
     quote do
       require Logger
       use Phoenix.Socket
-
       alias ApplicationRunner.AppSocket
       alias ApplicationRunner.Contract.User
       alias ApplicationRunner.Environment
@@ -28,7 +27,6 @@ defmodule ApplicationRunner.AppSocket do
       @impl true
       def init(state) do
         res = {:ok, {_, socket}} = super(state)
-
         Monitor.SessionMonitor.monitor(self(), socket.assigns)
         res
       end

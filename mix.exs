@@ -34,22 +34,21 @@ defmodule ApplicationRunner.MixProject do
     [
       {:credo, "~> 1.6.7", only: [:dev, :test], runtime: false},
       {:dialyxir, "~> 1.2", only: [:dev, :test], runtime: false},
-      {
-        :ex_component_schema,
-        git: "https://github.com/lenra-io/ex_component_schema", ref: "v1.0.0-beta.5"
-      },
+      {:ex_component_schema,
+       git: "https://github.com/lenra-io/ex_component_schema", ref: "v1.0.0-beta.5"},
       {:jason, "~> 1.4"},
       {:json_diff, "~> 0.1.3"},
       {:telemetry, "~> 1.2.0"},
       {:swarm, "~> 3.4"},
       {:ecto_sql, "~> 3.9.2"},
-      {:postgrex, "~> 0.16.5", only: [:test], runtime: false},
+      {:postgrex, "~> 0.16.5"},
       {:guardian, "~> 2.3.1"},
       {:phoenix, "~> 1.6.15"},
       {:finch, "~> 0.14"},
       {:bypass, "~> 2.1", only: :test},
       {:mongodb_driver, "~> 1.0.2"},
       {:crontab, "~> 1.1.13"},
+      {:quantum, "~> 3.0"},
       {:query_parser, git: "https://github.com/lenra-io/query-parser.git", tag: "v1.0.0-beta.17"},
       {:lenra_common, git: "https://github.com/lenra-io/lenra-common.git", tag: "v2.5.0"}
     ]
@@ -61,7 +60,7 @@ defmodule ApplicationRunner.MixProject do
         "ecto.drop --repo ApplicationRunner.Repo",
         "ecto.create --quiet",
         "ecto.migrate",
-        "test"
+        "test --no-start"
       ],
       "ecto.migrations": [
         "ecto.migrations --migrations-path priv/repo/migrations --migrations-path priv/repo/test_migrations"

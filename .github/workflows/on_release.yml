@@ -18,8 +18,11 @@ jobs:
           REF="${GITHUB_REF##*/}"
           echo "output.tag=${REF}"
           echo "::set-output name=tag::${REF}"
-          if [[ ${GITHUB_REF} == *beta.* ]]; then
-            echo "::set-output name=target_ref::beta"
+
+          regex='([0-9]+.[0-9]+.[0-9]+)(-([a-z]+).([0-9]+))'
+          if [[ $version =~ $regex ]]; then
+            channel="${BASH_REMATCH[3]}"
+            echo "::set-output name=target_ref::${channel}"
           else
             echo "::set-output name=target_ref::main"
           fi

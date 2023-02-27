@@ -123,15 +123,15 @@ defmodule ApplicationRunner.Session.UiBuilders.LenraBuilder do
   defp handle_view(session_metadata, component, ui_context, view_uid) do
     name = Map.get(component, "name")
     props = Map.get(component, "props")
-    coll = Map.get(component, "coll")
-    query = Map.get(component, "query", %{})
+    find = Map.get(component, "find", %{})
+
+    {coll, query, projection} = RouteServer.extract_find(component, find)
 
     with {:ok, new_view_uid} <-
            RouteServer.create_view_uid(
              session_metadata,
              name,
-             coll,
-             query,
+             %{coll: coll, query: query, projection: projection},
              %{},
              props,
              view_uid.context,
@@ -203,11 +203,11 @@ defmodule ApplicationRunner.Session.UiBuilders.LenraBuilder do
   @spec validate_with_error(String.t(), component(), ViewUid.t()) ::
           {:error, UiBuilderAdapter.common_error()} | {:ok, map()}
   defp validate_with_error(schema_path, component, %ViewUid{prefix_path: prefix_path}) do
-    with schema <-
-           JsonSchemata.get_schema_map(:root),
-         :ok <- ExComponentSchema.Validator.validate(schema, component) do
-      JsonSchemata.get_schema_map(schema_path)
-      {:ok, JsonSchemata.get_schema_map(schema_path)}
+    with %{schema: schema} = schema_map <-
+           JsonSchemata.get_schema_map(schema_path),
+         :ok <-
+           ExComponentSchema.Validator.validate(schema, component) do
+      {:ok, schema_map}
     else
       {:error, errors} ->
         err_message =

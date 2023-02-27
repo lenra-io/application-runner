@@ -95,14 +95,13 @@ defmodule ApplicationRunner.Session.RouteServer do
     with {:ok, route_params, base_view} <- find_route(routes, route),
          name <- Map.get(base_view, "name"),
          props <- Map.get(base_view, "props", %{}),
-         coll <- Map.get(base_view, "coll"),
-         query <- Map.get(base_view, "query", %{}),
+         find <- Map.get(base_view, "find", %{}),
+         {coll, query, projection} <- extract_find(base_view, find),
          {:ok, view_uid} <-
            create_view_uid(
              session_metadata,
              name,
-             coll,
-             query,
+             %{coll: coll, query: query, projection: projection},
              %{"route" => route_params},
              props,
              session_metadata.context,
@@ -115,6 +114,26 @@ defmodule ApplicationRunner.Session.RouteServer do
 
       err ->
         err
+    end
+  end
+
+  def extract_find(base_view, find) do
+    coll_deprecated = Map.get(base_view, "coll")
+    query_deprecated = Map.get(base_view, "query", %{})
+    name = Map.get(base_view, "name")
+
+    coll = Map.get(find, "coll")
+    query = Map.get(find, "query", %{})
+    projection = Map.get(find, "projection", %{})
+
+    if find == %{} && coll_deprecated != nil do
+      Logger.warning(
+        "Definition of view #{name} is deprecated since applicationRunner beta 106 check https://docs.lenra.io/components-api/components/view.html."
+      )
+
+      {coll_deprecated, query_deprecated, %{}}
+    else
+      {coll, query, projection}
     end
   end
 
@@ -154,8 +173,7 @@ defmodule ApplicationRunner.Session.RouteServer do
   @spec create_view_uid(
           Session.Metadata.t(),
           binary(),
-          binary() | nil,
-          map() | nil,
+          map(),
           map(),
           map() | nil,
           map(),
@@ -164,13 +182,16 @@ defmodule ApplicationRunner.Session.RouteServer do
   def create_view_uid(
         session_metadata,
         name,
-        coll,
-        query,
+        find,
         query_params,
         props,
         context,
         prefix_path
       ) do
+    coll = Map.get(find, :coll)
+    query = Map.get(find, :query)
+    projection = Map.get(find, :projection)
+
     %MongoUserLink{mongo_user_id: mongo_user_id} =
       MongoStorage.get_mongo_user_link!(session_metadata.env_id, session_metadata.user_id)
 
@@ -186,7 +207,8 @@ defmodule ApplicationRunner.Session.RouteServer do
          query_parsed: query_parsed,
          query_transformed: query_transformed,
          coll: coll,
-         context: context
+         context: context,
+         projection: projection
        }}
     end
   end

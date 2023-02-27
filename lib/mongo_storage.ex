@@ -158,9 +158,9 @@ defmodule ApplicationRunner.MongoStorage do
     end
   end
 
-  @spec filter_docs(number(), String.t(), map()) ::
+  @spec filter_docs(number(), String.t(), map(), keyword()) ::
           {:ok, list(map())} | {:error, TechnicalErrorType.t()}
-  def filter_docs(env_id, coll, filter) do
+  def filter_docs(env_id, coll, filter, opts \\ []) do
     Logger.debug(
       "#{__MODULE__} filter_docs for env_id: #{env_id}, coll: #{coll}, filter: #{inspect(filter)}"
     )
@@ -169,7 +169,7 @@ defmodule ApplicationRunner.MongoStorage do
 
     env_id
     |> mongo_instance()
-    |> Mongo.find(coll, clean_filter)
+    |> Mongo.find(coll, clean_filter, opts)
     |> case do
       {:error, err} ->
         TechnicalError.mongo_error_tuple(err)

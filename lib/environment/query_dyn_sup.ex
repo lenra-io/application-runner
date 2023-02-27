@@ -29,20 +29,19 @@ defmodule ApplicationRunner.Environment.QueryDynSup do
     DynamicSupervisor.init(strategy: :one_for_one)
   end
 
-  @spec ensure_child_started(term(), String.t() | nil, map() | nil, map() | nil) ::
+  @spec ensure_child_started(term(), String.t() | nil, map() | nil, map() | nil, map()) ::
           {:ok, pid()} | {:error, term()}
-  def ensure_child_started(env_id, coll, query_parsed, query_transformed) do
+  def ensure_child_started(env_id, coll, query_parsed, query_transformed, projection) do
     Logger.debug(
       "#{__MODULE__} ensure query server started for #{inspect([env_id, coll, query_parsed, query_transformed])}"
     )
 
-    case start_child(env_id, coll, query_parsed, query_transformed) do
+    case start_child(env_id, coll, query_parsed, query_transformed, projection) do
       {:ok, pid} ->
         Logger.info("ApplicationRunner.Environment.QueryServer started")
         {:ok, pid}
 
       {:error, {:already_started, pid}} ->
-        Logger.debug("ApplicationRunner.Environment.QueryServer already started")
         {:ok, pid}
 
       err ->
@@ -51,12 +50,13 @@ defmodule ApplicationRunner.Environment.QueryDynSup do
     end
   end
 
-  defp start_child(env_id, coll, query_parsed, query_transformed) do
+  defp start_child(env_id, coll, query_parsed, query_transformed, projection) do
     init_value = [
       query_parsed: query_parsed,
       query_transformed: query_transformed,
       coll: coll,
-      env_id: env_id
+      env_id: env_id,
+      projection: projection
     ]
 
     DynamicSupervisor.start_child(get_full_name(env_id), {QueryServer, init_value})

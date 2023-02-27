@@ -10,12 +10,12 @@ defmodule ApplicationRunner.Environment.ViewServer do
 
   require Logger
 
-  def group_name(env_id, coll, query) do
-    {__MODULE__, env_id, coll, query}
+  def group_name(env_id, coll, query, projection) do
+    {__MODULE__, env_id, coll, query, projection}
   end
 
-  def join_group(pid, env_id, coll, query) do
-    group = group_name(env_id, coll, query)
+  def join_group(pid, env_id, coll, query, projection) do
+    group = group_name(env_id, coll, query, projection)
     Swarm.join(group, pid)
   end
 
@@ -45,7 +45,8 @@ defmodule ApplicationRunner.Environment.ViewServer do
     env_id = Keyword.fetch!(opts, :env_id)
     %ViewUid{} = view_uid = Keyword.fetch!(opts, :view_uid)
 
-    with data <- QueryServer.get_data(env_id, view_uid.coll, view_uid.query_parsed),
+    with data <-
+           QueryServer.get_data(env_id, view_uid.coll, view_uid.query_parsed, view_uid.projection),
          {:ok, view} <-
            ApplicationServices.fetch_view(
              function_name,

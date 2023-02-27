@@ -35,28 +35,56 @@ defmodule ApplicationRunner.JsonSchemata do
       file_content
       |> Jason.decode!()
       |> ExComponentSchema.Schema.resolve()
+      |> load_schema()
 
-    schema = load_schema(schemata_map)
-
-    {:ok, %{schemata_map: schemata_map, schema: schema}}
+    {:ok, schemata_map}
   end
 
   def load_schema(root_schema) do
-    Map.replace(
-      root_schema,
-      :refs,
-      Map.map(root_schema.refs, fn {id, ref} ->
-        try do
-          ref_properties = ApplicationRunner.SchemaParser.parse(root_schema, ref)
-          Map.merge(%{schema: ref}, ref_properties)
-        rescue
-          e in ExComponentSchema.Schema.InvalidSchemaError ->
-            reraise ExComponentSchema.Schema.InvalidSchemaError,
-                    [message: "#{id} #{e.message}"],
-                    __STACKTRACE__
-        end
-      end)
-    )
+    Map.map(root_schema.refs, fn {id, ref} ->
+      try do
+        schema =
+          parse_schema_ref(ref, ref["$id"])
+          |> ExComponentSchema.Schema.resolve()
+
+        schema_properties = ApplicationRunner.SchemaParser.parse(schema)
+
+        Map.merge(%{schema: schema}, schema_properties)
+      rescue
+        e in ExComponentSchema.Schema.InvalidSchemaError ->
+          reraise ExComponentSchema.Schema.InvalidSchemaError,
+                  [message: "#{id} #{e.message}"],
+                  __STACKTRACE__
+      end
+    end)
+  end
+
+  defp parse_schema_ref(%{"$ref" => v}, id) do
+    concat_v =
+      if String.contains?(Enum.at(v, 0), id) do
+        Enum.concat(["#"], Enum.drop(v, 1))
+      else
+        v
+      end
+      |> Enum.join("/")
+
+    if concat_v == "../component.schema.json" do
+      %{"type" => "component"}
+    else
+      %{"$ref" => concat_v}
+    end
+  end
+
+  defp parse_schema_ref(sub_value, id) do
+    Map.new(sub_value, fn {k, v} ->
+      case v do
+        map when is_map(map) ->
+          {k, parse_schema_ref(v, id)}
+
+        value ->
+          {k, value}
+      end
+    end)
   end
 
   def read_schema(path, root_location) do
@@ -82,13 +110,9 @@ defmodule ApplicationRunner.JsonSchemata do
   @impl true
   def handle_call({:get_schema_map, path}, _from, schemata_map) do
     res =
-      if path == :root do
-        Map.get(schemata_map, :schemata_map)
-      else
-        case Map.fetch(Map.get(schemata_map, :schema).refs, path) do
-          :error -> {:error, [{"Invalid component type", "#"}]}
-          {:ok, res} -> res
-        end
+      case Map.fetch(schemata_map, path) do
+        :error -> {:error, [{"Invalid component type", "#"}]}
+        {:ok, res} -> res
       end
 
     {:reply, res, schemata_map}

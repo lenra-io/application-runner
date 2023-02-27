@@ -13,50 +13,62 @@ defmodule ApplicationRunner.Crons.Cron do
            only: [
              :id,
              :listener_name,
-             :cron_expression,
+             :schedule,
              :props,
              :should_run_missed_steps,
-             :last_run_date,
              :environment_id,
-             :user_id
+             :user_id,
+             :overlap,
+             :state,
+             :function_name
            ]}
   schema "crons" do
     belongs_to(:environment, Environment)
     belongs_to(:user, User)
 
     field(:listener_name, :string)
-    field(:cron_expression, :string)
-    field(:props, :map)
+    field(:schedule, :string)
+    field(:props, :map, default: %{})
+
+    field(:name, ApplicationRunner.Ecto.Reference)
+    field(:overlap, :boolean, default: false)
+    field(:state, :string, default: "active")
 
     field(:should_run_missed_steps, :boolean, default: false)
-    field(:last_run_date, :date)
+    field(:function_name, :string)
 
     timestamps()
   end
 
-  def changeset(webhook, params \\ %{}) do
-    webhook
+  def changeset(cron, params \\ %{}) do
+    cron
     |> cast(params, [
       :listener_name,
-      :cron_expression,
+      :schedule,
       :props,
       :should_run_missed_steps,
-      :last_run_date,
-      :user_id
+      :user_id,
+      :name,
+      :overlap,
+      :state
     ])
-    |> validate_required([:environment_id, :listener_name, :cron_expression])
-    |> validate_change(:cron_expression, fn :cron_expression, cron ->
+    |> validate_required([:environment_id, :listener_name, :schedule])
+    |> validate_change(:schedule, fn :schedule, cron ->
       case Parser.parse(cron) do
         {:ok, _cron_expr} -> []
-        _ -> [cron_expression: "Cron Expression is malformed."]
+        _ -> [schedule: "Schedule is malformed."]
       end
     end)
     |> foreign_key_constraint(:environment_id)
     |> foreign_key_constraint(:user_id)
   end
 
-  def new(env_id, params) do
-    %__MODULE__{environment_id: env_id}
+  def update(%__MODULE__{} = cron, params) do
+    changeset(cron, params)
+  end
+
+  def new(env_id, function_name, params) do
+    %__MODULE__{environment_id: env_id, function_name: function_name, name: make_ref()}
     |> __MODULE__.changeset(params)
   end
 end
