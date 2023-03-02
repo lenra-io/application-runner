@@ -10,9 +10,9 @@ defmodule ApplicationRunner.CronController do
   def app_create(conn, params) do
     with %{environment: env} <- AppGuardian.Plug.current_resource(conn),
          %Environment.Metadata{} = metadata <- MetadataAgent.get_metadata(env.id),
-         {:ok, _name} <-
+         {:ok, name} <-
            Crons.create(env.id, metadata.function_name, params) do
-      reply(conn, :ok)
+      reply(conn, name)
     else
       nil -> BusinessError.invalid_token_tuple()
       err -> err
@@ -39,7 +39,7 @@ defmodule ApplicationRunner.CronController do
       nil ->
         raise BusinessError.invalid_token()
 
-      {:ok, %{environment: env} = _resources} ->
+      %{environment: env} ->
         reply(conn, Crons.all(env.id))
     end
   end
