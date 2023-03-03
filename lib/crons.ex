@@ -38,6 +38,7 @@ defmodule ApplicationRunner.Crons do
       |> to_job()
       |> ApplicationRunner.Scheduler.add_job()
 
+      # Only the name is returned here because the cron is not inserted yet.
       {:ok, cron.name}
     end
   end
