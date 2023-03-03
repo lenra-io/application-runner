@@ -38,7 +38,7 @@ defmodule ApplicationRunner.Crons do
       |> to_job()
       |> ApplicationRunner.Scheduler.add_job()
 
-      {:ok, cron}
+      get_by_name(cron.name)
     end
   end
 
