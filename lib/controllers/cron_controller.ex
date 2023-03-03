@@ -10,10 +10,9 @@ defmodule ApplicationRunner.CronController do
   def app_create(conn, params) do
     with %{environment: env} <- AppGuardian.Plug.current_resource(conn),
          %Environment.Metadata{} = metadata <- MetadataAgent.get_metadata(env.id),
-         {:ok, name} <-
+         {:ok, cron} <-
            Crons.create(env.id, metadata.function_name, params) do
-      # TODO: Cannot return name because toString not implemented
-      reply(conn, name)
+      reply(conn, cron)
     else
       nil -> BusinessError.invalid_token_tuple()
       err -> err
