@@ -18,4 +18,12 @@ defmodule ApplicationRunner.Ecto.Reference do
   def dump(reference) when is_reference(reference) do
     {:ok, reference |> :erlang.ref_to_list() |> List.to_string()}
   end
+
+  defimpl Jason.Encoder, for: Reference do
+    def encode(value, _opts) do
+      with {:ok, res} <- ApplicationRunner.Ecto.Reference.dump(value) do
+        res
+      end
+    end
+  end
 end
