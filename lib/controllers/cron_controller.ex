@@ -10,18 +10,18 @@ defmodule ApplicationRunner.CronController do
   def app_create(conn, params) do
     with %{environment: env} <- AppGuardian.Plug.current_resource(conn),
          %Environment.Metadata{} = metadata <- MetadataAgent.get_metadata(env.id),
-         {:ok, cron} <-
+         {:ok, name} <-
            Crons.create(env.id, metadata.function_name, params) do
-      reply(conn, cron)
+      reply(conn, name)
     else
       nil -> BusinessError.invalid_token_tuple()
       err -> err
     end
   end
 
-  def get(conn, %{"id" => cron_id} = _params) do
+  def get(conn, %{"name" => cron_name} = _params) do
     with {:ok, cron} <-
-           Crons.get(cron_id) do
+           Crons.get_by_name(cron_name) do
       reply(conn, cron)
     end
   end
