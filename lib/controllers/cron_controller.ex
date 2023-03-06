@@ -47,7 +47,7 @@ defmodule ApplicationRunner.CronController do
          :ok <- Crons.update(cron, params) do
       reply(conn, :ok)
     else
-      false -> BusinessError.unauthorized_tuple()
+      false -> TechnicalError.unauthorized_tuple()
       err -> err
     end
   end
