@@ -45,7 +45,9 @@ defmodule ApplicationRunner.CronController do
   end
 
   def update(conn, %{"name" => name} = params) do
-    with {:ok, cron} <- Crons.get_by_name(name),
+    {:ok, loaded_name} = ApplicationRunner.Ecto.Reference.load(name)
+
+    with {:ok, cron} <- Crons.get_by_name(loaded_name),
          :ok <- Crons.update(cron, params) do
       reply(conn, :ok)
     end
