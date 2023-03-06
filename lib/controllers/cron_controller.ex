@@ -12,8 +12,6 @@ defmodule ApplicationRunner.CronController do
          %Environment.Metadata{} = metadata <- MetadataAgent.get_metadata(env.id),
          {:ok, name} <-
            Crons.create(env.id, metadata.function_name, params) do
-      IO.inspect(name)
-      IO.inspect(IEx.Helpers.i(name))
       reply(conn, name)
     else
       nil -> BusinessError.invalid_token_tuple()
