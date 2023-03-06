@@ -54,7 +54,7 @@ defmodule ApplicationRunner.CronController do
   def delete(conn, %{"name" => name} = _params) do
     IO.inspect("DELETE #{name}")
 
-    with {:ok, cron} <- Crons.get_by_name(name),
+    with {:ok, cron} <- Crons.get_by_name(ApplicationRunner.Ecto.Reference.load(name)),
          :ok <- Crons.delete(cron) do
       reply(conn, :ok)
     end
