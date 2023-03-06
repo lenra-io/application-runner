@@ -5,7 +5,7 @@ defmodule ApplicationRunner.CronController do
   alias ApplicationRunner.Ecto.Reference
   alias ApplicationRunner.Environment
   alias ApplicationRunner.Environment.MetadataAgent
-  alias ApplicationRunner.Errors.BusinessError
+  alias ApplicationRunner.Errors.{BusinessError, TechnicalError}
   alias ApplicationRunner.Guardian.AppGuardian
 
   def create(conn, params) do
@@ -61,7 +61,7 @@ defmodule ApplicationRunner.CronController do
          :ok <- Crons.delete(loaded_name) do
       reply(conn, :ok)
     else
-      false -> BusinessError.unauthorized_tuple()
+      false -> TechnicalError.unauthorized_tuple()
       err -> err
     end
   end

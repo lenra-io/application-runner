@@ -27,7 +27,6 @@ defmodule ApplicationRunner.Errors.BusinessError do
       {:mongo_not_started, "Mongo is not started for the given env_id"},
       {:could_not_register_appchannel, "Could not register the AppChannel into swarm"},
       {:null_parameters, "Cannot handle null parameters"},
-      {:cannot_start_session, "Cannot start session supervisor"},
-      {:unauthorized, "Unauthorized"}
+      {:cannot_start_session, "Cannot start session supervisor"}
     ]
 end
