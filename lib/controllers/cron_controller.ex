@@ -2,6 +2,7 @@ defmodule ApplicationRunner.CronController do
   use ApplicationRunner, :controller
 
   alias ApplicationRunner.Crons
+  alias ApplicationRunner.Ecto.Reference
   alias ApplicationRunner.Environment
   alias ApplicationRunner.Environment.MetadataAgent
   alias ApplicationRunner.Errors.BusinessError
@@ -45,7 +46,7 @@ defmodule ApplicationRunner.CronController do
   end
 
   def update(conn, %{"name" => name} = params) do
-    {:ok, loaded_name} = ApplicationRunner.Ecto.Reference.load(name)
+    {:ok, loaded_name} = Reference.load(name)
 
     with {:ok, cron} <- Crons.get_by_name(loaded_name),
          :ok <- Crons.update(cron, params) do
@@ -54,7 +55,7 @@ defmodule ApplicationRunner.CronController do
   end
 
   def delete(conn, %{"name" => name} = _params) do
-    {:ok, loaded_name} = ApplicationRunner.Ecto.Reference.load(name)
+    {:ok, loaded_name} = Reference.load(name)
 
     with :ok <- Crons.delete(loaded_name) do
       reply(conn, :ok)

@@ -76,18 +76,14 @@ defmodule ApplicationRunner.Crons do
   def update(cron, params) do
     # Quantum's default behavior will update the job when using the add_job.
     # There is no Scheduler.update_job method.
-    IO.inspect("UPDATING CRON")
-
-    IO.inspect(
-      with %Ecto.Changeset{valid?: true} = changeset <-
-             cron
-             |> Cron.update(params) do
-        changeset
-        |> Ecto.Changeset.apply_changes()
-        |> to_job()
-        |> ApplicationRunner.Scheduler.add_job()
-      end
-    )
+    with %Ecto.Changeset{valid?: true} = changeset <-
+           cron
+           |> Cron.update(params) do
+      changeset
+      |> Ecto.Changeset.apply_changes()
+      |> to_job()
+      |> ApplicationRunner.Scheduler.add_job()
+    end
   end
 
   def delete(cron_name) do

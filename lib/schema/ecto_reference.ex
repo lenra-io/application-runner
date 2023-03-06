@@ -3,6 +3,8 @@ defmodule ApplicationRunner.Ecto.Reference do
    ApplicationRunner.Ecto.Reference implements methods to properly parse an erlang reference to a String.
   """
   use Ecto.Type
+
+  alias ApplicationRunner.Ecto.Reference
   def type, do: :string
 
   def cast(reference) when is_reference(reference) do
@@ -25,7 +27,7 @@ defmodule ApplicationRunner.Ecto.Reference do
 
   defimpl Jason.Encoder, for: Reference do
     def encode(value, _opts) do
-      with {:ok, res} <- ApplicationRunner.Ecto.Reference.dump(value) do
+      with {:ok, res} <- Reference.dump(value) do
         [?", res, ?"]
       end
     end
