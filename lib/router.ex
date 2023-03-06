@@ -18,7 +18,10 @@ defmodule ApplicationRunner.Router do
         delete("/colls/:coll/docs/:docId", DocsController, :delete)
         post("/colls/:coll/docs/find", DocsController, :find)
 
-        resources("/crons", CronController, only: [:create, :index, :update, :delete])
+        resources("/crons", CronController,
+          only: [:create, :index, :update, :delete],
+          param: "name"
+        )
 
         post("/transaction", DocsController, :transaction)
         post("/transaction/:session_id/colls/:coll/docs", DocsController, :create_transaction)
