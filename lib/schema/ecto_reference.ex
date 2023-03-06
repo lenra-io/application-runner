@@ -22,7 +22,7 @@ defmodule ApplicationRunner.Ecto.Reference do
   defimpl Jason.Encoder, for: Reference do
     def encode(value, _opts) do
       with {:ok, res} <- ApplicationRunner.Ecto.Reference.dump(value) do
-        res
+        [?", res, ?"]
       end
     end
   end
