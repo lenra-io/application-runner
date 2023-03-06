@@ -86,8 +86,8 @@ defmodule ApplicationRunner.Crons do
     end
   end
 
-  def delete(cron) do
-    cron
+  def delete(cron_name) do
+    cron_name
     |> ApplicationRunner.Scheduler.delete_job()
   end
 

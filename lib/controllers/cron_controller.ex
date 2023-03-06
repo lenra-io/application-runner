@@ -56,8 +56,7 @@ defmodule ApplicationRunner.CronController do
 
     {:ok, loaded_name} = ApplicationRunner.Ecto.Reference.load(name)
 
-    with {:ok, cron} <- Crons.get_by_name(loaded_name),
-         :ok <- Crons.delete(cron) do
+    with :ok <- Crons.delete(loaded_name) do
       reply(conn, :ok)
     end
   end
