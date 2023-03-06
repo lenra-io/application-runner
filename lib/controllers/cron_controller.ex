@@ -7,11 +7,13 @@ defmodule ApplicationRunner.CronController do
   alias ApplicationRunner.Errors.BusinessError
   alias ApplicationRunner.Guardian.AppGuardian
 
-  def app_create(conn, params) do
+  def create(conn, params) do
     with %{environment: env} <- AppGuardian.Plug.current_resource(conn),
          %Environment.Metadata{} = metadata <- MetadataAgent.get_metadata(env.id),
          {:ok, name} <-
            Crons.create(env.id, metadata.function_name, params) do
+      IO.inspect(name)
+      IO.inspect(IEx.Helpers.i(name))
       reply(conn, name)
     else
       nil -> BusinessError.invalid_token_tuple()
@@ -26,15 +28,15 @@ defmodule ApplicationRunner.CronController do
     end
   end
 
-  def all(conn, %{"env_id" => env_id, "user_id" => user_id} = _params) do
+  def index(conn, %{"env_id" => env_id, "user_id" => user_id} = _params) do
     reply(conn, Crons.all(env_id, user_id))
   end
 
-  def all(conn, %{"env_id" => env_id} = _params) do
+  def index(conn, %{"env_id" => env_id} = _params) do
     reply(conn, Crons.all(env_id))
   end
 
-  def all(conn, _params) do
+  def index(conn, _params) do
     case AppGuardian.Plug.current_resource(conn) do
       nil ->
         raise BusinessError.invalid_token()
