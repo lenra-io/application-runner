@@ -20,19 +20,12 @@ defmodule ApplicationRunner.CronController do
     end
   end
 
+  # TODO: This method will be used when we implement the cron UI on the backoffice
   # def get(conn, %{"name" => cron_name} = _params) do
   #   with {:ok, cron} <-
   #          Crons.get_by_name(cron_name) do
   #     reply(conn, cron)
   #   end
-  # end
-
-  # def index(conn, %{"env_id" => env_id, "user_id" => user_id} = _params) do
-  #   reply(conn, Crons.all(env_id, user_id))
-  # end
-
-  # def index(conn, %{"env_id" => env_id} = _params) do
-  #   reply(conn, Crons.all(env_id))
   # end
 
   def index(conn, _params) do
@@ -48,17 +41,28 @@ defmodule ApplicationRunner.CronController do
   def update(conn, %{"name" => name} = params) do
     {:ok, loaded_name} = Reference.load(name)
 
-    with {:ok, cron} <- Crons.get_by_name(loaded_name),
+    with %{environment: env} <- AppGuardian.Plug.current_resource(conn),
+         {:ok, cron} <- Crons.get_by_name(loaded_name),
+         true <- env.id == cron.environment_id,
          :ok <- Crons.update(cron, params) do
       reply(conn, :ok)
+    else
+      false -> BusinessError.unauthorized_tuple()
+      err -> err
     end
   end
 
   def delete(conn, %{"name" => name} = _params) do
     {:ok, loaded_name} = Reference.load(name)
 
-    with :ok <- Crons.delete(loaded_name) do
+    with %{environment: env} <- AppGuardian.Plug.current_resource(conn),
+         {:ok, cron} <- Crons.get_by_name(loaded_name),
+         true <- env.id == cron.environment_id,
+         :ok <- Crons.delete(loaded_name) do
       reply(conn, :ok)
+    else
+      false -> BusinessError.unauthorized_tuple()
+      err -> err
     end
   end
 end
