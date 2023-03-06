@@ -9,6 +9,10 @@ defmodule ApplicationRunner.Ecto.Reference do
     {:ok, reference}
   end
 
+  def cast(reference) when is_bitstring(reference) do
+    load(reference)
+  end
+
   def cast(_), do: :error
 
   def load(reference) when is_bitstring(reference) do
