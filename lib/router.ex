@@ -20,8 +20,8 @@ defmodule ApplicationRunner.Router do
 
         post("/crons", CronController, :app_create)
         get("/crons", CronController, :all)
-        put("/crons/:name", CronController, :update)
-        delete("/crons/:name", CronController, :delete)
+        put("/crons", CronController, :update)
+        delete("/crons", CronController, :delete)
 
         post("/transaction", DocsController, :transaction)
         post("/transaction/:session_id/colls/:coll/docs", DocsController, :create_transaction)
