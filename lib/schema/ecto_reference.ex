@@ -4,7 +4,6 @@ defmodule ApplicationRunner.Ecto.Reference do
   """
   use Ecto.Type
 
-  alias ApplicationRunner.Ecto.Reference
   def type, do: :string
 
   def cast(reference) when is_reference(reference) do
@@ -27,7 +26,8 @@ defmodule ApplicationRunner.Ecto.Reference do
 
   defimpl Jason.Encoder, for: Reference do
     def encode(value, _opts) do
-      with {:ok, res} <- Reference.dump(value) do
+      # credo:disable-for-next-line
+      with {:ok, res} <- ApplicationRunner.Ecto.Reference.dump(value) do
         [?", res, ?"]
       end
     end
