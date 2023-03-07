@@ -168,6 +168,27 @@ defmodule ApplicationRunner.DocsController do
     end
   end
 
+  def update_many(
+        conn,
+        %{"coll" => coll},
+        %{"filter" => filter, "update" => update} = body_params,
+        %{environment: env},
+        replace_params
+      ) do
+    opts = Map.get(body_params, :opts, [])
+
+    with {:ok, res} =
+           MongoInstance.run_mongo_task(env.id, MongoStorage, :update_many, [
+             env.id,
+             coll,
+             Parser.replace_params(filter, replace_params),
+             update,
+             opts
+           ]) do
+      reply(conn, res)
+    end
+  end
+
   ###############
   # Transaction #
   ###############
