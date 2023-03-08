@@ -177,7 +177,7 @@ defmodule ApplicationRunner.DocsController do
       ) do
     opts = Map.get(body_params, :opts, [])
 
-    with {:ok, res} =
+    with {:ok, res} <-
            MongoInstance.run_mongo_task(env.id, MongoStorage, :update_many, [
              env.id,
              coll,

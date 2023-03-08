@@ -139,7 +139,7 @@ defmodule ApplicationRunner.DocsControllerTest do
   end
 
   describe "ApplicationRunner.DocsController.updateMany" do
-    test "should be protected with a token", %{conn: conn, doc_id: doc_id} do
+    test "should be protected with a token", %{conn: conn, doc_id: _doc_id} do
       conn =
         post(conn, Routes.docs_path(conn, :update_many, @coll), %{
           filter: %{"foo" => "bar"},

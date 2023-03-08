@@ -92,7 +92,7 @@ defmodule ApplicationRunner.MongoStorageTest do
 
       setup_mongo(env_id, "test")
 
-      {:ok, %{"_id" => doc_id}} = MongoStorage.create_doc(env_id, "test", %{test: "test"})
+      {:ok, %{"_id" => _doc_id}} = MongoStorage.create_doc(env_id, "test", %{test: "test"})
 
       assert {:ok, _updated_doc} =
                MongoStorage.update_many(
@@ -116,8 +116,8 @@ defmodule ApplicationRunner.MongoStorageTest do
 
       setup_mongo(env_id, "test")
 
-      {:ok, %{"_id" => doc_id}} = MongoStorage.create_doc(env_id, "test", %{test: "test"})
-      {:ok, %{"_id" => doc_id}} = MongoStorage.create_doc(env_id, "test", %{test: "test"})
+      {:ok, %{"_id" => _doc_id}} = MongoStorage.create_doc(env_id, "test", %{test: "test"})
+      {:ok, %{"_id" => _doc_id}} = MongoStorage.create_doc(env_id, "test", %{test: "test"})
 
       assert {:ok, _updated_doc} =
                MongoStorage.update_many(
