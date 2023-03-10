@@ -138,6 +138,37 @@ defmodule ApplicationRunner.DocsControllerTest do
     end
   end
 
+  describe "ApplicationRunner.DocsController.updateMany" do
+    test "should be protected with a token", %{conn: conn, doc_id: _doc_id} do
+      conn =
+        post(conn, Routes.docs_path(conn, :update_many, @coll), %{
+          filter: %{"foo" => "bar"},
+          update: %{"$set" => %{"foo" => "baz"}}
+        })
+
+      assert %{"message" => _, "reason" => "unauthenticated"} = json_response(conn, 401)
+    end
+
+    test "Should update the doc", %{
+      conn: conn,
+      token: token,
+      doc_id: _doc_id,
+      mongo_pid: mongo_pid
+    } do
+      conn =
+        conn
+        |> Plug.Conn.put_req_header("authorization", "Bearer " <> token)
+        |> post(Routes.docs_path(conn, :update_many, @coll), %{
+          filter: %{"foo" => "bar"},
+          update: %{"$set" => %{"foo" => "baz"}}
+        })
+
+      assert %{} = json_response(conn, 200)
+
+      assert [%{"foo" => "baz"}] = Mongo.find(mongo_pid, @coll, %{}) |> Enum.to_list()
+    end
+  end
+
   describe "ApplicationRunner.DocsController.delete" do
     test "should be protected with a token", %{conn: conn, doc_id: doc_id} do
       conn = delete(conn, Routes.docs_path(conn, :delete, @coll, doc_id))

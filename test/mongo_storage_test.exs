@@ -86,6 +86,58 @@ defmodule ApplicationRunner.MongoStorageTest do
     end
   end
 
+  describe "update_many" do
+    test "should update" do
+      env_id = Ecto.UUID.generate()
+
+      setup_mongo(env_id, "test")
+
+      {:ok, %{"_id" => _doc_id}} = MongoStorage.create_doc(env_id, "test", %{test: "test"})
+
+      assert {:ok, _updated_doc} =
+               MongoStorage.update_many(
+                 env_id,
+                 "test",
+                 %{test: "test"},
+                 %{
+                   "$set" => %{"test" => "test2"}
+                 }
+               )
+
+      {:ok, docs} = MongoStorage.fetch_all_docs(env_id, "test")
+
+      assert length(docs) == 1
+
+      assert Enum.at(docs, 0)["test"] == "test2"
+    end
+
+    test "should update many" do
+      env_id = Ecto.UUID.generate()
+
+      setup_mongo(env_id, "test")
+
+      {:ok, %{"_id" => _doc_id}} = MongoStorage.create_doc(env_id, "test", %{test: "test"})
+      {:ok, %{"_id" => _doc_id}} = MongoStorage.create_doc(env_id, "test", %{test: "test"})
+
+      assert {:ok, _updated_doc} =
+               MongoStorage.update_many(
+                 env_id,
+                 "test",
+                 %{test: "test"},
+                 %{
+                   "$set" => %{"test" => "test2"}
+                 }
+               )
+
+      {:ok, docs} = MongoStorage.fetch_all_docs(env_id, "test")
+
+      assert length(docs) == 2
+
+      assert Enum.at(docs, 0)["test"] == "test2"
+      assert Enum.at(docs, 1)["test"] == "test2"
+    end
+  end
+
   describe "delete_doc" do
     test "should add delete" do
       env_id = Ecto.UUID.generate()
