@@ -24,7 +24,12 @@ defmodule ApplicationRunner.Storage do
   def add_job(_storage_pid, job) do
     with %Ecto.Changeset{valid?: true} = changeset <- Crons.to_changeset(job),
          {:ok, _res} <-
-           Repo.insert(changeset) do
+           Repo.insert(changeset,
+             on_conflict:
+               {:replace,
+                [:schedule, :listener_name, :props, :should_run_missed_steps, :overlap, :state]},
+             conflict_target: [:id]
+           ) do
       :ok
     end
   end
