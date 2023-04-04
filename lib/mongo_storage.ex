@@ -225,6 +225,22 @@ defmodule ApplicationRunner.MongoStorage do
     end
   end
 
+  def update_many(env_id, coll, filter, update, opts \\ []) do
+    with decoded_filter <- decode_ids(filter),
+         {_value, filtered_update} <- Map.pop(update, "_id") do
+      env_id
+      |> mongo_instance()
+      |> Mongo.update_many(coll, decoded_filter, filtered_update, opts)
+      |> case do
+        {:error, err} ->
+          TechnicalError.mongo_error_tuple(err)
+
+        _res ->
+          {:ok, update}
+      end
+    end
+  end
+
   @spec delete_doc(number(), String.t(), String.t()) :: :ok | {:error, TechnicalErrorType.t()}
   def delete_doc(env_id, coll, doc_id) do
     Logger.debug(

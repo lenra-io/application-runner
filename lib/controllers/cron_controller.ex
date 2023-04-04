@@ -2,59 +2,67 @@ defmodule ApplicationRunner.CronController do
   use ApplicationRunner, :controller
 
   alias ApplicationRunner.Crons
+  alias ApplicationRunner.Ecto.Reference
   alias ApplicationRunner.Environment
   alias ApplicationRunner.Environment.MetadataAgent
-  alias ApplicationRunner.Errors.BusinessError
+  alias ApplicationRunner.Errors.{BusinessError, TechnicalError}
   alias ApplicationRunner.Guardian.AppGuardian
 
-  def app_create(conn, params) do
+  def create(conn, params) do
     with %{environment: env} <- AppGuardian.Plug.current_resource(conn),
          %Environment.Metadata{} = metadata <- MetadataAgent.get_metadata(env.id),
-         {:ok, _name} <-
+         {:ok, name} <-
            Crons.create(env.id, metadata.function_name, params) do
-      reply(conn, :ok)
+      reply(conn, name)
     else
       nil -> BusinessError.invalid_token_tuple()
       err -> err
     end
   end
 
-  def get(conn, %{"id" => cron_id} = _params) do
-    with {:ok, cron} <-
-           Crons.get(cron_id) do
-      reply(conn, cron)
-    end
-  end
+  # TODO: This method will be used when we implement the cron UI on the backoffice
+  # def get(conn, %{"name" => cron_name} = _params) do
+  #   with {:ok, cron} <-
+  #          Crons.get_by_name(cron_name) do
+  #     reply(conn, cron)
+  #   end
+  # end
 
-  def all(conn, %{"env_id" => env_id, "user_id" => user_id} = _params) do
-    reply(conn, Crons.all(env_id, user_id))
-  end
-
-  def all(conn, %{"env_id" => env_id} = _params) do
-    reply(conn, Crons.all(env_id))
-  end
-
-  def all(conn, _params) do
+  def index(conn, _params) do
     case AppGuardian.Plug.current_resource(conn) do
       nil ->
         raise BusinessError.invalid_token()
 
-      {:ok, %{environment: env} = _resources} ->
+      %{environment: env} ->
         reply(conn, Crons.all(env.id))
     end
   end
 
   def update(conn, %{"name" => name} = params) do
-    with {:ok, cron} <- Crons.get_by_name(name),
+    {:ok, loaded_name} = Reference.load(name)
+
+    with %{environment: env} <- AppGuardian.Plug.current_resource(conn),
+         {:ok, cron} <- Crons.get_by_name(loaded_name),
+         true <- env.id == cron.environment_id,
          :ok <- Crons.update(cron, params) do
       reply(conn, :ok)
+    else
+      false -> TechnicalError.unauthorized_tuple()
+      err -> err
     end
   end
 
   def delete(conn, %{"name" => name} = _params) do
-    with {:ok, cron} <- Crons.get_by_name(name),
-         :ok <- Crons.delete(cron) do
+    {:ok, loaded_name} = Reference.load(name)
+
+    with %{environment: env} <- AppGuardian.Plug.current_resource(conn),
+         {:ok, cron} <- Crons.get_by_name(loaded_name),
+         true <- env.id == cron.environment_id,
+         :ok <- Crons.delete(loaded_name) do
       reply(conn, :ok)
+    else
+      false -> TechnicalError.unauthorized_tuple()
+      err -> err
     end
   end
 end

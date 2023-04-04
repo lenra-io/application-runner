@@ -12,6 +12,7 @@ defmodule ApplicationRunner.Crons.Cron do
   @derive {Jason.Encoder,
            only: [
              :id,
+             :name,
              :listener_name,
              :schedule,
              :props,
