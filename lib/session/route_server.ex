@@ -243,8 +243,8 @@ defmodule ApplicationRunner.Session.RouteServer do
         Session.ListenersCache.save_listener(session_metadata.session_id, code, listener)
         {:ok, listener |> Map.drop(["action", "props", "type"]) |> Map.put("code", code)}
 
-      %{"navTo" => navTo} ->
-        {:ok, %{"navTo" => navTo}}
+      %{"navTo" => nav_to} ->
+        {:ok, %{"navTo" => nav_to}}
 
       _ ->
         BusinessError.no_action_in_listener_tuple(listener)

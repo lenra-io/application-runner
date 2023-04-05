@@ -25,9 +25,10 @@ defmodule ApplicationRunner.RoutesChannel do
 
         res = %{"lenraRoutes" => Map.get(manifest, "lenraRoutes")}
 
-        with :yes <- Swarm.register_name(get_swarm_name(session_id), self()) do
-          {:ok, res, socket}
-        else
+        case Swarm.register_name(get_swarm_name(session_id), self()) do
+          :yes ->
+            {:ok, res, socket}
+
           :no ->
             Logger.critical(
               BusinessError.could_not_register_appchannel(%{
