@@ -5,6 +5,7 @@ defmodule ApplicationRunner.Environment.DynamicSupervisor do
   """
   use DynamicSupervisor
 
+  alias ApplicationRunner.Monitor.EnvironmentMonitor
   alias ApplicationRunner.Environment
   alias ApplicationRunner.Errors.BusinessError
   alias ApplicationRunner.Session
@@ -26,18 +27,9 @@ defmodule ApplicationRunner.Environment.DynamicSupervisor do
     DynamicSupervisor.init(strategy: :one_for_one)
   end
 
-  @doc """
-    Ask swarm to start the `EnvManager` with the given `env_id` and add it to the :apps group.
-    This `EnvManager` process will be started in one of the cluster node.
-    If the node is closed, swarm will try to restart this `EnvManager` on an other node.
-    The children of this `EnvManager` process are restarted from scratch. That means the Sessions process will be lost.
-    The app cannot be started twice.
-    If the app is not already started, it returns `{:ok, <PID>}`
-    If the app is already started, return `{:error, {:already_started, <PID>}}`
-  """
   @spec start_env(term()) ::
           {:error, {:already_started, pid()}} | {:ok, pid()} | {:error, term()}
-  def start_env(env_metadata) do
+  defp start_env(env_metadata) do
     Logger.debug(
       "#{__MODULE__} Start Environment Supervisor with env_metadata: #{inspect(env_metadata)}"
     )
@@ -59,13 +51,18 @@ defmodule ApplicationRunner.Environment.DynamicSupervisor do
   end
 
   @doc """
-    Ensure that the app env process is started. Start the app env if not.
+    Ensure `Environment Supervisor` started.
+    This `Environment Supervisor` process will be started in one of the cluster node.
+    The children of this `Environment Supervisor` process are restarted from scratch. That means the Sessions process will be lost.
+    The app cannot be started twice.
+    If the app is not already started, it returns `{:ok, <PID>}`
+    If the app is already started, return `{:error, {:already_started, <PID>}}`
   """
-
   @spec ensure_env_started(term()) :: {:ok, pid} | {:error, term()}
   def ensure_env_started(env_metadata) do
     case start_env(env_metadata) do
       {:ok, pid} ->
+        EnvironmentMonitor.monitor(pid, env_metadata)
         {:ok, pid}
 
       {:error, {:already_started, pid}} ->
@@ -96,7 +93,8 @@ defmodule ApplicationRunner.Environment.DynamicSupervisor do
 
       pid ->
         Logger.info("Stopping environment supervision tree for name: #{inspect(name)}")
-        Supervisor.stop(pid)
+        DynamicSupervisor.terminate_child(__MODULE__, pid)
+        # Supervisor.stop(pid)
     end
   end
 
