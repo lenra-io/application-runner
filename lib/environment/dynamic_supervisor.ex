@@ -5,9 +5,9 @@ defmodule ApplicationRunner.Environment.DynamicSupervisor do
   """
   use DynamicSupervisor
 
-  alias ApplicationRunner.Monitor.EnvironmentMonitor
   alias ApplicationRunner.Environment
   alias ApplicationRunner.Errors.BusinessError
+  alias ApplicationRunner.Monitor.EnvironmentMonitor
   alias ApplicationRunner.Session
   alias LenraCommon.Errors, as: LC
 
