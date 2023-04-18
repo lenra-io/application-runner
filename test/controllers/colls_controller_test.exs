@@ -64,5 +64,14 @@ defmodule ApplicationRunner.CollsControllerTest do
 
       assert [] = json_response(conn, 200)
     end
+
+    test "try delete unset coll", %{conn: conn, token: token} do
+      conn =
+        conn
+        |> Plug.Conn.put_req_header("authorization", "Bearer " <> token)
+        |> delete(Routes.colls_path(conn, :delete, "test"))
+
+      assert %{} = json_response(conn, 200)
+    end
   end
 end

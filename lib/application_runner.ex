@@ -22,6 +22,8 @@ defmodule ApplicationRunner do
       use LenraCommonWeb, :controller
 
       alias ApplicationRunner.Router.Helpers, as: Routes
+
+      action_fallback(ApplicationRunner.FallbackController)
     end
   end
 

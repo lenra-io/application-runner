@@ -50,7 +50,8 @@ defmodule ApplicationRunner.MixProject do
       {:crontab, "~> 1.1.13"},
       {:quantum, "~> 3.0"},
       {:query_parser, git: "https://github.com/lenra-io/query-parser.git", tag: "v1.0.0-beta.18"},
-      {:lenra_common, git: "https://github.com/lenra-io/lenra-common.git", tag: "v2.5.0"}
+      # {:lenra_common, git: "https://github.com/lenra-io/lenra-common.git", tag: "v2.5.0"}
+      {:lenra_common, path: "/home/emric/Documents/Lenra/lenra-common", override: true}
     ]
   end
 

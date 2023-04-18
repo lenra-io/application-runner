@@ -87,7 +87,7 @@ defmodule ApplicationRunner.MongoStorage do
     |> Mongo.insert_one(coll, decoded_doc)
     |> case do
       {:error, err} ->
-        TechnicalError.mongo_error_tuple(err)
+        {:error, TechnicalError.mongo_error_tuple(err)}
 
       {:ok, res} ->
         {:ok, Map.put(doc, "_id", res.inserted_id)}
@@ -106,7 +106,7 @@ defmodule ApplicationRunner.MongoStorage do
     |> Mongo.insert_one(coll, decoded_doc, session: Swarm.whereis_name(session_uuid))
     |> case do
       {:error, err} ->
-        TechnicalError.mongo_error_tuple(err)
+        {:error, TechnicalError.mongo_error_tuple(err)}
 
       {:ok, res} ->
         {:ok, Map.put(doc, "_id", res.inserted_id)}
@@ -134,7 +134,7 @@ defmodule ApplicationRunner.MongoStorage do
     |> Mongo.find_one(coll, %{"_id" => bson_doc_id})
     |> case do
       {:error, err} ->
-        TechnicalError.mongo_error_tuple(err)
+        {:error, TechnicalError.mongo_error_tuple(err)}
 
       res ->
         {:ok, res}
@@ -151,7 +151,7 @@ defmodule ApplicationRunner.MongoStorage do
     |> Mongo.find(coll, %{})
     |> case do
       {:error, err} ->
-        TechnicalError.mongo_error_tuple(err)
+        {:error, TechnicalError.mongo_error_tuple(err)}
 
       cursor ->
         {:ok, Enum.to_list(cursor)}
@@ -172,7 +172,7 @@ defmodule ApplicationRunner.MongoStorage do
     |> Mongo.find(coll, clean_filter, opts)
     |> case do
       {:error, err} ->
-        TechnicalError.mongo_error_tuple(err)
+        {:error, TechnicalError.mongo_error_tuple(err)}
 
       cursor ->
         {:ok, Enum.to_list(cursor)}
@@ -194,7 +194,7 @@ defmodule ApplicationRunner.MongoStorage do
       |> Mongo.replace_one(coll, %{"_id" => bson_doc_id}, filtered_doc)
       |> case do
         {:error, err} ->
-          TechnicalError.mongo_error_tuple(err)
+          {:error, TechnicalError.mongo_error_tuple(err)}
 
         _res ->
           {:ok, Map.put(decoded_doc, "_id", bson_doc_id)}
@@ -217,7 +217,7 @@ defmodule ApplicationRunner.MongoStorage do
       )
       |> case do
         {:error, err} ->
-          TechnicalError.mongo_error_tuple(err)
+          {:error, TechnicalError.mongo_error_tuple(err)}
 
         _res ->
           {:ok, Map.put(decoded_doc, "_id", bson_doc_id)}
@@ -233,7 +233,7 @@ defmodule ApplicationRunner.MongoStorage do
       |> Mongo.update_many(coll, decoded_filter, filtered_update, opts)
       |> case do
         {:error, err} ->
-          TechnicalError.mongo_error_tuple(err)
+          {:error, TechnicalError.mongo_error_tuple(err)}
 
         _res ->
           {:ok, update}
@@ -253,7 +253,7 @@ defmodule ApplicationRunner.MongoStorage do
       |> Mongo.delete_one(coll, %{"_id" => bson_doc_id})
       |> case do
         {:error, err} ->
-          TechnicalError.mongo_error_tuple(err)
+          {:error, TechnicalError.mongo_error_tuple(err)}
 
         _res ->
           :ok
@@ -272,7 +272,7 @@ defmodule ApplicationRunner.MongoStorage do
       |> Mongo.delete_one(coll, %{"_id" => bson_doc_id}, session: Swarm.whereis_name(session_uuid))
       |> case do
         {:error, err} ->
-          TechnicalError.mongo_error_tuple(err)
+          {:error, TechnicalError.mongo_error_tuple(err)}
 
         _res ->
           :ok
@@ -290,7 +290,7 @@ defmodule ApplicationRunner.MongoStorage do
       [_, hex_id] ->
         case BSON.ObjectId.decode(hex_id) do
           :error ->
-            BusinessError.not_an_object_id_tuple()
+            {:error, BusinessError.not_an_object_id_tuple()}
 
           res ->
             res
@@ -330,7 +330,7 @@ defmodule ApplicationRunner.MongoStorage do
     |> mongo_instance()
     |> Mongo.drop_collection(coll)
     |> case do
-      {:error, err} -> TechnicalError.mongo_error(err)
+      {:error, err} -> {:error, TechnicalError.mongo_error_tuple(err)}
       :ok -> :ok
     end
   end
@@ -347,12 +347,13 @@ defmodule ApplicationRunner.MongoStorage do
       {:ok, session_uuid}
     else
       :no ->
-        BusinessError.error_during_transaction_start_tuple(%{
-          error: "uuid already used, please try again"
-        })
+        {:error,
+         BusinessError.error_during_transaction_start_tuple(%{
+           error: "uuid already used, please try again"
+         })}
 
       {:error, msg} ->
-        BusinessError.error_during_transaction_start_tuple(%{error_message: msg})
+        {:error, BusinessError.error_during_transaction_start_tuple(%{error_message: msg})}
     end
   end
 
