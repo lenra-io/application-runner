@@ -14,7 +14,7 @@ defmodule ApplicationRunner.RoutesChannel do
 
       alias LenraCommonWeb.ErrorHelpers
 
-      alias ApplicationRunner.Errors.{BusinessError, DevError, TechnicalError}
+      alias ApplicationRunner.Errors.{BusinessError, TechnicalError}
 
       require Logger
 
@@ -37,7 +37,7 @@ defmodule ApplicationRunner.RoutesChannel do
               })
             )
 
-            {:error, DevError.message("Could not register the AppChannel into swarm")}
+            {:error, TechnicalError.message("Could not register the AppChannel into swarm")}
 
           err ->
             err
