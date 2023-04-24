@@ -38,9 +38,6 @@ defmodule ApplicationRunner.RoutesChannel do
             )
 
             {:error, TechnicalError.message("Could not register the AppChannel into swarm")}
-
-          err ->
-            err
         end
       end
 
