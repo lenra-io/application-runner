@@ -38,7 +38,7 @@ defmodule ApplicationRunner.RoutesChannel do
               })
             )
 
-            {:error, %TechnicalError{message: "Could not register the AppChannel into swarm"}}
+            {:error, %TechnicalError{message: "Could not register the AppChannel into swarm", reason: :could_not_register_appchannel}}
         end
       end
 
