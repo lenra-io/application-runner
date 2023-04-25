@@ -71,7 +71,10 @@ defmodule ApplicationRunner.CollsControllerTest do
         |> Plug.Conn.put_req_header("authorization", "Bearer " <> token)
         |> delete(Routes.colls_path(conn, :delete, "test"))
 
-      assert %{} = json_response(conn, 200)
+      assert %{
+               "message" => "Could not access mongo. Please try again later.",
+               "metadata" => %{"code" => 26, "message" => "ns not found"}
+             } = json_response(conn, 400)
     end
   end
 end

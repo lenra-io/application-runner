@@ -87,7 +87,7 @@ defmodule ApplicationRunner.MongoStorage do
     |> Mongo.insert_one(coll, decoded_doc)
     |> case do
       {:error, err} ->
-        {:error, TechnicalError.mongo_error_tuple(err)}
+        TechnicalError.mongo_error_tuple(err)
 
       {:ok, res} ->
         {:ok, Map.put(doc, "_id", res.inserted_id)}
@@ -106,7 +106,7 @@ defmodule ApplicationRunner.MongoStorage do
     |> Mongo.insert_one(coll, decoded_doc, session: Swarm.whereis_name(session_uuid))
     |> case do
       {:error, err} ->
-        {:error, TechnicalError.mongo_error_tuple(err)}
+        TechnicalError.mongo_error_tuple(err)
 
       {:ok, res} ->
         {:ok, Map.put(doc, "_id", res.inserted_id)}
@@ -134,7 +134,7 @@ defmodule ApplicationRunner.MongoStorage do
     |> Mongo.find_one(coll, %{"_id" => bson_doc_id})
     |> case do
       {:error, err} ->
-        {:error, TechnicalError.mongo_error_tuple(err)}
+        TechnicalError.mongo_error_tuple(err)
 
       res ->
         {:ok, res}
@@ -151,7 +151,7 @@ defmodule ApplicationRunner.MongoStorage do
     |> Mongo.find(coll, %{})
     |> case do
       {:error, err} ->
-        {:error, TechnicalError.mongo_error_tuple(err)}
+        TechnicalError.mongo_error_tuple(err)
 
       cursor ->
         {:ok, Enum.to_list(cursor)}
@@ -172,7 +172,7 @@ defmodule ApplicationRunner.MongoStorage do
     |> Mongo.find(coll, clean_filter, opts)
     |> case do
       {:error, err} ->
-        {:error, TechnicalError.mongo_error_tuple(err)}
+        TechnicalError.mongo_error_tuple(err)
 
       cursor ->
         {:ok, Enum.to_list(cursor)}
@@ -194,7 +194,7 @@ defmodule ApplicationRunner.MongoStorage do
       |> Mongo.replace_one(coll, %{"_id" => bson_doc_id}, filtered_doc)
       |> case do
         {:error, err} ->
-          {:error, TechnicalError.mongo_error_tuple(err)}
+          TechnicalError.mongo_error_tuple(err)
 
         _res ->
           {:ok, Map.put(decoded_doc, "_id", bson_doc_id)}
@@ -217,7 +217,7 @@ defmodule ApplicationRunner.MongoStorage do
       )
       |> case do
         {:error, err} ->
-          {:error, TechnicalError.mongo_error_tuple(err)}
+          TechnicalError.mongo_error_tuple(err)
 
         _res ->
           {:ok, Map.put(decoded_doc, "_id", bson_doc_id)}
@@ -233,7 +233,7 @@ defmodule ApplicationRunner.MongoStorage do
       |> Mongo.update_many(coll, decoded_filter, filtered_update, opts)
       |> case do
         {:error, err} ->
-          {:error, TechnicalError.mongo_error_tuple(err)}
+          TechnicalError.mongo_error_tuple(err)
 
         _res ->
           {:ok, update}
@@ -253,7 +253,7 @@ defmodule ApplicationRunner.MongoStorage do
       |> Mongo.delete_one(coll, %{"_id" => bson_doc_id})
       |> case do
         {:error, err} ->
-          {:error, TechnicalError.mongo_error_tuple(err)}
+          TechnicalError.mongo_error_tuple(err)
 
         _res ->
           :ok
@@ -272,7 +272,7 @@ defmodule ApplicationRunner.MongoStorage do
       |> Mongo.delete_one(coll, %{"_id" => bson_doc_id}, session: Swarm.whereis_name(session_uuid))
       |> case do
         {:error, err} ->
-          {:error, TechnicalError.mongo_error_tuple(err)}
+          TechnicalError.mongo_error_tuple(err)
 
         _res ->
           :ok
@@ -330,7 +330,7 @@ defmodule ApplicationRunner.MongoStorage do
     |> mongo_instance()
     |> Mongo.drop_collection(coll)
     |> case do
-      {:error, err} -> {:error, TechnicalError.mongo_error_tuple(err)}
+      {:error, err} -> TechnicalError.mongo_error_tuple(err)
       :ok -> :ok
     end
   end
