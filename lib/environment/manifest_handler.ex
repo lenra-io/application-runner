@@ -56,29 +56,29 @@ defmodule ApplicationRunner.Environment.ManifestHandler do
     {:reply, Map.get(state, :manifest), state}
   end
 
-  @default_routes [%{"/" => %{"type" => "view", "name" => "main"}}]
+  @default_routes [%{"path" => "/", "view" => %{"type" => "view", "name" => "main"}}]
   def handle_call(:get_lenra_routes, _from, state) do
     Logger.debug("#{__MODULE__} handle call for :get_lenra_routes with #{inspect(state)}")
 
     manifest = Map.get(state, :manifest)
 
-    {:reply, get_route(manifest), state}
+    {:reply, get_routes(manifest), state}
   end
 
-  @default_json_route %{"/" => %{"type" => "view", "name" => "main"}}
+  @default_json_routes [%{"path" => "/", "view" => %{"type" => "view", "name" => "main"}}]
   def handle_call(:get_json_routes, _from, state) do
     Logger.debug("#{__MODULE__} handle call for :get_json_routes with #{inspect(state)}")
 
     manifest = Map.get(state, :manifest)
 
-    {:reply, Map.get(manifest, "jsonRoutes", @default_json_route), state}
+    {:reply, Map.get(manifest, "jsonRoutes", @default_json_routes), state}
   end
 
-  defp get_route(%{"rootView" => rootView}) do
-    %{"/" => %{"type" => "view", "name" => rootView}}
+  defp get_routes(%{"rootView" => rootView}) do
+    [%{"path" => "/", "view" => %{"type" => "view", "name" => rootView}}]
   end
 
-  defp get_route(manifest) do
+  defp get_routes(manifest) do
     Map.get(manifest, "lenraRoutes", @default_routes)
   end
 end

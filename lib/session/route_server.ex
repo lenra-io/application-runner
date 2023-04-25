@@ -143,14 +143,14 @@ defmodule ApplicationRunner.Session.RouteServer do
       :error,
       fn route, _err ->
         path = Map.get(route, "path")
-        widget = Map.get(route, "widget")
+        view = Map.get(route, "view")
 
         case Utils.Routes.match_route(path, url) do
           {:error, err} ->
             {:cont, {:error, err}}
 
           {:ok, route_params} ->
-            {:halt, {:ok, route_params, widget}}
+            {:halt, {:ok, route_params, view}}
         end
       end
     )

@@ -14,7 +14,7 @@ defmodule ApplicationRunner.RoutesChannel do
 
       alias LenraCommonWeb.ErrorHelpers
 
-      alias ApplicationRunner.Errors.{BusinessError, DevError, TechnicalError}
+      alias ApplicationRunner.Errors.BusinessError
 
       require Logger
 
@@ -30,17 +30,18 @@ defmodule ApplicationRunner.RoutesChannel do
             {:ok, res, socket}
 
           :no ->
+            metadata = %{
+              session_id: session_id,
+              route: "routes"
+            }
+
             Logger.critical(
-              BusinessError.could_not_register_appchannel(%{
-                session_id: session_id,
-                route: "routes"
-              })
+              metadata
+              |> BusinessError.could_not_register_appchannel()
             )
 
-            {:error, DevError.message("Could not register the AppChannel into swarm")}
-
-          err ->
-            err
+            metadata
+            |> BusinessError.could_not_register_appchannel_tuple()
         end
       end
 
