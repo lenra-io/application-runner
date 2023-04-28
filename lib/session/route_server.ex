@@ -197,12 +197,13 @@ defmodule ApplicationRunner.Session.RouteServer do
 
     params = query_params |> Map.merge(%{"me" => mongo_user_id})
     query_transformed = Parser.replace_params(query, params)
+    props_transformed = Parser.replace_params(props, params)
 
     with {:ok, query_parsed} <- parse_query(query, params) do
       {:ok,
        %ViewUid{
          name: name,
-         props: props,
+         props: props_transformed,
          prefix_path: "#{prefix_path}\n@view:#{name}",
          query_parsed: query_parsed,
          query_transformed: query_transformed,
