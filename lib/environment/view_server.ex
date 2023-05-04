@@ -45,6 +45,8 @@ defmodule ApplicationRunner.Environment.ViewServer do
     env_id = Keyword.fetch!(opts, :env_id)
     %ViewUid{} = view_uid = Keyword.fetch!(opts, :view_uid)
 
+    IO.inspect("VIEW SERVER init context #{view_uid.context}")
+
     with data <-
            QueryServer.get_data(env_id, view_uid.coll, view_uid.query_parsed, view_uid.projection),
          {:ok, view} <-
@@ -79,6 +81,8 @@ defmodule ApplicationRunner.Environment.ViewServer do
     Logger.debug(
       "#{__MODULE__} handle_info for :data_changes with #{inspect(%{function_name: fna, view_uid: wuid})}"
     )
+
+    IO.inspect("VIEW SERVER DATA CHANGED context #{wuid.context}")
 
     case ApplicationServices.fetch_view(fna, wuid.name, new_data, wuid.props, wuid.context) do
       {:ok, view} ->
