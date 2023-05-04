@@ -106,7 +106,8 @@ defmodule ApplicationRunner.AppSocket do
             token: session_token
           }
 
-          IO.inspect("APP SOCKET METADATAS context: #{context}")
+          IO.inspect("APP SOCKET METADATAS context")
+          IO.inspect(context)
 
           env_metadata = %Environment.Metadata{
             env_id: env_id,
