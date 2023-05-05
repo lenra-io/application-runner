@@ -22,7 +22,7 @@ defmodule ApplicationRunner.EventHandler do
   def send_env_event(env_id, action, props, event) do
     GenServer.call(
       get_full_name({:env, env_id}),
-      {:send_event, action, props, event},
+      {:send_event, action, props, event, env_id},
       Application.fetch_env!(:application_runner, :listeners_timeout)
     )
   end
@@ -30,7 +30,7 @@ defmodule ApplicationRunner.EventHandler do
   def send_session_event(session_id, action, props, event) do
     GenServer.call(
       get_full_name({:session, session_id}),
-      {:send_event, action, props, event},
+      {:send_event, action, props, event, session_id},
       Application.fetch_env!(:application_runner, :listeners_timeout)
     )
   end
@@ -63,7 +63,30 @@ defmodule ApplicationRunner.EventHandler do
   end
 
   @impl true
-  def handle_call({:send_event, action, props, event}, _from, %{mode: mode, id: id} = state) do
+  def handle_call(
+        {:send_event, "@lenra:" <> action, props, event, session_id},
+        _from,
+        state
+      ) do
+    Logger.debug(
+      "#{__MODULE__} handle_call for @lenra action: #{inspect(action)} with props #{inspect(props)} and event #{inspect(event)}"
+    )
+
+    case action do
+      "navTo" ->
+        ApplicationRunner.RoutesChannel.get_name(session_id)
+        |> Swarm.send({:send, :navTo, props})
+    end
+
+    {:reply, :ok, state}
+  end
+
+  @impl true
+  def handle_call(
+        {:send_event, action, props, event, _session_id},
+        _from,
+        %{mode: mode, id: id} = state
+      ) do
     Logger.debug(
       "#{__MODULE__} handle_call for action: #{inspect(action)} with props #{inspect(props)} and event #{inspect(event)}"
     )
