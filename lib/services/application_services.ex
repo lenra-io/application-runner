@@ -83,9 +83,6 @@ defmodule ApplicationRunner.ApplicationServices do
     headers = [{"Content-Type", "application/json"} | base_headers]
     body = Jason.encode!(%{view: view_name, data: data, props: props, context: context})
 
-    IO.inspect("APPLICATION SERVICES context")
-    IO.inspect(context)
-
     Logger.debug("Fetch application view \n#{url} : \n#{body}")
 
     Finch.build(:post, url, headers, body)

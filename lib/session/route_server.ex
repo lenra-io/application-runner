@@ -198,11 +198,7 @@ defmodule ApplicationRunner.Session.RouteServer do
     params = query_params |> Map.merge(%{"me" => mongo_user_id})
     query_transformed = Parser.replace_params(query, params)
 
-    # TODO: Update context to add the path params and the @ me
     context = Map.merge(context, %{"me" => mongo_user_id, "pathParams" => query_params["route"]})
-    IO.inspect("ROUTE SERVER")
-    IO.inspect(query_params)
-    IO.inspect(context)
 
     with {:ok, query_parsed} <- parse_query(query, params) do
       {:ok,
