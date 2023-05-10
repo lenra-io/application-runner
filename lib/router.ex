@@ -17,7 +17,7 @@ defmodule ApplicationRunner.Router do
         put("/colls/:coll/docs/:docId", DocsController, :update)
         delete("/colls/:coll/docs/:docId", DocsController, :delete)
         post("/colls/:coll/docs/find", DocsController, :find)
-        post("/colls/:coll/docs/update", DocsController, :update_many)
+        post("/colls/:coll/updateMany", DocsController, :update_many)
 
         resources("/crons", CronController,
           only: [:create, :index, :update, :delete],
