@@ -12,6 +12,7 @@ defmodule ApplicationRunner.Application do
     children = [
       ApplicationRunner.Repo,
       ApplicationRunner.Monitor.SessionMonitor,
+      ApplicationRunner.Monitor.EnvironmentMonitor,
       # Start the json validator server for the UI
       ApplicationRunner.JsonSchemata,
       ApplicationRunner.Scheduler,
