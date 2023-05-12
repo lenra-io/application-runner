@@ -12,7 +12,7 @@ At session start, we ensure that the environment is started. If the environment 
 The Supervisor starts all the necessary GenServers:
 
 - Environment.MetadataAgent: This is an agent that works mostly like a GenServer. The agent is here to keep all the metadata and make it accessible from every GenServer in the tree.
-- Environment.ManifestHandler: This GenServer gets and caches the manifest of the application. In the manifest, we will find routes, rout_View, and other information.
+- Environment.ManifestHandler: This GenServer gets and caches the manifest of the application. In the manifest, we will find routes, root_view, and other information.
 - ApplicationRunner.EventHandler: This GenServer is a queue for all events to send to the application.
 - Environment.MongoInstance: This GenServer is used to configure the Mongo connection and make calls to Mongo.
 - Environment.Events.*: All the tasks under Events are listeners that run on specific Environment lifetime events.
