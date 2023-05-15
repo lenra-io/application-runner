@@ -222,6 +222,16 @@ defmodule ApplicationRunner.Session.RouteServer do
     end
   end
 
+  @doc """
+  Projects elements from the given map based on the provided projection.
+
+  ## Examples
+
+      iex> Projection.project_map(%{"foo" => "bar", "john" => "doe"}, %{"foo" => true})
+      %{"foo" => "bar"}
+
+  """
+  @spec project_map(map(), map() | nil) :: map()
   def project_map(map, projection) do
     case projection do
       nil ->
