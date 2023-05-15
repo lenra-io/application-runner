@@ -124,6 +124,7 @@ defmodule ApplicationRunner.Session.UiBuilders.LenraBuilder do
     name = Map.get(component, "name")
     props = Map.get(component, "props")
     find = Map.get(component, "find", %{})
+    context_projection = Map.get(component, "context")
 
     {coll, query, projection} = RouteServer.extract_find(component, find)
 
@@ -135,6 +136,7 @@ defmodule ApplicationRunner.Session.UiBuilders.LenraBuilder do
              %{},
              props,
              view_uid.context,
+             context_projection,
              view_uid.prefix_path
            ),
          {:ok, new_app_context} <-
