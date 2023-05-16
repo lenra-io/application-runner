@@ -23,9 +23,4 @@ defmodule ApplicationRunner.FakeAppAdapter do
   def resource_from_params(_params) do
     {:ok, 1}
   end
-
-  @impl ApplicationRunner.Adapter
-  def get_service_name(_env_id) do
-    "service_name"
-  end
 end
