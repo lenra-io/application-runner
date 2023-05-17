@@ -39,7 +39,15 @@ defmodule ApplicationRunner.Webhooks.Webhook do
 
     changeset =
       %__MODULE__{}
-      |> cast(webhook_map, [:action, :props, :user_id])
+      |> cast(webhook_map, [
+        :uuid,
+        :action,
+        :props,
+        :user_id,
+        :environment_id,
+        :inserted_at,
+        :updated_at
+      ])
       |> validate_required([:environment_id, :action])
       |> foreign_key_constraint(:environment_id)
       |> foreign_key_constraint(:user_id)
