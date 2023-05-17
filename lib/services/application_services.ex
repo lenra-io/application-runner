@@ -55,6 +55,8 @@ defmodule ApplicationRunner.ApplicationServices do
     peeked_token = AppGuardian.peek(token)
     start_time = Telemetry.start(:app_listener, peeked_token.claims)
 
+    IO.inspect(url)
+
     res =
       Finch.build(:post, url, headers, body)
       |> Finch.request(AppHttp,
