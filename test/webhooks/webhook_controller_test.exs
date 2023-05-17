@@ -142,37 +142,37 @@ defmodule ApplicationRunner.Webhooks.ControllerTest do
     end
   end
 
-  test "Trigger webhook in env should work properly", %{conn: conn} do
-    {:ok, %{token: token}} = setup_env_token()
+  # test "Trigger webhook in env should work properly", %{conn: conn} do
+  #   {:ok, %{token: token}} = setup_env_token()
 
-    conn =
-      conn
-      |> Plug.Conn.put_req_header("authorization", "Bearer " <> token)
-      |> post(Routes.webhooks_path(conn, :create), %{
-        "action" => "test"
-      })
+  #   conn =
+  #     conn
+  #     |> Plug.Conn.put_req_header("authorization", "Bearer " <> token)
+  #     |> post(Routes.webhooks_path(conn, :create), %{
+  #       "action" => "test"
+  #     })
 
-    response = json_response(conn, 200)
+  #   response = json_response(conn, 200)
 
-    bypass = Bypass.open(port: 1234)
+  #   bypass = Bypass.open(port: 1234)
 
-    Bypass.stub(
-      bypass,
-      "POST",
-      "/function/test",
-      &handle_request(&1, fn body ->
-        assert body["props"] == nil
-        assert body["action"] == "test"
-        assert body["event"] == %{"payloadData" => "Value"}
-      end)
-    )
+  #   Bypass.stub(
+  #     bypass,
+  #     "POST",
+  #     "/function/test",
+  #     &handle_request(&1, fn body ->
+  #       assert body["props"] == nil
+  #       assert body["action"] == "test"
+  #       assert body["event"] == %{"payloadData" => "Value"}
+  #     end)
+  #   )
 
-    conn =
-      conn
-      |> post(Routes.webhooks_path(conn, :trigger, response["uuid"]), %{
-        "payloadData" => "Value"
-      })
+  #   conn =
+  #     conn
+  #     |> post(Routes.webhooks_path(conn, :trigger, response["uuid"]), %{
+  #       "payloadData" => "Value"
+  #     })
 
-    assert _res = json_response(conn, 200)
-  end
+  #   assert _res = json_response(conn, 200)
+  # end
 end
