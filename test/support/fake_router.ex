@@ -6,9 +6,14 @@ defmodule ApplicationRunner.FakeRouter do
 
   require ApplicationRunner.Router
 
-  ApplicationRunner.Router.app_routes()
-
   pipeline :api do
     plug(:accepts, ["json"])
+  end
+
+  ApplicationRunner.Router.app_routes()
+
+  scope "/api", ApplicationRunner do
+    pipe_through([:api])
+    ApplicationRunner.Router.resource_route(FakeResourceController)
   end
 end

@@ -8,4 +8,6 @@ Application.ensure_started(:application_runner)
 
 Ecto.Adapters.SQL.Sandbox.mode(ApplicationRunner.Repo, :manual)
 
+ApplicationRunner.FakeEndpoint.start_link()
+
 ExUnit.start()

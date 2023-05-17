@@ -23,7 +23,7 @@ defmodule ApplicationRunner.ResourcesController do
         conn =
           conn
           |> put_resp_content_type("image/event-stream")
-          |> put_resp_header("Content-Type", "application/octet-stream")
+          |> put_resp_header("content-type", "application/octet-stream")
           |> send_chunked(200)
 
         with {:ok, stream} <-
