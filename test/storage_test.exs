@@ -14,12 +14,10 @@ defmodule ApplicationRunner.StorageTest do
 
   setup do
     {:ok, env} = Repo.insert(Environment.new())
-    token = ApplicationRunner.AppSocket.create_env_token(env.id) |> elem(1)
 
     env_metadata = %Metadata{
       env_id: env.id,
-      function_name: "test",
-      token: token
+      function_name: "test"
     }
 
     {:ok, _} = start_supervised({MetadataAgent, env_metadata})

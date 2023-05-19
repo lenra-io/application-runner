@@ -12,12 +12,9 @@ defmodule ApplicationRunner.DocsControllerTest do
 
     {:ok, env} = ApplicationRunner.Repo.insert(Contract.Environment.new(%{}))
 
-    token = ApplicationRunner.AppSocket.create_env_token(env.id) |> elem(1)
-
     env_metadata = %Environment.Metadata{
       env_id: env.id,
-      function_name: "",
-      token: token
+      function_name: ""
     }
 
     {:ok, _} = start_supervised({Environment.MetadataAgent, env_metadata})

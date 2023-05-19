@@ -12,12 +12,9 @@ defmodule ApplicationRunner.CollsControllerTest do
 
     {:ok, env} = ApplicationRunner.Repo.insert(Contract.Environment.new(%{}))
 
-    token = ApplicationRunner.AppSocket.create_env_token(env.id) |> elem(1)
-
     env_metadata = %Environment.Metadata{
       env_id: env.id,
-      function_name: "",
-      token: token
+      function_name: ""
     }
 
     {:ok, _} = start_supervised({Environment.MetadataAgent, env_metadata})
@@ -38,7 +35,7 @@ defmodule ApplicationRunner.CollsControllerTest do
       |> Map.get(:inserted_id)
       |> BSON.ObjectId.encode!()
 
-    {:ok, Map.merge(ctx, %{mongo_pid: pid, token: token, doc_id: doc_id})}
+    {:ok, Map.merge(ctx, %{mongo_pid: pid, doc_id: doc_id})}
   end
 
   describe "ApplicationRunner.CollsController.delete" do

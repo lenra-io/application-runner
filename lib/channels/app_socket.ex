@@ -142,24 +142,6 @@ defmodule ApplicationRunner.AppSocket do
     end
   end
 
-  def create_env_token(env_id) do
-    with {:ok, token, _claims} <-
-           AppGuardian.encode_and_sign(env_id, %{type: "env", env_id: env_id}) do
-      {:ok, token}
-    end
-  end
-
-  def create_session_token(env_id, session_id, user_id) do
-    with {:ok, token, _claims} <-
-           AppGuardian.encode_and_sign(session_id, %{
-             type: "session",
-             user_id: user_id,
-             env_id: env_id
-           }) do
-      {:ok, token}
-    end
-  end
-
   def extract_params(params) do
     with {:ok, app_name} <- extract_appname(params) do
       context = extract_context(params)

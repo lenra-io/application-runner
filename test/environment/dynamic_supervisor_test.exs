@@ -30,12 +30,9 @@ defmodule ApplicationRunner.Environment.DynamixSupervisorTest do
     bypass = Bypass.open(port: 1234)
     Bypass.stub(bypass, "POST", "/function/#{@function_name}", &handle_resp/1)
 
-    {:ok, token, _claims} = AppGuardian.encode_and_sign(env_id, %{type: "env", env_id: env_id})
-
     env_metadata = %Environment.Metadata{
       env_id: env_id,
-      function_name: @function_name,
-      token: token
+      function_name: @function_name
     }
 
     on_exit(fn ->

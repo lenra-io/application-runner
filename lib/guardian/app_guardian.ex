@@ -5,6 +5,8 @@ defmodule ApplicationRunner.Guardian.AppGuardian do
 
   use Guardian, otp_app: :application_runner
 
+  alias ApplicationRunner.Environment.TokenAgent
+
   alias ApplicationRunner.{
     Environment,
     MongoStorage,
@@ -68,30 +70,13 @@ defmodule ApplicationRunner.Guardian.AppGuardian do
   end
 
   defp get_app_token(claims) do
-    case claims["type"] do
-      "session" ->
-        try do
-          Session.fetch_token(claims["sub"])
-        rescue
-          e ->
-            Logger.error(
-              "#{__MODULE__} failed to fetch session token for claims: #{inspect(claims)} with error: #{inspect(e)}"
-            )
-        end
-
-      "env" ->
-        try do
-          Environment.fetch_token(String.to_integer(claims["sub"]))
-        rescue
-          e ->
-            Logger.error(
-              "#{__MODULE__} failed to fetch environment token for claims: #{inspect(claims)} with error: #{inspect(e)}"
-            )
-        end
-
-      _err ->
-        Logger.error("#{__MODULE__} Unknown token type for claims: #{inspect(claims)}")
-        TechnicalError.unknown_error_tuple()
+    try do
+      TokenAgent.get_token(String.to_integer(claims["env_id"]), String.to_integer(claims["sub"]))
+    rescue
+      e ->
+        Logger.error(
+          "#{__MODULE__} failed to fetch environment token for claims: #{inspect(claims)} with error: #{inspect(e)}"
+        )
     end
   end
 end

@@ -31,16 +31,11 @@ defmodule ApplicationRunner.Webhooks.ControllerTest do
 
     session_uuid = Ecto.UUID.generate()
 
-    token =
-      ApplicationRunner.AppSocket.create_session_token(env.id, session_uuid, user.id)
-      |> elem(1)
-
     session_metadata = %ApplicationRunner.Session.Metadata{
       env_id: env.id,
       session_id: session_uuid,
       user_id: user.id,
       function_name: "test",
-      token: token,
       context: %{}
     }
 
@@ -60,12 +55,9 @@ defmodule ApplicationRunner.Webhooks.ControllerTest do
   defp setup_env_token do
     {:ok, env} = ApplicationRunner.Repo.insert(Contract.Environment.new(%{}))
 
-    token = ApplicationRunner.AppSocket.create_env_token(env.id) |> elem(1)
-
     env_metadata = %Environment.Metadata{
       env_id: env.id,
-      function_name: "test",
-      token: token
+      function_name: "test"
     }
 
     {:ok, _} = start_supervised({Environment.MetadataAgent, env_metadata})
