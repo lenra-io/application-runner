@@ -74,7 +74,7 @@ defmodule ApplicationRunner.Environment.ManifestHandler do
     {:reply, Map.get(manifest, "jsonRoutes", @default_json_routes), state}
   end
 
-  defp get_routes(%{"rootView" => rootView} = manifest) do
+  defp get_routes(%{"rootView" => rootView}) do
     [%{"path" => "/", "view" => %{"type" => "view", "name" => rootView}}]
   end
 
