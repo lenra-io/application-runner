@@ -51,16 +51,16 @@
 
 You can run Application Runner itself, but it is generally built as a library and needs a Phoenix parent application to access all functionalities: 
 
-You will first need to start two databases, postgres and mongo.
+To begin, make sure you have two databases, namely PostgreSQL and MongoDB, up and running. You can accomplish this by either executing the commands at the root of this project or manually running the Docker commands as shown below:
 
-command at the root of this project or running by hand the docker commands like so :
+
 * Start PostgreSQL with Docker `docker run --restart always -p 5432:5432 --name lenra-postgres -e POSTGRES_DB=lenra_dev -e POSTGRES_PASSWORD=postgres -d postgres`
 * Start MongoDB with Docker `docker compose up` or
   - `docker run --restart always -p 27017:27017 --name lenra-mongo -e MONGO_INITDB_DATABASE=test -e CONFIG='{"_id" : "rs0", "members" : [{"_id" : 0,"host" : "mongodb:27017"}]}' -d mongo:5 mongod --replSet rs0`
 
-You will then need to install and setup elixir prerequisites for the application_runner to run properly :
+Next, you'll need to install and configure the necessary prerequisites for Elixir's application_runner to function correctly. Follow these steps:
 
-* Install erlang in version 24.2 and elixir in version 1.13 otp-24
+* Install erlang version 24.2 and Elixir version 1.13 otp-24
 * Create the database and start migration `mix setup`. This is equivalent to running the following commands : 
   * `mix deps.get` to install the dependencies
   * `mix ecto.create` to create database

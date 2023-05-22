@@ -1,4 +1,4 @@
-defmodule LenraWeb.RessourcesControllerTest do
+defmodule LenraWeb.ResourcesControllerTest do
   use ApplicationRunner.ConnCase, async: true
 
   alias Ecto.UUID
