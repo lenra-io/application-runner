@@ -39,6 +39,10 @@ defmodule ApplicationRunner.Webhooks.WebhookServices do
     @repo.all(from(w in Webhook, where: w.environment_id == ^env_id and w.user_id == ^user_id))
   end
 
+  def get_by_uuid(uuid) do
+    @repo.get(Webhook, uuid)
+  end
+
   def trigger(webhook_uuid, payload) do
     case @repo.get(Webhook, webhook_uuid) do
       nil ->

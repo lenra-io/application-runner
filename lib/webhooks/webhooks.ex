@@ -29,6 +29,36 @@ defmodule ApplicationRunner.Webhooks.Webhook do
     |> foreign_key_constraint(:user_id)
   end
 
+  def embed(webhook) do
+    webhook_map =
+      if is_struct(webhook) do
+        webhook |> Map.from_struct()
+      else
+        webhook
+      end
+
+    changeset =
+      %__MODULE__{}
+      |> cast(webhook_map, [
+        :uuid,
+        :action,
+        :props,
+        :user_id,
+        :environment_id,
+        :inserted_at,
+        :updated_at
+      ])
+      |> validate_required([:environment_id, :action])
+      |> foreign_key_constraint(:environment_id)
+      |> foreign_key_constraint(:user_id)
+
+    if changeset.valid? do
+      Ecto.Changeset.apply_changes(changeset)
+    else
+      changeset
+    end
+  end
+
   def new(env_id, params) do
     %Webhook{environment_id: env_id}
     |> Webhook.changeset(params)
