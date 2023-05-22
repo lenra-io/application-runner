@@ -74,11 +74,15 @@ defmodule ApplicationRunner.Environment.ManifestHandler do
     {:reply, Map.get(manifest, "jsonRoutes", @default_json_routes), state}
   end
 
-  defp get_routes(%{"rootView" => rootView}) do
+  defp get_routes(%{"rootView" => rootView} = manifest) do
+    IO.inspect("GET ROUTES ROUTE VIEW")
+    IO.inspect(manifest)
     [%{"path" => "/", "view" => %{"type" => "view", "name" => rootView}}]
   end
 
   defp get_routes(manifest) do
+    IO.inspect("GET ROUTES")
+    IO.inspect(manifest)
     Map.get(manifest, "lenraRoutes", @default_routes)
   end
 end
