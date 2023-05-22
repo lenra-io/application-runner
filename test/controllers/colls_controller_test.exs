@@ -8,7 +8,6 @@ defmodule ApplicationRunner.CollsControllerTest do
 
   setup ctx do
     Application.ensure_all_started(:postgrex)
-    {:ok, _} = start_supervised(ApplicationRunner.FakeEndpoint)
     start_supervised(ApplicationRunner.Repo)
 
     {:ok, env} = ApplicationRunner.Repo.insert(Contract.Environment.new(%{}))
