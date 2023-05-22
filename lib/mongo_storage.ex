@@ -347,10 +347,9 @@ defmodule ApplicationRunner.MongoStorage do
       {:ok, session_uuid}
     else
       :no ->
-        {:error,
          BusinessError.error_during_transaction_start_tuple(%{
            error: "uuid already used, please try again"
-         })}
+         })
 
       {:error, msg} ->
         BusinessError.error_during_transaction_start_tuple(%{error_message: msg})
