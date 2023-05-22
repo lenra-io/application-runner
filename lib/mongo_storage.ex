@@ -353,7 +353,7 @@ defmodule ApplicationRunner.MongoStorage do
          })}
 
       {:error, msg} ->
-        {:error, BusinessError.error_during_transaction_start_tuple(%{error_message: msg})}
+        BusinessError.error_during_transaction_start_tuple(%{error_message: msg})
     end
   end
 
