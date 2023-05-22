@@ -60,7 +60,7 @@ command at the root of this project or running by hand the docker commands like 
 
 You will then need to install and setup elixir prerequisites for the application_runner to run properly :
 
-* Install erlang in version 24.2 and elixir in version 1.12.3 otp-24
+* Install erlang in version 24.2 and elixir in version 1.13 otp-24
 * Create the database and start migration `mix setup`. This is equivalent to running the following commands : 
   * `mix deps.get` to install the dependencies
   * `mix ecto.create` to create database
