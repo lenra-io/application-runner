@@ -27,8 +27,6 @@ defmodule ApplicationRunner.RoutesChannel do
           "lenraRoutes" => ApplicationRunner.Session.UiBuilders.LenraBuilder.get_routes(env_id)
         }
 
-        # res = %{"lenraRoutes" => Map.get(manifest, "lenraRoutes")}
-
         case Swarm.register_name(get_swarm_name(session_id), self()) do
           :yes ->
             {:ok, res, socket}
