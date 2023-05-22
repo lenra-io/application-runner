@@ -75,14 +75,14 @@ defmodule ApplicationRunner.Environment.ManifestHandler do
   end
 
   defp get_routes(%{"rootView" => rootView} = manifest) do
-    IO.inspect("GET ROUTES ROUTE VIEW")
-    IO.inspect(manifest)
+    Logger.info("GET ROUTES ROUTE VIEW")
+    Logger.info(manifest)
     [%{"path" => "/", "view" => %{"type" => "view", "name" => rootView}}]
   end
 
   defp get_routes(manifest) do
-    IO.inspect("GET ROUTES")
-    IO.inspect(manifest)
+    Logger.info("GET ROUTES")
+    Logger.info(manifest)
     Map.get(manifest, "lenraRoutes", @default_routes)
   end
 end
