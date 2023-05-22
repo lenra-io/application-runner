@@ -268,8 +268,9 @@ defmodule ApplicationRunner.DocsController do
 
       {:ok, token, _claims} =
         AppGuardian.encode_and_sign(uuid, %{
+          type: "session",
           env_id: env.id,
-          user: user,
+          user: user.id,
           transaction_id: transaction_id
         })
 
@@ -285,7 +286,11 @@ defmodule ApplicationRunner.DocsController do
       uuid = Ecto.UUID.generate()
 
       {:ok, token, _claims} =
-        AppGuardian.encode_and_sign(uuid, %{env_id: env.id, transaction_id: transaction_id})
+        AppGuardian.encode_and_sign(uuid, %{
+          type: "env",
+          env_id: env.id,
+          transaction_id: transaction_id
+        })
 
       TokenAgent.add_token(env.id, uuid, token)
 

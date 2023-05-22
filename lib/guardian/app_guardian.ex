@@ -45,6 +45,7 @@ defmodule ApplicationRunner.Guardian.AppGuardian do
   end
 
   def resource_from_claims(%{"user_id" => user_id, "env_id" => env_id}) do
+    IO.puts(:resource_from_claims)
     env = MongoStorage.get_env!(env_id)
     user = MongoStorage.get_user!(user_id)
     mongo_user_link = MongoStorage.get_mongo_user_link!(env_id, user_id)
@@ -71,7 +72,7 @@ defmodule ApplicationRunner.Guardian.AppGuardian do
 
   defp get_app_token(claims) do
     try do
-      TokenAgent.get_token(String.to_integer(claims["env_id"]), String.to_integer(claims["sub"]))
+      TokenAgent.get_token(claims["env_id"], claims["sub"])
     rescue
       e ->
         Logger.error(

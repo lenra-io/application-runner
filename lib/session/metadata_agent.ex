@@ -1,6 +1,6 @@
 defmodule ApplicationRunner.Session.MetadataAgent do
   @moduledoc """
-    ApplicationRunner.Session.TokenAgent manages token for session api request
+    ApplicationRunner.Session.MetadataAgent manages token for session api request
   """
   use Agent
   use SwarmNamed

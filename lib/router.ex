@@ -25,23 +25,9 @@ defmodule ApplicationRunner.Router do
         )
 
         post("/transaction", DocsController, :transaction)
-        post("/transaction/:session_id/colls/:coll/docs", DocsController, :create_transaction)
+        post("/transaction/commit", DocsController, :commit_transaction)
 
-        put(
-          "/transaction/:session_id/colls/:coll/docs/:docId",
-          DocsController,
-          :update_transaction
-        )
-
-        delete(
-          "/transaction/:session_id/colls/:coll/docs/:docId",
-          DocsController,
-          :delete_transaction
-        )
-
-        post("/transaction/:session_id/commit", DocsController, :commit_transaction)
-
-        post("/transacation/:session_id/abort", DocsController, :abort_transaction)
+        post("/transaction/abort", DocsController, :abort_transaction)
 
         post("/webhooks", Webhooks.WebhooksController, :create)
       end
