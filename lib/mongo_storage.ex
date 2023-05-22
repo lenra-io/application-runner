@@ -290,7 +290,7 @@ defmodule ApplicationRunner.MongoStorage do
       [_, hex_id] ->
         case BSON.ObjectId.decode(hex_id) do
           :error ->
-            {:error, BusinessError.not_an_object_id_tuple()}
+            BusinessError.not_an_object_id_tuple()
 
           res ->
             res
