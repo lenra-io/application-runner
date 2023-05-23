@@ -10,7 +10,6 @@ defmodule ApplicationRunner.Webhooks.ControllerTest do
 
   setup ctx do
     Application.ensure_all_started(:postgrex)
-    {:ok, _} = start_supervised(ApplicationRunner.FakeEndpoint)
     start_supervised(ApplicationRunner.Repo)
 
     {:ok, ctx}
