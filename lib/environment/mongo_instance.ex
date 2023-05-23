@@ -60,6 +60,15 @@ defmodule ApplicationRunner.Environment.MongoInstance do
   end
 end
 
+defimpl Jason.Encoder, for: Mongo.Error do
+  def encode(struct, _opts \\ []) do
+    Jason.encode!(%{
+      code: struct.code,
+      message: struct.message
+    })
+  end
+end
+
 defimpl Jason.Encoder, for: BSON.ObjectId do
   def encode(val, _opts \\ []) do
     val

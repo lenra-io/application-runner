@@ -330,7 +330,7 @@ defmodule ApplicationRunner.MongoStorage do
     |> mongo_instance()
     |> Mongo.drop_collection(coll)
     |> case do
-      {:error, err} -> TechnicalError.mongo_error(err)
+      {:error, err} -> TechnicalError.mongo_error_tuple(err)
       :ok -> :ok
     end
   end

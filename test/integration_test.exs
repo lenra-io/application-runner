@@ -36,7 +36,6 @@ defmodule ApplicationRunner.IntegrationTest do
 
   setup ctx do
     Application.ensure_all_started(:postgrex)
-    {:ok, _} = start_supervised(ApplicationRunner.FakeEndpoint)
     start_supervised(ApplicationRunner.Repo)
 
     ctx = Map.merge(ctx, setup_db(ctx))

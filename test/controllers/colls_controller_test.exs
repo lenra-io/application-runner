@@ -8,7 +8,6 @@ defmodule ApplicationRunner.CollsControllerTest do
 
   setup ctx do
     Application.ensure_all_started(:postgrex)
-    {:ok, _} = start_supervised(ApplicationRunner.FakeEndpoint)
     start_supervised(ApplicationRunner.Repo)
 
     {:ok, env} = ApplicationRunner.Repo.insert(Contract.Environment.new(%{}))
@@ -63,6 +62,18 @@ defmodule ApplicationRunner.CollsControllerTest do
         |> get(Routes.docs_path(conn, :get_all, @coll))
 
       assert [] = json_response(conn, 200)
+    end
+
+    test "try delete unset coll", %{conn: conn, token: token} do
+      conn =
+        conn
+        |> Plug.Conn.put_req_header("authorization", "Bearer " <> token)
+        |> delete(Routes.colls_path(conn, :delete, "test"))
+
+      assert %{
+               "message" => "Could not access mongo. Please try again later.",
+               "metadata" => %{"code" => 26, "message" => "ns not found"}
+             } = json_response(conn, 400)
     end
   end
 end
