@@ -71,13 +71,11 @@ defmodule ApplicationRunner.Guardian.AppGuardian do
   end
 
   defp get_app_token(claims) do
-    try do
-      TokenAgent.get_token(claims["env_id"], claims["sub"])
-    rescue
-      e ->
-        Logger.error(
-          "#{__MODULE__} failed to fetch environment token for claims: #{inspect(claims)} with error: #{inspect(e)}"
-        )
-    end
+    TokenAgent.get_token(claims["env_id"], claims["sub"])
+  rescue
+    e ->
+      Logger.error(
+        "#{__MODULE__} failed to fetch environment token for claims: #{inspect(claims)} with error: #{inspect(e)}"
+      )
   end
 end

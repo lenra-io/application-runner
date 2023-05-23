@@ -5,10 +5,10 @@ defmodule ApplicationRunner.EventHandler do
   use GenServer
   use SwarmNamed
 
-  alias ApplicationRunner.Guardian.AppGuardian
-  alias ApplicationRunner.Environment.TokenAgent
   alias ApplicationRunner.ApplicationServices
   alias ApplicationRunner.Environment
+  alias ApplicationRunner.Environment.TokenAgent
+  alias ApplicationRunner.Guardian.AppGuardian
   alias ApplicationRunner.Session
 
   require Logger
