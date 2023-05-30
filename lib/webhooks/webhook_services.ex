@@ -6,8 +6,10 @@ defmodule ApplicationRunner.Webhooks.WebhookServices do
   import Ecto.Query, only: [from: 2]
 
   alias ApplicationRunner.ApplicationServices
+  alias ApplicationRunner.Environment
   alias ApplicationRunner.Environment.MetadataAgent
   alias ApplicationRunner.Errors.TechnicalError
+  alias ApplicationRunner.Guardian.AppGuardian
   alias ApplicationRunner.Webhooks.Webhook
 
   @repo Application.compile_env(:application_runner, :repo)
@@ -51,13 +53,22 @@ defmodule ApplicationRunner.Webhooks.WebhookServices do
       webhook ->
         metadata = MetadataAgent.get_metadata(webhook.environment_id)
 
+        uuid = Ecto.UUID.generate()
+
+        {:ok, token, _claims} =
+          AppGuardian.encode_and_sign(uuid, %{type: "env", env_id: webhook.environment_id})
+
+        Environment.TokenAgent.add_token(webhook.environment_id, uuid, token)
+
         ApplicationServices.run_listener(
           metadata.function_name,
           webhook.action,
           webhook.props,
           payload,
-          metadata.token
+          token
         )
+
+        Environment.TokenAgent.revoke_token(webhook.environment_id, uuid)
     end
   end
 end

@@ -4,7 +4,6 @@ defmodule ApplicationRunner.Environment.DynamixSupervisorTest do
   alias ApplicationRunner.Contract
   alias ApplicationRunner.Environment
   alias ApplicationRunner.Environment.DynamicSupervisor
-  alias ApplicationRunner.Guardian.AppGuardian
 
   @function_name Ecto.UUID.generate()
 

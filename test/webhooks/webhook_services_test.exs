@@ -3,13 +3,14 @@ defmodule ApplicationRunner.Webhooks.ServicesTest do
 
   use ApplicationRunner.RepoCase
 
-  alias ApplicationRunner.Contract.{Environment, User}
+  alias ApplicationRunner.Contract
+  alias ApplicationRunner.Environment
   alias ApplicationRunner.Environment.{Metadata, MetadataAgent}
   alias ApplicationRunner.Repo
   alias ApplicationRunner.Webhooks.{Webhook, WebhookServices}
 
   setup do
-    {:ok, env} = Repo.insert(Environment.new())
+    {:ok, env} = Repo.insert(Contract.Environment.new())
 
     env_metadata = %Metadata{
       env_id: env.id,
@@ -17,10 +18,11 @@ defmodule ApplicationRunner.Webhooks.ServicesTest do
     }
 
     {:ok, _} = start_supervised({MetadataAgent, env_metadata})
+    start_supervised({Environment.TokenAgent, env_metadata})
 
     user =
       %{email: "test@test.te"}
-      |> User.new()
+      |> Contract.User.new()
       |> Repo.insert!()
 
     bypass = Bypass.open(port: 1234)
@@ -180,7 +182,7 @@ defmodule ApplicationRunner.Webhooks.ServicesTest do
   test "Get webhooks linked to specific user should work properly", %{env_id: env_id} do
     user =
       %{email: "test@test.te"}
-      |> User.new()
+      |> Contract.User.new()
       |> Repo.insert!()
 
     assert {:ok, _webhook} =

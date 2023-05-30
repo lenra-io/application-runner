@@ -3,6 +3,7 @@ defmodule ApplicationRunner.CollsControllerTest do
 
   alias ApplicationRunner.Contract
   alias ApplicationRunner.Environment
+  alias ApplicationRunner.Guardian.AppGuardian
 
   @coll "controller_test"
 
@@ -20,6 +21,8 @@ defmodule ApplicationRunner.CollsControllerTest do
     {:ok, _} = start_supervised({Environment.MetadataAgent, env_metadata})
     {:ok, pid} = start_supervised({Mongo, Environment.MongoInstance.config(env.id)})
 
+    start_supervised({Environment.TokenAgent, env_metadata})
+
     start_supervised(
       {Task.Supervisor,
        name:
@@ -35,7 +38,12 @@ defmodule ApplicationRunner.CollsControllerTest do
       |> Map.get(:inserted_id)
       |> BSON.ObjectId.encode!()
 
-    {:ok, Map.merge(ctx, %{mongo_pid: pid, doc_id: doc_id})}
+    uuid = Ecto.UUID.generate()
+    {:ok, token, _claims} = AppGuardian.encode_and_sign(uuid, %{type: "env", env_id: env.id})
+
+    Environment.TokenAgent.add_token(env.id, uuid, token)
+
+    {:ok, Map.merge(ctx, %{mongo_pid: pid, doc_id: doc_id, token: token})}
   end
 
   describe "ApplicationRunner.CollsController.delete" do

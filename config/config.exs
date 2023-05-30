@@ -43,6 +43,6 @@ config :swarm,
   debug: false
 
 config :logger,
-  level: :warning
+  level: :none
 
 import_config "#{Mix.env()}.exs"

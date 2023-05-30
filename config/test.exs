@@ -26,8 +26,12 @@ config :application_runner, ApplicationRunner.FakeEndpoint,
   secret_key_base: "jtmuKvO3YYasTYRMAMGs+LSgnBEIFLQIOh439wO3ZoQdSfvDhXrnjKg2R5lCuK04"
 
 config :swarm,
-  sync_nodes_timeout: 0
+  sync_nodes_timeout: 0,
+  debug: false
 
 config :phoenix, :json_library, Jason
 
-config :bypass, enable_debug_log: true
+config :bypass, enable_debug_log: false
+
+config :logger,
+  level: :none

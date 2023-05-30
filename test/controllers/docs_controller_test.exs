@@ -3,6 +3,7 @@ defmodule ApplicationRunner.DocsControllerTest do
 
   alias ApplicationRunner.Contract
   alias ApplicationRunner.Environment
+  alias ApplicationRunner.Guardian.AppGuardian
 
   @coll "controller_test"
 
@@ -20,6 +21,8 @@ defmodule ApplicationRunner.DocsControllerTest do
     {:ok, _} = start_supervised({Environment.MetadataAgent, env_metadata})
     {:ok, pid} = start_supervised({Mongo, Environment.MongoInstance.config(env.id)})
 
+    start_supervised({Environment.TokenAgent, env_metadata})
+
     start_supervised(
       {Task.Supervisor,
        name:
@@ -35,6 +38,11 @@ defmodule ApplicationRunner.DocsControllerTest do
       |> Map.get(:inserted_id)
       |> Jason.encode!()
       |> Jason.decode!()
+
+    uuid = Ecto.UUID.generate()
+    {:ok, token, _claims} = AppGuardian.encode_and_sign(uuid, %{type: "env", env_id: env.id})
+
+    Environment.TokenAgent.add_token(env.id, uuid, token)
 
     {:ok, Map.merge(ctx, %{mongo_pid: pid, token: token, doc_id: doc_id})}
   end

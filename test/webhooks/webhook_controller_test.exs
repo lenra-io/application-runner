@@ -3,6 +3,7 @@ defmodule ApplicationRunner.Webhooks.ControllerTest do
 
   alias ApplicationRunner.Contract
   alias ApplicationRunner.Environment
+  alias ApplicationRunner.Guardian.AppGuardian
   alias ApplicationRunner.MongoStorage.MongoUserLink
   alias ApplicationRunner.Webhooks.WebhookServices
 
@@ -39,8 +40,15 @@ defmodule ApplicationRunner.Webhooks.ControllerTest do
       context: %{}
     }
 
+    env_metadata = %Environment.Metadata{
+      env_id: env.id,
+      function_name: "test"
+    }
+
     {:ok, _} = start_supervised({ApplicationRunner.Session.MetadataAgent, session_metadata})
     {:ok, pid} = start_supervised({Mongo, Environment.MongoInstance.config(env.id)})
+
+    start_supervised({Environment.TokenAgent, env_metadata})
 
     Mongo.drop_collection(pid, @coll)
 
@@ -49,7 +57,12 @@ defmodule ApplicationRunner.Webhooks.ControllerTest do
       |> Map.get(:inserted_id)
       |> BSON.ObjectId.encode!()
 
-    {:ok, %{mongo_pid: pid, token: token, doc_id: doc_id, env_id: env.id}}
+    uuid = Ecto.UUID.generate()
+    {:ok, token, _claims} = AppGuardian.encode_and_sign(uuid, %{type: "env", env_id: env.id})
+
+    Environment.TokenAgent.add_token(env.id, uuid, token)
+
+    {:ok, %{mongo_pid: pid, token: token, doc_id: doc_id, env_id: env.id, token: token}}
   end
 
   defp setup_env_token do
@@ -63,6 +76,8 @@ defmodule ApplicationRunner.Webhooks.ControllerTest do
     {:ok, _} = start_supervised({Environment.MetadataAgent, env_metadata})
     {:ok, pid} = start_supervised({Mongo, Environment.MongoInstance.config(env.id)})
 
+    start_supervised({Environment.TokenAgent, env_metadata})
+
     Mongo.drop_collection(pid, @coll)
 
     doc_id =
@@ -70,7 +85,12 @@ defmodule ApplicationRunner.Webhooks.ControllerTest do
       |> Map.get(:inserted_id)
       |> BSON.ObjectId.encode!()
 
-    {:ok, %{mongo_pid: pid, token: token, doc_id: doc_id, env_id: env.id}}
+    uuid = Ecto.UUID.generate()
+    {:ok, token, _claims} = AppGuardian.encode_and_sign(uuid, %{type: "env", env_id: env.id})
+
+    Environment.TokenAgent.add_token(env.id, uuid, token)
+
+    {:ok, %{mongo_pid: pid, token: token, doc_id: doc_id, env_id: env.id, token: token}}
   end
 
   test "Create webhook in env should work properly", %{conn: conn} do
