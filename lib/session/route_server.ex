@@ -96,6 +96,7 @@ defmodule ApplicationRunner.Session.RouteServer do
          name <- Map.get(base_view, "name"),
          props <- Map.get(base_view, "props", %{}),
          find <- Map.get(base_view, "find", %{}),
+         context_projection <- Map.get(base_view, "context"),
          {coll, query, projection} <- extract_find(base_view, find),
          {:ok, view_uid} <-
            create_view_uid(
@@ -105,6 +106,7 @@ defmodule ApplicationRunner.Session.RouteServer do
              %{"route" => route_params},
              props,
              session_metadata.context,
+             context_projection,
              ""
            ) do
       builder_mod.build_ui(session_metadata, view_uid)
@@ -141,13 +143,16 @@ defmodule ApplicationRunner.Session.RouteServer do
     Enum.reduce_while(
       routes,
       :error,
-      fn {k, v}, _err ->
-        case Utils.Routes.match_route(k, url) do
+      fn route, _err ->
+        path = Map.get(route, "path")
+        view = Map.get(route, "view")
+
+        case Utils.Routes.match_route(path, url) do
           {:error, err} ->
             {:cont, {:error, err}}
 
           {:ok, route_params} ->
-            {:halt, {:ok, route_params, v}}
+            {:halt, {:ok, route_params, view}}
         end
       end
     )
@@ -174,6 +179,7 @@ defmodule ApplicationRunner.Session.RouteServer do
           map(),
           map() | nil,
           map(),
+          map() | nil,
           binary()
         ) :: {:ok, ViewUid.t()} | {:error, LenraCommon.Errors.BusinessError.t()}
   def create_view_uid(
@@ -183,6 +189,7 @@ defmodule ApplicationRunner.Session.RouteServer do
         query_params,
         props,
         context,
+        context_projection,
         prefix_path
       ) do
     coll = Map.get(find, :coll)
@@ -194,6 +201,11 @@ defmodule ApplicationRunner.Session.RouteServer do
 
     params = query_params |> Map.merge(%{"me" => mongo_user_id})
     query_transformed = Parser.replace_params(query, params)
+
+    context =
+      context
+      |> Map.merge(%{"me" => mongo_user_id, "pathParams" => query_params["route"]})
+      |> project_map(context_projection)
 
     with {:ok, query_parsed} <- parse_query(query, params) do
       {:ok,
@@ -207,6 +219,28 @@ defmodule ApplicationRunner.Session.RouteServer do
          context: context,
          projection: projection
        }}
+    end
+  end
+
+  @doc """
+  Projects elements from the given map based on the provided projection.
+
+  ## Examples
+
+      iex> Projection.project_map(%{"foo" => "bar", "john" => "doe"}, %{"foo" => true})
+      %{"foo" => "bar"}
+
+  """
+  @spec project_map(map(), map() | nil) :: map()
+  def project_map(map, projection) do
+    case projection do
+      nil ->
+        %{}
+
+      _ ->
+        Enum.reduce(projection, %{}, fn {key, true}, acc ->
+          Map.put(acc, key, Map.get(map, key))
+        end)
     end
   end
 
@@ -239,6 +273,9 @@ defmodule ApplicationRunner.Session.RouteServer do
         code = Session.ListenersCache.create_code(action, props)
         Session.ListenersCache.save_listener(session_metadata.session_id, code, listener)
         {:ok, listener |> Map.drop(["action", "props", "type"]) |> Map.put("code", code)}
+
+      %{"navTo" => nav_to} ->
+        {:ok, %{"navTo" => nav_to}}
 
       _ ->
         BusinessError.no_action_in_listener_tuple(listener)
