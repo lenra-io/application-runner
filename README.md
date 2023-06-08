@@ -53,10 +53,25 @@ You can run Application Runner itself, but it is generally built as a library an
 
 To begin, make sure you have two databases, namely PostgreSQL and MongoDB, up and running. You can accomplish this by either executing the commands at the root of this project or manually running the Docker commands as shown below:
 
+* Start them both with Docker Compose:
+    ```
+    docker compose up -d
+    ```
 
-* Start PostgreSQL with Docker `docker run --restart always -p 5432:5432 --name lenra-postgres -e POSTGRES_DB=lenra_dev -e POSTGRES_PASSWORD=postgres -d postgres`
-* Start MongoDB with Docker `docker compose up` or
-  - `docker run --restart always -p 27017:27017 --name lenra-mongo -e MONGO_INITDB_DATABASE=test -e CONFIG='{"_id" : "rs0", "members" : [{"_id" : 0,"host" : "mongodb:27017"}]}' -d mongo:5 mongod --replSet rs0`
+or
+
+* Start them separatly with Docker 
+    ```
+    # Start PostgreSQL
+    docker run --rm -dt -p 5432:5432 --name lenra-postgres -e POSTGRES_DB=lenra_dev -e POSTGRES_PASSWORD=postgres postgres:13
+    # Start MongoDB
+    docker run --rm -dt -p 27017:27017 --name lenra-mongo -e MONGO_INITDB_DATABASE=test -e CONFIG='{"_id" : "rs0", "members" : [{"_id" : 0,"host" : "mongodb:27017"}]}' -d mongo:5 mongod --replSet rs0
+    ```
+
+Load git submodules:
+```
+git submodule update --init --recursive
+```
 
 Next, you'll need to install and configure the necessary prerequisites for Elixir's application_runner to function correctly. Follow these steps:
 
@@ -65,7 +80,6 @@ Next, you'll need to install and configure the necessary prerequisites for Elixi
   * `mix deps.get` to install the dependencies
   * `mix ecto.create` to create database
   * `mix ecto.migrate` to start all migration and have an up-to-date database
-  * `mix run priv/repo/seeds.exs` to fill database with default values
   
 #### Add Application Runner to your project:
 ```elixir
