@@ -43,7 +43,7 @@ defmodule ApplicationRunner.MixProject do
       {:ecto_sql, "~> 3.9.2"},
       {:postgrex, "~> 0.16.5"},
       {:guardian, "~> 2.3.1"},
-      {:phoenix, "~> 1.6.15"},
+      {:phoenix, "~> 1.7.6"},
       {:finch, "~> 0.14"},
       {:bypass, "~> 2.1", only: :test},
       {:mongodb_driver, "~> 1.0.2"},
