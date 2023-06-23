@@ -101,9 +101,7 @@ defmodule ApplicationRunner.Environment.DynamicSupervisor do
   def session_stopped(env_id) do
     session_pid = Swarm.whereis_name(Session.DynamicSupervisor.get_name(env_id))
 
-    if !is_pid(session_pid) do
-      stop_env(env_id)
-    else
+    if is_pid(session_pid) do
       session_pid
       |> Process.alive?()
       |> if do
@@ -120,6 +118,8 @@ defmodule ApplicationRunner.Environment.DynamicSupervisor do
 
         stop_env(env_id)
       end
+    else
+      stop_env(env_id)
     end
   end
 end
