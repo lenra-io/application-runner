@@ -119,6 +119,10 @@ defmodule ApplicationRunner.Environment.DynamicSupervisor do
         stop_env(env_id)
       end
     else
+      Logger.warning(
+        "Session.DynamicSupervisor pid for environment #{env_id} has not been found. Maybe the session has crashed. Environment stopped"
+      )
+
       stop_env(env_id)
     end
   end
