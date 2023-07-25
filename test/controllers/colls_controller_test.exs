@@ -73,7 +73,7 @@ defmodule ApplicationRunner.CollsControllerTest do
       assert %{
                "message" => "Could not access mongo. Please try again later.",
                "metadata" => %{"code" => 26, "message" => "ns not found"}
-             } = json_response(conn, 400)
+             } = json_response(conn, 500)
     end
   end
 end
