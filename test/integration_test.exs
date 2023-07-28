@@ -58,6 +58,9 @@ defmodule ApplicationRunner.IntegrationTest do
 
     # Reset and setup mongo coll
     mongo_name = Environment.MongoInstance.get_full_name(em.env_id)
+    IO.inspect("-----------------------------------------")
+    IO.inspect(mongo_name)
+    IO.inspect("-----------------------------------------")
     Mongo.drop_collection(mongo_name, @coll)
 
     %{}
@@ -117,6 +120,9 @@ defmodule ApplicationRunner.IntegrationTest do
 
           {:ok, %{"view" => name, "data" => data}} ->
             resp_view(logger_agent, conn, name, data)
+
+          {:ok, %{}} ->
+            resp_manifest(logger_agent, conn)
 
           {:error, _} ->
             resp_manifest(logger_agent, conn)
