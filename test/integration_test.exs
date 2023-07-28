@@ -58,9 +58,6 @@ defmodule ApplicationRunner.IntegrationTest do
 
     # Reset and setup mongo coll
     mongo_name = Environment.MongoInstance.get_full_name(em.env_id)
-    IO.inspect("-----------------------------------------")
-    IO.inspect(mongo_name)
-    IO.inspect("-----------------------------------------")
     Mongo.drop_collection(mongo_name, @coll)
 
     %{}
