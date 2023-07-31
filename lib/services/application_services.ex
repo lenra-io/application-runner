@@ -8,6 +8,9 @@ defmodule ApplicationRunner.ApplicationServices do
 
   require Logger
 
+  @empty_body "{}"
+  @empty_body_length "2"
+
   defp get_http_context do
     base_url = Application.fetch_env!(:application_runner, :faas_url)
     auth = Application.fetch_env!(:application_runner, :faas_auth)
@@ -36,10 +39,6 @@ defmodule ApplicationRunner.ApplicationServices do
 
     url = "#{base_url}/function/#{function_name}"
 
-    headers = [
-      {"Content-Type", "application/json"} | base_headers
-    ]
-
     body =
       Jason.encode!(%{
         action: action,
@@ -47,6 +46,11 @@ defmodule ApplicationRunner.ApplicationServices do
         event: event,
         api: %{url: Application.fetch_env!(:application_runner, :url), token: token}
       })
+
+    headers = [
+      {"Content-Type", "application/json"},
+      {"Content-length", to_string(String.length(body))} | base_headers
+    ]
 
     Logger.debug("Call to Openfaas : #{function_name}")
 
@@ -80,8 +84,12 @@ defmodule ApplicationRunner.ApplicationServices do
     {base_url, base_headers} = get_http_context()
 
     url = "#{base_url}/function/#{function_name}"
-    headers = [{"Content-Type", "application/json"} | base_headers]
     body = Jason.encode!(%{view: view_name, data: data, props: props, context: context})
+
+    headers = [
+      {"Content-Type", "application/json"},
+      {"Content-length", to_string(String.length(body))} | base_headers
+    ]
 
     Logger.debug("Fetch application view \n#{url} : \n#{body}")
 
@@ -106,11 +114,15 @@ defmodule ApplicationRunner.ApplicationServices do
     {base_url, base_headers} = get_http_context()
 
     url = "#{base_url}/function/#{function_name}"
-    headers = [{"Content-Type", "application/json"} | base_headers]
+
+    headers = [
+      {"Content-Type", "application/json"},
+      {"Content-length", @empty_body_length} | base_headers
+    ]
 
     Logger.debug("Fetch application manifest \n#{url} : \n#{function_name}")
 
-    Finch.build(:post, url, headers)
+    Finch.build(:post, url, headers, @empty_body)
     |> Finch.request(AppHttp,
       receive_timeout: Application.fetch_env!(:application_runner, :manifest_timeout)
     )
@@ -137,8 +149,12 @@ defmodule ApplicationRunner.ApplicationServices do
 
     url = "#{base_url}/function/#{function_name}"
 
-    headers = [{"Content-Type", "application/json"} | base_headers]
     body = Jason.encode!(%{resource: resource})
+
+    headers = [
+      {"Content-Type", "application/json"},
+      {"Content-length", to_string(String.length(body))} | base_headers
+    ]
 
     Finch.build(:post, url, headers, body)
     |> Finch.stream(AppHttp, [], fn

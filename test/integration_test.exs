@@ -118,6 +118,9 @@ defmodule ApplicationRunner.IntegrationTest do
           {:ok, %{"view" => name, "data" => data}} ->
             resp_view(logger_agent, conn, name, data)
 
+          {:ok, %{}} ->
+            resp_manifest(logger_agent, conn)
+
           {:error, _} ->
             resp_manifest(logger_agent, conn)
         end

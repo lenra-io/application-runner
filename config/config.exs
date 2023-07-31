@@ -23,7 +23,10 @@ config :application_runner,
   lenra_user_table: "users",
   repo: ApplicationRunner.Repo,
   url: "localhost:4000",
-  env: "dev"
+  env: "dev",
+  faas_url: System.get_env("FAAS_URL", "https://openfaas-dev.lenra.me"),
+  faas_auth: System.get_env("FAAS_AUTH", "Basic YWRtaW46Z0Q4VjNHR1YxeUpS"),
+  faas_registry: System.get_env("FAAS_REGISTRY", "registry.gitlab.com/lenra/platform/lenra-ci")
 
 config :application_runner, :mongo,
   hostname: "localhost",
