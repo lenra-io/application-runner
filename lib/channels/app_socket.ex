@@ -81,13 +81,26 @@ defmodule ApplicationRunner.AppSocket do
       end
 
       defp extract_params(params) do
+        with {:ok, app_name} <- extract_appname(params) do
+          context = extract_context(params)
+          {:ok, app_name, context}
+        end
+      end
+
+      defp extract_context(params) do
+        case Map.get(params, "context", %{}) do
+          res when is_map(res) -> res
+          _not_map -> %{}
+        end
+      end
+
+      defp extract_appname(params) do
         app_name = Map.get(params, "app")
-        context = Map.get(params, "context", %{})
 
         if is_nil(app_name) do
           BusinessError.no_app_found_tuple()
         else
-          {:ok, app_name, context}
+          {:ok, app_name}
         end
       end
 
