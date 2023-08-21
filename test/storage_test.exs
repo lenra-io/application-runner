@@ -14,7 +14,7 @@ defmodule ApplicationRunner.StorageTest do
 
   setup do
     {:ok, env} = Repo.insert(Environment.new())
-    token = ApplicationRunner.AppSocket.do_create_env_token(env.id) |> elem(1)
+    token = ApplicationRunner.AppSocket.create_env_token(env.id) |> elem(1)
 
     env_metadata = %Metadata{
       env_id: env.id,

@@ -8,11 +8,8 @@ defmodule ApplicationRunner.AppSocket do
       require Logger
       use Phoenix.Socket
       alias ApplicationRunner.AppSocket
-      alias ApplicationRunner.Contract.User
-      alias ApplicationRunner.Environment
-      alias ApplicationRunner.Errors.{BusinessError, TechnicalError}
+      alias ApplicationRunner.Errors.TechnicalError
       alias ApplicationRunner.Monitor
-      alias ApplicationRunner.Session
       alias ApplicationRunner.Telemetry
       alias LenraCommonWeb.ErrorHelpers
 
@@ -43,12 +40,17 @@ defmodule ApplicationRunner.AppSocket do
       # See `Phoenix.Token` documentation for examples in
       # performing token verification on connect.
       @impl true
-      def connect(params, socket, _connect_info) do
-        with {:ok, app_name, context} <- extract_params(params),
-             {:ok, user_id} <- @adapter_mod.resource_from_params(params),
-             :ok <- @adapter_mod.allow(user_id, app_name),
+      def connect(adapter_mod, params, socket, _connect_info) do
+        with {:ok, app_name, context} <- ApplicationRunner.AppSocket.extract_params(params),
+             {:ok, user_id} <- adapter_mod.resource_from_params(params),
+             :ok <- adapter_mod.allow(user_id, app_name),
              {:ok, env_metadata, session_metadata} <-
-               create_metadatas(user_id, app_name, context),
+               ApplicationRunner.AppSocket.create_metadatas(
+                 adapter_mod,
+                 user_id,
+                 app_name,
+                 context
+               ),
              start_time <- Telemetry.start(:app_session, session_metadata),
              {:ok, session_pid} <- Session.start_session(session_metadata, env_metadata) do
           Logger.notice("Joined app #{app_name} with params #{inspect(params)}")
@@ -80,59 +82,6 @@ defmodule ApplicationRunner.AppSocket do
         end
       end
 
-      defp extract_params(params) do
-        app_name = Map.get(params, "app")
-        context = Map.get(params, "context", %{})
-
-        if is_nil(app_name) do
-          BusinessError.no_app_found_tuple()
-        else
-          {:ok, app_name, context}
-        end
-      end
-
-      defp create_metadatas(user_id, app_name, context) do
-        session_id = Ecto.UUID.generate()
-
-        with function_name when is_bitstring(function_name) <-
-               @adapter_mod.get_function_name(app_name),
-             env_id <- @adapter_mod.get_env_id(app_name),
-             {:ok, session_token} <- create_session_token(env_id, session_id, user_id),
-             {:ok, env_token} <- create_env_token(env_id) do
-          # prepare the assigns to the session/environment
-          session_metadata = %Session.Metadata{
-            env_id: env_id,
-            session_id: session_id,
-            user_id: user_id,
-            function_name: function_name,
-            context: context,
-            token: session_token
-          }
-
-          env_metadata = %Environment.Metadata{
-            env_id: env_id,
-            function_name: function_name,
-            token: env_token
-          }
-
-          {:ok, env_metadata, session_metadata}
-        else
-          {:error, :forbidden} ->
-            {:error, BusinessError.forbidden()}
-
-          err ->
-            err
-        end
-      end
-
-      def create_env_token(env_id) do
-        AppSocket.do_create_env_token(env_id)
-      end
-
-      def create_session_token(env_id, session_id, user_id) do
-        AppSocket.do_create_session_token(env_id, session_id, user_id)
-      end
-
       # Socket id's are topics that allow you to identify all sockets for a given user:
       #
       #     def id(socket), do: "user_socket:#{socket.assigns.user_id}"
@@ -148,16 +97,53 @@ defmodule ApplicationRunner.AppSocket do
     end
   end
 
+  alias ApplicationRunner.Environment
+  alias ApplicationRunner.Errors.BusinessError
   alias ApplicationRunner.Guardian.AppGuardian
+  alias ApplicationRunner.Session
 
-  def do_create_env_token(env_id) do
+  def create_metadatas(adapter_mod, user_id, app_name, context) do
+    session_id = Ecto.UUID.generate()
+
+    with function_name when is_bitstring(function_name) <-
+           adapter_mod.get_function_name(app_name),
+         env_id <- adapter_mod.get_env_id(app_name),
+         {:ok, session_token} <- create_session_token(env_id, session_id, user_id),
+         {:ok, env_token} <- create_env_token(env_id) do
+      # prepare the assigns to the session/environment
+      session_metadata = %Session.Metadata{
+        env_id: env_id,
+        session_id: session_id,
+        user_id: user_id,
+        function_name: function_name,
+        context: context,
+        token: session_token
+      }
+
+      env_metadata = %Environment.Metadata{
+        env_id: env_id,
+        function_name: function_name,
+        token: env_token
+      }
+
+      {:ok, env_metadata, session_metadata}
+    else
+      {:error, :forbidden} ->
+        {:error, BusinessError.forbidden()}
+
+      err ->
+        err
+    end
+  end
+
+  def create_env_token(env_id) do
     with {:ok, token, _claims} <-
            AppGuardian.encode_and_sign(env_id, %{type: "env", env_id: env_id}) do
       {:ok, token}
     end
   end
 
-  def do_create_session_token(env_id, session_id, user_id) do
+  def create_session_token(env_id, session_id, user_id) do
     with {:ok, token, _claims} <-
            AppGuardian.encode_and_sign(session_id, %{
              type: "session",
@@ -165,6 +151,30 @@ defmodule ApplicationRunner.AppSocket do
              env_id: env_id
            }) do
       {:ok, token}
+    end
+  end
+
+  def extract_params(params) do
+    with {:ok, app_name} <- extract_appname(params) do
+      context = extract_context(params)
+      {:ok, app_name, context}
+    end
+  end
+
+  defp extract_context(params) do
+    case Map.get(params, "context", %{}) do
+      res when is_map(res) -> res
+      _not_map -> %{}
+    end
+  end
+
+  defp extract_appname(params) do
+    app_name = Map.get(params, "app")
+
+    if is_nil(app_name) do
+      BusinessError.no_app_found_tuple()
+    else
+      {:ok, app_name}
     end
   end
 end
