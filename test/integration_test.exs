@@ -77,7 +77,7 @@ defmodule ApplicationRunner.IntegrationTest do
         session_id: @session_id,
         function_name: @function_name,
         context: %{},
-        token: AppSocket.do_create_session_token(env.id, @session_id, user.id) |> elem(1)
+        token: AppSocket.create_session_token(env.id, @session_id, user.id) |> elem(1)
       }
     }
   end
@@ -87,7 +87,7 @@ defmodule ApplicationRunner.IntegrationTest do
       env_metadata: %Environment.Metadata{
         env_id: env.id,
         function_name: @function_name,
-        token: AppSocket.do_create_env_token(env.id) |> elem(1)
+        token: AppSocket.create_env_token(env.id) |> elem(1)
       }
     }
   end

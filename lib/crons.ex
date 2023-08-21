@@ -18,7 +18,7 @@ defmodule ApplicationRunner.Crons do
         function_name
       ) do
     with {:ok, token} <-
-           AppSocket.do_create_env_token(env_id),
+           AppSocket.create_env_token(env_id),
          {:ok, _pid} <-
            Environment.ensure_env_started(%Environment.Metadata{
              env_id: env_id,
