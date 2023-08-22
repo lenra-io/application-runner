@@ -11,6 +11,8 @@ defmodule ApplicationRunner.AppSocket do
       alias ApplicationRunner.Errors.TechnicalError
       alias ApplicationRunner.Monitor
       alias ApplicationRunner.Telemetry
+      alias ApplicationRunner.Session
+
       alias LenraCommonWeb.ErrorHelpers
 
       @adapter_mod unquote(adapter_mod)
@@ -40,13 +42,13 @@ defmodule ApplicationRunner.AppSocket do
       # See `Phoenix.Token` documentation for examples in
       # performing token verification on connect.
       @impl true
-      def connect(adapter_mod, params, socket, _connect_info) do
+      def connect(params, socket, _connect_info) do
         with {:ok, app_name, context} <- ApplicationRunner.AppSocket.extract_params(params),
-             {:ok, user_id} <- adapter_mod.resource_from_params(params),
-             :ok <- adapter_mod.allow(user_id, app_name),
+             {:ok, user_id} <- @adapter_mod.resource_from_params(params),
+             :ok <- @adapter_mod.allow(user_id, app_name),
              {:ok, env_metadata, session_metadata} <-
                ApplicationRunner.AppSocket.create_metadatas(
-                 adapter_mod,
+                 @adapter_mod,
                  user_id,
                  app_name,
                  context
