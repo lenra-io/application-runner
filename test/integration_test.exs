@@ -20,7 +20,11 @@ defmodule ApplicationRunner.IntegrationTest do
   @coll "test_integration"
   @query %{"foo" => "bar"}
 
-  @manifest %{"rootView" => "main"}
+  @manifest %{
+    "lenraRoutes" => [
+      %{"path" => "/", "view" => %{"type" => "view", "name" => "main"}}
+    ]
+  }
 
   def view("main", _) do
     %{"type" => "view", "name" => "echo", "query" => @query, "coll" => @coll}
@@ -311,7 +315,12 @@ defmodule ApplicationRunner.IntegrationTest do
     assert [
              # First, the env starts...
              # The manifest is fetched
-             {:manifest, %{"rootView" => "main"}},
+             {:manifest,
+              %{
+                "lenraRoutes" => [
+                  %{"path" => "/", "view" => %{"type" => "view", "name" => "main"}}
+                ]
+              }},
              # The onEnvStart event is run.
              {:listener, "onEnvStart", %{}},
              # Then the session starts.
