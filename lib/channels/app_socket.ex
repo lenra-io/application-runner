@@ -10,6 +10,7 @@ defmodule ApplicationRunner.AppSocket do
       alias ApplicationRunner.AppSocket
       alias ApplicationRunner.Errors.TechnicalError
       alias ApplicationRunner.Monitor
+      alias ApplicationRunner.Session
       alias ApplicationRunner.Telemetry
       alias LenraCommonWeb.ErrorHelpers
 
