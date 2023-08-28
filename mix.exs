@@ -49,8 +49,8 @@ defmodule ApplicationRunner.MixProject do
       {:mongodb_driver, "~> 1.0.2"},
       {:crontab, "~> 1.1.13"},
       {:quantum, "~> 3.0"},
-      {:query_parser, git: "https://github.com/lenra-io/query-parser.git", tag: "v1.0.0-beta.25"},
-      {:lenra_common, git: "https://github.com/lenra-io/lenra-common.git", tag: "v2.7.1"}
+      {:query_parser, git: "https://github.com/lenra-io/query-parser.git", tag: "v1.0.0-beta.26"},
+      {:lenra_common, "~> 2.8"}
     ]
   end
 

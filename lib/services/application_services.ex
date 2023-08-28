@@ -5,6 +5,7 @@ defmodule ApplicationRunner.ApplicationServices do
   alias ApplicationRunner.Errors.TechnicalError
   alias ApplicationRunner.Guardian.AppGuardian
   alias ApplicationRunner.Telemetry
+  alias LenraCommon.Errors
 
   require Logger
 
@@ -238,6 +239,7 @@ defmodule ApplicationRunner.ApplicationServices do
         TechnicalError.error_404_tuple(body)
 
       500 ->
+        Errors.log(body)
         Telemetry.event(:alert, %{}, TechnicalError.error_500(body))
         TechnicalError.error_500_tuple(body)
 
@@ -247,6 +249,7 @@ defmodule ApplicationRunner.ApplicationServices do
 
       err ->
         # maybe alert ?
+        Errors.log(err)
         Logger.critical(TechnicalError.unknown_error(err))
         TechnicalError.unknown_error_tuple(body)
     end

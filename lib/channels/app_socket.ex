@@ -8,6 +8,7 @@ defmodule ApplicationRunner.AppSocket do
       require Logger
       use Phoenix.Socket
       alias ApplicationRunner.AppSocket
+      alias ApplicationRunner.Errors
       alias ApplicationRunner.Errors.TechnicalError
       alias ApplicationRunner.Monitor
       alias ApplicationRunner.Session
@@ -78,7 +79,7 @@ defmodule ApplicationRunner.AppSocket do
             {:error, ErrorHelpers.translate_error(reason)}
 
           {:error, reason} ->
-            Logger.error(reason)
+            Errors.log(reason)
             {:error, ErrorHelpers.translate_error(TechnicalError.unknown_error())}
         end
       end
