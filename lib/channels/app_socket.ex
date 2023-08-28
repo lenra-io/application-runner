@@ -8,11 +8,11 @@ defmodule ApplicationRunner.AppSocket do
       require Logger
       use Phoenix.Socket
       alias ApplicationRunner.AppSocket
-      alias ApplicationRunner.Errors
       alias ApplicationRunner.Errors.TechnicalError
       alias ApplicationRunner.Monitor
       alias ApplicationRunner.Session
       alias ApplicationRunner.Telemetry
+      alias LenraCommon.Errors
       alias LenraCommonWeb.ErrorHelpers
 
       @adapter_mod unquote(adapter_mod)
