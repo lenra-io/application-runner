@@ -82,6 +82,7 @@ defmodule ApplicationRunner.AppSocket do
             reason
             |> Errors
             |> Logger.error()
+
             {:error, ErrorHelpers.translate_error(TechnicalError.unknown_error())}
         end
       end
