@@ -50,7 +50,7 @@ defmodule ApplicationRunner.MixProject do
       {:crontab, "~> 1.1.13"},
       {:quantum, "~> 3.0"},
       {:query_parser, git: "https://github.com/lenra-io/query-parser.git", tag: "v1.0.0-beta.26"},
-      {:lenra_common, "~> 2.8"}
+      {:lenra_common, "~> 2.9"}
     ]
   end
 
