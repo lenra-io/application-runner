@@ -12,6 +12,7 @@ defmodule ApplicationRunner.AppSocket do
       alias ApplicationRunner.Monitor
       alias ApplicationRunner.Session
       alias ApplicationRunner.Telemetry
+      alias LenraCommon.Errors
       alias LenraCommonWeb.ErrorHelpers
 
       @adapter_mod unquote(adapter_mod)
@@ -78,7 +79,10 @@ defmodule ApplicationRunner.AppSocket do
             {:error, ErrorHelpers.translate_error(reason)}
 
           {:error, reason} ->
-            Logger.error(reason)
+            reason
+            |> Errors.format_error_with_stacktrace()
+            |> Logger.error()
+
             {:error, ErrorHelpers.translate_error(TechnicalError.unknown_error())}
         end
       end
@@ -98,6 +102,7 @@ defmodule ApplicationRunner.AppSocket do
     end
   end
 
+  require Logger
   alias ApplicationRunner.Environment
   alias ApplicationRunner.Errors.BusinessError
   alias ApplicationRunner.Guardian.AppGuardian
