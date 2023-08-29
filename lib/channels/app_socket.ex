@@ -80,7 +80,7 @@ defmodule ApplicationRunner.AppSocket do
 
           {:error, reason} ->
             reason
-            |> Errors
+            |> Errors.format_error_with_stacktrace()
             |> Logger.error()
 
             {:error, ErrorHelpers.translate_error(TechnicalError.unknown_error())}
@@ -103,6 +103,7 @@ defmodule ApplicationRunner.AppSocket do
   end
 
   require Logger
+  alias LenraCommon.Errors
   alias ApplicationRunner.Environment
   alias ApplicationRunner.Errors.BusinessError
   alias ApplicationRunner.Guardian.AppGuardian
