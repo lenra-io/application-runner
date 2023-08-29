@@ -103,7 +103,6 @@ defmodule ApplicationRunner.AppSocket do
   end
 
   require Logger
-  alias LenraCommon.Errors
   alias ApplicationRunner.Environment
   alias ApplicationRunner.Errors.BusinessError
   alias ApplicationRunner.Guardian.AppGuardian
