@@ -5,6 +5,7 @@ defmodule ApplicationRunner.Environment.DynamicSupervisor do
   """
   use DynamicSupervisor
 
+  alias ApplicationRunner.ApplicationServices
   alias ApplicationRunner.Environment
   alias ApplicationRunner.Errors.BusinessError
   alias ApplicationRunner.Monitor.EnvironmentMonitor
@@ -29,10 +30,12 @@ defmodule ApplicationRunner.Environment.DynamicSupervisor do
 
   @spec start_env(term()) ::
           {:error, {:already_started, pid()}} | {:ok, pid()} | {:error, term()}
-  defp start_env(env_metadata) do
+  defp start_env(%Environment.Metadata{} = env_metadata) do
     Logger.debug(
       "#{__MODULE__} Start Environment Supervisor with env_metadata: #{inspect(env_metadata)}"
     )
+
+    ApplicationServices.start_app(env_metadata.function_name)
 
     case DynamicSupervisor.start_child(
            __MODULE__,

@@ -11,6 +11,12 @@ defmodule ApplicationRunner.ApplicationServices do
 
   @empty_body "{}"
   @empty_body_length "2"
+  @min_scale_label "com.openfaas.scale.min"
+  @max_scale_label "com.openfaas.scale.max"
+  @scale_factor_label "com.openfaas.scale.factor"
+  @min_scale_default "0"
+  @max_scale_default "5"
+  @scale_factor_default "10"
 
   defp get_http_context do
     base_url = Application.fetch_env!(:application_runner, :faas_url)
@@ -181,6 +187,10 @@ defmodule ApplicationRunner.ApplicationServices do
         "requests" => %{
           "memory" => "128Mi",
           "cpu" => "50m"
+        },
+        "labels" => %{
+          @min_scale_label => @min_scale_default,
+          @max_scale_label => @max_scale_default
         }
       })
 
@@ -194,6 +204,63 @@ defmodule ApplicationRunner.ApplicationServices do
     )
     |> Finch.request(AppHttp, receive_timeout: 1000)
     |> response(:deploy_app)
+  end
+
+  def start_app(function_name) do
+    Logger.info("Start Openfaas application #{function_name}")
+    set_app_min_scale(function_name, 1)
+  end
+
+  def stop_app(function_name) do
+    Logger.info("Stop Openfaas application #{function_name}")
+    set_app_min_scale(function_name, 0)
+  end
+
+  def set_app_min_scale(function_name, min_scale) do
+    set_app_labels(function_name, %{@min_scale_label => to_string(min_scale)})
+  end
+
+  def get_app_status(function_name) do
+    {base_url, headers} = get_http_context()
+
+    url = "#{base_url}/system/function/#{function_name}"
+
+    Logger.debug("Get Openfaas application #{function_name} status")
+
+    Finch.build(
+      :get,
+      url,
+      headers
+    )
+    |> Finch.request(AppHttp, receive_timeout: 1000)
+    |> response(:get_app)
+  end
+
+  def set_app_labels(function_name, labels) do
+    {base_url, headers} = get_http_context()
+
+    url = "#{base_url}/system/functions"
+
+    {:ok, app} = get_app_status(function_name)
+
+    # .service=.name | .labels["com.openfaas.scale.max"]="7" | .labels["com.openfaas.scale.min"]="0"
+    app =
+      app
+      |> Map.put(:service, function_name)
+      |> Map.put(:labels, Map.merge(app["labels"], labels))
+
+    body = Jason.encode!(app)
+
+    Logger.debug("Set Openfaas application #{function_name} labels \n#{labels}")
+
+    Finch.build(
+      :put,
+      url,
+      headers,
+      body
+    )
+    |> Finch.request(AppHttp, receive_timeout: 1000)
+    |> response(:update_app)
   end
 
   defp response({:ok, acc}, :resource) do
@@ -212,6 +279,15 @@ defmodule ApplicationRunner.ApplicationServices do
   defp response({:ok, %Finch.Response{status: status_code}}, :deploy_app)
        when status_code in [200, 202] do
     {:ok, status_code}
+  end
+
+  defp response({:ok, %Finch.Response{status: status_code}}, :update_app)
+       when status_code in [200, 202] do
+    {:ok, status_code}
+  end
+
+  defp response({:ok, %Finch.Response{status: 200, body: body}}, :get_app) do
+    {:ok, Jason.decode!(body)}
   end
 
   defp response({:error, %Mint.TransportError{reason: reason}}, _action) do
