@@ -12,7 +12,7 @@ defmodule ApplicationRunner.CollsControllerTest do
 
     {:ok, env} = ApplicationRunner.Repo.insert(Contract.Environment.new(%{}))
 
-    token = ApplicationRunner.AppSocket.do_create_env_token(env.id) |> elem(1)
+    token = ApplicationRunner.AppSocket.create_env_token(env.id) |> elem(1)
 
     env_metadata = %Environment.Metadata{
       env_id: env.id,
@@ -72,7 +72,8 @@ defmodule ApplicationRunner.CollsControllerTest do
 
       assert %{
                "message" => "Could not access mongo. Please try again later.",
-               "metadata" => %{"code" => 26, "message" => "ns not found"}
+               "metadata" => %{"code" => 26, "message" => "ns not found"},
+               "reason" => "mongo_error"
              } = json_response(conn, 500)
     end
   end

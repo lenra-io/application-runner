@@ -20,7 +20,11 @@ defmodule ApplicationRunner.IntegrationTest do
   @coll "test_integration"
   @query %{"foo" => "bar"}
 
-  @manifest %{"rootView" => "main"}
+  @manifest %{
+    "lenraRoutes" => [
+      %{"path" => "/", "view" => %{"type" => "view", "name" => "main"}}
+    ]
+  }
 
   def view("main", _) do
     %{"type" => "view", "name" => "echo", "query" => @query, "coll" => @coll}
@@ -77,7 +81,7 @@ defmodule ApplicationRunner.IntegrationTest do
         session_id: @session_id,
         function_name: @function_name,
         context: %{},
-        token: AppSocket.do_create_session_token(env.id, @session_id, user.id) |> elem(1)
+        token: AppSocket.create_session_token(env.id, @session_id, user.id) |> elem(1)
       }
     }
   end
@@ -87,7 +91,7 @@ defmodule ApplicationRunner.IntegrationTest do
       env_metadata: %Environment.Metadata{
         env_id: env.id,
         function_name: @function_name,
-        token: AppSocket.do_create_env_token(env.id) |> elem(1)
+        token: AppSocket.create_env_token(env.id) |> elem(1)
       }
     }
   end
@@ -117,6 +121,9 @@ defmodule ApplicationRunner.IntegrationTest do
 
           {:ok, %{"view" => name, "data" => data}} ->
             resp_view(logger_agent, conn, name, data)
+
+          {:ok, %{}} ->
+            resp_manifest(logger_agent, conn)
 
           {:error, _} ->
             resp_manifest(logger_agent, conn)
@@ -308,7 +315,12 @@ defmodule ApplicationRunner.IntegrationTest do
     assert [
              # First, the env starts...
              # The manifest is fetched
-             {:manifest, %{"rootView" => "main"}},
+             {:manifest,
+              %{
+                "lenraRoutes" => [
+                  %{"path" => "/", "view" => %{"type" => "view", "name" => "main"}}
+                ]
+              }},
              # The onEnvStart event is run.
              {:listener, "onEnvStart", %{}},
              # Then the session starts.
