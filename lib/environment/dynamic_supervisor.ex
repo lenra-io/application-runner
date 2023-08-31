@@ -101,18 +101,26 @@ defmodule ApplicationRunner.Environment.DynamicSupervisor do
   def session_stopped(env_id) do
     session_pid = Swarm.whereis_name(Session.DynamicSupervisor.get_name(env_id))
 
-    session_pid
-    |> Process.alive?()
-    |> if do
+    if is_pid(session_pid) do
       session_pid
-      |> DynamicSupervisor.count_children()
-      |> case do
-        %{supervisors: 0} -> stop_env(env_id)
-        _any -> :ok
+      |> Process.alive?()
+      |> if do
+        session_pid
+        |> DynamicSupervisor.count_children()
+        |> case do
+          %{supervisors: 0} -> stop_env(env_id)
+          _any -> :ok
+        end
+      else
+        Logger.critical(
+          "Session.DynamicSupervisor for environment #{env_id} is not running. This should not occur, environment stopped"
+        )
+
+        stop_env(env_id)
       end
     else
-      Logger.critical(
-        "Session.DynamicSupervisor for environment #{env_id} is not running. This should not occur, environment stopped"
+      Logger.warning(
+        "Session.DynamicSupervisor pid for environment #{env_id} has not been found. Maybe the session has crashed. Environment stopped"
       )
 
       stop_env(env_id)
