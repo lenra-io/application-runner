@@ -251,7 +251,7 @@ defmodule ApplicationRunner.ApplicationServices do
 
     body = Jason.encode!(app)
 
-    Logger.debug("Set Openfaas application #{function_name} labels \n#{labels}")
+    Logger.debug("Set Openfaas application #{function_name} labels \n#{inspect(labels)}")
 
     Finch.build(
       :put,
