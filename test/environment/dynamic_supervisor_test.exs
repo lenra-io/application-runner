@@ -24,10 +24,16 @@ defmodule ApplicationRunner.Environment.DynamixSupervisorTest do
     end
   end
 
-  test "should scall to zero on environment exit" do
+  defp handle_app_info_resp(conn) do
+    Plug.Conn.resp(conn, 200, Jason.encode!(%{name: "test"}))
+  end
+
+  test "should scall to one on environment start and to zero on environment exit" do
     {:ok, %{id: env_id}} = Repo.insert(Contract.Environment.new())
 
     bypass = Bypass.open(port: 1234)
+    Bypass.stub(bypass, "GET", "/system/function/#{@function_name}", &handle_app_info_resp/1)
+    Bypass.stub(bypass, "PUT", "/system/functions", &handle_resp/1)
     Bypass.stub(bypass, "POST", "/function/#{@function_name}", &handle_resp/1)
 
     {:ok, token, _claims} = AppGuardian.encode_and_sign(env_id, %{type: "env", env_id: env_id})
@@ -42,16 +48,38 @@ defmodule ApplicationRunner.Environment.DynamixSupervisorTest do
       Swarm.unregister_name(Environment.Supervisor.get_name(env_id))
     end)
 
+    # Check scale up
+    Bypass.expect_once(
+      bypass,
+      "PUT",
+      "/system/functions",
+      fn conn ->
+        {:ok, body, conn} = Plug.Conn.read_body(conn)
+        app = Jason.decode!(body)
+
+        assert "1" = app["labels"]["com.openfaas.scale.min"]
+
+        conn
+        |> send_resp(200, "ok")
+      end
+    )
+
     {:ok, _pid} = DynamicSupervisor.ensure_env_started(env_metadata)
 
     my_pid = self()
 
+    # Check scale down
     Bypass.expect_once(
       bypass,
-      "POST",
-      "/system/scale-function/#{@function_name}",
+      "PUT",
+      "/system/functions",
       fn conn ->
         send(my_pid, :lookup)
+
+        {:ok, body, conn} = Plug.Conn.read_body(conn)
+        app = Jason.decode!(body)
+
+        assert "0" = app["labels"]["com.openfaas.scale.min"]
 
         conn
         |> send_resp(200, "ok")

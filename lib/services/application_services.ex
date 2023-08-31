@@ -243,11 +243,10 @@ defmodule ApplicationRunner.ApplicationServices do
 
     {:ok, app} = get_app_status(function_name)
 
-    # .service=.name | .labels["com.openfaas.scale.max"]="7" | .labels["com.openfaas.scale.min"]="0"
     app =
       app
       |> Map.put(:service, function_name)
-      |> Map.put(:labels, Map.merge(app["labels"], labels))
+      |> Map.put(:labels, Map.merge(Map.get(app, :labels, %{}), labels))
 
     body = Jason.encode!(app)
 
