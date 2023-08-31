@@ -1,6 +1,7 @@
 defmodule ApplicationRunner.Webhooks.ServicesTest do
   @moduledoc false
 
+  alias ApplicationRunner.EventHandler
   use ApplicationRunner.RepoCase
 
   alias ApplicationRunner.Contract
@@ -18,6 +19,8 @@ defmodule ApplicationRunner.Webhooks.ServicesTest do
     }
 
     {:ok, _} = start_supervised({MetadataAgent, env_metadata})
+    {:ok, _} = start_supervised({EventHandler, [id: env.id, mode: :env]})
+
     start_supervised({Environment.TokenAgent, env_metadata})
 
     user =

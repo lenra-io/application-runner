@@ -22,17 +22,21 @@ defmodule ApplicationRunner.EventHandler do
     the call will run listeners with the given `action` `props` `event`
   """
   def send_env_event(env_id, action, props, event) do
+    uuid = Ecto.UUID.generate()
+
     GenServer.call(
       get_full_name({:env, env_id}),
-      {:send_event, action, props, event, env_id},
+      {:send_event, action, props, event, env_id, uuid},
       Application.fetch_env!(:application_runner, :listeners_timeout)
     )
   end
 
   def send_session_event(session_id, action, props, event) do
+    uuid = Ecto.UUID.generate()
+
     GenServer.call(
       get_full_name({:session, session_id}),
-      {:send_event, action, props, event, session_id},
+      {:send_event, action, props, event, session_id, uuid},
       Application.fetch_env!(:application_runner, :listeners_timeout)
     )
   end
@@ -66,7 +70,7 @@ defmodule ApplicationRunner.EventHandler do
 
   @impl true
   def handle_call(
-        {:send_event, "@lenra:" <> action, props, event, session_id},
+        {:send_event, "@lenra:" <> action, props, event, uuid, session_id},
         _from,
         state
       ) do
@@ -85,7 +89,7 @@ defmodule ApplicationRunner.EventHandler do
 
   @impl true
   def handle_call(
-        {:send_event, action, props, event, _session_id},
+        {:send_event, action, props, event, _id, uuid},
         _from,
         %{mode: mode, id: id} = state
       ) do
@@ -93,18 +97,18 @@ defmodule ApplicationRunner.EventHandler do
       "#{__MODULE__} handle_call for action: #{inspect(action)} with props #{inspect(props)} and event #{inspect(event)}"
     )
 
-    %{function_name: function_name, token: token, uuid: uuid, env_id: env_id} =
-      get_metadata(mode, id) |> create_token
+    %{function_name: function_name, token: token} = get_metadata(mode, id) |> create_token(uuid)
 
     res = ApplicationServices.run_listener(function_name, action, props, event, token)
 
-    TokenAgent.revoke_token(env_id, uuid)
     {:reply, res, state}
+  after
+    %{env_id: env_id} = get_metadata(mode, id)
+
+    TokenAgent.revoke_token(env_id, uuid)
   end
 
-  defp create_token(%{function_name: function_name, user_id: user_id, env_id: env_id}) do
-    uuid = Ecto.UUID.generate()
-
+  defp create_token(%{function_name: function_name, user_id: user_id, env_id: env_id}, uuid) do
     {:ok, token, _claims} =
       AppGuardian.encode_and_sign(uuid, %{type: "session", env_id: env_id, user_id: user_id})
 
@@ -113,9 +117,7 @@ defmodule ApplicationRunner.EventHandler do
     %{function_name: function_name, token: token, uuid: uuid, env_id: env_id}
   end
 
-  defp create_token(%{function_name: function_name, env_id: env_id}) do
-    uuid = Ecto.UUID.generate()
-
+  defp create_token(%{function_name: function_name, env_id: env_id}, uuid) do
     {:ok, token, _claims} = AppGuardian.encode_and_sign(uuid, %{type: "env", env_id: env_id})
 
     TokenAgent.add_token(env_id, uuid, token)

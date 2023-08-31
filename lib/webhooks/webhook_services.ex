@@ -5,6 +5,7 @@ defmodule ApplicationRunner.Webhooks.WebhookServices do
 
   import Ecto.Query, only: [from: 2]
 
+  alias ApplicationRunner.EventHandler
   alias ApplicationRunner.ApplicationServices
   alias ApplicationRunner.Environment
   alias ApplicationRunner.Environment.MetadataAgent
@@ -51,24 +52,12 @@ defmodule ApplicationRunner.Webhooks.WebhookServices do
         TechnicalError.error_404_tuple()
 
       webhook ->
-        metadata = MetadataAgent.get_metadata(webhook.environment_id)
-
-        uuid = Ecto.UUID.generate()
-
-        {:ok, token, _claims} =
-          AppGuardian.encode_and_sign(uuid, %{type: "env", env_id: webhook.environment_id})
-
-        Environment.TokenAgent.add_token(webhook.environment_id, uuid, token)
-
-        ApplicationServices.run_listener(
-          metadata.function_name,
+        EventHandler.send_env_event(
+          webhook.environment_id,
           webhook.action,
           webhook.props,
-          payload,
-          token
+          payload
         )
-
-        Environment.TokenAgent.revoke_token(webhook.environment_id, uuid)
     end
   end
 end
