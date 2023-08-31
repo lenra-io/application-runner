@@ -5,12 +5,8 @@ defmodule ApplicationRunner.Webhooks.WebhookServices do
 
   import Ecto.Query, only: [from: 2]
 
-  alias ApplicationRunner.EventHandler
-  alias ApplicationRunner.ApplicationServices
-  alias ApplicationRunner.Environment
-  alias ApplicationRunner.Environment.MetadataAgent
   alias ApplicationRunner.Errors.TechnicalError
-  alias ApplicationRunner.Guardian.AppGuardian
+  alias ApplicationRunner.EventHandler
   alias ApplicationRunner.Webhooks.Webhook
 
   @repo Application.compile_env(:application_runner, :repo)
