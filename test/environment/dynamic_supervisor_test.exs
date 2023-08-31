@@ -25,7 +25,7 @@ defmodule ApplicationRunner.Environment.DynamixSupervisorTest do
   end
 
   defp handle_app_info_resp(conn) do
-    Plug.Conn.resp(conn, 200, Jason.encode!(%{name: "test"}))
+    Plug.Conn.resp(conn, 200, Jason.encode!(%{name: @function_name}))
   end
 
   test "should scall to one on environment start and to zero on environment exit" do

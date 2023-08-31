@@ -170,6 +170,10 @@ defmodule ApplicationRunner.ApplicationServices do
     |> response(:resource)
   end
 
+  @doc """
+  Deploy an application to OpenFaaS.
+  """
+  @spec deploy_app(String.t(), String.t()) :: :ok | {:error, struct} | {:ok, any}
   def deploy_app(image_name, function_name) do
     {base_url, headers} = get_http_context()
 
@@ -206,20 +210,52 @@ defmodule ApplicationRunner.ApplicationServices do
     |> response(:deploy_app)
   end
 
+  @doc """
+  Start an OpenFaaS application.
+  """
+  @spec start_app(String.t()) :: :ok | {:error, struct} | {:ok, any}
   def start_app(function_name) do
     Logger.info("Start Openfaas application #{function_name}")
     set_app_min_scale(function_name, 1)
   end
 
+  @doc """
+  Stop an OpenFaaS application.
+  """
+  @spec stop_app(String.t()) :: :ok | {:error, struct} | {:ok, any}
   def stop_app(function_name) do
     Logger.info("Stop Openfaas application #{function_name}")
     set_app_min_scale(function_name, 0)
   end
 
+  @doc """
+  Set the minimum scale of an OpenFaaS application.
+  """
+  @spec set_app_min_scale(String.t(), integer()) :: :ok | {:error, struct} | {:ok, any}
   def set_app_min_scale(function_name, min_scale) do
     set_app_labels(function_name, %{@min_scale_label => to_string(min_scale)})
   end
 
+  @doc """
+  Set the maximum scale of an OpenFaaS application.
+  """
+  @spec set_app_max_scale(String.t(), integer()) :: :ok | {:error, struct} | {:ok, any}
+  def set_app_max_scale(function_name, max_scale) do
+    set_app_labels(function_name, %{@max_scale_label => to_string(max_scale)})
+  end
+
+  @doc """
+  Set the maximum scale of an OpenFaaS application.
+  """
+  @spec set_app_scale_factor(String.t(), integer()) :: :ok | {:error, struct} | {:ok, any}
+  def set_app_scale_factor(function_name, scale_factor) when scale_factor in [0, 100] do
+    set_app_labels(function_name, %{@scale_factor_label => to_string(scale_factor)})
+  end
+
+  @doc """
+  Get the status of an application from OpenFaaS.
+  """
+  @spec get_app_status(String.t()) :: :ok | {:error, struct} | {:ok, any}
   def get_app_status(function_name) do
     {base_url, headers} = get_http_context()
 
@@ -236,6 +272,10 @@ defmodule ApplicationRunner.ApplicationServices do
     |> response(:get_app)
   end
 
+  @doc """
+  Set the labels of an OpenFaaS application.
+  """
+  @spec set_app_labels(String.t(), map()) :: :ok | {:error, struct} | {:ok, any}
   def set_app_labels(function_name, labels) do
     {base_url, headers} = get_http_context()
 
