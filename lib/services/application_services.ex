@@ -281,25 +281,29 @@ defmodule ApplicationRunner.ApplicationServices do
 
     url = "#{base_url}/system/functions"
 
-    {:ok, app} = get_app_status(function_name)
+    case get_app_status(function_name) do
+      {:ok, app} ->
+        app =
+          app
+          |> Map.put(:service, function_name)
+          |> Map.put(:labels, Map.merge(Map.get(app, :labels, %{}), labels))
 
-    app =
-      app
-      |> Map.put(:service, function_name)
-      |> Map.put(:labels, Map.merge(Map.get(app, :labels, %{}), labels))
+        body = Jason.encode!(app)
 
-    body = Jason.encode!(app)
+        Logger.debug("Set Openfaas application #{function_name} labels \n#{inspect(labels)}")
 
-    Logger.debug("Set Openfaas application #{function_name} labels \n#{inspect(labels)}")
+        Finch.build(
+          :put,
+          url,
+          headers,
+          body
+        )
+        |> Finch.request(AppHttp, receive_timeout: 1000)
+        |> response(:update_app)
 
-    Finch.build(
-      :put,
-      url,
-      headers,
-      body
-    )
-    |> Finch.request(AppHttp, receive_timeout: 1000)
-    |> response(:update_app)
+      _ ->
+        TechnicalError.openfaas_not_reachable_tuple()
+    end
   end
 
   defp response({:ok, acc}, :resource) do

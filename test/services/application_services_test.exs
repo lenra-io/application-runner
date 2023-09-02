@@ -9,6 +9,10 @@ defmodule ApplicationRunner.ApplicationServicesTest do
     Plug.Conn.resp(conn, 200, "ok")
   end
 
+  defp handle_error_resp(conn) do
+    Plug.Conn.resp(conn, 500, "error")
+  end
+
   defp app_info_handler(app \\ %{name: @function_name}) do
     fn conn ->
       Plug.Conn.resp(conn, 200, Jason.encode!(app))
@@ -61,5 +65,33 @@ defmodule ApplicationRunner.ApplicationServicesTest do
     )
 
     ApplicationServices.start_app(@function_name)
+  end
+
+  test "failing app info while stating app" do
+    bypass = Bypass.open(port: 1234)
+    Bypass.stub(bypass, "GET", "/system/function/#{@function_name}", &handle_error_resp/1)
+
+    result = ApplicationServices.start_app(@function_name)
+
+    assert {
+             :error,
+             %LenraCommon.Errors.TechnicalError{
+               reason: :openfaas_not_reachable
+             }
+           } = result
+  end
+
+  test "failing app info while stoping app" do
+    bypass = Bypass.open(port: 1234)
+    Bypass.stub(bypass, "GET", "/system/function/#{@function_name}", &handle_error_resp/1)
+
+    result = ApplicationServices.stop_app(@function_name)
+
+    assert {
+             :error,
+             %LenraCommon.Errors.TechnicalError{
+               reason: :openfaas_not_reachable
+             }
+           } = result
   end
 end
