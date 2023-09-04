@@ -87,6 +87,36 @@ defmodule ApplicationRunner.AppSocket do
         end
       end
 
+      def create_metadatas(adapter_mod, user_id, app_name, context) do
+        session_id = Ecto.UUID.generate()
+
+        with function_name when is_bitstring(function_name) <-
+               @adapter_mod.get_function_name(app_name),
+             env_id <- @adapter_mod.get_env_id(app_name) do
+          # prepare the assigns to the session/environment
+          session_metadata = %Session.Metadata{
+            env_id: env_id,
+            session_id: session_id,
+            user_id: user_id,
+            function_name: function_name,
+            context: context
+          }
+
+          env_metadata = %Environment.Metadata{
+            env_id: env_id,
+            function_name: function_name
+          }
+
+          {:ok, env_metadata, session_metadata}
+        else
+          {:error, :forbidden} ->
+            {:error, BusinessError.forbidden()}
+
+          err ->
+            err
+        end
+      end
+
       # Socket id's are topics that allow you to identify all sockets for a given user:
       #
       #     def id(socket), do: "user_socket:#{socket.assigns.user_id}"
@@ -103,40 +133,7 @@ defmodule ApplicationRunner.AppSocket do
   end
 
   require Logger
-  alias ApplicationRunner.Environment
   alias ApplicationRunner.Errors.BusinessError
-  alias ApplicationRunner.Guardian.AppGuardian
-  alias ApplicationRunner.Session
-
-  def create_metadatas(adapter_mod, user_id, app_name, context) do
-    session_id = Ecto.UUID.generate()
-
-    with function_name when is_bitstring(function_name) <-
-           @adapter_mod.get_function_name(app_name),
-         env_id <- @adapter_mod.get_env_id(app_name) do
-      # prepare the assigns to the session/environment
-      session_metadata = %Session.Metadata{
-        env_id: env_id,
-        session_id: session_id,
-        user_id: user_id,
-        function_name: function_name,
-        context: context
-      }
-
-      env_metadata = %Environment.Metadata{
-        env_id: env_id,
-        function_name: function_name
-      }
-
-      {:ok, env_metadata, session_metadata}
-    else
-      {:error, :forbidden} ->
-        {:error, BusinessError.forbidden()}
-
-      err ->
-        err
-    end
-  end
 
   def extract_params(params) do
     with {:ok, app_name} <- extract_appname(params) do
