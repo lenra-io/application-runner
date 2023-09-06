@@ -110,27 +110,37 @@ defmodule ApplicationRunner.IntegrationTest do
   end
 
   def setup_bypass(%{logger_agent: logger_agent, session_metadata: sm}) do
-    bypass =
-      Bypass.open(port: 1234)
-      |> Bypass.stub("POST", @url, fn conn ->
-        {:ok, body, conn} = Plug.Conn.read_body(conn)
+    bypass = Bypass.open(port: 1234)
+    Bypass.stub(bypass, "GET", "/system/function/#{@function_name}", &resp_app_info/1)
+    Bypass.stub(bypass, "PUT", "/system/functions", &resp_update/1)
 
-        case Jason.decode(body) do
-          {:ok, %{"action" => action, "props" => props}} ->
-            resp_listener(logger_agent, conn, action, props, sm.token)
+    Bypass.stub(bypass, "POST", @url, fn conn ->
+      {:ok, body, conn} = Plug.Conn.read_body(conn)
 
-          {:ok, %{"view" => name, "data" => data}} ->
-            resp_view(logger_agent, conn, name, data)
+      case Jason.decode(body) do
+        {:ok, %{"action" => action, "props" => props}} ->
+          resp_listener(logger_agent, conn, action, props, sm.token)
 
-          {:ok, %{}} ->
-            resp_manifest(logger_agent, conn)
+        {:ok, %{"view" => name, "data" => data}} ->
+          resp_view(logger_agent, conn, name, data)
 
-          {:error, _} ->
-            resp_manifest(logger_agent, conn)
-        end
-      end)
+        {:ok, %{}} ->
+          resp_manifest(logger_agent, conn)
+
+        {:error, _} ->
+          resp_manifest(logger_agent, conn)
+      end
+    end)
 
     %{bypass: bypass}
+  end
+
+  def resp_app_info(conn) do
+    Plug.Conn.resp(conn, 200, Jason.encode!(%{name: @function_name, label: %{}}))
+  end
+
+  def resp_update(conn) do
+    Plug.Conn.resp(conn, 200, Jason.encode!(%{}))
   end
 
   def resp_manifest(logger_agent, conn) do

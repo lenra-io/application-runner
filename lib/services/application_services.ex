@@ -11,6 +11,12 @@ defmodule ApplicationRunner.ApplicationServices do
 
   @empty_body "{}"
   @empty_body_length "2"
+  @min_scale_label "com.openfaas.scale.min"
+  @max_scale_label "com.openfaas.scale.max"
+  @scale_factor_label "com.openfaas.scale.factor"
+  @min_scale_default "0"
+  @max_scale_default "5"
+  @scale_factor_default "10"
 
   defp get_http_context do
     base_url = Application.fetch_env!(:application_runner, :faas_url)
@@ -164,6 +170,10 @@ defmodule ApplicationRunner.ApplicationServices do
     |> response(:resource)
   end
 
+  @doc """
+  Deploy an application to OpenFaaS.
+  """
+  @spec deploy_app(String.t(), String.t()) :: :ok | {:error, struct} | {:ok, any}
   def deploy_app(image_name, function_name) do
     {base_url, headers} = get_http_context()
 
@@ -181,6 +191,10 @@ defmodule ApplicationRunner.ApplicationServices do
         "requests" => %{
           "memory" => "128Mi",
           "cpu" => "50m"
+        },
+        "labels" => %{
+          @min_scale_label => @min_scale_default,
+          @max_scale_label => @max_scale_default
         }
       })
 
@@ -194,6 +208,102 @@ defmodule ApplicationRunner.ApplicationServices do
     )
     |> Finch.request(AppHttp, receive_timeout: 1000)
     |> response(:deploy_app)
+  end
+
+  @doc """
+  Start an OpenFaaS application.
+  """
+  @spec start_app(String.t()) :: :ok | {:error, struct} | {:ok, any}
+  def start_app(function_name) do
+    Logger.info("Start Openfaas application #{function_name}")
+    set_app_min_scale(function_name, 1)
+  end
+
+  @doc """
+  Stop an OpenFaaS application.
+  """
+  @spec stop_app(String.t()) :: :ok | {:error, struct} | {:ok, any}
+  def stop_app(function_name) do
+    Logger.info("Stop Openfaas application #{function_name}")
+    set_app_min_scale(function_name, 0)
+  end
+
+  @doc """
+  Set the minimum scale of an OpenFaaS application.
+  """
+  @spec set_app_min_scale(String.t(), integer()) :: :ok | {:error, struct} | {:ok, any}
+  def set_app_min_scale(function_name, min_scale) do
+    set_app_labels(function_name, %{@min_scale_label => to_string(min_scale)})
+  end
+
+  @doc """
+  Set the maximum scale of an OpenFaaS application.
+  """
+  @spec set_app_max_scale(String.t(), integer()) :: :ok | {:error, struct} | {:ok, any}
+  def set_app_max_scale(function_name, max_scale) do
+    set_app_labels(function_name, %{@max_scale_label => to_string(max_scale)})
+  end
+
+  @doc """
+  Set the maximum scale of an OpenFaaS application.
+  """
+  @spec set_app_scale_factor(String.t(), integer()) :: :ok | {:error, struct} | {:ok, any}
+  def set_app_scale_factor(function_name, scale_factor) when scale_factor in [0, 100] do
+    set_app_labels(function_name, %{@scale_factor_label => to_string(scale_factor)})
+  end
+
+  @doc """
+  Get the status of an application from OpenFaaS.
+  """
+  @spec get_app_status(String.t()) :: :ok | {:error, struct} | {:ok, any}
+  def get_app_status(function_name) do
+    {base_url, headers} = get_http_context()
+
+    url = "#{base_url}/system/function/#{function_name}"
+
+    Logger.debug("Get Openfaas application #{function_name} status")
+
+    Finch.build(
+      :get,
+      url,
+      headers
+    )
+    |> Finch.request(AppHttp, receive_timeout: 1000)
+    |> response(:get_app)
+  end
+
+  @doc """
+  Set the labels of an OpenFaaS application.
+  """
+  @spec set_app_labels(String.t(), map()) :: :ok | {:error, struct} | {:ok, any}
+  def set_app_labels(function_name, labels) do
+    {base_url, headers} = get_http_context()
+
+    url = "#{base_url}/system/functions"
+
+    case get_app_status(function_name) do
+      {:ok, app} ->
+        app =
+          app
+          |> Map.put(:service, function_name)
+          |> Map.put(:labels, Map.merge(Map.get(app, :labels, %{}), labels))
+
+        body = Jason.encode!(app)
+
+        Logger.debug("Set Openfaas application #{function_name} labels \n#{inspect(labels)}")
+
+        Finch.build(
+          :put,
+          url,
+          headers,
+          body
+        )
+        |> Finch.request(AppHttp, receive_timeout: 1000)
+        |> response(:update_app)
+
+      _ ->
+        TechnicalError.openfaas_not_reachable_tuple()
+    end
   end
 
   defp response({:ok, acc}, :resource) do
@@ -212,6 +322,15 @@ defmodule ApplicationRunner.ApplicationServices do
   defp response({:ok, %Finch.Response{status: status_code}}, :deploy_app)
        when status_code in [200, 202] do
     {:ok, status_code}
+  end
+
+  defp response({:ok, %Finch.Response{status: status_code}}, :update_app)
+       when status_code in [200, 202] do
+    {:ok, status_code}
+  end
+
+  defp response({:ok, %Finch.Response{status: 200, body: body}}, :get_app) do
+    {:ok, Jason.decode!(body)}
   end
 
   defp response({:error, %Mint.TransportError{reason: reason}}, _action) do

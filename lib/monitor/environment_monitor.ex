@@ -2,6 +2,7 @@ defmodule ApplicationRunner.Monitor.EnvironmentMonitor do
   @moduledoc """
     The EnvironmentMonitor monitor environment supervisor.
   """
+  alias ApplicationRunner.ApplicationServices
 
   use GenServer
 
@@ -42,16 +43,7 @@ defmodule ApplicationRunner.Monitor.EnvironmentMonitor do
     function_name = Map.get(metadata, :function_name)
     Logger.debug("#{__MODULE__} handle down #{inspect(pid)} with metadata #{inspect(metadata)}")
 
-    headers = [
-      {"Content-Type", "application/merge-patch+json"},
-      {"Authorization", auth}
-    ]
-
-    url = "#{base_url}/system/scale-function/#{function_name}"
-    body = Jason.encode!(%{replicas: 0})
-
-    Finch.build(:post, url, headers, body)
-    |> Finch.request(AppHttp)
+    ApplicationServices.stop_app(function_name)
 
     {:noreply, new_state}
   end
