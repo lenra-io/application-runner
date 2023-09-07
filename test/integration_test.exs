@@ -111,10 +111,11 @@ defmodule ApplicationRunner.IntegrationTest do
   end
 
   def setup_bypass(%{logger_agent: logger_agent, session_metadata: sm}) do
-    bypass =
-      Bypass.open(port: 1234)
-      |> Bypass.stub("POST", @url, fn conn ->
-        {:ok, body, conn} = Plug.Conn.read_body(conn)
+    bypass = Bypass.open(port: 1234)
+    Bypass.stub(bypass, "GET", "/system/function/#{@function_name}", &resp_app_info/1)
+    Bypass.stub(bypass, "PUT", "/system/functions", &resp_update/1)
+    Bypass.stub(bypass, "POST", @url, fn conn ->
+      {:ok, body, conn} = Plug.Conn.read_body(conn)
 
         uuid = Ecto.UUID.generate()
 
@@ -131,18 +132,26 @@ defmodule ApplicationRunner.IntegrationTest do
           {:ok, %{"action" => action, "props" => props}} ->
             resp_listener(logger_agent, conn, action, props, token)
 
-          {:ok, %{"view" => name, "data" => data}} ->
-            resp_view(logger_agent, conn, name, data)
+        {:ok, %{"view" => name, "data" => data}} ->
+          resp_view(logger_agent, conn, name, data)
 
-          {:ok, %{}} ->
-            resp_manifest(logger_agent, conn)
+        {:ok, %{}} ->
+          resp_manifest(logger_agent, conn)
 
-          {:error, _} ->
-            resp_manifest(logger_agent, conn)
-        end
-      end)
+        {:error, _} ->
+          resp_manifest(logger_agent, conn)
+      end
+    end)
 
     %{bypass: bypass}
+  end
+
+  def resp_app_info(conn) do
+    Plug.Conn.resp(conn, 200, Jason.encode!(%{name: @function_name, label: %{}}))
+  end
+
+  def resp_update(conn) do
+    Plug.Conn.resp(conn, 200, Jason.encode!(%{}))
   end
 
   def resp_manifest(logger_agent, conn) do
