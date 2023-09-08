@@ -1,4 +1,9 @@
 <div id="top"></div>
+
+
+# This repository is deprecated and its content have been moved to [lenra-io/server](the server repository)
+
+
 <!--
 *** Thanks for checking out the Best-README-Template. If you have a suggestion
 *** that would make this better, please fork the repo and create a pull request
