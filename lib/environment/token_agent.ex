@@ -1,6 +1,6 @@
 defmodule ApplicationRunner.Environment.TokenAgent do
   @moduledoc """
-    ApplicationRunner.Environment.MetadataAgent manages environment state
+    ApplicationRunner.Environment.TokenAgent manages the transaction tokens
   """
   use Agent
   use SwarmNamed

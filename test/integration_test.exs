@@ -114,23 +114,24 @@ defmodule ApplicationRunner.IntegrationTest do
     bypass = Bypass.open(port: 1234)
     Bypass.stub(bypass, "GET", "/system/function/#{@function_name}", &resp_app_info/1)
     Bypass.stub(bypass, "PUT", "/system/functions", &resp_update/1)
+
     Bypass.stub(bypass, "POST", @url, fn conn ->
       {:ok, body, conn} = Plug.Conn.read_body(conn)
 
-        uuid = Ecto.UUID.generate()
+      uuid = Ecto.UUID.generate()
 
-        {:ok, token, _claims} =
-          AppGuardian.encode_and_sign(uuid, %{
-            type: "session",
-            env_id: sm.env_id,
-            user_id: sm.user_id
-          })
+      {:ok, token, _claims} =
+        AppGuardian.encode_and_sign(uuid, %{
+          type: "session",
+          env_id: sm.env_id,
+          user_id: sm.user_id
+        })
 
-        Environment.TokenAgent.add_token(sm.env_id, uuid, token)
+      Environment.TokenAgent.add_token(sm.env_id, uuid, token)
 
-        case Jason.decode(body) do
-          {:ok, %{"action" => action, "props" => props}} ->
-            resp_listener(logger_agent, conn, action, props, token)
+      case Jason.decode(body) do
+        {:ok, %{"action" => action, "props" => props}} ->
+          resp_listener(logger_agent, conn, action, props, token)
 
         {:ok, %{"view" => name, "data" => data}} ->
           resp_view(logger_agent, conn, name, data)
