@@ -2,8 +2,9 @@ defmodule ApplicationRunner.DocsController do
   use ApplicationRunner, :controller
 
   alias ApplicationRunner.Environment.MongoInstance
-  alias ApplicationRunner.{Guardian.AppGuardian, MongoStorage}
+  alias ApplicationRunner.Environment.TokenAgent
   alias LenraCommon.Errors.DevError
+  alias ApplicationRunner.{Guardian.AppGuardian, MongoStorage}
   alias QueryParser.Parser
 
   require Logger
@@ -69,6 +70,29 @@ defmodule ApplicationRunner.DocsController do
     end
   end
 
+  def create(
+        conn,
+        %{"coll" => coll},
+        doc,
+        %{environment: env, transaction_id: transaction_id},
+        replace_params
+      ) do
+    with filtered_doc <- Map.delete(doc, "_id"),
+         {:ok, docs} <-
+           MongoInstance.run_mongo_task(env.id, MongoStorage, :create_doc, [
+             env.id,
+             coll,
+             Parser.replace_params(filtered_doc, replace_params),
+             transaction_id
+           ]) do
+      Logger.debug(
+        "#{__MODULE__} respond to #{inspect(conn.method)} on #{inspect(conn.request_path)} with res #{inspect(docs)}"
+      )
+
+      reply(conn, docs)
+    end
+  end
+
   def create(conn, %{"coll" => coll}, doc, %{environment: env}, replace_params) do
     with filtered_doc <- Map.delete(doc, "_id"),
          {:ok, docs} <-
@@ -76,6 +100,29 @@ defmodule ApplicationRunner.DocsController do
              env.id,
              coll,
              Parser.replace_params(filtered_doc, replace_params)
+           ]) do
+      Logger.debug(
+        "#{__MODULE__} respond to #{inspect(conn.method)} on #{inspect(conn.request_path)} with res #{inspect(docs)}"
+      )
+
+      reply(conn, docs)
+    end
+  end
+
+  def update(
+        conn,
+        %{"coll" => coll, "docId" => doc_id},
+        new_doc,
+        %{environment: env, transaction_id: transaction_id},
+        replace_params
+      ) do
+    with {:ok, docs} <-
+           MongoInstance.run_mongo_task(env.id, MongoStorage, :update_doc, [
+             env.id,
+             coll,
+             doc_id,
+             Parser.replace_params(new_doc, replace_params),
+             transaction_id
            ]) do
       Logger.debug(
         "#{__MODULE__} respond to #{inspect(conn.method)} on #{inspect(conn.request_path)} with res #{inspect(docs)}"
@@ -104,6 +151,28 @@ defmodule ApplicationRunner.DocsController do
       )
 
       reply(conn, docs)
+    end
+  end
+
+  def delete(
+        conn,
+        %{"coll" => coll, "docId" => doc_id},
+        _body_params,
+        %{environment: env, transaction_id: transaction_id},
+        _replace_params
+      ) do
+    with :ok <-
+           MongoInstance.run_mongo_task(env.id, MongoStorage, :delete_doc, [
+             env.id,
+             coll,
+             doc_id,
+             transaction_id
+           ]) do
+      Logger.debug(
+        "#{__MODULE__} respond to #{inspect(conn.method)} on #{inspect(conn.request_path)} with status :ok"
+      )
+
+      reply(conn)
     end
   end
 
@@ -192,24 +261,53 @@ defmodule ApplicationRunner.DocsController do
   ###############
   # Transaction #
   ###############
+  def transaction(conn, _params, _body_params, %{environment: env, user: user}, _replace_params) do
+    with {:ok, transaction_id} <-
+           MongoInstance.run_mongo_task(env.id, MongoStorage, :start_transaction, [env.id]) do
+      uuid = Ecto.UUID.generate()
+
+      {:ok, token, _claims} =
+        AppGuardian.encode_and_sign(uuid, %{
+          type: "session",
+          env_id: env.id,
+          user: user.id,
+          transaction_id: transaction_id
+        })
+
+      TokenAgent.add_token(env.id, uuid, token)
+
+      reply(conn, token)
+    end
+  end
 
   def transaction(conn, _params, _body_params, %{environment: env}, _replace_params) do
-    with {:ok, session_uuid} <-
+    with {:ok, transaction_id} <-
            MongoInstance.run_mongo_task(env.id, MongoStorage, :start_transaction, [env.id]) do
-      reply(conn, session_uuid)
+      uuid = Ecto.UUID.generate()
+
+      {:ok, token, _claims} =
+        AppGuardian.encode_and_sign(uuid, %{
+          type: "env",
+          env_id: env.id,
+          transaction_id: transaction_id
+        })
+
+      TokenAgent.add_token(env.id, uuid, token)
+
+      reply(conn, token)
     end
   end
 
   def commit_transaction(
         conn,
-        %{"session_id" => session_id},
+        _params,
         _body_params,
-        %{environment: env},
+        %{environment: env, transaction_id: transaction_id},
         _replace_params
       ) do
     with :ok <-
            MongoInstance.run_mongo_task(env.id, MongoStorage, :commit_transaction, [
-             session_id,
+             transaction_id,
              env.id
            ]) do
       Logger.debug(
@@ -222,83 +320,15 @@ defmodule ApplicationRunner.DocsController do
 
   def abort_transaction(
         conn,
-        %{"session_id" => session_id},
+        _params,
         _body_params,
-        %{environment: env},
+        %{environment: env, transaction_id: transaction_id},
         _replace_params
       ) do
     with :ok <-
            MongoInstance.run_mongo_task(env.id, MongoStorage, :revert_transaction, [
-             session_id,
+             transaction_id,
              env.id
-           ]) do
-      Logger.debug(
-        "#{__MODULE__} respond to #{inspect(conn.method)} on #{inspect(conn.request_path)} with status :ok"
-      )
-
-      reply(conn)
-    end
-  end
-
-  def create_transaction(
-        conn,
-        %{"coll" => coll, "session_id" => session_id},
-        doc,
-        %{environment: env},
-        replace_params
-      ) do
-    with filtered_doc <- Map.delete(doc, "_id"),
-         {:ok, docs} <-
-           MongoInstance.run_mongo_task(env.id, MongoStorage, :create_doc, [
-             env.id,
-             coll,
-             Parser.replace_params(filtered_doc, replace_params),
-             session_id
-           ]) do
-      Logger.debug(
-        "#{__MODULE__} respond to #{inspect(conn.method)} on #{inspect(conn.request_path)} with res #{inspect(docs)}"
-      )
-
-      reply(conn, docs)
-    end
-  end
-
-  def update_transaction(
-        conn,
-        %{"coll" => coll, "session_id" => session_id, "docId" => doc_id},
-        new_doc,
-        %{environment: env},
-        replace_params
-      ) do
-    with {:ok, docs} <-
-           MongoInstance.run_mongo_task(env.id, MongoStorage, :update_doc, [
-             env.id,
-             coll,
-             doc_id,
-             Parser.replace_params(new_doc, replace_params),
-             session_id
-           ]) do
-      Logger.debug(
-        "#{__MODULE__} respond to #{inspect(conn.method)} on #{inspect(conn.request_path)} with res #{inspect(docs)}"
-      )
-
-      reply(conn, docs)
-    end
-  end
-
-  def delete_transaction(
-        conn,
-        %{"coll" => coll, "docId" => doc_id, "session_id" => session_id},
-        _body_params,
-        %{environment: env},
-        _replace_params
-      ) do
-    with :ok <-
-           MongoInstance.run_mongo_task(env.id, MongoStorage, :delete_doc, [
-             env.id,
-             coll,
-             doc_id,
-             session_id
            ]) do
       Logger.debug(
         "#{__MODULE__} respond to #{inspect(conn.method)} on #{inspect(conn.request_path)} with status :ok"

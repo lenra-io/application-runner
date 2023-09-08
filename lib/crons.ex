@@ -17,13 +17,10 @@ defmodule ApplicationRunner.Crons do
         env_id,
         function_name
       ) do
-    with {:ok, token} <-
-           AppSocket.create_env_token(env_id),
-         {:ok, _pid} <-
+    with {:ok, _pid} <-
            Environment.ensure_env_started(%Environment.Metadata{
              env_id: env_id,
-             function_name: function_name,
-             token: token
+             function_name: function_name
            }) do
       EventHandler.send_env_event(env_id, action, props, event)
     end

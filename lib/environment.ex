@@ -8,6 +8,4 @@ defmodule ApplicationRunner.Environment do
   defdelegate get_manifest(env_id), to: Environment.ManifestHandler
 
   defdelegate ensure_env_started(env_metadata), to: Environment.DynamicSupervisor
-
-  defdelegate fetch_token(env_id), to: Environment.MetadataAgent
 end

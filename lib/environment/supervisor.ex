@@ -24,6 +24,7 @@ defmodule ApplicationRunner.Environment.Supervisor do
     children = [
       # TODO: add module once they done !
       {Environment.MetadataAgent, em},
+      {Environment.TokenAgent, em},
       {Environment.ManifestHandler, env_id: em.env_id, function_name: em.function_name},
       {ApplicationRunner.EventHandler, mode: :env, id: em.env_id},
       {Mongo, Environment.MongoInstance.config(em.env_id)},

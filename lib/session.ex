@@ -6,13 +6,6 @@ defmodule ApplicationRunner.Session do
   alias ApplicationRunner.Session
 
   @doc """
-    Fetch the current token for the given `session_id`.
-
-    Returns UUID.
-  """
-  defdelegate fetch_token(session_id), to: Session.MetadataAgent
-
-  @doc """
     Start a Session Supervisor for the given session_state (session_id must be unique),
     Make sure the environment Supervisor is started for the given `env_state`,
     if the environment is not started, it is started with the given `env_state`.

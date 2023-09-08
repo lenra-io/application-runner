@@ -5,6 +5,8 @@ defmodule ApplicationRunner.Guardian.AppGuardian do
 
   use Guardian, otp_app: :application_runner
 
+  alias ApplicationRunner.Environment.TokenAgent
+
   alias ApplicationRunner.{
     Environment,
     MongoStorage,
@@ -17,6 +19,29 @@ defmodule ApplicationRunner.Guardian.AppGuardian do
 
   def subject_for_token(session_pid, _claims) do
     {:ok, to_string(session_pid)}
+  end
+
+  def resource_from_claims(%{
+        "user_id" => user_id,
+        "env_id" => env_id,
+        "transaction_id" => transaction_id
+      }) do
+    env = MongoStorage.get_env!(env_id)
+    user = MongoStorage.get_user!(user_id)
+    mongo_user_link = MongoStorage.get_mongo_user_link!(env_id, user_id)
+
+    {:ok,
+     %{
+       environment: env,
+       user: user,
+       mongo_user_link: mongo_user_link,
+       transaction_id: transaction_id
+     }}
+  end
+
+  def resource_from_claims(%{"env_id" => env_id, "transaction_id" => transaction_id}) do
+    env = MongoStorage.get_env!(env_id)
+    {:ok, %{environment: env, transaction_id: transaction_id}}
   end
 
   def resource_from_claims(%{"user_id" => user_id, "env_id" => env_id}) do
@@ -45,30 +70,11 @@ defmodule ApplicationRunner.Guardian.AppGuardian do
   end
 
   defp get_app_token(claims) do
-    case claims["type"] do
-      "session" ->
-        try do
-          Session.fetch_token(claims["sub"])
-        rescue
-          e ->
-            Logger.error(
-              "#{__MODULE__} failed to fetch session token for claims: #{inspect(claims)} with error: #{inspect(e)}"
-            )
-        end
-
-      "env" ->
-        try do
-          Environment.fetch_token(String.to_integer(claims["sub"]))
-        rescue
-          e ->
-            Logger.error(
-              "#{__MODULE__} failed to fetch environment token for claims: #{inspect(claims)} with error: #{inspect(e)}"
-            )
-        end
-
-      _err ->
-        Logger.error("#{__MODULE__} Unknown token type for claims: #{inspect(claims)}")
-        TechnicalError.unknown_error_tuple()
-    end
+    TokenAgent.get_token(claims["env_id"], claims["sub"])
+  rescue
+    e ->
+      Logger.error(
+        "#{__MODULE__} failed to fetch environment token for claims: #{inspect(claims)} with error: #{inspect(e)}"
+      )
   end
 end

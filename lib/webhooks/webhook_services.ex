@@ -5,9 +5,8 @@ defmodule ApplicationRunner.Webhooks.WebhookServices do
 
   import Ecto.Query, only: [from: 2]
 
-  alias ApplicationRunner.ApplicationServices
-  alias ApplicationRunner.Environment.MetadataAgent
   alias ApplicationRunner.Errors.TechnicalError
+  alias ApplicationRunner.EventHandler
   alias ApplicationRunner.Webhooks.Webhook
 
   @repo Application.compile_env(:application_runner, :repo)
@@ -49,14 +48,11 @@ defmodule ApplicationRunner.Webhooks.WebhookServices do
         TechnicalError.error_404_tuple()
 
       webhook ->
-        metadata = MetadataAgent.get_metadata(webhook.environment_id)
-
-        ApplicationServices.run_listener(
-          metadata.function_name,
+        EventHandler.send_env_event(
+          webhook.environment_id,
           webhook.action,
           webhook.props,
-          payload,
-          metadata.token
+          payload
         )
     end
   end

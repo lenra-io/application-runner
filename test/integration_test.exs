@@ -1,8 +1,9 @@
 defmodule ApplicationRunner.IntegrationTest do
   use ApplicationRunner.ConnCase, async: false
 
+  alias ApplicationRunner.Guardian.AppGuardian
+
   alias ApplicationRunner.{
-    AppSocket,
     Contract,
     Environment,
     MongoStorage,
@@ -60,6 +61,8 @@ defmodule ApplicationRunner.IntegrationTest do
     # Start env
     Environment.DynamicSupervisor.ensure_env_started(em)
 
+    start_supervised({Environment.TokenAgent, em})
+
     # Reset and setup mongo coll
     mongo_name = Environment.MongoInstance.get_full_name(em.env_id)
     Mongo.drop_collection(mongo_name, @coll)
@@ -80,8 +83,7 @@ defmodule ApplicationRunner.IntegrationTest do
         user_id: user.id,
         session_id: @session_id,
         function_name: @function_name,
-        context: %{},
-        token: AppSocket.create_session_token(env.id, @session_id, user.id) |> elem(1)
+        context: %{}
       }
     }
   end
@@ -90,8 +92,7 @@ defmodule ApplicationRunner.IntegrationTest do
     %{
       env_metadata: %Environment.Metadata{
         env_id: env.id,
-        function_name: @function_name,
-        token: AppSocket.create_env_token(env.id) |> elem(1)
+        function_name: @function_name
       }
     }
   end
@@ -117,9 +118,20 @@ defmodule ApplicationRunner.IntegrationTest do
     Bypass.stub(bypass, "POST", @url, fn conn ->
       {:ok, body, conn} = Plug.Conn.read_body(conn)
 
+      uuid = Ecto.UUID.generate()
+
+      {:ok, token, _claims} =
+        AppGuardian.encode_and_sign(uuid, %{
+          type: "session",
+          env_id: sm.env_id,
+          user_id: sm.user_id
+        })
+
+      Environment.TokenAgent.add_token(sm.env_id, uuid, token)
+
       case Jason.decode(body) do
         {:ok, %{"action" => action, "props" => props}} ->
-          resp_listener(logger_agent, conn, action, props, sm.token)
+          resp_listener(logger_agent, conn, action, props, token)
 
         {:ok, %{"view" => name, "data" => data}} ->
           resp_view(logger_agent, conn, name, data)
