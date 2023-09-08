@@ -103,7 +103,9 @@ defmodule ApplicationRunner.AppSocket do
   end
 
   require Logger
+  alias ApplicationRunner.Environment
   alias ApplicationRunner.Errors.BusinessError
+  alias ApplicationRunner.Session
 
   def create_metadatas(adapter_mod, user_id, app_name, context) do
     session_id = Ecto.UUID.generate()
